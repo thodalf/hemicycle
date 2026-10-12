@@ -29,7 +29,7 @@ Standalone components, zoneless, Signals partout.
 - **Barre « Terminer la semaine »** toujours à portée de pouce, avec le nombre d’actions et de PA libres ; si une
   décision bloque, elle y renvoie.
 - Onglets d’actions en ruban qui défile au doigt ; scènes, débats, manifestations, budgets et patrimoine en plein
-  écran ; au débat, la main de cartes passe juste sous la scène.
+  écran et défilent au doigt (la page derrière reste immobile) ; au débat, la main de cartes passe juste sous la scène.
 - Champs à 16 px (pas de zoom automatique sur iOS), zones tactiles agrandies, marges de sécurité (encoche, barre
   d’accueil), nombres à la française (« 4 000 € »).
 
@@ -76,7 +76,9 @@ Standalone components, zoneless, Signals partout.
   France des territoires, campagne d’implantation, tisser son réseau, reprendre des études, fonder un think tank,
   mission d’information et proposition de loi (député·e), grande réforme (ministre), plan de relance (Matignon),
   refondation du parti, grand chantier et tournée diplomatique (Élysée), grande enquête (journaliste), mémoires
-  (ancien·ne président·e), six mois au vert et année sabbatique (tout l’agenda). Un peu d’effet chaque semaine, beaucoup
+  (ancien·ne président·e), six mois au vert et année sabbatique. Les petits projets réservent 2 à 4 PA par semaine ;
+  les **gros projets** accaparent l’agenda : il ne reste que **3 PA** par semaine (12 semaines et plus), **2 PA** au-delà
+  de six mois. Un peu d’effet chaque semaine, beaucoup
   à l’arrivée (parfois avec un risque). **S’y consacrer jusqu’au bout** fait défiler les semaines : les petites
   décisions se règlent seules (le choix le plus prudent) et l’on est rappelé·e dès qu’il se passe quelque chose
   d’important (campagne, résultats, promotion, chapitre, alerte médicale, crise grave, budget). Le projet continue

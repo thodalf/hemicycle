@@ -1,5 +1,5 @@
 import { GameState } from '../models/game.models';
-import { PROJECTS_BY_ID, ProjectDef, projectVisible } from '../data/projects';
+import { PROJECTS_BY_ID, ProjectDef, projectLeaves, projectReserve, projectVisible } from '../data/projects';
 import { applyEffects, pushNews, rollRisk } from './effects';
 import { Rng } from './rng';
 
@@ -15,7 +15,7 @@ export function projectDef(d: GameState): ProjectDef | null {
 /** Points d'action réservés cette semaine par le projet en cours */
 export function reservedAp(d: GameState): number {
   const def = projectDef(d);
-  return def ? Math.min(def.ap, d.player.actionPoints.max) : 0;
+  return def ? projectReserve(def, d.player.actionPoints.max) : 0;
 }
 
 export function projectAvailability(d: GameState, def: ProjectDef): { ok: boolean; reason?: string } {
@@ -26,7 +26,7 @@ export function projectAvailability(d: GameState, def: ProjectDef): { ok: boolea
   const why = def.eligible?.(d);
   if (why) return { ok: false, reason: why };
   if (def.money && d.player.finances.personal < def.money) return { ok: false, reason: `Il faut ${def.money.toLocaleString('fr-FR')} € de fonds personnels` };
-  if (def.ap < 99 && def.ap > d.player.actionPoints.max) return { ok: false, reason: 'Pas assez de points d’action par semaine' };
+  if (projectLeaves(def) === null && def.ap > d.player.actionPoints.max) return { ok: false, reason: 'Pas assez de points d’action par semaine' };
   return { ok: true };
 }
 
@@ -39,7 +39,7 @@ export function startProject(d: GameState, id: string): boolean {
     : def.domain;
   d.project = { id, startWeek: d.week, done: 0, weeks: def.weeks, ...(domain ? { domain } : {}) };
   pushNews(d, 'action', 'neutral', `Projet lancé : ${def.label}`,
-    `${def.weeks} semaines, ${def.ap >= 99 ? 'tout votre agenda' : `${def.ap} PA réservés chaque semaine`}.`);
+    `${def.weeks} semaines. ${projectLeaves(def) !== null ? `Gros projet : il ne vous reste que ${projectLeaves(def)} PA par semaine.` : `${def.ap} PA réservés chaque semaine.`}`);
   return true;
 }
 

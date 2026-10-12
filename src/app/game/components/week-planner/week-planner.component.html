@@ -68,7 +68,7 @@
                 <p class="muted">{{ p.def.description }}</p>
                 <div class="costs mono">
                   <span class="cost ap">{{ p.def.weeks }} sem.</span>
-                  <span class="cost">{{ p.def.ap >= 99 ? 'tout l’agenda' : p.def.ap + ' PA/sem.' }}</span>
+                  <span class="cost" [class.heavy]="p.big">{{ p.load }}</span>
                   @if (p.def.money) { <span class="cost">{{ p.def.money.toLocaleString('fr-FR') }} €</span> }
                 </div>
                 <div class="fx">
@@ -203,7 +203,7 @@
         @if (current(); as c) {
           <strong>{{ c.def.label }}</strong>
           <div class="pbar" [attr.aria-label]="c.done + ' semaines sur ' + c.weeks"><span [style.width.%]="c.done / c.weeks * 100"></span></div>
-          <small class="muted">{{ c.done }} / {{ c.weeks }} semaines · {{ c.def.ap >= 99 ? 'tout l’agenda' : c.def.ap + ' PA par semaine' }}</small>
+          <small class="muted">{{ c.done }} / {{ c.weeks }} semaines · {{ c.load }}</small>
           <button class="btn primary small" [disabled]="!turn.canDevote()" (click)="devote()">S’y consacrer jusqu’au bout</button>
           @if (turn.canEndWeek() && !turn.canDevote()) { <small class="muted">Impossible de s’y consacrer pendant une campagne : le projet avance chaque semaine.</small> }
           @if (confirmAbandon()) {

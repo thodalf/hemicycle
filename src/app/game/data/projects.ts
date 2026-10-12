@@ -15,7 +15,7 @@ export interface ProjectDef {
   label: string;
   description: string;
   weeks: number;
-  /** Points d'action réservés chaque semaine (99 : tout l'agenda) */
+  /** Points d'action réservés chaque semaine (petits projets ; les gros projets ne laissent que 2 ou 3 PA) */
   ap: number;
   /** Dépense au lancement, en euros */
   money?: number;
@@ -137,19 +137,38 @@ export const PROJECTS: ProjectDef[] = [
     final: [{ kind: 'income', base: 150000 }, st('popularity', 4), st('credibility', 2), { kind: 'exposure', delta: 4 }],
   },
   {
-    id: 'cure_longue', label: 'Six mois au vert', weeks: 26, ap: 99, cooldown: 52,
-    description: 'Disparaître de la vie publique pour se refaire une santé. Votre agenda est vide, vos adversaires occupent le terrain.',
+    id: 'cure_longue', label: 'Six mois au vert', weeks: 26, ap: 0, cooldown: 52,
+    description: 'Se retirer pour se refaire une santé. Votre agenda est presque vide, vos adversaires occupent le terrain.',
     weekly: [st('stress', -3), st('energy', 4), { kind: 'health', delta: 0.3 }, st('popularity', -0.3), st('influence', -0.5)],
     final: [{ kind: 'health', delta: 6 }, { kind: 'flagAdd', key: 'hygiene', delta: 4 }],
   },
   {
-    id: 'sabbatique', label: 'Année sabbatique', weeks: 52, ap: 99, cooldown: 260,
+    id: 'sabbatique', label: 'Année sabbatique', weeks: 52, ap: 0, cooldown: 260,
     description: 'Un an loin de la politique : voyages, famille, lectures. On revient changé·e… et un peu oublié·e.',
     eligible: d => (d.presidency ? 'Impossible à l’Élysée' : null),
     weekly: [st('stress', -3), st('energy', 5), { kind: 'health', delta: 0.25 }, st('popularity', -0.35), st('influence', -0.45)],
     final: [{ kind: 'health', delta: 8 }, { kind: 'flagAdd', key: 'hygiene', delta: 6 }, st('credibility', 2), { kind: 'skillPoints', delta: 1 }],
   },
 ];
+
+/** Un gros projet (12 semaines et plus) accapare l'agenda : il ne laisse que 3 PA par semaine, 2 au-delà de six mois */
+export function projectLeaves(def: ProjectDef): number | null {
+  if (def.weeks >= 26) return 2;
+  if (def.weeks >= 12) return 3;
+  return null;
+}
+
+/** Points d'action réservés chaque semaine pour un maximum donné */
+export function projectReserve(def: ProjectDef, max: number): number {
+  const leaves = projectLeaves(def);
+  return leaves !== null ? Math.max(0, max - leaves) : Math.min(def.ap, max);
+}
+
+/** Libellé de la charge : « 2 PA par semaine », « ne laisse que 3 PA » */
+export function projectLoadLabel(def: ProjectDef): string {
+  const leaves = projectLeaves(def);
+  return leaves !== null ? `gros projet : ne laisse que ${leaves} PA/sem.` : `${def.ap} PA/sem.`;
+}
 
 export const PROJECTS_BY_ID = new Map(PROJECTS.map(p => [p.id, p]));
 

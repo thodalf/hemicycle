@@ -13,7 +13,7 @@ import { TurnService } from '../../services/turn.service';
 import { FxService } from '../../services/fx.service';
 import { ELECTIONS } from '../../data/ranks';
 import { PARTNERS, PARTNERS_BY_ID } from '../../engine/intl';
-import { PROJECTS, PROJECTS_BY_ID, projectVisible } from '../../data/projects';
+import { PROJECTS, PROJECTS_BY_ID, projectLeaves, projectLoadLabel, projectVisible } from '../../data/projects';
 import { projectAvailability } from '../../engine/projects';
 
 /** Actions qui peuvent viser n'importe quelle personnalité, pas seulement votre parti */
@@ -60,7 +60,7 @@ export class WeekPlannerComponent {
   protected readonly current = computed(() => {
     const s = this.game.s();
     const def = s.project ? PROJECTS_BY_ID.get(s.project.id) : null;
-    return def && s.project ? { def, done: s.project.done, weeks: s.project.weeks } : null;
+    return def && s.project ? { def, done: s.project.done, weeks: s.project.weeks, load: projectLoadLabel(def) } : null;
   });
 
   /** Projets proposés à votre rang */
@@ -71,7 +71,7 @@ export class WeekPlannerComponent {
       const w = describeEffects(def.weekly);
       const risk = def.risk ? describeEffects(def.risk.onFailure) : null;
       return {
-        def, av: projectAvailability(s, def),
+        def, av: projectAvailability(s, def), load: projectLoadLabel(def), big: projectLeaves(def) !== null,
         weekly: [...w.gains, ...w.losses, ...w.other], final: [...f.gains, ...f.losses, ...f.other],
         riskText: risk ? 'En cas d’échec : ' + [...risk.losses, ...risk.gains, ...risk.other].map(c => c.text).join(', ') : '',
       };

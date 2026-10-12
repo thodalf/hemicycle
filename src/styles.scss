@@ -156,9 +156,14 @@ html { -webkit-text-size-adjust: 100%; background: var(--bg); }
   .btn { min-height: 38px; }
   .btn.small { min-height: 32px; padding: 5px 10px; }
   /* Les fenêtres (scènes, débats, budgets, patrimoine…) passent en plein écran */
-  .overlay:has(> .sheet, > .builder, > .arena) { padding: 0 !important; align-items: stretch !important; }
+  /* En bloc (et non en grille étirée) : la fenêtre grandit avec son contenu et l'overlay défile */
+  .overlay:has(> .sheet, > .builder, > .arena) { padding: 0 !important; display: block !important; }
   .overlay > .sheet, .overlay > .builder, .overlay > .arena {
     max-width: none !important; min-height: 100dvh; border-radius: 0 !important; border: 0 !important;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
+
+/* Fenêtre ouverte : seule elle défile, la page derrière reste immobile */
+.overlay { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+html:has(.overlay), html:has(.overlay) body { overflow: hidden; }

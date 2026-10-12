@@ -150,3 +150,5 @@
 .plan-list li.reserved { background: var(--accent-soft); border-radius: 6px; }
 .action.project { border-left: 3px solid var(--accent); }
 .fx-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); align-self: center; margin-right: 2px; }
+
+.cost.heavy { color: var(--bad); font-weight: 600; }
