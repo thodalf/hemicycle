@@ -177,6 +177,14 @@ export class WeekPlannerComponent {
     { weeks: 4, label: '1 mois' }, { weeks: 26, label: '6 mois' }, { weeks: 52, label: '1 an' }, { weeks: 260, label: '5 ans' },
   ];
 
+  protected scrollToPlan(): void {
+    document.querySelector('app-week-planner .plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  protected scrollToDecisions(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   protected skip(weeks: number): void {
     const from = this.game.week();
     this.turn.skip(weeks);

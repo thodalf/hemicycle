@@ -22,6 +22,17 @@ Standalone components, zoneless, Signals partout.
   dans le premier emplacement libre.
 - Code : `services/auth.service.ts`, `services/save-store.ts`, `components/auth`, `components/slots`.
 
+## Sur téléphone
+
+- Barre du haut compacte (semaine, fatigue, santé, fonds) et **onglets en bas d’écran** : Agenda, Profil, Actualité
+  (pastilles pour les décisions en attente et les nouvelles).
+- **Barre « Terminer la semaine »** toujours à portée de pouce, avec le nombre d’actions et de PA libres ; si une
+  décision bloque, elle y renvoie.
+- Onglets d’actions en ruban qui défile au doigt ; scènes, débats, manifestations, budgets et patrimoine en plein
+  écran ; au débat, la main de cartes passe juste sous la scène.
+- Champs à 16 px (pas de zoom automatique sur iOS), zones tactiles agrandies, marges de sécurité (encoche, barre
+  d’accueil), nombres à la française (« 4 000 € »).
+
 ## Mécaniques
 
 - **Une vie, pas une partie** (`engine/life.ts`) : les victoires et défaites de scénario (Grand Maître, « Vive le Roi ! »,

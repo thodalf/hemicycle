@@ -70,6 +70,13 @@ const LEVELS: { max: number; label: string; tone: string }[] = [
     @keyframes alarm { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 4px var(--bad-soft); } }
     @media (prefers-reduced-motion: reduce) { .alarm, .h-danger { animation: none; } }
     @media (max-width: 820px) { .lbl { display: none; } }
+    @media (max-width: 640px) {
+      :host { gap: 4px; justify-content: space-between; flex-wrap: nowrap; }
+      .vital { gap: 5px; padding: 2px 4px; font-size: 12px; }
+      .vital .eyebrow { font-size: 9.5px; letter-spacing: .04em; }
+      .gauge { width: 34px; }
+      .money .tag { font-size: 10px; padding: 1px 5px; }
+    }
   `,
 })
 export class VitalsComponent {

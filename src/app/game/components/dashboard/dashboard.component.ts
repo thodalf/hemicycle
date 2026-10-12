@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DOMAIN_LABELS } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { DebateArenaComponent } from '../debate-arena/debate-arena.component';
@@ -54,12 +54,12 @@ import { Milestone } from '../../models/game.models';
       </div>
       <app-vitals />
       <span class="save" [class]="'s-' + game.saveStatus()" [title]="saveTip()">
-        <span class="dot" aria-hidden="true"></span>{{ saveLabel() }}
+        <span class="dot" aria-hidden="true"></span><span class="save-lbl">{{ saveLabel() }}</span>
       </span>
-      <button class="btn small" (click)="confirmQuit()">Mes parties</button>
+      <button class="btn small quit" (click)="confirmQuit()" aria-label="Mes parties">Mes parties</button>
     </header>
 
-    <div class="grid">
+    <div class="grid" [attr.data-tab]="tab()">
       <div class="col-left">
         <app-profile-panel />
         <app-life-panel />
@@ -143,6 +143,18 @@ import { Milestone } from '../../models/game.models';
     } @else if (wealthOpen()) {
       <app-patrimoine (closed)="wealthOpen.set(false)" />
     }
+
+    <!-- Téléphone : une colonne à la fois, onglets en bas d'écran -->
+    <nav class="mobile-tabs" aria-label="Sections">
+      @for (t of tabs; track t.id) {
+        <button type="button" [class.on]="tab() === t.id" [attr.aria-current]="tab() === t.id ? 'page' : null" (click)="setTab(t.id)">
+          <span class="ico" aria-hidden="true">{{ t.icon }}</span>
+          <span>{{ t.label }}</span>
+          @if (t.id === 'agenda' && game.s().pendingDecisions.length) { <b class="badge">{{ game.s().pendingDecisions.length }}</b> }
+          @if (t.id === 'actu' && unread()) { <b class="badge dot-badge" aria-label="Nouvelles"></b> }
+        </button>
+      }
+    </nav>
 
     <app-election-night />
     <app-fx-layer />
@@ -238,16 +250,63 @@ import { Milestone } from '../../models/game.models';
       .grid { grid-template-columns: 260px minmax(0, 1fr); }
       .col-right { grid-column: 1 / -1; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
     }
+    .mobile-tabs { display: none; }
     @media (max-width: 820px) {
-      .grid { grid-template-columns: 1fr; padding: 12px 16px 32px; }
-      .col-left { order: 2; } .col-main { order: 1; } .col-right { order: 3; }
-      .topbar { gap: 12px; padding: 10px 16px; flex-wrap: wrap; }
+      .grid { grid-template-columns: 1fr; padding: 12px 12px calc(84px + env(safe-area-inset-bottom, 0px)); gap: 12px; }
+      .col-left, .col-main, .col-right { gap: 12px; }
+      .col-right { grid-template-columns: 1fr; }
+      /* Une colonne à la fois */
+      .grid[data-tab='agenda'] .col-left, .grid[data-tab='agenda'] .col-right,
+      .grid[data-tab='moi'] .col-main, .grid[data-tab='moi'] .col-right,
+      .grid[data-tab='actu'] .col-left, .grid[data-tab='actu'] .col-main { display: none; }
+      /* Barre du haut compacte */
+      .topbar { display: grid; grid-template-columns: auto 1fr auto auto; gap: 4px 10px; padding: 8px 12px; align-items: center; }
+      .brand { font-size: 17px; }
+      .facts { gap: 10px; font-size: 12px; flex-wrap: nowrap; overflow: hidden; }
+      .facts > span:nth-child(n+2) { display: none; }
+      .save .save-lbl { display: none; }
+      .quit { padding: 4px 8px; }
+      .brand { order: 1; } .facts { order: 2; } .save { order: 3; } .quit { order: 4; justify-self: end; }
+      app-vitals { grid-column: 1 / -1; order: 5; }
+      .mobile-tabs {
+        display: grid; grid-template-columns: repeat(3, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
+        background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(10px);
+        border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .mobile-tabs button {
+        position: relative; display: grid; justify-items: center; gap: 2px; padding: 8px 4px 9px; border: 0; background: none;
+        font-size: 11.5px; font-weight: 500; color: var(--ink-3); cursor: pointer; min-height: 56px;
+      }
+      .mobile-tabs .ico { font-size: 19px; line-height: 1; filter: grayscale(1); opacity: .7; }
+      .mobile-tabs button.on { color: var(--accent); .ico { filter: none; opacity: 1; } }
+      .mobile-tabs button.on::before { content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); }
+      .badge { position: absolute; top: 5px; left: calc(50% + 8px); min-width: 17px; height: 17px; padding: 0 5px; border-radius: 999px;
+        background: var(--bad); color: #fff; font-size: 10.5px; line-height: 17px; text-align: center; }
+      .dot-badge { min-width: 9px; width: 9px; height: 9px; padding: 0; top: 7px; }
+      .end { padding: 22px 18px; h2 { font-size: 25px; } }
+      .obit { padding: 22px 16px; h2 { font-size: 28px; } }
+      .facts-grid { grid-template-columns: 1fr; }
     }
   `,
 })
 export class DashboardComponent {
   protected readonly game = inject(GameStateService);
   protected readonly program = inject(ProgramService);
+
+  /** Navigation mobile : agenda, profil, actualité */
+  protected readonly tabs = [
+    { id: 'agenda', label: 'Agenda', icon: '🗓️' },
+    { id: 'moi', label: 'Profil', icon: '👤' },
+    { id: 'actu', label: 'Actualité', icon: '📰' },
+  ] as const;
+  protected readonly tab = signal<'agenda' | 'moi' | 'actu'>('agenda');
+  private readonly seenNews = signal(this.game.s().news[0]?.id ?? '');
+  protected readonly unread = computed(() => this.tab() !== 'actu' && (this.game.s().news[0]?.id ?? '') !== this.seenNews());
+  protected setTab(t: 'agenda' | 'moi' | 'actu'): void {
+    if (t === 'actu' || this.tab() === 'actu') this.seenNews.set(this.game.s().news[0]?.id ?? '');
+    this.tab.set(t);
+    window.scrollTo({ top: 0 });
+  }
   protected readonly builderHidden = signal(false);
   protected readonly budget = inject(BudgetService);
   protected readonly budgetOpen = signal(false);

@@ -176,3 +176,16 @@
     </aside>
   </div>
 </section>
+
+<!-- Téléphone : barre de fin de semaine toujours à portée de pouce -->
+<div class="mobile-end" role="region" aria-label="Fin de semaine">
+  <button type="button" class="summary" (click)="scrollToPlan()">
+    <strong>{{ planner.plan().length }} action{{ planner.plan().length > 1 ? 's' : '' }}</strong>
+    <span class="muted">{{ planner.apLeft() }} PA libre{{ planner.apLeft() > 1 ? 's' : '' }}</span>
+  </button>
+  @if (turn.blocking().length) {
+    <button type="button" class="btn warn-btn" (click)="scrollToDecisions()">{{ turn.blocking().length }} décision{{ turn.blocking().length > 1 ? 's' : '' }} à trancher</button>
+  } @else {
+    <button type="button" class="btn primary" [disabled]="!turn.canEndWeek()" (click)="endWeek()">Terminer la semaine →</button>
+  }
+</div>

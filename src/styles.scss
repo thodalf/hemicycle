@@ -145,3 +145,20 @@ select, input[type=text] {
   .btn:active:not(:disabled) { transform: translateY(1px) scale(.98); }
   .btn.primary:not(:disabled):hover { box-shadow: 0 6px 16px -8px var(--accent); }
 }
+
+/* ── Téléphone ──────────────────────────────────────────── */
+html { -webkit-text-size-adjust: 100%; background: var(--bg); }
+@media (max-width: 640px) {
+  .card { padding: 14px; }
+  .card-title { font-size: 16px; margin-bottom: 10px; }
+  /* Pas de zoom automatique d'iOS sur les champs */
+  select, input[type=text], input[type=password], input[type=number] { font-size: 16px; }
+  .btn { min-height: 38px; }
+  .btn.small { min-height: 32px; padding: 5px 10px; }
+  /* Les fenêtres (scènes, débats, budgets, patrimoine…) passent en plein écran */
+  .overlay:has(> .sheet, > .builder, > .arena) { padding: 0 !important; align-items: stretch !important; }
+  .overlay > .sheet, .overlay > .builder, .overlay > .arena {
+    max-width: none !important; min-height: 100dvh; border-radius: 0 !important; border: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
