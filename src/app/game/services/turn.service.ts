@@ -110,6 +110,7 @@ export class TurnService {
     weeklyIntl(d, rng);
     weeklyObjectives(d, rng);
     weeklyScenario(d, rng);
+    settleEndings(d);
     weeklyProject(d, rng);
     settleEndings(d);
     weeklyLife(d, rng);
@@ -157,7 +158,9 @@ export class TurnService {
       const milestones = d.milestones.length;
       const elections = new Set(d.elections.map(e => e.id));
       this.planner.execute(d, rng);
-      while (d.project && d.project.id === project.id) {
+      // Garde-fou : jamais plus de semaines que la durée restante du projet (+ marge)
+      const limit = project.weeks - project.done + 4;
+      while (d.project && d.project.id === project.id && report.weeks < limit) {
         const stop = this.autoResolve(d, rng);
         if (stop) { report.reason = `Décision à prendre : ${stop}`; break; }
         this.advance(d, rng);

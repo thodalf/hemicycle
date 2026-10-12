@@ -79,7 +79,7 @@ function weeklyLodge(d: GameState, rng: Rng): void {
       d.player.flags['lastRevelation'] = d.week;
     }
   }
-  if (l.grade >= 4 && rankOrder(d.player.rankId) >= rankOrder('ministre') && d.status === 'en_cours') {
+  if (l.grade >= 4 && rankOrder(d.player.rankId) >= rankOrder('ministre') && d.status === 'en_cours' && !d.milestones.some(m => m.title === 'Grand Maître et homme d’État')) {
     d.status = 'victoire';
     d.endTitle = 'Grand Maître et homme d’État';
     d.endReason = `Grand Maître de ${l.obedience} et ${d.player.rankId === 'president' ? 'chef de l’État' : 'membre du gouvernement'} : jamais personne n’avait réuni autant d’influence, visible et invisible.`;

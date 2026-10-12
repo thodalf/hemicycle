@@ -118,7 +118,7 @@ export function weeklyPress(d: GameState, rng: Rng): void {
   }
 
   // Victoire du scénario : diriger la rédaction et faire l'opinion
-  if (d.scenario === 'editorialiste' && p.grade >= 4 && p.audience >= 65 && s.influence >= 60 && d.status === 'en_cours') {
+  if (d.scenario === 'editorialiste' && p.grade >= 4 && p.audience >= 65 && s.influence >= 60 && d.status === 'en_cours' && !d.milestones.some(m => m.title === 'Le quatrième pouvoir')) {
     d.status = 'victoire';
     d.endTitle = 'Le quatrième pouvoir';
     d.endReason = `Directeur·rice de la rédaction de ${p.outlet}, vous faites et défaites les carrières. Les politiques vous appellent avant de parler.`;

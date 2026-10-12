@@ -86,7 +86,7 @@ export function weeklyMole(d: GameState, rng: Rng): void {
   }
 
   // La taupe à la tête du parti : victoire alternative
-  if (d.scenario === 'infiltre' && d.party.leaderNpcId === 'player' && d.status === 'en_cours') {
+  if (d.scenario === 'infiltre' && d.party.leaderNpcId === 'player' && d.status === 'en_cours' && !d.milestones.some(m => m.title === 'La taupe en chef')) {
     d.status = 'victoire';
     d.endTitle = 'La taupe en chef';
     d.endReason = `Vous dirigez désormais le parti que vous deviez espionner. ${m.homeName} n’en revient pas : l’adversaire entier est entre vos mains.`;

@@ -56,7 +56,8 @@ export function abandonProject(d: GameState): void {
 export function weeklyProject(d: GameState, rng: Rng): void {
   const def = projectDef(d);
   const pr = d.project;
-  if (!def || !pr || d.status !== 'en_cours') return;
+  // Seule la mort arrête un projet (une victoire de scénario n'est qu'un chapitre)
+  if (!def || !pr || d.status === 'mort') return;
   const ctx = { domain: pr.domain };
   applyEffects(d, def.weekly, ctx, rng);
   pr.done += 1;
