@@ -1,0 +1,120 @@
+<div class="overlay" role="dialog" aria-modal="true" aria-label="Programme présidentiel">
+  <section class="builder">
+    <header class="head">
+      <div>
+        <span class="eyebrow">Campagne présidentielle</span>
+        <h2>Votre programme</h2>
+      </div>
+      <div class="progress">
+        <span class="mono">{{ report().answered }} / {{ report().total }}</span>
+        <div class="bar"><span [style.width.%]="100 * report().answered / report().total"></span></div>
+      </div>
+      <button class="btn small" (click)="closed.emit()">Plus tard</button>
+    </header>
+
+    <div class="body">
+      <div class="main">
+        <nav class="map" aria-label="Questions">
+          @for (g of groups; track g.domain) {
+            <div class="map-group">
+              <span class="map-label">{{ g.label }}</span>
+              <span class="dots">
+                @for (it of g.items; track it.q.id) {
+                  <button class="dot" [class.done]="selected(it.q)" [class.here]="it.index === index()"
+                          [attr.aria-label]="'Question ' + (it.index + 1) + ' : ' + it.q.theme" [title]="it.q.theme"
+                          (click)="index.set(it.index)">{{ it.index + 1 }}</button>
+                }
+              </span>
+            </div>
+          }
+        </nav>
+
+        @let q = current();
+        <div class="question">
+          <span class="eyebrow">Question {{ index() + 1 }} · {{ domainLabel(q) }} · {{ q.theme }}</span>
+          <h3>{{ q.question }}</h3>
+        </div>
+
+        <div class="options">
+          @for (o of q.options; track o.id) {
+            @let ap = appeal(o);
+            <button class="option" [class.on]="selected(q) === o.id" (click)="choose(q, o)">
+              <span class="opt-label">{{ o.label }}</span>
+              <span class="opt-tags">
+                <span class="tag" [class]="'tag ' + side(o.position)">{{ stance(o.position) }}</span>
+                <span class="tag cost mono" [class.save]="o.cost < 0">{{ cost(o.cost) }}</span>
+              </span>
+              @if (ap.pleases) { <span class="opt-appeal good-t">Séduit : {{ ap.pleases }}</span> }
+              @if (ap.worries) { <span class="opt-appeal bad-t">Inquiète : {{ ap.worries }}</span> }
+            </button>
+          }
+        </div>
+
+        <div class="nav">
+          <button class="btn" [disabled]="index() === 0" (click)="go(-1)">← Précédente</button>
+          <button class="btn" [disabled]="index() === questions.length - 1" (click)="go(1)">Suivante →</button>
+        </div>
+      </div>
+
+      <aside class="summary">
+        <div class="block">
+          <span class="eyebrow">Positionnement</span>
+          <app-stance-axis [markers]="axis()" />
+          <p class="line">Programme <strong>{{ stance(report().position) }}</strong></p>
+        </div>
+
+        <div class="block kpis">
+          <div>
+            <span class="eyebrow">Coût net</span>
+            <strong class="mono">{{ cost(report().cost) }}</strong>
+            <span class="chip" [class.good]="report().funding === 'credible'" [class.warn]="report().funding === 'tendu' || report().funding === 'austerite'"
+                  [class.bad]="report().funding === 'non_finance'">{{ fundingLabel() }}</span>
+          </div>
+          <div>
+            <span class="eyebrow">Cohérence</span>
+            <strong class="mono">±{{ report().spread | number: '1.0-0' }}</strong>
+            <span class="chip" [class.good]="report().coherence === 'coherent'" [class.bad]="report().coherence === 'attrape_tout'">{{ coherenceLabel() }}</span>
+          </div>
+        </div>
+
+        <div class="block">
+          <span class="eyebrow">Électorats</span>
+          <ul class="segments">
+            @for (s of segmentRows(); track s.id) {
+              <li>
+                <span class="seg-label" [title]="s.label + ' : ' + (s.weight * 100 | number: '1.0-0') + ' % de l’électorat'">{{ s.label }}</span>
+                <span class="diverge">
+                  <span class="mid"></span>
+                  <span class="fill" [class.pos]="s.score > 0" [class.neg]="s.score < 0" [style.width.%]="s.width"></span>
+                </span>
+                <span class="mono score">{{ s.score > 0 ? '+' : '' }}{{ s.score }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="block">
+          <span class="eyebrow">Réaction du parti</span>
+          <ul class="factions">
+            @for (f of report().factions; track f.id) {
+              <li><span>{{ f.name }}</span>
+                <span class="mono" [class.good-t]="f.delta > 0" [class.bad-t]="f.delta < 0">{{ f.delta > 0 ? '+' : '' }}{{ f.delta }}</span></li>
+            }
+          </ul>
+        </div>
+
+        <div class="block verdict">
+          <span>Effet estimé au premier tour</span>
+          <strong class="mono" [class.good-t]="report().electoralBonus > 0" [class.bad-t]="report().electoralBonus < 0">
+            {{ report().electoralBonus > 0 ? '+' : '' }}{{ report().electoralBonus | number: '1.1-1' }} pts
+          </strong>
+        </div>
+
+        <button class="btn primary present" [disabled]="!complete()" (click)="present()">
+          {{ complete() ? 'Présenter le programme' : 'Encore ' + (report().total - report().answered) + ' question(s)' }}
+        </button>
+        <p class="muted note">Une fois présenté, le programme fixe votre ligne et fournit vos arguments de débat.</p>
+      </aside>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,106 @@
+<div class="overlay" role="dialog" aria-modal="true" aria-label="Patrimoine">
+  <section class="sheet">
+    <header class="head">
+      <div>
+        <span class="eyebrow">Vie privée</span>
+        <h2>Patrimoine</h2>
+      </div>
+      <button class="btn small" (click)="closed.emit()">Fermer</button>
+    </header>
+
+    @let img = svc.image();
+    @let ch = svc.charges();
+    <div class="kpis">
+      <div class="kpi"><span class="eyebrow">Fonds personnels</span><strong class="mono">{{ game.player().finances.personal | number: '1.0-0' }} €</strong></div>
+      <div class="kpi"><span class="eyebrow">Biens</span><strong class="mono">{{ svc.value() | number: '1.0-0' }} €</strong>
+        @if (svc.debt()) { <small class="muted">dont crédits restants {{ svc.debt() | number: '1.0-0' }} €</small> }</div>
+      <div class="kpi"><span class="eyebrow">Patrimoine net</span><strong class="mono">{{ svc.net() | number: '1.0-0' }} €</strong></div>
+      <div class="kpi"><span class="eyebrow">Charges nettes</span>
+        <strong class="mono" [class.good-t]="ch.net > 0" [class.bad-t]="ch.net < 0">{{ signed(ch.net) }} €/sem.</strong>
+        <small class="muted">entretien {{ ch.upkeep | number: '1.0-0' }} · crédits {{ ch.loans | number: '1.0-0' }} · revenus {{ ch.rent | number: '1.0-0' }}</small></div>
+      <div class="kpi image" [class.bad]="img.popularity < 0" [class.good]="img.popularity > 0">
+        <span class="eyebrow">Image publique</span>
+        <strong>{{ img.label }}</strong>
+        <small>{{ perWeek(img.popularity) }}</small>
+        <small class="muted">{{ img.explanation }}</small>
+      </div>
+    </div>
+
+    <div class="cols">
+      <div class="col">
+        <h3>Vos biens</h3>
+        <ul class="owned">
+          @for (a of svc.owned(); track a.uid) {
+            @let def = svc.def(a);
+            <li>
+              <div class="o-main">
+                <strong>{{ def.label }}</strong>
+                <span class="mono small">{{ a.value | number: '1.0-0' }} €
+                  @if (def.category !== 'quotidien') {
+                    <span [class.good-t]="gain(a) > 0" [class.bad-t]="gain(a) < 0">({{ signed(gain(a)) }})</span>
+                  }
+                </span>
+                @if (a.debt > 0) { <small class="muted">Crédit : {{ a.debt | number: '1.0-0' }} € restants · {{ a.payment | number: '1.0-0' }} €/sem.</small> }
+                <small class="muted">{{ perks(def).join(' · ') }}</small>
+              </div>
+              <button class="btn small" (click)="svc.sell(a.uid)">Vendre {{ svc.salePrice(a) | number: '1.0-0' }} €</button>
+            </li>
+          } @empty {
+            <li class="muted empty">Rien à votre nom pour l’instant. Les biens donnent des bonus, mais votre train de vie se voit.</li>
+          }
+        </ul>
+        <p class="note muted">
+          L’opinion juge votre patrimoine net et surtout ce que vous affichez (ostentation). L’effet grandit avec votre notoriété
+          et pèse davantage pour un élu de gauche. Un découvert de plus de 500 € force la vente d’un bien.
+        </p>
+      </div>
+
+      <div class="col">
+        <h3>Acheter</h3>
+        <nav class="tabs" role="tablist">
+          @for (c of categories; track c[0]) {
+            <button role="tab" [class.on]="category() === c[0]" (click)="category.set(c[0])">{{ c[1] }}</button>
+          }
+        </nav>
+        <ul class="shop">
+          @for (def of shop(); track def.id) {
+            @let av = svc.canBuy(def);
+            @let avLoan = svc.canBuy(def, true);
+            @let after = svc.previewImage(def);
+            <li [class.disabled]="!av.ok && !(def.mortgage && avLoan.ok)">
+              <div class="s-head">
+                <strong>{{ def.label }}</strong>
+                <span class="mono price">{{ def.price | number: '1.0-0' }} €</span>
+              </div>
+              <p class="muted">{{ def.description }}</p>
+              <div class="chips">
+                @for (p of perks(def); track p) { <span class="chip">{{ p }}</span> }
+                @if (def.upkeep) { <span class="chip bad">Entretien {{ def.upkeep | number: '1.0-0' }} €/sem.</span> }
+                @if (def.unlocks) { <span class="chip accent">Débloque : {{ def.unlocks }}</span> }
+              </div>
+              <div class="s-foot">
+                <span class="osten" [title]="'Ostentation ' + def.ostentation + ' / 10'">
+                  <span class="muted">Ostentation</span>
+                  @for (i of dots; track i) { <span class="dot" [class.on]="i * 2 < def.ostentation"></span> }
+                </span>
+                <span class="muted small">Image après achat : <b>{{ after.label }}</b>
+                  @if (after.popularity !== img.popularity) { ({{ perWeek(after.popularity) }}) }
+                </span>
+                @if (def.stackable && svc.count(def)) { <span class="chip">×{{ svc.count(def) }}</span> }
+              </div>
+              <div class="s-cta">
+                <button class="btn small primary" [disabled]="!av.ok" (click)="svc.buy(def.id, false)">Acheter comptant</button>
+                @if (def.mortgage) {
+                  <button class="btn small" [disabled]="!avLoan.ok" (click)="svc.buy(def.id, true)">
+                    À crédit : apport {{ svc.downPayment(def) | number: '1.0-0' }} €, puis {{ svc.payment(def) | number: '1.0-0' }} €/sem.
+                  </button>
+                }
+                @if (!av.ok) { <span class="reason">{{ (def.mortgage && avLoan.ok) ? 'Comptant : fonds insuffisants' : av.reason }}</span> }
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>

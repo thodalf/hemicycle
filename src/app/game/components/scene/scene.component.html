@@ -1,0 +1,82 @@
+<div class="overlay" role="dialog" aria-modal="true" [attr.aria-label]="def().title">
+  <section class="sheet">
+    <header class="band" [style.background-color]="def().band">
+      <div class="band-top">
+        <span class="eyebrow on-dark">{{ def().eyebrow }}</span>
+        @if (s().status === 'en_cours') {
+          <span class="progress mono">Étape {{ s().stage + 1 }} / {{ stagesCount() }}</span>
+        }
+      </div>
+      <h2>{{ svc.text(def().title) }}</h2>
+      <p class="intro">{{ svc.text(def().intro) }}</p>
+      <ol class="pips" aria-hidden="true">
+        @for (i of pips(); track i) {
+          <li [class.done]="i < s().stage || s().status !== 'en_cours'" [class.now]="i === s().stage && s().status === 'en_cours'"></li>
+        }
+      </ol>
+    </header>
+
+    <div class="gauges">
+      @for (g of def().gauges; track g.id) {
+        <div class="g" [class]="'g ' + tone(g)">
+          <span class="eyebrow">{{ g.label }}</span>
+          <strong class="mono">{{ display(g) }}</strong>
+          <div class="track">
+            <span class="fill" [style.width.%]="width(g)"></span>
+            @if (dangerAt(g); as at) { <i class="danger" [style.left.%]="at" [title]="g.danger!.label"></i> }
+          </div>
+          <small class="muted">{{ g.good === 'high' ? 'Plus c’est haut, mieux c’est' : 'À contenir' }}</small>
+        </div>
+      }
+    </div>
+
+    <div class="content">
+      @if (s().status === 'en_cours') {
+        @if (svc.step(); as step) {
+          <h3>{{ svc.text(step.title) }}</h3>
+          <p class="context">{{ svc.text(step.context) }}</p>
+          <div class="choices">
+            @for (c of step.choices; track c.id) {
+              @let ok = available(c);
+              @let chance = success(c);
+              <button class="choice" [disabled]="!ok" (click)="svc.choose(c.id)">
+                <span class="choice-label">{{ c.label }}</span>
+                @if (c.hint) { <span class="choice-hint">{{ c.hint }}</span> }
+                <span class="fx">
+                  @for (p of preview(c); track p.label) {
+                    <span [class.good-t]="p.good" [class.bad-t]="!p.good">{{ p.label }} {{ signed(p.value) }}</span>
+                  }
+                  @if (c.money) { <span class="bad-t">−{{ c.money | number: '1.0-0' }} €</span> }
+                </span>
+                <span class="meta">
+                  @if (chance !== null) {
+                    <span class="chip" [class.good]="chance >= 65" [class.warn]="chance >= 35 && chance < 65" [class.bad]="chance < 35">Réussite {{ chance }} %</span>
+                  } @else { <span class="chip">Sans risque</span> }
+                  @if (!ok) { <span class="chip bad">{{ reason(c) }}</span> }
+                </span>
+              </button>
+            }
+          </div>
+        }
+      } @else {
+        <div class="result">
+          <span class="eyebrow">Bilan · score {{ s().score }}</span>
+          <h3>{{ s().status === 'succes' ? 'Réussite' : s().status === 'mitige' ? 'Bilan mitigé' : 'Échec' }}{{ s().brokenBy ? ' · ' + s().brokenBy : '' }}</h3>
+          <p>{{ outcome() }}</p>
+          <div class="rewards">
+            @for (r of s().rewardSummary; track $index) { <span class="chip">{{ r }}</span> }
+          </div>
+          <button class="btn primary" (click)="svc.leave()">Continuer</button>
+        </div>
+      }
+    </div>
+
+    @if (log().length) {
+      <ol class="log">
+        @for (l of log(); track $index) {
+          <li [class]="l.tone"><span class="muted">{{ l.step }}</span> · <b>{{ l.choice }}</b> — {{ l.text }}</li>
+        }
+      </ol>
+    }
+  </section>
+</div>

@@ -1,0 +1,233 @@
+import { DecimalPipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
+import {
+  ActionCategory, ActionDefinition, CATEGORY_LABELS, DOMAINS, DOMAIN_LABELS, Domain, Payer, PlannedAction,
+} from '../../models/game.models';
+import { ACTIONS_BY_ID } from '../../data/actions';
+import { RANKS } from '../../data/ranks';
+import { ActionPlannerService, partyFundable } from '../../services/action-planner.service';
+import { partyCapitalCost, wearFactor } from '../../engine/effects';
+import { describeEffects } from '../../engine/describe';
+import { GameStateService } from '../../services/game-state.service';
+import { TurnService } from '../../services/turn.service';
+import { FxService } from '../../services/fx.service';
+import { ELECTIONS } from '../../data/ranks';
+
+/** Actions qui peuvent viser n'importe quelle personnalité, pas seulement votre parti */
+const ANY_NPC = ['dejeuner', 'diner_maison', 'off', 'grand_oral', 'clash_reseaux', 'demonter'];
+
+interface TargetOption {
+  id: string;
+  label: string;
+}
+
+/**
+ * Prototype : gestion de la semaine.
+ * Le joueur compose son agenda (budget de points d'action), voit les coûts
+ * cumulés en temps réel, puis clôt la semaine — sauf si une décision urgente
+ * attend une réponse.
+ */
+@Component({
+  selector: 'app-week-planner',
+  imports: [DecimalPipe],
+  templateUrl: './week-planner.component.html',
+  styleUrl: './week-planner.component.scss',
+})
+export class WeekPlannerComponent {
+  protected readonly game = inject(GameStateService);
+  protected readonly planner = inject(ActionPlannerService);
+  protected readonly turn = inject(TurnService);
+  private readonly anim = inject(FxService);
+
+  /** Onglets présents dans ce scénario, scénario en premier */
+  protected readonly categories = computed(() => {
+    const present = new Set([...this.planner.unlocked(), ...this.planner.locked()].map(a => a.category));
+    const all = (Object.entries(CATEGORY_LABELS) as [ActionCategory, string][]).filter(([c]) => present.has(c));
+    const scenario = this.game.s().scenario;
+    const first = scenario === 'royaute' ? 'couronne' : scenario === 'franc_macon' ? 'loge' : scenario === 'editorialiste' ? 'redaction' : scenario === 'infiltre' ? 'infiltration' : null;
+    return first ? [...all.filter(([c]) => c === first), ...all.filter(([c]) => c !== first)] : all;
+  });
+  protected readonly category = signal<ActionCategory>(this.categories()[0]?.[0] ?? 'terrain');
+  /** Cible choisie pour chaque action ciblée (actionId → domaine / id) */
+  private readonly targets = signal<Record<string, string>>({});
+  protected readonly reportOpen = signal(true);
+  /** Payeur choisi pour chaque action payante (perso par défaut) */
+  private readonly payers = signal<Record<string, Payer>>({});
+  protected readonly fundable = partyFundable;
+
+  protected readonly visibleActions = computed(() =>
+    this.planner.unlocked().filter(a => a.category === this.category()));
+  protected readonly lockedActions = computed(() =>
+    this.planner.locked().filter(a => a.category === this.category()));
+
+  protected readonly apPips = computed(() => {
+    const ap = this.game.player().actionPoints;
+    const spent = this.planner.spent().ap;
+    return Array.from({ length: ap.max }, (_, i) =>
+      i < spent ? 'planned' : i < ap.current ? 'free' : 'lost');
+  });
+
+  protected targetOptions(action: ActionDefinition): TargetOption[] {
+    const s = this.game.s();
+    switch (action.target) {
+      case 'domain':
+        return DOMAINS.map(d => ({
+          id: d, label: `${DOMAIN_LABELS[d]} · ${Math.round(s.player.dossiers[d].mastery)}${d === s.agendaDomain ? ' · à la une' : ''}`,
+        }));
+      case 'npc':
+        return s.npcs
+          .filter(n => n.partyId === s.party.id || ANY_NPC.includes(action.id))
+          .map(n => ({ id: n.id, label: `${n.name} (${n.relationToPlayer > 0 ? '+' : ''}${Math.round(n.relationToPlayer)})` }));
+      case 'contact':
+        return s.contacts.map(c => ({ id: c.id, label: `${c.name} · conf. ${Math.round(c.trust)} · crédit ${c.balance}` }));
+      case 'faction':
+        return s.party.factions.map(f => ({ id: f.id, label: `${f.name} · ${Math.round(f.supportForPlayer)} %` }));
+      default:
+        return [];
+    }
+  }
+
+  protected selectedTarget(action: ActionDefinition): string {
+    const chosen = this.targets()[action.id];
+    if (chosen) return chosen;
+    if (action.target === 'domain') return this.game.s().agendaDomain;
+    return this.targetOptions(action)[0]?.id ?? '';
+  }
+
+  protected setTarget(action: ActionDefinition, value: string): void {
+    this.targets.update(t => ({ ...t, [action.id]: value }));
+  }
+
+  /** Gains et pertes affichés sur la carte (mis en cache par action) */
+  private readonly fxCache = new Map<string, ReturnType<typeof describeEffects>>();
+  protected fx(action: ActionDefinition) {
+    let v = this.fxCache.get(action.id);
+    if (!v) { v = describeEffects(action.effects); this.fxCache.set(action.id, v); }
+    return v;
+  }
+  /** Lassitude prévue si l'action est répétée (et une fois de plus si déjà planifiée cette semaine) */
+  protected wear(action: ActionDefinition): number {
+    const s = this.game.s();
+    const planned = this.planner.plan().filter(p => p.actionId === action.id).length;
+    const base = wearFactor(s, action.id);
+    const streakNow = base < 1 ? Math.round((1 - base) / 0.2) : 0;
+    return Math.max(0.4, 1 - 0.2 * (streakNow + planned));
+  }
+
+  protected failText(action: ActionDefinition): string {
+    if (!action.risk) return '';
+    const f = describeEffects(action.risk.onFailure);
+    return 'En cas d’échec : ' + [...f.losses, ...f.gains, ...f.other].map(c => c.text).join(', ');
+  }
+
+  protected payer(action: ActionDefinition): Payer {
+    return partyFundable(action) ? this.payers()[action.id] ?? 'perso' : 'perso';
+  }
+
+  protected setPayer(action: ActionDefinition, payer: Payer): void {
+    this.payers.update(p => ({ ...p, [action.id]: payer }));
+  }
+
+  /** Infobulle du bouton « Parti » */
+  protected partyHint(action: ActionDefinition): string {
+    const left = this.planner.envelopeLeft().toLocaleString('fr-FR');
+    const pc = partyCapitalCost(this.game.s(), action.cost.money ?? 0);
+    return this.planner.leaderPays()
+      ? `Réglé par la trésorerie du parti (reste ${left} €)`
+      : `Enveloppe de la fédération : ${left} € restants · coûte ${pc} pt de capital politique`;
+  }
+
+  protected availability(action: ActionDefinition) {
+    return this.planner.availability(action, action.target ? this.selectedTarget(action) : undefined, this.payer(action));
+  }
+
+  protected plan(action: ActionDefinition, event?: Event): void {
+    const target = this.selectedTarget(action);
+    const ok = this.planner.add(action.id, action.target === 'domain'
+      ? { domain: target as Domain }
+      : action.target ? { targetId: target } : undefined, this.payer(action));
+    // Un jeton « −n PA » s'envole de la carte vers l'agenda de la semaine
+    if (ok && event) this.anim.fly(event.currentTarget as Element, document.querySelector('app-week-planner .plan-list'), `${action.cost.ap} PA`);
+  }
+
+  protected describe(p: PlannedAction): { label: string; target?: string; ap: number; party: boolean } {
+    const a = ACTIONS_BY_ID.get(p.actionId)!;
+    const s = this.game.s();
+    let target: string | undefined;
+    if (p.domain) target = DOMAIN_LABELS[p.domain];
+    else if (p.targetId) {
+      target = s.npcs.find(n => n.id === p.targetId)?.name
+        ?? s.contacts.find(c => c.id === p.targetId)?.name.split(' (')[0]
+        ?? s.party.factions.find(f => f.id === p.targetId)?.name;
+    }
+    return { label: a.label, target, ap: a.cost.ap, party: p.payer === 'parti' };
+  }
+
+  protected rankLabel(a: ActionDefinition): string {
+    return RANKS[a.minRank].label;
+  }
+
+  protected endWeek(): void {
+    const before = this.game.s();
+    const from = before.week;
+    const known = new Set(before.pendingDecisions.map(d => d.id));
+    const funds = before.player.finances.personal;
+    this.turn.endWeek();
+    this.reportOpen.set(true);
+
+    // Animations : page de calendrier, variations au-dessus des jauges, secousse si coup dur
+    const after = this.game.s();
+    if (after.week === from) return;
+    const overlay = !!(after.scene || after.debate || after.protest);
+    if (!overlay) this.anim.weekTurn(from, after.week, this.game.date());
+    const report = this.turn.lastReport();
+    report?.deltas.forEach((x, i) => {
+      const el = document.querySelector(`app-profile-panel [data-stat="${x.key}"]`);
+      const good = x.key === 'stress' ? x.delta < 0 : x.delta > 0;
+      this.anim.floatAt(el, `${x.delta > 0 ? '+' : '−'}${Math.abs(x.delta)}`, good ? 'good' : 'bad', 500 + i * 140);
+    });
+    const df = Math.round(after.player.finances.personal - funds);
+    if (df) this.anim.floatAt(document.querySelector('app-vitals .money'), `${df > 0 ? '+' : '−'}${Math.abs(df).toLocaleString('fr-FR')} €`, df > 0 ? 'good' : 'bad', 700);
+    if (Math.abs(df) >= 100 && !overlay) this.anim.coins(document.querySelector('app-vitals .money'), df > 0, Math.min(10, 3 + Math.round(Math.abs(df) / 1500)));
+
+    // Flash info sur les coups durs de la semaine
+    const fresh = after.news.filter(n => n.week === after.week);
+    const flash = fresh.find(n => n.kind === 'scandale' || (n.kind === 'actu' && n.tone === 'negative'));
+    if (flash) setTimeout(() => this.anim.ticker(`${flash.title}${flash.body ? ' — ' + flash.body : ''}`), 900);
+
+    // Objectifs atteints : gerbe de confettis sur le panneau
+    const done = fresh.filter(n => n.title.startsWith('Objectif atteint'));
+    done.forEach((n, i) => setTimeout(() => {
+      const panel = document.querySelector('app-objectives-panel');
+      this.anim.burstAt(panel, 'good');
+      this.anim.floatAt(panel, n.title.replace('Objectif atteint : ', '✓ '), 'good');
+    }, 1100 + i * 400));
+
+    // Taupe : rapport transmis
+    if (after.news.filter(n => n.week >= from).some(n => n.title === 'Transmettre un rapport à votre officier' && /Rapport transmis/.test(n.body ?? ''))) {
+      setTimeout(() => this.anim.stamp('Transmis', 'neutral', 'Top secret'), 1000);
+    }
+
+    // Soirée électorale
+    const justResolved = after.elections.filter(e => e.resolved && e.result && before.elections.some(b => b.id === e.id && !b.resolved));
+    const e = justResolved[0];
+    if (e?.result) {
+      const name = (id: string) => id === 'player' ? after.player.name : after.npcs.find(n => n.id === id)?.name ?? id;
+      const color = (id: string) => {
+        if (id === 'player') return after.party.color;
+        const pid = after.npcs.find(n => n.id === id)?.partyId;
+        return [after.party, ...after.otherParties].find(p => p.id === pid)?.color ?? '#8a8f9a';
+      };
+      const rows = (r: Record<string, number>) => Object.entries(r).sort((a, b) => b[1] - a[1])
+        .map(([id, share]) => ({ name: name(id), color: color(id), share, player: id === 'player' }));
+      const rounds = [{ label: e.result.secondRound ? 'Premier tour' : 'Résultats', rows: rows(e.result.firstRound) }];
+      if (e.result.secondRound) rounds.push({ label: 'Second tour', rows: rows(e.result.secondRound) });
+      setTimeout(() => this.anim.election.set({
+        title: ELECTIONS[e.type].label, rounds, winner: name(e.result!.winnerId), playerWon: e.result!.winnerId === 'player',
+      }), 600);
+    }
+
+    const hard = after.pendingDecisions.filter(d => !known.has(d.id)).some(d => ['scandale', 'crise', 'banqueroute', 'revelation', 'enquete', 'defiance'].includes(d.tag));
+    if (hard || (after.player.finances.personal < 0 && funds >= 0)) setTimeout(() => this.anim.shake(), 650);
+  }
+}

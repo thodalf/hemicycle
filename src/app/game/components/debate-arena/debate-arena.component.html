@@ -1,0 +1,187 @@
+<ng-template #icon let-move>
+  <svg class="ico" viewBox="0 0 20 20" aria-hidden="true">
+    @switch (move) {
+      @case ('faits') { <path d="M3 17V9h3v8H3Zm5.5 0V4h3v13h-3ZM14 17v-6h3v6h-3Z" /> }
+      @case ('attaque') { <path d="M11.5 1.5 4 11h5l-1.5 7.5L15 9h-5l1.5-7.5Z" /> }
+      @case ('emotion') { <path d="M10 17.5 3.2 10.8a4.1 4.1 0 0 1 5.8-5.8l1 1 1-1a4.1 4.1 0 0 1 5.8 5.8L10 17.5Z" /> }
+      @case ('parade') { <path d="M10 1.8 3.5 4.3v5.2c0 4 2.8 7.4 6.5 8.7 3.7-1.3 6.5-4.7 6.5-8.7V4.3L10 1.8Z" /> }
+    }
+  </svg>
+</ng-template>
+
+<div class="overlay" role="dialog" aria-modal="true" [attr.aria-label]="d().title">
+  <section class="arena">
+    <header class="stage">
+      <div class="stage-top">
+        <span class="eyebrow on-stage">{{ d().title }}</span>
+        <span class="stage-meta">
+          <span class="crowd">Public : {{ crowd() }}</span>
+          @if (d().status === 'en_cours') {
+            <span class="round mono">Manche {{ d().round }} / {{ d().maxRounds }}</span>
+          }
+        </span>
+      </div>
+
+      <div class="duel">
+        <div class="fighter me">
+          <span class="avatar" [style.background]="game.s().party.color">{{ initials() }}</span>
+          <div class="who">
+            <strong>{{ game.player().name }}</strong>
+            <div class="gauge-label"><span>Sang-froid</span><span class="mono">{{ d().composure | number: '1.0-0' }}</span></div>
+            <div class="gauge"><span [style.width.%]="d().composure" [class.low]="d().composure < 30"></span></div>
+          </div>
+        </div>
+
+        <div class="topic">
+          @if (d().status === 'en_cours') {
+            <span class="eyebrow on-stage">Sujet</span>
+            <strong>{{ topicLabel() }}</strong>
+          } @else {
+            <span class="eyebrow on-stage">Verdict</span>
+            <strong>{{ verdict().title }}</strong>
+          }
+        </div>
+
+        <div class="fighter opp">
+          <div class="who">
+            <strong>{{ d().opponentName }}</strong>
+            <div class="gauge-label"><span>Sang-froid</span><span class="mono">{{ d().oppComposure | number: '1.0-0' }}</span></div>
+            <div class="gauge"><span [style.width.%]="d().oppComposure" [class.low]="d().oppComposure < 30"></span></div>
+          </div>
+          <span class="avatar" [style.background]="d().opponentColor">{{ oppInitials() }}</span>
+        </div>
+      </div>
+
+      <div class="audience" [attr.aria-label]="'Audience : ' + (d().audience | number: '1.0-0')">
+        <div class="meter">
+          <span class="fill" [class.left]="meter().side === 'left'" [class.right]="meter().side === 'right'"
+                [style.width.%]="meter().width"
+                [style.background]="meter().side === 'left' ? game.s().party.color : d().opponentColor"></span>
+          <span class="center"></span>
+        </div>
+        <div class="meter-legend mono">
+          <span>Pour vous</span>
+          <span>Audience {{ d().audience > 0 ? '+' : '' }}{{ d().audience | number: '1.0-0' }}</span>
+          <span>Pour lui</span>
+        </div>
+      </div>
+    </header>
+
+    @if (d().status === 'en_cours') {
+      <div class="board">
+        <div class="intel">
+          <div class="intent" [class.hidden-intent]="!d().intentRevealed">
+            <span class="eyebrow">Son prochain coup</span>
+            @if (d().intentRevealed) {
+              <span class="move-tag" [class]="'m-' + d().oppIntent">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: d().oppIntent }" />
+                {{ moveLabels[d().oppIntent] }}
+              </span>
+              <small class="muted">Vos notes l’avaient prévu… sauf s’il bluffe.</small>
+            } @else {
+              <span class="move-tag unknown">?</span>
+              <small class="muted">{{ profile() }}</small>
+            }
+          </div>
+          <ul class="rules">
+            <li><b class="t-faits">Faits</b> battent <b class="t-emotion">Émotion</b></li>
+            <li><b class="t-emotion">Émotion</b> bat <b class="t-attaque">Attaque</b></li>
+            <li><b class="t-attaque">Attaque</b> bat <b class="t-faits">Faits</b></li>
+            <li><b class="t-parade">Parade</b> renvoie l’<b class="t-attaque">Attaque</b></li>
+            <li class="muted">Les Faits ne valent que sur le sujet de la manche.</li>
+            <li class="muted">Une idée <b class="t-gauche">de gauche</b> ou <b class="t-droite">de droite</b> séduit le public du même bord, déplace votre ligne et fait réagir les courants du parti.</li>
+          </ul>
+        </div>
+
+        <div class="ideo">
+          <div class="ideo-axis">
+            <span class="eyebrow">Clivage</span>
+            <app-stance-axis [markers]="axis()" />
+          </div>
+          <div class="ideo-party">
+            <span class="eyebrow">Réaction du parti</span>
+            <ul>
+              @for (f of impact(); track f.id) {
+                <li>
+                  <span>{{ f.name }} <small class="muted">· {{ f.position }}</small></span>
+                  <span class="mono delta" [class.up]="f.delta > 0" [class.down]="f.delta < 0">
+                    {{ f.delta > 0 ? '▲ +' + f.delta : f.delta < 0 ? '▼ ' + f.delta : '=' }}
+                  </span>
+                </li>
+              }
+            </ul>
+            @if (d().flipflops) { <small class="flip">Volte-face : {{ d().flipflops }} (crédibilité −{{ d().flipflops * 2 }})</small> }
+          </div>
+        </div>
+
+        <div class="hand" role="list" aria-label="Vos arguments">
+          @for (card of d().hand; track card.id) {
+            @let p = power(card);
+            @let pv = preview(card);
+            <button class="card-arg" role="listitem" [class]="'m-' + card.move" (click)="svc.play(card.id)"
+                    [class.off]="p.note?.startsWith('Hors')">
+              <span class="card-band">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: card.move }" />
+                {{ moveLabels[card.move] }}
+                <span class="band-end">
+                  @if (card.lean) { <span class="lean">{{ card.lean < 0 ? 'Gauche' : 'Droite' }}</span> }
+                  @if (card.special) { <span>★</span> }
+                </span>
+              </span>
+              <span class="card-label">{{ card.label }}</span>
+              <span class="card-power mono">{{ p.power }}</span>
+              <span class="card-foot">
+                @if (p.note) { <small>{{ p.note }}</small> }
+                @if (pv) {
+                  <span class="chip" [class.good]="pv === 'gagne'" [class.bad]="pv === 'perdu'">
+                    {{ pv === 'gagne' ? 'L’emporte' : pv === 'perdu' ? 'Perdant' : 'Égalité' }}
+                  </span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+
+        <div class="actions-row">
+          @if (d().combo > 1) { <span class="chip accent">Série ×{{ d().combo }}</span> }
+          <span class="spacer"></span>
+          <button class="btn" [disabled]="d().breathsLeft < 1" (click)="svc.breathe()"
+                  title="Sacrifie la manche, +25 de sang-froid">
+            Reprendre son souffle ({{ d().breathsLeft }})
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="result" [class]="'r-' + verdict().tone">
+        <p class="result-line">
+          @switch (d().status) {
+            @case ('gagne') { Le public est avec vous. Les extraits tournent déjà en boucle. }
+            @case ('perdu') { La séquence vous échappe. Il faudra rebondir. }
+            @default { Personne ne l’emporte vraiment ce soir. }
+          }
+        </p>
+        <div class="rewards">
+          @for (r of d().rewardSummary; track $index) { <span class="chip">{{ r }}</span> }
+        </div>
+        <button class="btn primary" (click)="svc.leave()">Quitter le plateau</button>
+      </div>
+    }
+
+    @if (recentLog().length) {
+      <ol class="log">
+        @for (e of recentLog(); track e.round + e.playerLabel) {
+          <li [class]="e.outcome">
+            <span class="log-head">
+              <span class="mono">M{{ e.round }}</span>
+              <span class="vs"><span [class]="'t-' + e.playerMove">{{ e.playerLabel }}</span>
+                @if (e.playerLean) { <small class="lean-log" [class]="e.playerLean < 0 ? 't-gauche' : 't-droite'">{{ e.playerLean < 0 ? 'gauche' : 'droite' }}</small> }
+                contre <span [class]="'t-' + e.oppMove">{{ e.oppLabel }}</span></span>
+              <span class="swing mono">{{ signed(e.swing) }}</span>
+            </span>
+            <span class="log-text">{{ e.text }}</span>
+          </li>
+        }
+      </ol>
+    }
+  </section>
+</div>

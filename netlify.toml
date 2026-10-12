@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "dist/polsim/browser"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Application monopage : toutes les routes servent index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

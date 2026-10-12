@@ -1,0 +1,201 @@
+<div class="overlay" role="dialog" aria-modal="true" aria-label="Budgets">
+  <section class="sheet">
+    <header class="head">
+      <div>
+        <span class="eyebrow">Gestion</span>
+        <h2>Budgets</h2>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" [class.on]="tab() === 'parti'" [disabled]="!svc.partyAccess()" (click)="tab.set('parti')"
+                [title]="svc.partyAccess() ? '' : 'Réservé à la direction du parti'">Le parti</button>
+        <button role="tab" [class.on]="tab() === 'etat'" [disabled]="!svc.stateAccess()" (click)="tab.set('etat')"
+                [title]="svc.stateAccess() ? '' : 'Réservé aux membres du gouvernement'">L’État</button>
+      </nav>
+      <button class="btn small" (click)="closed.emit()">Fermer</button>
+    </header>
+
+    @if (tab() === 'parti') {
+      @if (svc.party(); as f) {
+        @let r = svc.partyReport()!;
+        <div class="kpis">
+          <div class="kpi"><span class="eyebrow">Trésorerie</span><strong class="mono" [class.bad-t]="f.treasury < 0">{{ keur(f.treasury) }}</strong></div>
+          <div class="kpi"><span class="eyebrow">Adhérents</span><strong class="mono">{{ f.members | number: '1.0-0' }}</strong>
+            <small class="muted">{{ r.membersRate >= 0 ? '+' : '' }}{{ r.membersRate * 100 | number: '1.1-1' }} %/mois</small></div>
+          <div class="kpi"><span class="eyebrow">Solde mensuel prévu</span><strong class="mono" [class.good-t]="r.balance >= 0" [class.bad-t]="r.balance < 0">{{ signed(r.balance) }} k€</strong></div>
+          <div class="kpi"><span class="eyebrow">Prochaine clôture</span><strong class="mono">{{ r.weeksToSettle === 0 ? 'cette semaine' : 'dans ' + r.weeksToSettle + ' sem.' }}</strong></div>
+        </div>
+
+        <div class="cols">
+          <div class="col">
+            <h3>Recettes <small class="muted mono">{{ r.income.total | number: '1.0-0' }} k€/mois</small></h3>
+            <div class="line">
+              <div class="line-head"><span>Cotisations</span><span class="mono">{{ r.income.cotisations | number: '1.0-0' }} k€</span></div>
+              <label class="slider" for="fee">
+                <span class="muted">Cotisation annuelle moyenne : <b class="mono">{{ f.fee }} €</b></span>
+                <input id="fee" type="range" min="10" max="100" step="5" [value]="f.fee" (change)="svc.setFee(num($event))" />
+              </label>
+              <small class="muted">Au-delà de 40 €, les adhésions reculent.</small>
+            </div>
+            <div class="line"><div class="line-head"><span>Financement public</span><span class="mono">{{ r.income.publicFunding | number: '1.0-0' }} k€</span></div>
+              <small class="muted">Proportionnel aux voix et aux élus : suit votre popularité.</small></div>
+            <div class="line"><div class="line-head"><span>Dons</span><span class="mono">{{ r.income.dons | number: '1.0-0' }} k€</span></div>
+              <small class="muted">Dépend de votre influence et de la communication.</small></div>
+
+            <h3 class="hist">Trésorerie sur un an</h3>
+            @if (spark(); as sp) {
+              <svg class="spark" viewBox="0 0 240 56" preserveAspectRatio="none" role="img" aria-label="Évolution de la trésorerie">
+                <polygon [attr.points]="sp.area" class="area" />
+                <line x1="0" x2="240" [attr.y1]="sp.zero" [attr.y2]="sp.zero" class="zero" />
+                <polyline [attr.points]="sp.line" class="stroke" />
+                <circle [attr.cx]="sp.last[0]" [attr.cy]="sp.last[1]" r="3" class="dot" />
+              </svg>
+            } @else {
+              <p class="muted small">La courbe apparaît après la première clôture mensuelle.</p>
+            }
+          </div>
+
+          <div class="col">
+            <h3>Dépenses <small class="muted mono">{{ r.expenses.total | number: '1.0-0' }} k€/mois</small></h3>
+            @for (l of lines; track l.id) {
+              <div class="line">
+                <label class="slider" [for]="'line-' + l.id">
+                  <span class="line-head"><span>{{ l.label }}</span><span class="mono">{{ f.allocations[l.id] | number: '1.0-1' }} k€</span></span>
+                  <input [id]="'line-' + l.id" type="range" [min]="l.min * svc.scale()" [max]="l.max * svc.scale()" [step]="svc.scale() < 1 ? 0.5 : 10" [value]="f.allocations[l.id]" (change)="setLine(l.id, $event)" />
+                </label>
+                <small class="muted">{{ l.effect }}</small>
+                @if (l.id === 'permanents') {
+                  <span class="chip" [class.good]="r.efficiency >= 1" [class.warn]="r.efficiency < 1">Efficacité des dépenses : {{ r.efficiency * 100 | number: '1.0-0' }} %</span>
+                }
+              </div>
+            }
+            <div class="line fixed"><div class="line-head"><span>Siège et frais fixes</span><span class="mono">{{ r.expenses.fixed | number: '1.0-1' }} k€</span></div></div>
+          </div>
+        </div>
+      }
+    } @else {
+      @if (svc.national(); as nb) {
+        @let r = svc.nationalReport()!;
+        <div class="plf-head">
+          <div>
+            <span class="eyebrow">Projet de loi de finances</span>
+            <h3 class="plf-title">Budget {{ nb.year }}</h3>
+          </div>
+          @if (nb.pending) {
+            <span class="chip" [class.bad]="game.week() >= nb.deadlineWeek" [class.warn]="game.week() < nb.deadlineWeek">
+              À soumettre avant la semaine {{ nb.deadlineWeek }}
+            </span>
+          } @else {
+            <span class="chip good">Adopté · prochain budget en semaine {{ nb.nextDueWeek }}</span>
+          }
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><span class="eyebrow">Dépenses</span><strong class="mono">{{ md(r.spending) }}</strong></div>
+          <div class="kpi"><span class="eyebrow">Recettes</span><strong class="mono">{{ md(r.revenue) }}</strong></div>
+          <div class="kpi"><span class="eyebrow">Déficit</span><strong class="mono">{{ md(r.deficit) }}</strong>
+            <span class="chip" [class.good]="r.deficitPct <= 3" [class.warn]="r.deficitPct > 3 && r.deficitPct <= 4.5" [class.bad]="r.deficitPct > 4.5">{{ r.deficitPct | number: '1.1-1' }} % du PIB</span></div>
+          <div class="kpi"><span class="eyebrow">Adoption par l’Assemblée</span><strong class="mono">{{ r.voteChance * 100 | number: '1.0-0' }} %</strong></div>
+        </div>
+
+        <div class="cols state">
+          <div class="col">
+            <h3>Dépenses par mission <small class="muted">±{{ range * 100 }} % maximum</small></h3>
+            @for (m of missions; track m.id) {
+              @let pct = missionPct(m.id, m.base);
+              <label class="slider" [for]="'mission-' + m.id">
+                <span class="line-head">
+                  <span>{{ m.label }}</span>
+                  <span class="mono">{{ md(missionValue(m.id)) }}
+                    <span class="delta" [class.good-t]="pct > 0" [class.bad-t]="pct < 0">{{ pct === 0 ? '' : signed(pct) + ' %' }}</span></span>
+                </span>
+                <input [id]="'mission-' + m.id" type="range" [min]="m.base * (1 - range)" [max]="m.base * (1 + range)" step="0.5"
+                       [value]="missionValue(m.id)" [disabled]="!svc.canEditNational()" (change)="svc.setMission(m.id, num($event))" />
+              </label>
+            }
+            <p class="muted small">Charge de la dette et autres missions : 151 Md€ non pilotables cette année.</p>
+
+            <h3>Recettes fiscales</h3>
+            @for (t of taxes; track t.id) {
+              <label class="slider" [for]="'tax-' + t.id">
+                <span class="line-head">
+                  <span>{{ t.label }}</span>
+                  <span class="mono">{{ taxValue(t.id) }} {{ t.unit }}</span>
+                </span>
+                <input [id]="'tax-' + t.id" type="range" [min]="t.min" [max]="t.max" [step]="t.step"
+                       [value]="taxValue(t.id)" [disabled]="!svc.canEditNational()" (change)="svc.setTax(t.id, num($event))" />
+                <small class="muted">{{ t.help }}</small>
+              </label>
+            }
+          </div>
+
+          <aside class="col aside">
+            <div class="block">
+              <span class="eyebrow">Orientation du budget</span>
+              <app-stance-axis [markers]="axis()" />
+              <p class="small">Budget <strong>{{ stance(r.position) }}</strong></p>
+            </div>
+            <div class="block">
+              <span class="eyebrow">Électorats</span>
+              <ul class="segments">
+                @for (s of r.segments; track s.id) {
+                  <li>
+                    <span class="seg-label">{{ s.label }}</span>
+                    <span class="diverge"><span class="mid"></span>
+                      <span class="fill" [class.pos]="s.score > 0" [class.neg]="s.score < 0" [style.width.%]="(s.score < 0 ? -s.score : s.score) / 12 * 50"></span></span>
+                    <span class="mono score">{{ s.score > 0 ? '+' : '' }}{{ s.score | number: '1.0-1' }}</span>
+                  </li>
+                }
+              </ul>
+              <p class="small">Effet sur votre popularité : <b class="mono" [class.good-t]="r.popularityDelta > 0" [class.bad-t]="r.popularityDelta < 0">{{ signed(r.popularityDelta) }}</b>
+                · crédibilité <b class="mono" [class.good-t]="r.credibilityDelta > 0" [class.bad-t]="r.credibilityDelta < 0">{{ signed(r.credibilityDelta) }}</b></p>
+            </div>
+            <div class="block">
+              <span class="eyebrow">Réaction du parti</span>
+              <ul class="factions">
+                @for (f of r.factions; track f.id) {
+                  <li><span>{{ f.name }}</span><span class="mono" [class.good-t]="f.delta > 0" [class.bad-t]="f.delta < 0">{{ signed(f.delta) }}</span></li>
+                }
+              </ul>
+            </div>
+            @if (r.warnings.length || r.cuts.length) {
+              <div class="block warnings">
+                <span class="eyebrow">Alertes</span>
+                <ul>
+                  @for (w of r.warnings; track w) { <li>{{ w }}</li> }
+                  @for (c of r.cuts; track c.label) { <li>{{ c.protest }}</li> }
+                </ul>
+              </div>
+            }
+
+            @if (nb.pending) {
+              @if (nb.rejected) {
+                <div class="block rejected">
+                  <strong>L’Assemblée a rejeté le budget.</strong>
+                  <button class="btn primary" (click)="svc.force493()">Engager le 49.3 · censure {{ svc.censureRisk() }} %</button>
+                  <button class="btn" (click)="svc.revise()">Revoir la copie (−1 crédibilité)</button>
+                </div>
+              } @else {
+                <div class="actions">
+                  <button class="btn" (click)="svc.reset()">Revenir au budget de référence</button>
+                  <button class="btn primary" (click)="svc.submit()">Soumettre au vote de l’Assemblée</button>
+                </div>
+              }
+            }
+            @if (nb.history.length) {
+              <div class="block">
+                <span class="eyebrow">Budgets adoptés</span>
+                <ul class="factions">
+                  @for (h of nb.history; track h.year) {
+                    <li><span>{{ h.year }}{{ h.via === '49.3' ? ' (49.3)' : '' }}</span><span class="mono">{{ h.deficitPct | number: '1.1-1' }} %</span></li>
+                  }
+                </ul>
+              </div>
+            }
+          </aside>
+        </div>
+      } @else {
+        <p class="empty muted">Le budget de l’État se prépare au gouvernement, à partir du rang de ministre.</p>
+      }
+    }
+  </section>
+</div>

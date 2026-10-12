@@ -1,0 +1,149 @@
+<div class="overlay" role="dialog" aria-modal="true" aria-label="Manifestation">
+  <section class="sheet">
+    <header class="street">
+      <div class="street-top">
+        <span class="eyebrow on-dark">Manifestation {{ p().scale }}</span>
+        @if (p().cause) { <span class="pill">{{ leanLabel(p().cause!.lean) }} · {{ domain(p().cause!.domain) }}</span> }
+      </div>
+      <h2 class="banner">{{ p().cause?.label ?? 'Préparer une manifestation' }}</h2>
+      <ol class="steps">
+        @for (s of steps; track s.id; let i = $index) {
+          <li [class.done]="i < stepIndex()" [class.now]="i === stepIndex()">{{ s.label }}</li>
+        }
+      </ol>
+    </header>
+
+    @if (p().phase !== 'preparation') {
+      <div class="gauges">
+        <div class="g">
+          <span class="eyebrow">Affluence</span>
+          <strong class="mono">{{ p().turnout | number: '1.0-0' }}</strong>
+          <div class="bar target"><span [style.width.%]="turnoutRatio()"></span><i class="mark" title="Objectif"></i></div>
+          <small class="muted">Objectif {{ p().target | number: '1.0-0' }}</small>
+        </div>
+        <div class="g">
+          <span class="eyebrow">Tension</span>
+          <strong class="mono" [class.bad-t]="p().tension >= 60">{{ p().tension | number: '1.0-0' }}</strong>
+          <div class="bar tension"><span [style.width.%]="p().tension" [class.hot]="p().tension >= 60"></span><i class="mark" style="left: 80%"></i></div>
+          <small class="muted">{{ p().overflow ? 'Débordements !' : 'Débordements à 80' }}</small>
+        </div>
+        <div class="g">
+          <span class="eyebrow">Médias</span>
+          <strong class="mono">{{ p().media | number: '1.0-0' }}</strong>
+          <div class="bar"><span [style.width.%]="p().media"></span></div>
+          <small class="muted">Couverture</small>
+        </div>
+        <div class="g">
+          <span class="eyebrow">Image</span>
+          <strong class="mono" [class.good-t]="p().image > 0" [class.bad-t]="p().image < 0">{{ signed(p().image) }}</strong>
+          <div class="diverge"><span class="mid"></span><span class="fill" [class.pos]="p().image > 0" [class.neg]="p().image < 0" [style.width.%]="(p().image < 0 ? -p().image : p().image)"></span></div>
+          <small class="muted">Dans l’opinion</small>
+        </div>
+      </div>
+    }
+
+    <div class="content">
+      @switch (p().phase) {
+        @case ('preparation') {
+          <div class="prep">
+            <div class="block">
+              <span class="eyebrow">La cause</span>
+              <div class="causes">
+                @for (c of p().causeOptions; track c.id) {
+                  <button class="cause" [class.on]="p().cause?.id === c.id" (click)="svc.setCause(c.id)">
+                    <strong>{{ c.label }}</strong>
+                    <span class="cause-meta">
+                      <span class="tag" [class.left]="c.lean < 0" [class.right]="c.lean > 0">{{ leanLabel(c.lean) }}</span>
+                      <span class="muted">{{ domain(c.domain) }}</span>
+                      @if (c.domain === game.s().agendaDomain) { <span class="chip warn">à la une</span> }
+                    </span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="block">
+              <span class="eyebrow">Échelle</span>
+              <div class="seg">
+                <button [class.on]="p().scale === 'locale'" (click)="svc.setScale('locale')">Locale</button>
+                <button [class.on]="p().scale === 'nationale'" [disabled]="!national()" (click)="svc.setScale('nationale')"
+                        [title]="national() ? '' : 'À partir du rang de député·e'">Nationale</button>
+              </div>
+            </div>
+
+            <div class="block">
+              <span class="eyebrow">Alliés (2 au maximum)</span>
+              <div class="allies">
+                @for (c of allies(); track c.id) {
+                  <button class="ally" [class.on]="p().allies.includes(c.id)" (click)="svc.toggleAlly(c.id)"
+                          [disabled]="!p().allies.includes(c.id) && p().allies.length >= 2">
+                    <span>{{ c.name }}</span>
+                    <small class="muted">confiance {{ c.trust | number: '1.0-0' }}@if (p().cause && c.domain === p().cause!.domain) { · <b class="good-t">concerné</b> }</small>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="launch">
+              <div>
+                <span class="eyebrow">Affluence attendue</span>
+                <strong class="mono big">{{ p().cause ? (estimate().expected | number: '1.0-0') : '—' }}</strong>
+                <small class="muted">pour un objectif de {{ estimate().target | number: '1.0-0' }}</small>
+              </div>
+              <span class="spacer"></span>
+              <button class="btn" (click)="svc.cancel()">Renoncer</button>
+              <button class="btn primary" [disabled]="!p().cause" (click)="svc.launch()">Lancer la mobilisation</button>
+            </div>
+          </div>
+        }
+        @case ('bilan') {
+          <div class="result" [class]="'result r-' + p().status">
+            <span class="eyebrow">Bilan · score {{ score() }}</span>
+            <h3>{{ p().status === 'succes' ? 'Succès' : p().status === 'mitige' ? 'Bilan mitigé' : 'Échec' }}{{ p().overflow ? ', avec débordements' : '' }}</h3>
+            <div class="counts">
+              <div><strong class="mono">{{ p().organizers | number: '1.0-0' }}</strong><span>selon les organisateurs</span></div>
+              <div><strong class="mono">{{ p().police | number: '1.0-0' }}</strong><span>selon la police</span></div>
+            </div>
+            <div class="rewards">
+              @for (r of p().rewardSummary; track $index) { <span class="chip">{{ r }}</span> }
+            </div>
+            <button class="btn primary" (click)="svc.leave()">Rentrer</button>
+          </div>
+        }
+        @default {
+          @if (p().event; as e) {
+            <div class="event">
+              <h3>{{ e.title }}</h3>
+              <p class="context">{{ e.context }}</p>
+              <div class="choices">
+                @for (c of e.choices; track c.id) {
+                  @let ok = available(c);
+                  @let chance = success(c);
+                  <button class="choice" [disabled]="!ok" (click)="svc.choose(c.id)">
+                    <span class="choice-label">{{ c.label }}</span>
+                    @if (c.hint) { <span class="choice-hint">{{ c.hint }}</span> }
+                    @if (effects(c); as fx) { <span class="choice-fx mono">{{ fx }}</span> }
+                    <span class="choice-meta">
+                      @if (chance !== null) {
+                        <span class="chip" [class.good]="chance >= 65" [class.warn]="chance >= 35 && chance < 65" [class.bad]="chance < 35">Réussite {{ chance }} %</span>
+                      } @else { <span class="chip">Sans risque</span> }
+                      @if (!ok) { <span class="chip bad">{{ reason(c) }}</span> }
+                    </span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        }
+      }
+    </div>
+
+    @if (log().length) {
+      <ol class="log">
+        @for (l of log(); track $index) {
+          <li [class]="l.tone"><b>{{ l.choice }}</b> — {{ l.text }}</li>
+        }
+      </ol>
+    }
+  </section>
+</div>

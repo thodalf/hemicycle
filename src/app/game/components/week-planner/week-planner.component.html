@@ -1,0 +1,163 @@
+<section class="card planner">
+  <header class="planner-head">
+    <div>
+      <div class="eyebrow">Semaine {{ game.week() }} · {{ game.date() }}</div>
+      <h2>Agenda de la semaine</h2>
+    </div>
+    <div class="ap" [attr.aria-label]="planner.apLeft() + ' points d’action restants'">
+      <span class="eyebrow">Points d’action</span>
+      <div class="pips">
+        @for (pip of apPips(); track $index) {
+          <span class="pip" [class]="pip"></span>
+        }
+      </div>
+    </div>
+  </header>
+
+  @if (turn.lastReport(); as report) {
+    @if (reportOpen()) {
+      <div class="report">
+        <div class="report-head">
+          <strong>Bilan de la semaine {{ report.week }}</strong>
+          <button class="btn small" (click)="reportOpen.set(false)">Fermer</button>
+        </div>
+        <div class="report-deltas">
+          @for (d of report.deltas; track d.key) {
+            <span class="chip" [class.good]="(d.key === 'stress') ? d.delta < 0 : d.delta > 0"
+                  [class.bad]="(d.key === 'stress') ? d.delta > 0 : d.delta < 0">
+              {{ d.label }} {{ d.delta > 0 ? '+' : '' }}{{ d.delta }}
+            </span>
+          }
+          @if (report.fundsDelta) {
+            <span class="chip" [class.good]="report.fundsDelta > 0" [class.bad]="report.fundsDelta < 0">
+              Fonds {{ report.fundsDelta > 0 ? '+' : '' }}{{ report.fundsDelta.toLocaleString('fr-FR') }} €
+            </span>
+          }
+          @if (report.newDecisions) {
+            <span class="chip warn">{{ report.newDecisions }} nouvelle(s) décision(s)</span>
+          }
+        </div>
+        @if (report.headlines.length) {
+          <ul class="report-news">
+            @for (h of report.headlines; track h) { <li>{{ h }}</li> }
+          </ul>
+        }
+      </div>
+    }
+  }
+
+  <div class="planner-body">
+    <!-- Catalogue -->
+    <div class="catalog">
+      <nav class="tabs" role="tablist">
+        @for (c of categories(); track c[0]) {
+          <button role="tab" [class.active]="category() === c[0]" [attr.aria-selected]="category() === c[0]"
+                  (click)="category.set(c[0])">{{ c[1] }}</button>
+        }
+      </nav>
+
+      <ul class="actions">
+        @for (a of visibleActions(); track a.id) {
+          @let av = availability(a);
+          <li class="action" [class.disabled]="!av.ok">
+            <div class="action-main">
+              <div class="action-title">
+                <strong>{{ a.label }}</strong>
+                @if (a.risk) { <span class="chip warn" [title]="failText(a)">risque</span> }
+              </div>
+              <p class="muted">{{ a.description }}</p>
+              <div class="costs mono">
+                <span class="cost ap">{{ a.cost.ap }} PA</span>
+                @if (a.cost.energy) { <span class="cost">⚡ {{ a.cost.energy }}</span> }
+                @if (a.cost.money) { <span class="cost">{{ a.cost.money.toLocaleString('fr-FR') }} €</span> }
+                @if (a.cost.politicalCapital) { <span class="cost">◆ {{ a.cost.politicalCapital }} cap.</span> }
+              </div>
+              @let f = fx(a);
+              @if (f.gains.length || f.losses.length || f.other.length) {
+                <div class="fx">
+                  @for (c of f.gains; track c.text) { <span class="fx-chip good">{{ c.text }}</span> }
+                  @for (c of f.losses; track c.text) { <span class="fx-chip bad">{{ c.text }}</span> }
+                  @for (c of f.other; track c.text) { <span class="fx-chip">{{ c.text }}</span> }
+                  @if (a.risk) { <span class="fx-chip risk" [title]="failText(a)">{{ failText(a) }}</span> }
+                  @if (wear(a) < 1) { <span class="fx-chip bad" title="Répéter la même action d’une semaine sur l’autre lasse : les gains diminuent.">Lassitude : gains −{{ 100 - wear(a) * 100 | number: '1.0-0' }} %</span> }
+                </div>
+              }
+              @if (fundable(a)) {
+                <div class="payer" role="group" [attr.aria-label]="'Qui paie : ' + a.label">
+                  <span class="muted">Payer :</span>
+                  <button type="button" [class.on]="payer(a) === 'perso'" (click)="setPayer(a, 'perso')">Fonds perso</button>
+                  <button type="button" [class.on]="payer(a) === 'parti'" (click)="setPayer(a, 'parti')" [title]="partyHint(a)">
+                    Caisse du parti
+                  </button>
+                  @if (payer(a) === 'parti') { <small class="muted">{{ partyHint(a) }}</small> }
+                </div>
+              }
+              @if (a.target) {
+                <select [value]="selectedTarget(a)" (change)="setTarget(a, $any($event.target).value)"
+                        [attr.aria-label]="'Cible de ' + a.label">
+                  @for (o of targetOptions(a); track o.id) {
+                    <option [value]="o.id" [selected]="o.id === selectedTarget(a)">{{ o.label }}</option>
+                  }
+                </select>
+              }
+            </div>
+            <div class="action-cta">
+              <button class="btn small" [disabled]="!av.ok" (click)="plan(a, $event)">Planifier</button>
+              @if (!av.ok) { <span class="reason">{{ av.reason }}</span> }
+            </div>
+          </li>
+        } @empty {
+          <li class="muted empty">Aucune action débloquée dans cette catégorie.</li>
+        }
+        @for (a of lockedActions(); track a.id) {
+          <li class="action locked">
+            <div class="action-main">
+              <strong>{{ a.label }}</strong>
+              <p class="muted">Se débloque au rang {{ rankLabel(a) }}.</p>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <!-- Plan de la semaine -->
+    <aside class="plan">
+      <div class="eyebrow">Votre semaine</div>
+      <ol class="plan-list">
+        @for (p of planner.plan(); track p.uid) {
+          @let info = describe(p);
+          <li>
+            <span class="mono ap-tag">{{ info.ap }}</span>
+            <span class="plan-label">
+              {{ info.label }}
+              @if (info.target) { <small class="muted">→ {{ info.target }}</small> }
+              @if (info.party) { <small class="party-tag">payé par le parti</small> }
+            </span>
+            <button class="remove" (click)="planner.remove(p.uid)" [attr.aria-label]="'Retirer ' + info.label">×</button>
+          </li>
+        } @empty {
+          <li class="muted empty">Rien de prévu. Piochez dans le catalogue.</li>
+        }
+      </ol>
+
+      <dl class="totals mono">
+        <div><dt>Énergie</dt><dd>{{ planner.spent().energy ? '−' + planner.spent().energy : 0 }} / {{ game.stats().energy | number: '1.0-0' }}</dd></div>
+        <div><dt>Dépenses perso</dt><dd>{{ planner.spent().money.toLocaleString('fr-FR') }} €</dd></div>
+        <div><dt>Caisse du parti</dt><dd>{{ planner.spent().partyMoney.toLocaleString('fr-FR') }} / {{ planner.envelope().toLocaleString('fr-FR') }} €</dd></div>
+        <div><dt>Capital</dt><dd>{{ planner.spent().politicalCapital ? '−' + planner.spent().politicalCapital : 0 }} / {{ game.stats().politicalCapital | number: '1.0-0' }}</dd></div>
+      </dl>
+
+      @if (turn.blocking().length) {
+        <p class="blocking">
+          {{ turn.blocking().length }} décision(s) urgente(s) à trancher avant de clore la semaine.
+        </p>
+      }
+      <button class="btn primary end" [disabled]="!turn.canEndWeek()" (click)="endWeek()">
+        Terminer la semaine →
+      </button>
+      @if (planner.apLeft() > 0 && turn.canEndWeek()) {
+        <p class="muted hint">{{ planner.apLeft() }} PA non utilisés seront perdus.</p>
+      }
+    </aside>
+  </div>
+</section>
