@@ -9,6 +9,7 @@ import {
 } from '../engine/effects';
 import { owns } from '../engine/patrimoine';
 import { intlPower, intlRelevant } from '../engine/intl';
+import { reservedAp } from '../engine/projects';
 import { ASSETS_BY_ID } from '../data/assets';
 import { Rng } from '../engine/rng';
 import { recordObjectiveEvent } from '../engine/objectives';
@@ -63,7 +64,9 @@ export class ActionPlannerService {
   /** Vous dirigez le parti : c'est la trésorerie qui paie, sans capital politique */
   readonly leaderPays = computed(() => partyCapitalCost(this.game.s(), 1000) === 0);
 
-  readonly apLeft = computed(() => this.game.player().actionPoints.current - this.spent().ap);
+  /** Points d'action réservés par le projet au long cours */
+  readonly reserved = computed(() => reservedAp(this.game.s()));
+  readonly apLeft = computed(() => Math.max(0, this.game.player().actionPoints.current - this.reserved()) - this.spent().ap);
 
   /** Actions débloquées au rang courant */
   /**

@@ -71,9 +71,16 @@ Standalone components, zoneless, Signals partout.
   protection policière ; footing). Sous 38 : alertes médicales. Risques annuels affichés : mortalité de Gompertz
   aggravée par une mauvaise santé, accidents (voiture de sport, voilier, fatigue au volant ; chauffeur protecteur),
   attentats (selon le rang, la menace et la protection). Espérance de vie simulée : 77 ans en moyenne.
-- **Laisser passer le temps** : ellipses d’un mois, six mois, un an ou cinq ans. Les petites décisions se règlent
-  seules (le choix le plus prudent, sans engagement), et l’ellipse s’arrête dès qu’un événement important survient
-  (campagne qui s’ouvre, résultats, promotion, chapitre, alerte médicale, crise grave, budget, décès).
+- **Projets au long cours** (`data/projects.ts`, `engine/projects.ts`, onglet **Projets**) : des actions qui
+  s’étalent sur plusieurs semaines et réservent des points d’action chaque semaine — écrire un livre-programme, tour de
+  France des territoires, campagne d’implantation, tisser son réseau, reprendre des études, fonder un think tank,
+  mission d’information et proposition de loi (député·e), grande réforme (ministre), plan de relance (Matignon),
+  refondation du parti, grand chantier et tournée diplomatique (Élysée), grande enquête (journaliste), mémoires
+  (ancien·ne président·e), six mois au vert et année sabbatique (tout l’agenda). Un peu d’effet chaque semaine, beaucoup
+  à l’arrivée (parfois avec un risque). **S’y consacrer jusqu’au bout** fait défiler les semaines : les petites
+  décisions se règlent seules (le choix le plus prudent) et l’on est rappelé·e dès qu’il se passe quelque chose
+  d’important (campagne, résultats, promotion, chapitre, alerte médicale, crise grave, budget). Le projet continue
+  ensuite chaque semaine ; on peut l’abandonner. C’est ainsi que le temps passe vite, sans ellipse abstraite.
   **Se retirer de la vie publique** (dès 50 ans ou après l’Élysée) fait défiler les années jusqu’à la nécrologie.
 - **Élection présidentielle à date fixe** (`engine/presidency.ts`) : avril 2027 (semaine 16), puis tous les cinq ans.
   Bouton **« Se déclarer candidat·e à la présidence »** (jusqu’à 78 semaines avant, popularité 12 minimum) ; il faut
@@ -219,6 +226,7 @@ src/app/game/
 │   ├── random-events.ts       Événements aléatoires
 │   ├── life-events.ts         Événements de la vie : santé, âge, menaces, course à l’Élysée
 │   ├── rank-events.ts         Événements propres à chaque fonction
+│   ├── projects.ts            Projets au long cours
 │   ├── intl-events.ts         Événements internationaux
 │   ├── scene-salon.ts         Scène du Salon de l’agriculture
 │   ├── assets.ts              Biens achetables (patrimoine)
@@ -242,6 +250,7 @@ src/app/game/
 │   ├── life.ts                Âge, santé, mort, chapitres de vie, retraite, nécrologie
 │   ├── presidency.ts          Calendrier présidentiel, candidature, parrainages, présidence, crises
 │   ├── government.ts          Portefeuilles, Matignon, censure, Salon de l’agriculture
+│   ├── projects.ts            Lancement, avancement et aboutissement des projets
 │   ├── intl.ts                Relations, prestige, tensions, crises internationales
 │   ├── press.ts               Audience, réputation, propriétaire, promotions
 │   ├── founding.ts            Fonder son parti (au départ ou en cours de partie)

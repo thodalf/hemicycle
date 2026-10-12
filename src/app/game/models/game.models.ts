@@ -549,6 +549,17 @@ export interface PresidencyState {
   lastCrisisWeek: number;
 }
 
+/** Projet au long cours en cours */
+export interface ActiveProject {
+  id: string;
+  startWeek: number;
+  /** Semaines déjà accomplies */
+  done: number;
+  weeks: number;
+  /** Domaine travaillé, figé au lancement */
+  domain?: Domain;
+}
+
 /** Gouvernement dirigé par le joueur (Premier·e ministre) */
 export interface GovernmentState {
   since: number;
@@ -902,6 +913,7 @@ export interface GameState {
   portfolio: Domain | null;
   government: GovernmentState | null;
   intl: IntlState;
+  project: ActiveProject | null;
   player: Player;
   party: Party;
   otherParties: PartyInfo[];

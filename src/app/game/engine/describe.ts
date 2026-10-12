@@ -34,7 +34,10 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'npcStat': return [{ text: `${n(e.delta)} ${e.stat === 'popularity' ? 'popularité' : 'influence'} de la cible`, tone: tone(e.delta, true) }];
     case 'contact': return e.trust ? [{ text: `${n(e.trust)} confiance${e.contactId === '$target' ? ' du contact' : ''}`, tone: tone(e.trust) }] : [];
     case 'stance': return [{ text: `Ligne ${e.delta > 0 ? 'vers la droite' : 'vers la gauche'} (${Math.abs(e.delta)})`, tone: 'neutral' }];
-    case 'flagAdd': return e.key === 'illegal' ? [{ text: 'Illégal : risque d’enquête', tone: 'bad' }] : [];
+    case 'flagAdd': return e.key === 'illegal' ? [{ text: 'Illégal : risque d’enquête', tone: 'bad' }]
+      : e.key === 'hygiene' ? [{ text: `${n(e.delta)} hygiène de vie`, tone: tone(e.delta) }]
+      : e.key === 'protection' ? [{ text: `${n(e.delta)} protection`, tone: tone(e.delta) }] : [];
+    case 'skillPoints': return [{ text: `${n(e.delta)} pt de compétence`, tone: tone(e.delta) }];
     case 'partyTreasury': return [{ text: `${n(e.delta)} k€ caisse du parti`, tone: tone(e.delta) }];
     case 'press': {
       const out: EffectChip[] = [];

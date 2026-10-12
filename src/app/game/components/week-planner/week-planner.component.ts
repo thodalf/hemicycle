@@ -13,6 +13,8 @@ import { TurnService } from '../../services/turn.service';
 import { FxService } from '../../services/fx.service';
 import { ELECTIONS } from '../../data/ranks';
 import { PARTNERS, PARTNERS_BY_ID } from '../../engine/intl';
+import { PROJECTS, PROJECTS_BY_ID, projectVisible } from '../../data/projects';
+import { projectAvailability } from '../../engine/projects';
 
 /** Actions qui peuvent viser n'importe quelle personnalité, pas seulement votre parti */
 const ANY_NPC = ['dejeuner', 'diner_maison', 'off', 'grand_oral', 'clash_reseaux', 'demonter'];
@@ -45,12 +47,36 @@ export class WeekPlannerComponent {
     const present = new Set([...this.planner.unlocked(), ...this.planner.locked()].map(a => a.category));
     const all = (Object.entries(CATEGORY_LABELS) as [ActionCategory, string][]).filter(([c]) => present.has(c));
     const scenario = this.game.s().scenario;
-    if (this.game.s().presidency) return [...all.filter(([c]) => c === 'elysee'), ...all.filter(([c]) => c !== 'elysee')];
-    if (present.has('fonction') && !['royaute', 'franc_macon', 'editorialiste', 'infiltre'].includes(scenario)) return [...all.filter(([c]) => c === 'fonction'), ...all.filter(([c]) => c !== 'fonction')];
+    const withProjects = (list: [ActionCategory | 'projets', string][]) => [...list.slice(0, 1), ['projets', 'Projets'] as [ActionCategory | 'projets', string], ...list.slice(1)];
+    if (this.game.s().presidency) return withProjects([...all.filter(([c]) => c === 'elysee'), ...all.filter(([c]) => c !== 'elysee')]);
+    if (present.has('fonction') && !['royaute', 'franc_macon', 'editorialiste', 'infiltre'].includes(scenario)) return withProjects([...all.filter(([c]) => c === 'fonction'), ...all.filter(([c]) => c !== 'fonction')]);
     const first = scenario === 'royaute' ? 'couronne' : scenario === 'franc_macon' ? 'loge' : scenario === 'editorialiste' ? 'redaction' : scenario === 'infiltre' ? 'infiltration' : null;
-    return first ? [...all.filter(([c]) => c === first), ...all.filter(([c]) => c !== first)] : all;
+    return withProjects(first ? [...all.filter(([c]) => c === first), ...all.filter(([c]) => c !== first)] : all);
   });
-  protected readonly category = signal<ActionCategory>(this.categories()[0]?.[0] ?? 'terrain');
+  protected readonly category = signal<ActionCategory | 'projets'>(this.categories()[0]?.[0] ?? 'terrain');
+  protected readonly confirmAbandon = signal(false);
+
+  /** Projet en cours */
+  protected readonly current = computed(() => {
+    const s = this.game.s();
+    const def = s.project ? PROJECTS_BY_ID.get(s.project.id) : null;
+    return def && s.project ? { def, done: s.project.done, weeks: s.project.weeks } : null;
+  });
+
+  /** Projets proposés à votre rang */
+  protected readonly projects = computed(() => {
+    const s = this.game.s();
+    return PROJECTS.filter(p => projectVisible(s, p)).map(def => {
+      const f = describeEffects(def.final);
+      const w = describeEffects(def.weekly);
+      const risk = def.risk ? describeEffects(def.risk.onFailure) : null;
+      return {
+        def, av: projectAvailability(s, def),
+        weekly: [...w.gains, ...w.losses, ...w.other], final: [...f.gains, ...f.losses, ...f.other],
+        riskText: risk ? 'En cas d’échec : ' + [...risk.losses, ...risk.gains, ...risk.other].map(c => c.text).join(', ') : '',
+      };
+    });
+  });
   /** Cible choisie pour chaque action ciblée (actionId → domaine / id) */
   private readonly targets = signal<Record<string, string>>({});
   protected readonly reportOpen = signal(true);
@@ -173,9 +199,6 @@ export class WeekPlannerComponent {
     return RANKS[a.minRank].label;
   }
 
-  protected readonly skipOptions = [
-    { weeks: 4, label: '1 mois' }, { weeks: 26, label: '6 mois' }, { weeks: 52, label: '1 an' }, { weeks: 260, label: '5 ans' },
-  ];
 
   protected scrollToPlan(): void {
     document.querySelector('app-week-planner .plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -185,12 +208,26 @@ export class WeekPlannerComponent {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  protected skip(weeks: number): void {
+  protected lancer(id: string): void {
+    if (this.turn.lancer(id)) {
+      this.anim.stamp('Projet lancé', 'neutral', PROJECTS_BY_ID.get(id)?.label ?? '');
+      this.category.set(this.categories()[0]?.[0] ?? 'terrain');
+    }
+  }
+
+  protected abandon(): void {
+    this.confirmAbandon.set(false);
+    this.turn.abandon();
+  }
+
+  protected devote(): void {
     const from = this.game.week();
-    this.turn.skip(weeks);
+    const label = this.current()?.def.label ?? '';
+    this.turn.devote();
     this.reportOpen.set(true);
     const after = this.game.s();
     if (after.week !== from && after.status !== 'mort') this.anim.weekTurn(from, after.week, this.game.date());
+    if (!after.project && after.status !== 'mort') setTimeout(() => this.anim.stamp('Projet abouti', 'good', label), 900);
   }
 
   protected endWeek(): void {

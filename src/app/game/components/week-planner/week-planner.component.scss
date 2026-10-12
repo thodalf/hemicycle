@@ -140,6 +140,13 @@
 @keyframes report-in { from { opacity: 0; transform: translateY(-8px); } }
 @keyframes chip-pop { from { opacity: 0; transform: scale(.4); } }
 
-.skip { display: grid; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--line);
-  small { font-size: 11.5px; line-height: 1.35; } }
-.skip-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.project-box { display: grid; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--line);
+  small { font-size: 11.5px; line-height: 1.35; } strong { font-size: 13.5px; }
+  .btn { justify-self: start; }
+  .link { background: none; border: 0; padding: 0; color: var(--ink-3); font-size: 12px; cursor: pointer; justify-self: start; text-decoration: underline; }
+  .confirm { display: flex; gap: 6px; align-items: center; font-size: 12px; } }
+.pbar { height: 8px; border-radius: 4px; background: var(--surface); border: 1px solid var(--line); overflow: hidden;
+  span { display: block; height: 100%; background: repeating-linear-gradient(135deg, var(--accent) 0 6px, color-mix(in srgb, var(--accent) 80%, white) 6px 12px); transition: width .5s ease; } }
+.plan-list li.reserved { background: var(--accent-soft); border-radius: 6px; }
+.action.project { border-left: 3px solid var(--accent); }
+.fx-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); align-self: center; margin-right: 2px; }

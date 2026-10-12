@@ -4,6 +4,7 @@ import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } fro
 import { retire, settleEndings, weeklyLife } from '../engine/life';
 import { weeklyGovernment } from '../engine/government';
 import { weeklyIntl } from '../engine/intl';
+import { abandonProject, startProject, weeklyProject } from '../engine/projects';
 import { canDeclare, declareCandidacy, endPresidency, weeklyPresidency, weeklyPresidential } from '../engine/presidency';
 import { effectValue } from '../data/actions';
 import { Rng } from '../engine/rng';
@@ -33,9 +34,9 @@ export interface SkipReport {
   reason: string;
 }
 
-/** Décisions qui interrompent une ellipse : le joueur doit les trancher lui-même */
+/** Décisions qui interrompent un projet auquel on se consacre : le joueur doit les trancher lui-même */
 const STOP_TAGS = new Set(['former_gouvernement', 'pm_censure', 'ev_matignon', 'alerte_sante', 'pres_censure', 'pres_destitution', 'pres_tentative', 'banqueroute', 'remaniement', 'congres', 'faillite_parti']);
-/** Pendant une ellipse, on ne s'engage dans rien : pas de scène, pas d'adhésion, pas d'achat */
+/** Quand on se consacre à un projet, on ne s’engage dans rien d’autre : pas de scène, pas d’adhésion, pas d’achat */
 const ACTIVE_KINDS = new Set<Effect['kind']>(['scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'die', 'declare', 'resign', 'bankrupt', 'loan', 'end']);
 
 export interface DecisionOutcome {
@@ -106,34 +107,46 @@ export class TurnService {
     weeklyIntl(d, rng);
     weeklyObjectives(d, rng);
     weeklyScenario(d, rng);
+    weeklyProject(d, rng);
     settleEndings(d);
     weeklyLife(d, rng);
   }
 
-  /** Une ellipse est possible hors campagne électorale */
-  readonly canSkip = computed(() => {
+  /** Se consacrer à son projet : possible hors campagne électorale, avec un projet en cours */
+  readonly canDevote = computed(() => {
     const s = this.game.s();
-    return this.canEndWeek() && s.player.finances.legalCeiling === null && !s.elections.some(e => !e.resolved);
+    return !!s.project && this.canEndWeek() && s.player.finances.legalCeiling === null && !s.elections.some(e => !e.resolved);
   });
 
+  lancer(projectId: string): boolean {
+    let ok = false;
+    this.game.mutate(d => { ok = startProject(d, projectId); });
+    return ok;
+  }
+
+  abandon(): void {
+    this.game.mutate(d => abandonProject(d));
+  }
+
   /**
-   * Laisser passer le temps : les semaines s'enchaînent sans agenda, les petites décisions
-   * se règlent d'elles-mêmes (le choix le plus prudent), et l'ellipse s'arrête dès qu'il se
-   * passe quelque chose d'important (campagne, promotion, crise grave, alerte médicale, décès…).
+   * Se consacrer à son projet : les semaines s'enchaînent jusqu'à son terme ; les petites
+   * décisions se règlent d'elles-mêmes (le choix le plus prudent), et l'on est rappelé·e dès
+   * qu'il se passe quelque chose d'important (campagne, promotion, crise grave, alerte médicale…).
    */
-  skip(weeks: number): void {
-    if (!this.canSkip()) return;
+  devote(): void {
+    if (!this.canDevote()) return;
     const before = this.game.s();
+    const project = before.project!;
     const beforeStats = { ...before.player.stats };
     const beforeFunds = before.player.finances.personal + before.player.finances.campaign;
     const beforeDecisions = new Set(before.pendingDecisions.map(d => d.id));
-    let report: SkipReport = { weeks: 0, reason: '' };
+    const report: SkipReport = { weeks: 0, reason: '' };
     this.game.mutate((d, rng) => {
       const rank = d.player.rankId;
       const milestones = d.milestones.length;
       const elections = new Set(d.elections.map(e => e.id));
       this.planner.execute(d, rng);
-      for (let i = 0; i < weeks; i++) {
+      while (d.project && d.project.id === project.id) {
         const stop = this.autoResolve(d, rng);
         if (stop) { report.reason = `Décision à prendre : ${stop}`; break; }
         this.advance(d, rng);
@@ -142,6 +155,7 @@ export class TurnService {
         d.scene = null;
         report.weeks += 1;
         if (d.status === 'mort') { report.reason = 'Décès'; break; }
+        if (!d.project) break;
         if (d.milestones.length > milestones) { report.reason = d.milestones.at(-1)!.title; break; }
         if (d.player.rankId !== rank) { report.reason = 'Changement de rang'; break; }
         if (d.elections.some(e => !elections.has(e.id) && !e.resolved)) { report.reason = 'Une campagne électorale s’ouvre'; break; }
@@ -150,7 +164,10 @@ export class TurnService {
         const urgent = d.pendingDecisions.find(x => STOP_TAGS.has(x.tag));
         if (urgent) { report.reason = `Décision à prendre : ${urgent.title}`; break; }
       }
-      if (report.weeks) pushNews(d, 'systeme', 'neutral', `Le temps passe : ${report.weeks} semaine${report.weeks > 1 ? 's' : ''}`, report.reason ? `Interruption : ${report.reason}.` : undefined);
+      if (report.weeks && d.project) {
+        pushNews(d, 'systeme', 'neutral', `Projet interrompu après ${report.weeks} semaine${report.weeks > 1 ? 's' : ''}`,
+          `${report.reason}. Le projet continue : ${d.project.done}/${d.project.weeks} semaines.`);
+      }
     });
     this.lastSkip.set(report);
     this.report(before, beforeStats, beforeFunds, beforeDecisions);

@@ -53,6 +53,7 @@ function migrate(s: GameState): GameState {
   s.portfolio ??= null;
   s.government ??= null;
   s.intl ??= initIntl();
+  s.project ??= null;
   if (!s.presidential) {
     s.presidential = initPresidential(s);
     // Une partie déjà avancée : le calendrier rattrape la date courante
