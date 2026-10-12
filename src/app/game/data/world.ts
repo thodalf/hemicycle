@@ -1,6 +1,8 @@
 import { MISSIONS, TAXES } from './budget';
 import { createPress } from './press';
 import { setupFoundedPartyAtStart } from '../engine/founding';
+import { initialHealth, startAge } from '../engine/life';
+import { initPresidential } from '../engine/presidency';
 import {
   BudgetDraft, DOMAINS, Domain, OutletKind, ScenarioId, DossierState, Faction, FactionId, GameState, NetworkContact, Npc, PartyInfo,
 } from '../models/game.models';
@@ -61,7 +63,7 @@ const OPPOSITION_FIGURES: Record<string, [string, string]> = {
   gc: ['Rosa Delcourt', 'Malik Benali'],
 };
 
-function makeFactions(partyPosition: number): Faction[] {
+export function makeFactions(partyPosition: number): Faction[] {
   const pos = factionPositions(partyPosition);
   return [
     { id: 'ligne_dure', name: 'Ligne dure', weight: 35, position: pos.ligne_dure, satisfaction: 50, supportForPlayer: 35 },
@@ -190,6 +192,10 @@ export function createInitialState(opts: NewGameOptions): GameState {
     partyFinance: null,
     nationalBudget: null,
     status: 'en_cours',
+    milestones: [],
+    death: null,
+    presidency: null,
+    presidential: null as unknown as GameState['presidential'],
     player: {
       name: opts.name.trim() || 'Camille Martin',
       gender: opts.gender,
@@ -208,6 +214,8 @@ export function createInitialState(opts: NewGameOptions): GameState {
       pool: [],
       boosters: 1,
       assets: [],
+      age: 0,
+      health: 80,
       flags: {},
     },
     party: { ...party, factions: makeFactions(party.position), leaderNpcId: 'npc-vasseur', cohesion: 60 },
@@ -227,6 +235,9 @@ export function createInitialState(opts: NewGameOptions): GameState {
   if (opts.scenario === 'editorialiste') startPress(state, opts.outlet ?? 'radio');
   if (infiltre) startMole(state, home);
   if (custom && opts.customParty) setupFoundedPartyAtStart(state, opts.customParty);
+  state.player.age = startAge(state.scenario);
+  state.player.health = initialHealth(state.player.age);
+  state.presidential = initPresidential(state);
   return state;
 }
 

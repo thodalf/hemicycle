@@ -1,6 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, GameState, StatKey } from '../models/game.models';
-import { MAX_WEEKS, RANKS } from '../data/ranks';
+import { RANKS } from '../data/ranks';
 import { createDecision } from '../data/decisions';
 import { countTrait, fireRecruit, payroll, weeklyTraits } from '../engine/recruits';
 import { availableFunds, spend, partySupport, pushNews } from '../engine/effects';
@@ -75,7 +75,8 @@ export class ProgressionService {
 
     // Énergie, stress, burn-out
     const s = p.stats;
-    s.stress = clamp(s.stress - 5 + rank.order * 1.5 + (s.energy < 25 ? 6 : 0) + d.pendingDecisions.length * 2);
+    const pressure = p.rankId === 'ancien_president' ? 1 : rank.order;
+    s.stress = clamp(s.stress - 5 + pressure * 1.5 + (s.energy < 25 ? 6 : 0) + d.pendingDecisions.length * 2);
     s.energy = clamp(s.energy + 14 - s.stress / 10);
     const burnout = s.stress >= 95;
     if (burnout) {
@@ -129,12 +130,11 @@ export class ProgressionService {
     weeklyNationalBudget(d);
 
     // Conditions de défaite
-    if (d.week > 10 && s.popularity <= 2 && s.credibility <= 5) {
+    // Revers (devient un chapitre : la partie continue, en repartant de plus bas)
+    if (d.week > 10 && s.popularity <= 2 && s.credibility <= 5 && d.week >= Number(p.flags['desert'] ?? 0)) {
       d.status = 'defaite';
-      d.endReason = 'Plus personne ne vous écoute. Votre carrière politique s’achève dans l’indifférence.';
-    } else if (d.week > MAX_WEEKS) {
-      d.status = 'defaite';
-      d.endReason = 'Cinq ans ont passé : la fenêtre historique s’est refermée.';
+      d.endTitle = 'Traversée du désert';
+      d.endReason = 'Plus personne ne vous écoute. Vous disparaissez des écrans… pour un temps.';
     }
   }
 }

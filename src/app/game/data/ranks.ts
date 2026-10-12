@@ -29,6 +29,10 @@ export const RANKS: Record<RankId, RankDefinition> = {
     id: 'president', label: 'Président·e de la République', order: 6, weeklyActionPoints: 8, monthlyIncome: 15200,
     promotion: null,
   },
+  ancien_president: {
+    id: 'ancien_president', label: 'Ancien·ne président·e', order: 6, weeklyActionPoints: 6, monthlyIncome: 6200,
+    promotion: null,
+  },
 };
 
 export const rankOrder = (id: RankId) => RANKS[id].order;
@@ -42,4 +46,16 @@ export const ELECTIONS: Record<ElectionType, ElectionConfig> = {
 
 /** Date de début de partie : chaque tour = une semaine */
 export const START_DATE = new Date(2027, 0, 4);
-export const MAX_WEEKS = 260;
+
+/* ── Calendrier présidentiel ── */
+/** Premier scrutin présidentiel (avril 2027) */
+export const FIRST_PRESIDENTIAL_WEEK = 16;
+/** Durée d'un mandat : cinq ans */
+export const MANDATE_WEEKS = 260;
+export const PARRAINAGES_REQUIRED = 500;
+/** On peut se déclarer jusqu'à un an et demi avant le scrutin */
+export const DECLARE_WINDOW = 78;
+/** Âge de départ selon le scénario */
+export const START_AGE: Record<string, number> = {
+  carriere: 26, presidentielle: 52, bercy: 47, royaute: 45, franc_macon: 38, editorialiste: 31, infiltre: 27,
+};

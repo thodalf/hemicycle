@@ -76,6 +76,8 @@ export class ActionPlannerService {
       if (a.category === 'loge') return !!s.lodge;
       if (a.category === 'redaction') return !!s.press;
       if (a.category === 'infiltration') return !!s.mole;
+      if (a.category === 'elysee') return !!s.presidency;
+      if (a.onlyRanks && !a.onlyRanks.includes(s.player.rankId)) return false;
       return true;
     });
   });
@@ -106,6 +108,9 @@ export class ActionPlannerService {
       if (req.grade !== undefined && (s.lodge?.grade ?? -1) < req.grade) return { ok: false, reason: 'Grade insuffisant' };
       if (req.moleDelivered !== undefined && (s.mole?.delivered ?? 0) < req.moleDelivered) return { ok: false, reason: `Transmettez d’abord ${req.moleDelivered} renseignements` };
       if (req.pressGrade !== undefined && (s.press?.grade ?? -1) < req.pressGrade) return { ok: false, reason: 'Poste insuffisant à la rédaction' };
+      if (req.declared && !s.presidential.declared) return { ok: false, reason: 'Déclarez d’abord votre candidature' };
+      if (req.maxHealth !== undefined && s.player.health > req.maxHealth) return { ok: false, reason: 'Inutile : votre santé est bonne' };
+      if (req.minAge !== undefined && s.player.age < req.minAge) return { ok: false, reason: `À partir de ${req.minAge} ans` };
       if (req.asset && !owns(s, req.asset)) {
         return { ok: false, reason: `Nécessite : ${req.asset.map(id => ASSETS_BY_ID.get(id)?.label).join(' ou ')}` };
       }

@@ -13,6 +13,8 @@ import { adjustPress } from './press';
 import { adjustMole } from './mole';
 import { declareBankruptcy, takeLoan } from './bankruptcy';
 import { OUTLETS, PRESS_GRADES, PRESS_SALARIES, createPress } from '../data/press';
+import { adjustHealth, die } from './life';
+import { addParrainages, adjustPresidency, declareCandidacy, endPresidency } from './presidency';
 
 /* ============================================================
  *  Moteur d'effets — fonctions pures appliquées sur un brouillon
@@ -304,6 +306,8 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       }
       case 'rank': {
+        // À l'Élysée, aucune décision ne vous fait changer de rang (sauf la fin du mandat)
+        if (d.presidency && e.rankId !== 'president') break;
         if (RANKS[e.rankId].order > RANKS[d.player.rankId].order) {
           d.player.boosters += 1;
           summary.push('Booster de recrutement +1');
@@ -450,6 +454,28 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
           pushNews(d, 'systeme', 'neutral', 'Démission de la loge', 'Vous remettez votre tablier. Certaines portes se refermeront.');
           summary.push('Loge quittée');
         }
+        break;
+      case 'health':
+        summary.push(...adjustHealth(d, e.delta));
+        break;
+      case 'presidency':
+        summary.push(...adjustPresidency(d, e, rng));
+        break;
+      case 'parrainages':
+        summary.push(...addParrainages(d, e.delta));
+        break;
+      case 'declare':
+        summary.push(...declareCandidacy(d));
+        break;
+      case 'resign':
+        if (d.presidency) {
+          endPresidency(d, e.why ?? 'demission');
+          summary.push(e.why === 'destitution' ? 'Destitué·e' : 'Démission');
+        }
+        break;
+      case 'die':
+        die(d, e.cause, e.text);
+        summary.push('Décès');
         break;
       case 'grade':
         if (d.lodge) {

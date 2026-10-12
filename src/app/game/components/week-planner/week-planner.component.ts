@@ -44,6 +44,7 @@ export class WeekPlannerComponent {
     const present = new Set([...this.planner.unlocked(), ...this.planner.locked()].map(a => a.category));
     const all = (Object.entries(CATEGORY_LABELS) as [ActionCategory, string][]).filter(([c]) => present.has(c));
     const scenario = this.game.s().scenario;
+    if (this.game.s().presidency) return [...all.filter(([c]) => c === 'elysee'), ...all.filter(([c]) => c !== 'elysee')];
     const first = scenario === 'royaute' ? 'couronne' : scenario === 'franc_macon' ? 'loge' : scenario === 'editorialiste' ? 'redaction' : scenario === 'infiltre' ? 'infiltration' : null;
     return first ? [...all.filter(([c]) => c === first), ...all.filter(([c]) => c !== first)] : all;
   });
@@ -165,6 +166,18 @@ export class WeekPlannerComponent {
 
   protected rankLabel(a: ActionDefinition): string {
     return RANKS[a.minRank].label;
+  }
+
+  protected readonly skipOptions = [
+    { weeks: 4, label: '1 mois' }, { weeks: 26, label: '6 mois' }, { weeks: 52, label: '1 an' }, { weeks: 260, label: '5 ans' },
+  ];
+
+  protected skip(weeks: number): void {
+    const from = this.game.week();
+    this.turn.skip(weeks);
+    this.reportOpen.set(true);
+    const after = this.game.s();
+    if (after.week !== from && after.status !== 'mort') this.anim.weekTurn(from, after.week, this.game.date());
   }
 
   protected endWeek(): void {

@@ -28,6 +28,10 @@ import { NewsFeedComponent } from '../news-feed/news-feed.component';
 import { PartyPanelComponent } from '../party-panel/party-panel.component';
 import { ProfilePanelComponent } from '../profile-panel/profile-panel.component';
 import { WeekPlannerComponent } from '../week-planner/week-planner.component';
+import { LifePanelComponent } from '../life-panel/life-panel.component';
+import { PresidencyPanelComponent } from '../presidency-panel/presidency-panel.component';
+import { DEATH_LABELS, lifeSummary } from '../../engine/life';
+import { Milestone } from '../../models/game.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -36,6 +40,7 @@ import { WeekPlannerComponent } from '../week-planner/week-planner.component';
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent,
+    LifePanelComponent, PresidencyPanelComponent,
   ],
   template: `
     <header class="topbar">
@@ -55,6 +60,7 @@ import { WeekPlannerComponent } from '../week-planner/week-planner.component';
     <div class="grid">
       <div class="col-left">
         <app-profile-panel />
+        <app-life-panel />
         <section class="card budget-card wealth-card">
           <div class="card-title"><span>Patrimoine</span>
             <span class="chip" [class.bad]="wealth.image().popularity < 0" [class.good]="wealth.image().popularity > 0">{{ wealth.image().label }}</span></div>
@@ -85,6 +91,7 @@ import { WeekPlannerComponent } from '../week-planner/week-planner.component';
         <app-team-panel />
       </div>
       <main class="col-main">
+        <app-presidency-panel />
         @if (game.s().crown || game.s().lodge || game.s().press || game.s().mole) {
           <app-scenario-panel />
         }
@@ -140,13 +147,39 @@ import { WeekPlannerComponent } from '../week-planner/week-planner.component';
       <app-booster />
     }
 
-    @if (game.s().status !== 'en_cours' && !game.s().debate && !game.s().protest && !game.s().scene) {
-      <div class="overlay" role="dialog" aria-modal="true">
-        <div class="card end">
-          <div class="eyebrow">{{ game.s().status === 'victoire' ? 'Victoire' : 'Fin de carrière' }} · semaine {{ game.week() }}</div>
-          <h2>{{ game.s().endTitle ?? (game.s().status === 'victoire' ? 'Président·e de la République' : 'Rideau.') }}</h2>
-          <p>{{ game.s().endReason }}</p>
+    @if (game.s().status === 'mort' && game.s().death; as death) {
+      <div class="overlay obit-wrap" role="dialog" aria-modal="true" aria-labelledby="obit-name">
+        <article class="card obit">
+          <div class="eyebrow">Nécrologie · {{ deathLabel(death.cause) }}</div>
+          <div class="cross" aria-hidden="true"></div>
+          <h2 id="obit-name">{{ game.player().name }}</h2>
+          <p class="dates mono">{{ summary().born }} – {{ summary().died }} · {{ death.age }} ans</p>
+          <p class="cause">{{ death.text }}</p>
+          <p class="epitaph">« {{ summary().epitaph }} »</p>
+          <dl class="facts-grid">
+            <div><dt>Plus haute fonction</dt><dd>{{ summary().bestRank }}</dd></div>
+            <div><dt>Mandats présidentiels</dt><dd class="mono">{{ summary().mandates }}</dd></div>
+            <div><dt>Réformes</dt><dd class="mono">{{ summary().reforms }}</dd></div>
+            <div><dt>Patrimoine laissé</dt><dd class="mono">{{ wealth.net() | number: '1.0-0' }} €</dd></div>
+          </dl>
+          @if (game.s().milestones.length) {
+            <ol class="timeline">
+              @for (m of game.s().milestones; track $index) {
+                <li [class]="'k-' + m.kind"><span class="mono">{{ m.age }} ans</span> <strong>{{ m.title }}</strong><span class="muted"> — {{ m.text }}</span></li>
+              }
+            </ol>
+          }
           <button class="btn primary" (click)="game.quit()">Retour à mes parties</button>
+        </article>
+      </div>
+    } @else if (chapter(); as m) {
+      <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="chapter-title">
+        <div class="card end chapter" [class]="'k-' + m.kind">
+          <div class="eyebrow">Nouveau chapitre · {{ m.age }} ans · semaine {{ m.week }}</div>
+          <h2 id="chapter-title">{{ m.title }}</h2>
+          <p>{{ m.text }}</p>
+          <p class="muted small">{{ m.kind === 'revers' ? 'Un revers, pas une fin : la partie continue.' : 'La partie continue : seule la mort met fin à une vie politique.' }}</p>
+          <button class="btn primary" (click)="chapter.set(null)">Continuer</button>
         </div>
       </div>
     }
@@ -171,7 +204,25 @@ import { WeekPlannerComponent } from '../week-planner/week-planner.component';
     .b-row { display: flex; justify-content: space-between; font-size: 13px; .neg { color: var(--bad); } }
     .col-left, .col-main, .col-right { display: grid; gap: 16px; align-content: start; min-width: 0; }
     .overlay { position: fixed; inset: 0; background: rgba(10, 12, 18, .55); display: grid; place-items: center; padding: 16px; z-index: 10; }
-    .end { max-width: 440px; text-align: center; padding: 28px; h2 { font-size: 30px; margin: 8px 0; } p { color: var(--ink-2); } }
+    .end { max-width: 440px; text-align: center; padding: 28px; h2 { font-size: 30px; margin: 8px 0; } p { color: var(--ink-2); } .small { font-size: 12.5px; } }
+    .chapter { border-top: 5px solid var(--accent); animation: rise .45s cubic-bezier(.2,.8,.3,1.2); }
+    .chapter.k-victoire { border-top-color: var(--good); }
+    .chapter.k-revers { border-top-color: var(--bad); }
+    .obit-wrap { background: rgba(8, 8, 10, .78); }
+    .obit { max-width: 560px; max-height: calc(100dvh - 32px); overflow: auto; text-align: center; padding: 30px 28px;
+      font-family: var(--font-display); border: 1px solid var(--ink-3); animation: rise .8s ease;
+      h2 { font-size: 34px; margin: 6px 0 2px; } .dates { margin: 0; color: var(--ink-2); }
+      .cause { margin: 14px 0 6px; color: var(--ink-2); } .epitaph { font-style: italic; margin: 0 0 16px; }
+      .btn { margin-top: 18px; font-family: var(--font-body, inherit); } }
+    .cross { width: 2px; height: 26px; margin: 8px auto 0; background: var(--ink-2); position: relative;
+      &::after { content: ''; position: absolute; left: -7px; top: 7px; width: 16px; height: 2px; background: var(--ink-2); } }
+    .facts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; margin: 0; text-align: left; font-size: 13px;
+      font-family: var(--font-body, inherit);
+      div { padding: 6px 10px; border-radius: 8px; background: var(--surface-2); } dt { color: var(--ink-3); font-size: 11.5px; } dd { margin: 0; font-weight: 600; } }
+    .timeline { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 4px; text-align: left; font-size: 12.5px; font-family: var(--font-body, inherit);
+      li { padding-left: 10px; border-left: 3px solid var(--line); } .mono { margin-right: 6px; color: var(--ink-3); } .k-victoire { border-left-color: var(--good); } .k-revers { border-left-color: var(--bad); } .k-carriere { border-left-color: var(--accent); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97); } }
+    @media (prefers-reduced-motion: reduce) { .chapter, .obit { animation: none; } }
     .topbar { flex-wrap: wrap; row-gap: 6px; }
     .save { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); white-space: nowrap;
       .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); } }
@@ -202,23 +253,36 @@ export class DashboardComponent {
   private readonly fx = inject(FxService);
   private lastRank = this.game.player().rankId;
   private lastStatus = this.game.s().status;
+  private lastMilestones = this.game.s().milestones.length;
+  /** Dernier chapitre ouvert, affiché en grand */
+  protected readonly chapter = signal<Milestone | null>(null);
+  protected readonly summary = () => lifeSummary(this.game.s());
+  protected deathLabel(c: keyof typeof DEATH_LABELS) { return DEATH_LABELS[c]; }
 
   /** Promotions, victoire et défaite : tampon et confettis */
   private readonly celebrate = effect(() => {
     const rank = this.game.player().rankId;
     const status = this.game.s().status;
+    const milestones = this.game.s().milestones;
     untracked(() => {
+      if (milestones.length > this.lastMilestones && status !== 'mort') {
+        const m = milestones.at(-1)!;
+        setTimeout(() => {
+          if (m.kind !== 'carriere') this.chapter.set(m);
+          if (m.kind === 'victoire') { this.fx.stamp('Nouveau chapitre', 'good', m.title); this.burstAround(); }
+          else if (m.kind === 'revers') { this.fx.stamp('Revers', 'bad', m.title); this.fx.shake(); }
+          else this.fx.stamp('Chapitre', 'neutral', m.title);
+        }, 700);
+      }
+      this.lastMilestones = milestones.length;
       if (rank !== this.lastRank && RANKS[rank].order > RANKS[this.lastRank].order) {
         setTimeout(() => {
           this.fx.stamp('Promotion !', 'good', RANKS[rank].label);
           this.burstAround();
         }, 400);
       }
-      if (status !== this.lastStatus && status !== 'en_cours') {
-        setTimeout(() => {
-          if (status === 'victoire') { this.fx.stamp('Victoire !', 'good', this.game.s().endTitle ?? ''); this.burstAround(); setTimeout(() => this.burstAround(), 500); }
-          else { this.fx.stamp('Rideau', 'bad', this.game.s().endTitle ?? ''); this.fx.shake(); }
-        }, 300);
+      if (status !== this.lastStatus && status === 'mort') {
+        setTimeout(() => { this.fx.stamp('In memoriam', 'bad', this.game.s().endTitle ?? ''); this.fx.shake(); }, 300);
       }
       this.lastRank = rank;
       this.lastStatus = status;

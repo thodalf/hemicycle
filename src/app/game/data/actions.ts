@@ -786,6 +786,174 @@ const RAW_ACTIONS: ActionDefinition[] = [
     },
   },
 
+  // ── Élysée (présidence de la République) ─────────────────
+  {
+    id: 'allocution', label: 'Allocution télévisée', category: 'elysee', minRank: 'president',
+    description: 'Vingt heures, toutes les chaînes. Le pays vous écoute… ou zappe.',
+    cost: { ap: 1, energy: 8 }, cooldownWeeks: 2,
+    effects: [{ kind: 'presidency', approval: 4 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  },
+  {
+    id: 'conseil_ministres', label: 'Présider le Conseil des ministres', category: 'elysee', minRank: 'president', target: 'domain',
+    description: 'Fixer le cap, recadrer les ministres, arbitrer sur un dossier.',
+    cost: { ap: 1, energy: 5 }, maxPerWeek: 1,
+    effects: [{ kind: 'presidency', majority: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'dossier', domain: '$domain', delta: 3 }],
+  },
+  {
+    id: 'reforme', label: 'Faire voter une réforme', category: 'elysee', minRank: 'president', target: 'domain',
+    description: 'Un texte ambitieux soumis au Parlement. Sans majorité, il risque d’être rejeté.',
+    cost: { ap: 2, energy: 12, politicalCapital: 20 }, cooldownWeeks: 4,
+    effects: [{ kind: 'presidency', reform: true, approval: -3, majority: -3 }, { kind: 'dossier', domain: '$domain', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
+  },
+  {
+    id: 'article_49_3', label: 'Passer en force (49.3)', category: 'elysee', minRank: 'president',
+    description: 'La réforme est adoptée sans vote. L’opposition hurle, la rue gronde.',
+    cost: { ap: 1, politicalCapital: 30 }, cooldownWeeks: 8,
+    effects: [{ kind: 'presidency', reform: true, force: true, approval: -7, majority: -8, threat: 5 }, { kind: 'stat', stat: 'credibility', delta: -2 }],
+  },
+  {
+    id: 'dissolution', label: 'Dissoudre l’Assemblée nationale', category: 'elysee', minRank: 'president',
+    description: 'Législatives anticipées : les Français choisiront votre majorité… ou une cohabitation.',
+    cost: { ap: 2, politicalCapital: 25 }, cooldownWeeks: 52,
+    effects: [{ kind: 'presidency', dissolve: true }, { kind: 'stat', stat: 'stress', delta: 10 }],
+  },
+  {
+    id: 'referendum_national', label: 'Soumettre une question au référendum', category: 'elysee', minRank: 'president',
+    description: 'Le peuple tranche. Un oui vous grandit, un non vous affaiblit durablement.',
+    cost: { ap: 2, energy: 15, politicalCapital: 20 }, cooldownWeeks: 26,
+    effects: [{ kind: 'presidency', approval: 8, reform: true, force: true }, { kind: 'stat', stat: 'influence', delta: 4 }],
+    risk: { baseChance: 0.5, scaleWith: 'popularity', scaleWeight: 0.6, onFailure: [{ kind: 'presidency', approval: -12, majority: -6 }, { kind: 'stat', stat: 'credibility', delta: -6 }], failureNews: 'Le non l’emporte. On reparle de 1969.' },
+  },
+  {
+    id: 'voyage_etat', label: 'Voyage d’État', category: 'elysee', minRank: 'president',
+    description: 'Tapis rouge, contrats, conférence de presse commune.',
+    cost: { ap: 2, energy: 15 }, maxPerWeek: 1,
+    effects: [{ kind: 'dossier', domain: 'diplomatie', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 5 }, { kind: 'presidency', approval: 2 }],
+  },
+  {
+    id: 'conseil_defense', label: 'Réunir le Conseil de défense', category: 'elysee', minRank: 'president',
+    description: 'Renseignement, armées, sécurité intérieure : point sur les menaces.',
+    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    effects: [{ kind: 'presidency', security: 8, threat: -6 }, { kind: 'dossier', domain: 'securite', delta: 4 }],
+  },
+  {
+    id: 'protection_gspr', label: 'Renforcer votre protection rapprochée', category: 'elysee', minRank: 'president',
+    description: 'Plus d’officiers du GSPR, des parcours secrets. Et une image de président·e barricadé·e.',
+    cost: { ap: 1, politicalCapital: 5 }, cooldownWeeks: 4,
+    effects: [{ kind: 'presidency', security: 18, approval: -1 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
+  },
+  {
+    id: 'bain_foule', label: 'Bain de foule', category: 'elysee', minRank: 'president',
+    description: 'Serrer des mains, embrasser des enfants. Votre sécurité déteste ça.',
+    cost: { ap: 1, energy: 10 }, maxPerWeek: 1,
+    effects: [{ kind: 'presidency', approval: 5, threat: 4 }, { kind: 'stat', stat: 'popularity', delta: 3 }],
+    risk: { baseChance: 0.12, onFailure: [{ kind: 'health', delta: -8 }, { kind: 'stat', stat: 'stress', delta: 12 }, { kind: 'presidency', approval: 2, security: 5 }], failureNews: 'Un homme vous gifle devant les caméras. Vous tombez mal.' },
+  },
+  {
+    id: 'conference_presse', label: 'Grande conférence de presse', category: 'elysee', minRank: 'president',
+    description: 'Deux heures face à trois cents journalistes. Aucune question n’est interdite.',
+    cost: { ap: 1, energy: 8 }, cooldownWeeks: 4,
+    effects: [{ kind: 'presidency', approval: 3 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
+    risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.6, onFailure: [{ kind: 'presidency', approval: -5 }, { kind: 'stat', stat: 'credibility', delta: -3 }], failureNews: 'Une réponse agacée tourne en boucle sur les chaînes d’info.' },
+  },
+  {
+    id: 'remaniement_pm', label: 'Changer de Premier ministre', category: 'elysee', minRank: 'president',
+    description: 'Un fusible saute, un nouveau gouvernement redonne de l’élan.',
+    cost: { ap: 1, politicalCapital: 20 }, cooldownWeeks: 26,
+    effects: [{ kind: 'presidency', pm: true, majority: 6, approval: 3 }],
+  },
+  {
+    id: 'congres_versailles', label: 'Discours devant le Congrès à Versailles', category: 'elysee', minRank: 'president',
+    description: 'Députés et sénateurs réunis. Une adresse solennelle à la Nation.',
+    cost: { ap: 2, energy: 10, politicalCapital: 15 }, cooldownWeeks: 52,
+    effects: [{ kind: 'presidency', approval: 6, majority: 5 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
+  },
+  {
+    id: 'sommet_bilateral', label: 'Recevoir un chef d’État étranger', category: 'elysee', minRank: 'president',
+    description: 'Dîner d’État, accords commerciaux, poignée de main sur le perron.',
+    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    effects: [{ kind: 'dossier', domain: 'economie', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'presidency', approval: 1 }],
+  },
+
+  // ── Course à l'Élysée ───────────────────────────────────
+  {
+    id: 'chercher_parrainages', label: 'Chercher des parrainages', category: 'parti', minRank: 'militant', requires: { declared: true },
+    description: 'Appeler un à un les maires et conseillers. Il en faut cinq cents.',
+    cost: { ap: 1, energy: 10 },
+    effects: [{ kind: 'parrainages', delta: 45 }, { kind: 'stat', stat: 'stress', delta: 3 }],
+  },
+  {
+    id: 'tournee_maires', label: 'Tournée des maires ruraux', category: 'terrain', minRank: 'militant', requires: { declared: true },
+    description: 'Trois départements, quarante mairies, une centaine de signatures.',
+    cost: { ap: 2, energy: 18, money: 1500 }, maxPerWeek: 1,
+    effects: [{ kind: 'parrainages', delta: 95 }, { kind: 'contact', contactId: 'ct-maires', trust: 4 }, { kind: 'stat', stat: 'stress', delta: 5 }],
+  },
+
+  // ── Ancien·ne président·e ───────────────────────────────
+  {
+    id: 'conferences_inter', label: 'Cycle de conférences à l’étranger', category: 'argent', minRank: 'militant', onlyRanks: ['ancien_president'],
+    description: 'Une heure de souvenirs devant des banquiers, à prix d’or.',
+    cost: { ap: 1, energy: 8 }, cooldownWeeks: 3,
+    effects: [{ kind: 'income', base: 25000 }, { kind: 'stat', stat: 'credibility', delta: -2 }, { kind: 'exposure', delta: 3 }],
+  },
+  {
+    id: 'memoires', label: 'Écrire ses mémoires', category: 'medias', minRank: 'militant', onlyRanks: ['ancien_president'],
+    description: 'Six cents pages, quelques règlements de comptes, un gros à-valoir.',
+    cost: { ap: 2, energy: 12 }, cooldownWeeks: 26,
+    effects: [{ kind: 'income', base: 40000 }, { kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'exposure', delta: 4 }],
+  },
+  {
+    id: 'fondation', label: 'Animer votre fondation', category: 'reseau', minRank: 'militant', onlyRanks: ['ancien_president'],
+    description: 'Colloques, bourses, rapports : rester utile, et visible.',
+    cost: { ap: 1, money: 3000 }, maxPerWeek: 1,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }],
+  },
+  {
+    id: 'adouber', label: 'Adouber un·e héritier·e', category: 'parti', minRank: 'militant', onlyRanks: ['ancien_president'],
+    description: 'Votre soutien vaut de l’or dans une primaire. Le parti vous écoute encore.',
+    cost: { ap: 1, energy: 5 }, cooldownWeeks: 8,
+    effects: [{ kind: 'cohesion', delta: 4 }, { kind: 'faction', factionId: '*', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }],
+  },
+
+  // ── Santé ────────────────────────────────────────────────
+  {
+    id: 'bilan_sante', label: 'Bilan de santé complet', category: 'sante', minRank: 'militant',
+    description: 'Prise de sang, électrocardiogramme, conseils avisés.',
+    cost: { ap: 1, money: 250 }, cooldownWeeks: 8,
+    effects: [{ kind: 'health', delta: 4 }, { kind: 'flagAdd', key: 'hygiene', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -3 }],
+  },
+  {
+    id: 'suivi_nutrition', label: 'Suivi nutritionnel', category: 'sante', minRank: 'militant',
+    description: 'Fini les plateaux-repas et les buffets de vœux.',
+    cost: { ap: 1, money: 400 }, cooldownWeeks: 6,
+    effects: [{ kind: 'flagAdd', key: 'hygiene', delta: 3 }, { kind: 'health', delta: 2 }, { kind: 'stat', stat: 'energy', delta: -4 }],
+  },
+  {
+    id: 'arret_tabac', label: 'Arrêter la cigarette', category: 'sante', minRank: 'militant',
+    description: 'Trois semaines d’irritabilité pour des années de vie.',
+    cost: { ap: 1 }, cooldownWeeks: 52,
+    effects: [{ kind: 'flagAdd', key: 'hygiene', delta: 6 }, { kind: 'stat', stat: 'stress', delta: 10 }, { kind: 'stat', stat: 'energy', delta: -6 }],
+  },
+  {
+    id: 'cure', label: 'Cure de repos', category: 'sante', minRank: 'militant',
+    description: 'Dix jours loin de tout, sous surveillance médicale. On parlera de votre absence.',
+    cost: { ap: 3, money: 2500 }, cooldownWeeks: 12,
+    effects: [{ kind: 'health', delta: 8 }, { kind: 'flagAdd', key: 'hygiene', delta: 4 }, { kind: 'stat', stat: 'energy', delta: 40 }, { kind: 'stat', stat: 'stress', delta: -30 }, { kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'influence', delta: -3 }, { kind: 'momentum', delta: -4 }],
+  },
+  {
+    id: 'specialiste', label: 'Consulter un grand spécialiste', category: 'sante', minRank: 'militant', requires: { maxHealth: 55 },
+    description: 'Un professeur de médecine réputé, des examens poussés, un traitement de pointe.',
+    cost: { ap: 2, money: 4000 }, cooldownWeeks: 6,
+    effects: [{ kind: 'health', delta: 10 }, { kind: 'stat', stat: 'stress', delta: -4 }],
+    risk: { baseChance: 0.15, onFailure: [{ kind: 'health', delta: 3 }, { kind: 'exposure', delta: 6 }, { kind: 'stat', stat: 'popularity', delta: -2 }], failureNews: 'Un paparazzi vous photographie à la sortie de l’hôpital.' },
+  },
+  {
+    id: 'protection_policiere', label: 'Demander une protection policière', category: 'sante', minRank: 'depute',
+    description: 'Des officiers du SDLP vous accompagnent. Moins de spontanéité, plus de sécurité.',
+    cost: { ap: 1, politicalCapital: 6 }, cooldownWeeks: 12,
+    effects: [{ kind: 'flagAdd', key: 'protection', delta: 45 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
+  },
+
   // ── Repos ────────────────────────────────────────────────
   {
     id: 'repos', label: 'Souffler', category: 'repos', minRank: 'militant',
@@ -803,7 +971,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     id: 'footing', label: 'Footing matinal', category: 'repos', minRank: 'militant',
     description: 'Quarante minutes au bord du canal avant la première réunion.',
     cost: { ap: 1 }, maxPerWeek: 1,
-    effects: [{ kind: 'stat', stat: 'energy', delta: 10 }, { kind: 'stat', stat: 'stress', delta: -7 }],
+    effects: [{ kind: 'stat', stat: 'energy', delta: 10 }, { kind: 'stat', stat: 'stress', delta: -7 }, { kind: 'flagAdd', key: 'hygiene', delta: 0.6 }],
   },
   {
     id: 'sejour_campagne', label: 'Séjour dans votre maison', category: 'repos', minRank: 'militant',
@@ -841,7 +1009,10 @@ export function effectValue(e: Effect): number {
     case 'press': return 0.6 * ((e.audience ?? 0) + (e.reputation ?? 0)) + 0.3 * (e.independance ?? 0) + 3 * (e.scoops ?? 0);
     case 'npcRelation': return e.delta * 0.08;
     case 'contact': return (e.trust ?? 0) * 0.15;
-    case 'flagAdd': return e.key === 'illegal' ? -3 * e.delta : 0;
+    case 'flagAdd': return e.key === 'illegal' ? -3 * e.delta : e.key === 'hygiene' ? 0.8 * e.delta : e.key === 'protection' ? 0.1 * e.delta : 0;
+    case 'health': return 0.8 * e.delta;
+    case 'presidency': return 0.8 * (e.approval ?? 0) + 0.4 * (e.majority ?? 0) + 0.2 * (e.security ?? 0) - 0.2 * (e.threat ?? 0) + (e.reform ? 4 : 0);
+    case 'parrainages': return 0.06 * e.delta;
     case 'partyTreasury': return e.delta * 0.1;
     case 'crown': return 0.5 * ((e.soutien ?? 0) + (e.legitimite ?? 0) + (e.armee ?? 0));
     case 'lodge': return 0.3 * ((e.fraternite ?? 0) + (e.discretion ?? 0) + (e.planches ?? 0) * 5);
@@ -853,7 +1024,7 @@ export function effectValue(e: Effect): number {
 /** Part minimale de la valeur des gains rendue en malus visibles */
 const RATIO: Partial<Record<ActionCategory, number>> = {
   terrain: 0.7, medias: 0.75, dossiers: 0.7, parti: 0.75, reseau: 0.75, argent: 0.75, redaction: 0.7,
-  couronne: 0.6, loge: 0.6, repos: 0.5,
+  couronne: 0.6, loge: 0.6, repos: 0.5, elysee: 0.6,
 };
 
 /** Malus de contrepartie selon la catégorie : [effet, valeur d'un point, plafond] */
@@ -868,6 +1039,7 @@ const COUNTER: Partial<Record<ActionCategory, [(n: number) => Effect, number, nu
   loge: [n => ({ kind: 'lodge', discretion: -n }), 0.3, 12],
   parti: [n => ({ kind: 'faction', factionId: 'ligne_dure', delta: -n }), 0.4, 8],
   repos: [n => ({ kind: 'momentum', delta: -n }), 0.35, 8],
+  elysee: [n => ({ kind: 'stat', stat: 'stress', delta: n }), 0.6, 8],
 };
 
 function sameSlot(a: Effect, b: Effect): boolean {

@@ -117,3 +117,7 @@
 @keyframes plan-in { from { opacity: 0; transform: translateX(30px) scale(.9); } }
 @keyframes report-in { from { opacity: 0; transform: translateY(-8px); } }
 @keyframes chip-pop { from { opacity: 0; transform: scale(.4); } }
+
+.skip { display: grid; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--line);
+  small { font-size: 11.5px; line-height: 1.35; } }
+.skip-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }

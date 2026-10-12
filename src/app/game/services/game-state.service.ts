@@ -10,6 +10,8 @@ import { ensurePartyFinance } from '../engine/budget';
 import { migrateTeam } from '../engine/recruits';
 import { PartyDraft, foundPartyInGame } from '../engine/founding';
 import { MOLE_GOAL } from '../engine/mole';
+import { initialHealth, settleEndings, startAge } from '../engine/life';
+import { initPresidential } from '../engine/presidency';
 
 
 const RESUME_KEY = 'polsim.resume.v1';
@@ -39,6 +41,30 @@ function migrate(s: GameState): GameState {
   s.lodge ??= null;
   s.press ??= null;
   s.mole ??= null;
+  // Âge, santé, chapitres de vie, calendrier présidentiel
+  s.player.age ??= startAge(s.scenario) + (s.week - 1) / 52;
+  s.player.health ??= initialHealth(s.player.age);
+  s.milestones ??= [];
+  s.death ??= null;
+  s.presidency ??= null;
+  if (!s.presidential) {
+    s.presidential = initPresidential(s);
+    // Une partie déjà avancée : le calendrier rattrape la date courante
+    while (s.presidential.nextWeek <= s.week) s.presidential.nextWeek += 260;
+  }
+  // Une ancienne fin de partie devient un chapitre : la vie continue
+  if (s.status === 'victoire' || s.status === 'defaite') {
+    if (s.player.rankId === 'president' && s.status === 'victoire') {
+      s.endTitle ??= 'Élu·e président·e de la République';
+      s.player.flags['presMandates'] = 1;
+      s.presidency = { since: s.week, mandates: 1, approval: 55, majority: 52, security: 60, threat: 30, primeMinister: 'Claire Montel', reforms: 0, cohabitation: false, lastCrisisWeek: s.week };
+      s.presidential.incumbentId = 'player';
+      s.presidential.incumbentName = s.player.name;
+      s.presidential.incumbentMandates = 1;
+      s.presidential.nextWeek = s.week + 260;
+    }
+    settleEndings(s);
+  }
   // Nouveaux dossiers et contacts associés
   for (const domain of DOMAINS) {
     s.player.dossiers[domain] ??= { mastery: 10, lastStudiedWeek: null };
@@ -138,6 +164,8 @@ export class GameStateService {
     if (!current) return;
     const draft = structuredClone(current);
     fn(draft, new Rng(draft));
+    // Les fins de scénario deviennent des chapitres : seule la mort termine la partie
+    settleEndings(draft);
     this._state.set(draft);
     this.save(draft);
   }

@@ -6,6 +6,7 @@ import { ASSETS_BY_ID } from './assets';
 import { OUTLETS } from './press';
 import { ofParty } from './world';
 import { effectValue, withCounterweight } from './actions';
+import { LIFE_EVENTS } from './life-events';
 
 /* ============================================================
  *  Événements aléatoires : vie privée, médias, coulisses,
@@ -13,7 +14,7 @@ import { effectValue, withCounterweight } from './actions';
  *  tombent simplement dans le fil d'actualité.
  * ============================================================ */
 
-interface RandomEvent {
+export interface RandomEvent {
   tag: string;
   minRank?: RankId;
   /** Poids relatif dans le tirage */
@@ -27,7 +28,7 @@ const s = (stat: 'popularity' | 'influence' | 'credibility' | 'politicalCapital'
   ({ kind: 'stat', stat, delta });
 
 /** Choix d'événement : peut exiger de l'argent ou un rang, filtré au tirage */
-type EvChoice = DecisionChoice & { needMoney?: number; needRank?: RankId };
+export type EvChoice = DecisionChoice & { needMoney?: number; needRank?: RankId };
 
 const c = (id: string, label: string, effects: Effect[], outcome: string, extra: Partial<EvChoice> = {}): EvChoice =>
   ({ id, label, effects, outcome, ...extra });
@@ -1348,7 +1349,7 @@ const NEWS_EVENTS: { title: string; body: string; effects: Effect[]; tone: 'posi
 
 /* Tout a un prix : un choix d'événement très avantageux et sans risque reçoit une
  * contrepartie (exposition s'il rapporte de l'argent, stress sinon). */
-const SPECIAL = new Set(['scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'flag']);
+const SPECIAL = new Set(['declare', 'die', 'resign', 'scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'flag']);
 function balanceChoice(c: DecisionChoice): DecisionChoice {
   if (c.risk || c.effects.some(e => SPECIAL.has(e.kind))) return c;
   const money = c.effects.some(e => (e.kind === 'funds' && e.delta > 0) || e.kind === 'income');
@@ -1390,7 +1391,7 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     else if (lodgeGates.length && rng.chance(0.04)) ev = pick(lodgeGates);
     else if (pressGates.length && rng.chance(0.045)) ev = pick(pressGates);
   }
-  if (!ev && d.week > 2 && rng.chance(0.28)) ev = pick(RANDOM_EVENTS.filter(e => canFire(e, 20)));
+  if (!ev && d.week > 2 && rng.chance(0.28)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS].filter(e => canFire(e, 20)));
   if (ev) {
     const { choices, ...built } = ev.build(d, rng);
     const usable = choices

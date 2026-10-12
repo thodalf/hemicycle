@@ -1,4 +1,5 @@
 import { youngPartyMalus } from '../engine/founding';
+import { campaignOpensAt, canDeclare, declareCandidacy, incumbentBonus, presidentialResult } from '../engine/presidency';
 import { Injectable, computed, inject } from '@angular/core';
 import { ElectionType, GameState, ScheduledElection } from '../models/game.models';
 import { ELECTIONS, RANKS } from '../data/ranks';
@@ -88,7 +89,19 @@ export class ElectionEngineService {
     if (d.elections.some(e => !e.resolved)) return;
     const rule = RANKS[d.player.rankId].promotion;
     if (rule?.via !== 'election') return;
+    // La présidentielle suit le calendrier (tous les cinq ans), pas l'investiture
+    if (rule.election === 'presidentielle') return;
+    if (d.player.flags['retired'] || Number(d.player.flags['ineligibleUntil'] ?? 0) > d.week) return;
     if (d.week < Number(d.player.flags['nextElectionWeek'] ?? 0)) return;
+    const campaign = ELECTIONS[rule.election].campaignWeeks;
+    // La primaire se tient dans l'année qui précède la présidentielle
+    if (rule.election === 'primaire') {
+      const left = d.presidential.nextWeek - d.week;
+      if (d.player.flags['monarchie'] || left > 52 || left < campaign + ELECTIONS.presidentielle.campaignWeeks + 3) return;
+    } else if (d.presidential.declared && d.week + campaign + 1 >= campaignOpensAt(d)) {
+      // Pas de scrutin local en travers de la campagne présidentielle
+      return;
+    }
     const ok = Object.entries(rule.requires).every(([k, v]) => d.player.stats[k as keyof typeof d.player.stats] >= v);
     if (!ok) return;
 
@@ -124,12 +137,14 @@ export class ElectionEngineService {
         : s.popularity * 0.55 + s.influence * 0.2 + s.credibility * 0.2;
       const program = type !== 'presidentielle' ? 0
         : d.program?.validated ? programReport(d).electoralBonus : -6;
-      return base + d.player.momentum * 0.35 + 5 - penalty(d.player.stance) + program - (type === 'primaire' ? 0 : youngPartyMalus(d));
+      const incumbent = type === 'presidentielle' ? incumbentBonus(d, 'player') : 0;
+      return base + d.player.momentum * 0.35 + 5 - penalty(d.player.stance) + program + incumbent - (type === 'primaire' ? 0 : youngPartyMalus(d));
     }
     const npc = d.npcs.find(n => n.id === id)!;
     const notoriety = type === 'municipales' ? 8 : type === 'legislatives' ? 14 : 22;
     const npcPos = [d.party, ...d.otherParties].find(p => p.id === npc.partyId)?.position ?? 0;
-    return npc.popularity * 0.55 + npc.influence * 0.25 + notoriety - penalty(npcPos);
+    const incumbent = type === 'presidentielle' ? incumbentBonus(d, id) : 0;
+    return npc.popularity * 0.55 + npc.influence * 0.25 + notoriety + incumbent - penalty(npcPos);
   }
 
   private shares(d: GameState, e: ScheduledElection, rng: Rng, noise: number, ids = e.candidateIds): Record<string, number> {
@@ -161,6 +176,10 @@ export class ElectionEngineService {
     d.player.flags['depassement'] = false;
 
     const score = (secondRound ?? firstRound)['player'] ?? firstRound['player'];
+    if (e.type === 'presidentielle') {
+      presidentialResult(d, e, winnerId, score, rng);
+      return;
+    }
     const rule = RANKS[d.player.rankId].promotion;
     if (winnerId === 'player' && rule) {
       applyEffects(d, [
@@ -169,10 +188,8 @@ export class ElectionEngineService {
       ], {}, rng);
       pushNews(d, 'election', 'positive', `Victoire aux ${cfg.label.toLowerCase()} (${score} %)`,
         `Vous devenez ${RANKS[rule.to].label}.`);
-      if (rule.to === 'president') {
-        d.status = 'victoire';
-        d.endReason = `Élu·e au second tour avec ${score} % des voix. L’Élysée vous attend.`;
-      }
+      // Investi·e par la primaire : candidature présidentielle déclarée d'office
+      if (e.type === 'primaire' && canDeclare(d).ok) declareCandidacy(d);
     } else {
       applyEffects(d, [
         { kind: 'stat', stat: 'popularity', delta: -8 }, { kind: 'stat', stat: 'influence', delta: -5 },
@@ -182,10 +199,6 @@ export class ElectionEngineService {
       pushNews(d, 'election', 'negative',
         invalidated ? 'Élection annulée par le juge électoral' : `Défaite aux ${cfg.label.toLowerCase()} (${firstRound['player']} %)`,
         invalidated ? 'Vos comptes de campagne ont été rejetés. Victoire attribuée à votre adversaire.' : `Prochaine tentative possible en semaine ${d.week + cfg.interval}.`);
-      if (e.type === 'presidentielle') {
-        d.status = 'defaite';
-        d.endReason = `Battu·e à l’élection présidentielle avec ${score} % des voix.`;
-      }
     }
   }
 }

@@ -307,7 +307,12 @@ export function force493(d: GameState, rng: Rng): void {
   if (!nb?.pending || !nb.rejected) return;
   adopt(d, rng, '49.3');
   const censure = clamp(0.2 + (50 - partySupport(d)) / 200, 0.05, 0.6);
-  if (rng.chance(censure)) {
+  const fell = rng.chance(censure);
+  if (fell && d.presidency) {
+    // À l'Élysée, c'est le gouvernement qui tombe, pas le président
+    applyEffects(d, [{ kind: 'presidency', pm: true, majority: -8, approval: -4 }, { kind: 'stat', stat: 'influence', delta: -4 }], {}, rng);
+    pushNews(d, 'actu', 'negative', 'Motion de censure adoptée : le gouvernement tombe', `Vous nommez ${d.presidency.primeMinister} à Matignon.`);
+  } else if (fell) {
     applyEffects(d, [{ kind: 'rank', rankId: 'depute' }, { kind: 'stat', stat: 'influence', delta: -10 }], {}, rng);
     pushNews(d, 'actu', 'negative', 'Motion de censure adoptée : le gouvernement tombe',
       'Vous retrouvez votre siège de député·e.');

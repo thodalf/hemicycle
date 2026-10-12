@@ -1,6 +1,6 @@
 # Hémicycle — simulateur de carrière politique (Angular 21)
 
-Prototype jouable : de militant·e à Président·e, une semaine par tour.
+Prototype jouable : de militant·e à Président·e, une semaine par tour — et une vie entière, jusqu’à la mort.
 
 ```bash
 npm install
@@ -24,6 +24,43 @@ Standalone components, zoneless, Signals partout.
 
 ## Mécaniques
 
+- **Une vie, pas une partie** (`engine/life.ts`) : les victoires et défaites de scénario (Grand Maître, « Vive le Roi ! »,
+  taupe démasquée, banqueroute, rédaction qui vous remercie, défaite à la présidentielle…) ne terminent plus rien.
+  Elles deviennent des **chapitres** (affichés en grand, listés dans le panneau « Une vie ») ; les revers ont des
+  conséquences — faillite : retour à zéro et perte des mandats ; taupe démasquée : retour dans votre vrai parti ;
+  coup d’État raté : cinq ans d’inéligibilité ; « plus personne ne vous écoute » : traversée du désert. **Seule la mort
+  termine la partie** : vieillesse, maladie, accident ou assassinat, suivie d’une **nécrologie** (dates, cause, plus
+  haute fonction, mandats, réformes, patrimoine, épitaphe, tous les chapitres).
+- **Âge et santé** : âge de départ selon le scénario (26 ans en carrière, 52 en présidentielle…), une année tous les
+  52 tours. La santé suit la courbe naturelle de l’âge, abîmée par le stress, l’épuisement et l’exposition, entretenue
+  par l’hygiène de vie (onglet **Santé** : bilan, suivi nutritionnel, arrêter la cigarette, cure, grand spécialiste,
+  protection policière ; footing). Sous 38 : alertes médicales. Risques annuels affichés : mortalité de Gompertz
+  aggravée par une mauvaise santé, accidents (voiture de sport, voilier, fatigue au volant ; chauffeur protecteur),
+  attentats (selon le rang, la menace et la protection). Espérance de vie simulée : 77 ans en moyenne.
+- **Laisser passer le temps** : ellipses d’un mois, six mois, un an ou cinq ans. Les petites décisions se règlent
+  seules (le choix le plus prudent, sans engagement), et l’ellipse s’arrête dès qu’un événement important survient
+  (campagne qui s’ouvre, résultats, promotion, chapitre, alerte médicale, crise grave, budget, décès).
+  **Se retirer de la vie publique** (dès 50 ans ou après l’Élysée) fait défiler les années jusqu’à la nécrologie.
+- **Élection présidentielle à date fixe** (`engine/presidency.ts`) : avril 2027 (semaine 16), puis tous les cinq ans.
+  Bouton **« Se déclarer candidat·e à la présidence »** (jusqu’à 78 semaines avant, popularité 12 minimum) ; il faut
+  **500 parrainages** d’élus avant l’ouverture de la campagne (actions « Chercher des parrainages », « Tournée des maires
+  ruraux », appareil du parti, événements). Sans l’appui du parti, c’est une candidature dissidente (le chef du parti se
+  présente aussi). La primaire se tient dans l’année qui précède et vaut déclaration. Campagne de huit semaines,
+  programme, sondages, débat décisif, soirée électorale. Sans vous, les PNJ se disputent l’Élysée ; l’alternance
+  fait tomber les ministres du camp battu.
+- **Présidence** : panneau « Palais de l’Élysée » — cote de confiance (usure du pouvoir), majorité à l’Assemblée
+  (cohabitation possible), sécurité, menace, Premier ministre, réformes. Onglet **Élysée** : allocution, Conseil des
+  ministres, réforme (adoptée si majorité), 49.3, dissolution (législatives anticipées), référendum, voyage d’État,
+  Conseil de défense, protection du GSPR, bain de foule, conférence de presse, changer de Premier ministre, Congrès à
+  Versailles, chef d’État reçu. Crises du quinquennat : attentat, épidémie, grève générale, crise diplomatique,
+  catastrophe naturelle, scandale d’État, menace d’attentat, homme armé dans la foule (mortel), motion de censure,
+  destitution (article 68), sommets, rumeurs sur votre santé, cohabitation. Deux mandats consécutifs au plus,
+  démission possible (élection anticipée), puis **ancien·ne président·e** : conférences, mémoires, fondation, adouber
+  un héritier — et une affaire du quinquennat qui ressurgit.
+- **Événements de la vie** (`data/life-events.ts`) : malaise en meeting, rumeurs sur la santé, médecin qui alerte,
+  « trop vieux pour gouverner ? », petit-enfant, ami disparu, héritage, marathon, menaces de mort, agression, colis
+  piégé, chauffeur qui s’endort, sondage d’outsider, élus qui marchandent leurs parrainages, pressions sur les parrains,
+  l’Élysée vous consulte, médiation internationale.
 - **Semaine** : planifier des actions (points d’action, énergie, argent, capital politique), puis clore la semaine.
 - **Débats au tour par tour** : 3 à 5 manches, chacune sur un sujet. Main de 5 arguments construite à partir de vos stats et dossiers.
   Triangle Faits > Émotion > Attaque > Faits, la Parade renvoie l’Attaque, les Faits ne valent que sur le sujet de la manche.
@@ -55,7 +92,7 @@ Standalone components, zoneless, Signals partout.
 - **Scénario « Retour à la royauté »** : diriger la Ligue de la Couronne (fictive), faire monter soutien, légitimité du
   prétendant et ralliement de l’armée ; référendum (voie légale) ou coup de force institutionnel.
 - **Scénario « Franc-maçon »** : loge et obédience fictives, grades d’Apprenti à Grand Maître, planches en tenue,
-  fraternité et discrétion, faveurs des frères, révélations ; victoire : Grand Maître et membre du gouvernement.
+  fraternité et discrétion, faveurs des frères, révélations ; grand chapitre : Grand Maître et membre du gouvernement.
 - **Fonder son propre parti** : dès la création de la partie (nom, couleur, position sur l’axe, avec aperçu face aux
   partis existants) ou en cours de route (« Claquer la porte » dans le panneau du parti : 3 000 € et 20 de capital,
   gratuit si des dissidents vous le proposent). Vous en restez le chef quel que soit votre rang, un proche peut vous
@@ -66,15 +103,15 @@ Standalone components, zoneless, Signals partout.
   Directeur·rice de la rédaction, salaire, audience, réputation, indépendance face au propriétaire et à sa ligne,
   scoops. Onglet Rédaction (12 actions : éditorial, chronique, polémique, enquête, confidences en off, émission en
   direct, interview exclusive, interview contradictoire = débat, livre-enquête…) et deux scènes (enquête, direct).
-  Victoire : diriger la rédaction avec 65 d’audience et 60 d’influence. Dans une partie normale, la Rédaction s’ouvre
+  Grand chapitre : diriger la rédaction avec 65 d’audience et 60 d’influence. Dans une partie normale, la Rédaction s’ouvre
   par un événement (offre de chronique), avec un risque de « double casquette » pour les élus.
 - **Scénario « Infiltré·e »** (`engine/mole.ts`) : choisissez votre vrai camp et le parti à infiltrer. Vous y prenez
   votre carte sous couverture. Onglet Infiltration (écouter aux portes, fouiller la fédération, copier le fichier des
   adhérents, retourner un cadre, semer la zizanie, organiser des fuites, jouer les agents doubles, faire du zèle,
   transmettre vos rapports à l’officier traitant) et deux scènes (réunion secrète du bureau, grand déballage).
   Couverture qui s’use (surtout si votre ligne s’écarte de celle du parti), renseignements qui se périment, officier
-  qui s’impatiente, soupçons du service d’ordre. Victoire : transmettre 150 renseignements puis réussir le grand
-  déballage, ou prendre la tête du parti infiltré. Défaite : démasqué·e.
+  qui s’impatiente, soupçons du service d’ordre. Grand chapitre : transmettre 150 renseignements puis réussir le grand
+  déballage, ou prendre la tête du parti infiltré. Revers : démasqué·e (retour dans votre vrai camp).
 - **Équilibre bonus / malus** : contrepoids automatiques sur toutes les actions (au moins 70 à 75 % de la valeur des
   gains rendue en malus visibles selon la nature de l’action : stress, exposition, courants, dynamique…), lassitude
   (répéter une action d’une semaine sur l’autre : gains −20 %, −40 %…, jusqu’à −60 %), pertes amplifiées quand une
@@ -98,14 +135,14 @@ Standalone components, zoneless, Signals partout.
   une avance au parti, ou déclarer la faillite personnelle (biens vendus, équipe partie, réputation en lambeaux).
   Deuxième faillite ou 25 000 € de dettes : fin de carrière.
 - **Indicateurs vitaux** en haut de l’écran : fatigue (énergie et stress combinés, projection après l’agenda prévu,
-  alerte au-delà de 80) et fonds personnels (découvert, banqueroute).
+  alerte au-delà de 80), santé et âge, fonds personnels (découvert, banqueroute).
 - **Gains et pertes affichés** sur chaque action (pastilles vertes et rouges, conséquences d’un échec au survol du
   « risque »). Les actions aux gros bonus portent désormais des contreparties nettes : stress, exposition, perte de
   dynamique ou d’influence, image écornée (`engine/describe.ts`).
 - **Animations 2D** (`services/fx.service.ts`, `components/fx-layer`, `components/emblem`) : jeton qui vole vers
   l’agenda, page de calendrier en fin de semaine, chiffres flottants au-dessus des jauges et des fonds, confettis ou
   éclats et secousse à la résolution des décisions, illustrations animées des décisions (télé, journal, gyrophare,
-  drapeau, épées, poignée de main, trophée, éclair, pièces), tampons « Promotion ! », « Victoire ! », « Rideau ».
+  drapeau, épées, poignée de main, trophée, éclair, pièces), tampons « Promotion ! », « Nouveau chapitre », « Revers », « In memoriam ».
   Soirée électorale animée (compte à rebours de 20 h, barres qui montent, second tour, verdict avec confettis ou
   pluie), bandeau « Flash info » sur les coups durs, pièces qui volent vers vos fonds ou s’en échappent, gerbes sur
   les objectifs atteints, tampon « Transmis — Top secret », radar de la mission d’infiltration, jauges qui rebondissent.
@@ -146,6 +183,7 @@ src/app/game/
 │   ├── scenes.ts              Les scènes interactives (dont royauté, loge, marché arrangé)
 │   ├── recruits.ts            Traits, raretés, noms des recrues
 │   ├── random-events.ts       Événements aléatoires
+│   ├── life-events.ts         Événements de la vie : santé, âge, menaces, course à l’Élysée
 │   ├── assets.ts              Biens achetables (patrimoine)
 │   ├── press.ts               Médias, grades et salaires du scénario Éditorialiste
 │   ├── staff.ts               Membres d’équipe recrutables
@@ -164,6 +202,8 @@ src/app/game/
 │   ├── bankruptcy.ts          Découvert, agios, procédure, faillite personnelle
 │   ├── describe.ts            Effets en langage clair (gains / pertes)
 │   ├── mole.ts                Scénario Infiltré·e : couverture, rapports, soupçons
+│   ├── life.ts                Âge, santé, mort, chapitres de vie, retraite, nécrologie
+│   ├── presidency.ts          Calendrier présidentiel, candidature, parrainages, présidence, crises
 │   ├── press.ts               Audience, réputation, propriétaire, promotions
 │   ├── founding.ts            Fonder son parti (au départ ou en cours de partie)
 │   └── effects.ts             applyEffects(), risques, dépenses, plafond légal
@@ -196,7 +236,9 @@ src/app/game/
     ├── booster/          Ouverture d’un booster (overlay)
     ├── patrimoine/       Biens, boutique, image publique (overlay)
     ├── party-form/       Formulaire de création de parti
-    ├── vitals/           Fatigue et fonds dans la barre du haut
+    ├── vitals/           Fatigue, santé et fonds dans la barre du haut
+    ├── life-panel/       Âge, santé, risques, chapitres, retraite
+    ├── presidency-panel/ Présidentielle (déclaration, parrainages) et Palais de l’Élysée
     ├── fx-layer/         Calque d’animations 2D
     ├── emblem/           Illustrations animées des décisions
     ├── election-night/   Soirée électorale animée
@@ -235,5 +277,5 @@ src/app/game/
 ## Pistes suivantes
 
 - Carte électorale par territoire (sondages par région, ciblage du porte-à-porte)
-- Mandat présidentiel jouable après la victoire
+- Héritiers et dynasties : rejouer un enfant ou un dauphin après la mort
 - Tests unitaires sur `engine/` (fonctions pures + RNG à seed fixe)

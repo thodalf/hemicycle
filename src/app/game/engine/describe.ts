@@ -69,7 +69,23 @@ export function describeEffect(e: Effect): EffectChip[] {
       if (e.deliver) out.push({ text: 'Transmet vos renseignements', tone: 'good' });
       return out;
     }
-    case 'end': return [{ text: e.status === 'victoire' ? 'Victoire possible' : 'Fin de partie possible', tone: 'neutral' }];
+    case 'health': return [{ text: `${n(e.delta)} santé`, tone: tone(e.delta) }];
+    case 'parrainages': return [{ text: `${n(e.delta)} parrainages`, tone: tone(e.delta) }];
+    case 'declare': return [{ text: 'Candidature à la présidentielle', tone: 'neutral' }];
+    case 'resign': return [{ text: 'Quitte l’Élysée', tone: 'bad' }];
+    case 'die': return [{ text: 'Danger de mort', tone: 'bad' }];
+    case 'presidency': {
+      const out: EffectChip[] = [];
+      if (e.approval) out.push({ text: `${n(e.approval)} cote de confiance`, tone: tone(e.approval) });
+      if (e.majority) out.push({ text: `${n(e.majority)} majorité`, tone: tone(e.majority) });
+      if (e.security) out.push({ text: `${n(e.security)} sécurité`, tone: tone(e.security) });
+      if (e.threat) out.push({ text: `${n(e.threat)} menace`, tone: tone(e.threat, true) });
+      if (e.reform) out.push({ text: 'Réforme (vote de l’Assemblée)', tone: 'good' });
+      if (e.pm) out.push({ text: 'Nouveau Premier ministre', tone: 'neutral' });
+      if (e.dissolve) out.push({ text: 'Législatives anticipées', tone: 'neutral' });
+      return out;
+    }
+    case 'end': return [{ text: e.status === 'victoire' ? 'Nouveau chapitre possible' : 'Revers possible', tone: 'neutral' }];
     case 'scene': return [{ text: 'Scène interactive', tone: 'neutral' }];
     case 'debate': return [{ text: 'Débat', tone: 'neutral' }];
     case 'protest': return [{ text: 'Manifestation', tone: 'neutral' }];

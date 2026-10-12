@@ -41,11 +41,11 @@ interface Downloads { save(o: { filename: string; data: string | Blob }): Promis
               <div class="info">
                 <strong>{{ m.name }}</strong>
                 <span>{{ m.rank }} · {{ m.party }}</span>
-                <span class="muted">{{ m.scenario }} · semaine {{ m.week }} · {{ ago(m.updatedAt) }}
-                  @if (m.status !== 'en_cours') { · <b>{{ m.status === 'victoire' ? 'Victoire' : 'Terminée' }}</b> }</span>
+                <span class="muted">{{ m.scenario }}{{ m.age ? ' · ' + m.age + ' ans' : '' }} · semaine {{ m.week }} · {{ ago(m.updatedAt) }}
+                  @if (m.status === 'mort') { · <b>Décédé·e</b> }</span>
               </div>
               <div class="cta">
-                <button class="btn primary small" (click)="resume(n)">{{ m.status === 'en_cours' ? 'Continuer' : 'Revoir' }}</button>
+                <button class="btn primary small" (click)="resume(n)">{{ m.status === 'mort' ? 'Nécrologie' : 'Continuer' }}</button>
                 <button class="btn small" (click)="exportSlot(n)">Exporter</button>
                 <button class="btn small" (click)="pickImport(n)">Importer ici</button>
                 <button class="btn small danger" (click)="remove(n)">{{ confirmDelete() === n ? 'Confirmer la suppression' : 'Supprimer' }}</button>

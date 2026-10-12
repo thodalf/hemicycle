@@ -15,7 +15,7 @@ import { PartyFormComponent } from '../party-form/party-form.component';
       <div class="eyebrow">Simulateur de carrière politique · emplacement {{ slot() }}</div>
       <h1>Hémicycle</h1>
       <p class="lede">De militant·e de section à l’Élysée. Chaque semaine compte : terrain, médias, dossiers, courants, réseau.
-        Les rivaux, eux, ne dorment jamais.</p>
+        Les rivaux, eux, ne dorment jamais. Les victoires et les revers ne sont que des chapitres : la partie ne s’achève qu’à votre mort.</p>
 
       <form class="card" (submit)="start($event)">
         <label class="field">
@@ -35,25 +35,25 @@ import { PartyFormComponent } from '../party-form/party-form.component';
           <legend class="eyebrow">Scénario</legend>
           <div class="scenarios">
             <button type="button" class="scenario" [class.on]="scenario() === 'carriere'" (click)="scenario.set('carriere')">
-              <strong>Carrière complète</strong><small>De militant·e de section jusqu’à l’Élysée.</small>
+              <strong>Carrière complète</strong><small>De militant·e de section jusqu’à l’Élysée. Départ à 26 ans.</small>
             </button>
             <button type="button" class="scenario" [class.on]="scenario() === 'presidentielle'" (click)="scenario.set('presidentielle')">
-              <strong>Campagne présidentielle</strong><small>Candidat·e investi·e et chef·fe de parti : programme, 8 semaines, budget du parti.</small>
+              <strong>Campagne présidentielle</strong><small>Candidat·e investi·e et chef·fe de parti : programme, 8 semaines, budget du parti. 52 ans.</small>
             </button>
             <button type="button" class="scenario" [class.on]="scenario() === 'bercy'" (click)="scenario.set('bercy')">
-              <strong>Ministre à Bercy</strong><small>Bouclez le budget de la France et faites-le voter à l’Assemblée.</small>
+              <strong>Ministre à Bercy</strong><small>Bouclez le budget de la France et faites-le voter à l’Assemblée. 47 ans.</small>
             </button>
             <button type="button" class="scenario" [class.on]="scenario() === 'royaute'" (click)="scenario.set('royaute')">
-              <strong>Retour à la royauté</strong><small>Menez un mouvement royaliste : référendum ou coup de force pour abolir la République.</small>
+              <strong>Retour à la royauté</strong><small>Menez un mouvement royaliste : référendum ou coup de force pour abolir la République. 45 ans.</small>
             </button>
             <button type="button" class="scenario" [class.on]="scenario() === 'franc_macon'" (click)="scenario.set('franc_macon')">
-              <strong>Franc-maçon</strong><small>Élu·e initié·e : gravir les grades de la loge et les marches du pouvoir.</small>
+              <strong>Franc-maçon</strong><small>Élu·e initié·e : gravir les grades de la loge et les marches du pouvoir. 38 ans.</small>
             </button>
             <button type="button" class="scenario" [class.on]="scenario() === 'editorialiste'" (click)="scenario.set('editorialiste')">
-              <strong>Éditorialiste</strong><small>Journaliste politique : de pigiste à directeur·rice de la rédaction. Faire et défaire les carrières.</small>
+              <strong>Éditorialiste</strong><small>Journaliste politique : de pigiste à directeur·rice de la rédaction. Faire et défaire les carrières. 31 ans.</small>
             </button>
             <button type="button" class="scenario" [class.on]="scenario() === 'infiltre'" (click)="scenario.set('infiltre')">
-              <strong>Infiltré·e</strong><small>Encarté·e chez l’adversaire sous une fausse identité : espionner, saboter, transmettre… et ne jamais se faire prendre.</small>
+              <strong>Infiltré·e</strong><small>Encarté·e chez l’adversaire sous une fausse identité : espionner, saboter, transmettre… et ne jamais se faire prendre. 27 ans.</small>
             </button>
           </div>
         </fieldset>

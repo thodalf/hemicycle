@@ -35,7 +35,7 @@ import { MOLE_GOAL } from '../../engine/mole';
         </div>
         <p class="muted small next">
           @if (m.delivered >= goal) { <strong>Prêt·e :</strong> le grand déballage est disponible (onglet Infiltration). }
-          @else { Victoire : transmettre {{ goal }} renseignements puis réussir le grand déballage — ou prendre la tête du parti infiltré. }
+          @else { Objectif du scénario : transmettre {{ goal }} renseignements puis réussir le grand déballage — ou prendre la tête du parti infiltré. }
         </p>
       </section>
     }
@@ -73,7 +73,7 @@ import { MOLE_GOAL } from '../../engine/mole';
           @if (pressNext(); as n) {
             · Prochain poste ({{ pressGrades[p.grade + 1] }}) : audience {{ n.audience }}, réputation {{ n.reputation }}, {{ n.scoops }} scoop(s){{ n.influence ? ', influence ' + n.influence : '' }}.
           } @else if (game.s().scenario === 'editorialiste') {
-            · Victoire : audience 65 et influence 60.
+            · Objectif du scénario : audience 65 et influence 60.
           }
         </p>
       </section>

@@ -158,6 +158,21 @@
       @if (planner.apLeft() > 0 && turn.canEndWeek()) {
         <p class="muted hint">{{ planner.apLeft() }} PA non utilisés seront perdus.</p>
       }
+      <div class="skip">
+        <span class="eyebrow">Laisser passer le temps</span>
+        <div class="skip-btns">
+          @for (o of skipOptions; track o.weeks) {
+            <button class="btn small" [disabled]="!turn.canSkip()" (click)="skip(o.weeks)">{{ o.label }}</button>
+          }
+        </div>
+        @if (turn.canEndWeek() && !turn.canSkip()) {
+          <small class="muted">Impossible pendant une campagne électorale.</small>
+        } @else if (turn.lastSkip(); as r) {
+          <small class="muted">{{ r.weeks }} semaine(s) écoulée(s){{ r.reason ? ' — arrêt : ' + r.reason : '' }}.</small>
+        } @else {
+          <small class="muted">Sans agenda, les petites affaires se règlent seules ; tout événement important interrompt l’ellipse.</small>
+        }
+      </div>
     </aside>
   </div>
 </section>

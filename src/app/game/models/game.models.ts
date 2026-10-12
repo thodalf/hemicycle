@@ -12,7 +12,8 @@ export type RankId =
   | 'ministre'
   | 'chef_parti'
   | 'candidat_presidence'
-  | 'president';
+  | 'president'
+  | 'ancien_president';
 
 export type Domain =
   | 'economie' | 'ecologie' | 'securite' | 'diplomatie' | 'social'
@@ -44,8 +45,9 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'repos';
+export type ActionCategory = 'elysee' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
+  elysee: 'Élysée',
   terrain: 'Terrain',
   medias: 'Médias',
   dossiers: 'Dossiers',
@@ -56,6 +58,7 @@ export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   infiltration: 'Infiltration',
   couronne: 'Couronne',
   loge: 'Loge',
+  sante: 'Santé',
   repos: 'Repos',
 };
 
@@ -69,7 +72,10 @@ export type NewsKind =
   | 'rival' | 'parti' | 'election' | 'reseau' | 'systeme';
 export type Tone = 'positive' | 'neutral' | 'negative';
 export type NpcTrait = 'carrieriste' | 'ideologue' | 'mediatique' | 'manoeuvrier' | 'integre' | 'sulfureux';
-export type GameStatus = 'en_cours' | 'victoire' | 'defaite';
+/** 'victoire' et 'defaite' ne durent qu'un instant : elles deviennent des chapitres de vie.
+ * Seule la mort ('mort') termine la partie. */
+export type GameStatus = 'en_cours' | 'victoire' | 'defaite' | 'mort';
+export type DeathCause = 'vieillesse' | 'maladie' | 'accident' | 'assassinat';
 
 // ── Joueur ──────────────────────────────────────────────────
 
@@ -132,6 +138,10 @@ export interface Player {
   boosters: number;
   /** Biens personnels (patrimoine) */
   assets: OwnedAsset[];
+  /** Âge en années (avance d'1/52 par semaine) */
+  age: number;
+  /** Santé 0-100 : sous 35, les alertes médicales et le risque de mort grimpent */
+  health: number;
   flags: Record<string, boolean | number>;
 }
 
@@ -212,6 +222,12 @@ export type Effect =
   | { kind: 'partyTreasury'; delta: number }
   | { kind: 'partyAllocation'; line: PartyLine; value: number }
   | { kind: 'rank'; rankId: RankId }
+  | { kind: 'health'; delta: number }
+  | { kind: 'presidency'; approval?: number; majority?: number; security?: number; threat?: number; reform?: boolean; force?: boolean; pm?: boolean; dissolve?: boolean }
+  | { kind: 'parrainages'; delta: number }
+  | { kind: 'declare' }
+  | { kind: 'resign'; why?: 'demission' | 'destitution' }
+  | { kind: 'die'; cause: DeathCause; text: string }
   | { kind: 'flag'; key: string; value: boolean | number };
 
 export interface EffectContext {
@@ -246,7 +262,9 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean };
+  /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
+  onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
   personalOnly?: boolean;
   cost: ActionCost;
@@ -469,6 +487,61 @@ export interface DebateState {
   status: DebateStatus;
   ko: boolean;
   rewardSummary: string[];
+}
+
+// ── Vie, présidence ─────────────────────────────────────────
+
+/** Les fins de scénario ne terminent plus la partie : elles deviennent des chapitres */
+export interface Milestone {
+  week: number;
+  age: number;
+  title: string;
+  text: string;
+  kind: 'victoire' | 'revers' | 'carriere';
+}
+
+export interface DeathInfo {
+  week: number;
+  age: number;
+  cause: DeathCause;
+  text: string;
+}
+
+/** Calendrier présidentiel : un scrutin tous les cinq ans (260 semaines) */
+export interface PresidentialCalendar {
+  /** Semaine du prochain scrutin */
+  nextWeek: number;
+  /** Président·e en exercice : 'player' ou id de PNJ */
+  incumbentId: string | null;
+  incumbentName: string;
+  /** Mandats consécutifs du président en exercice (PNJ) */
+  incumbentMandates: number;
+  /** Parti au pouvoir */
+  incumbentPartyId?: string;
+  /** Candidature déclarée pour le prochain scrutin */
+  declared: boolean;
+  declaredWeek?: number;
+  /** Parrainages d'élus recueillis (500 requis) */
+  parrainages: number;
+  /** Rang à retrouver en cas de défaite */
+  prevRank?: RankId;
+}
+
+export interface PresidencyState {
+  since: number;
+  mandates: number;
+  /** Cote de confiance (0-100) */
+  approval: number;
+  /** Soutien de l'Assemblée (≥ 50 : majorité) */
+  majority: number;
+  /** Protection rapprochée (0-100) */
+  security: number;
+  /** Menace terroriste / d'attentat contre vous (0-100) */
+  threat: number;
+  primeMinister: string;
+  reforms: number;
+  cohabitation: boolean;
+  lastCrisisWeek: number;
 }
 
 // ── Équipe & objectifs ──────────────────────────────────────
@@ -785,6 +858,11 @@ export interface GameState {
   status: GameStatus;
   endReason?: string;
   endTitle?: string;
+  /** Chapitres de la vie du personnage (victoires de scénario, revers, grandes étapes) */
+  milestones: Milestone[];
+  death: DeathInfo | null;
+  presidential: PresidentialCalendar;
+  presidency: PresidencyState | null;
   player: Player;
   party: Party;
   otherParties: PartyInfo[];

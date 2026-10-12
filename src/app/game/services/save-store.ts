@@ -20,6 +20,7 @@ export interface SlotMeta {
   party: string;
   partyColor: string;
   status: string;
+  age?: number;
   updatedAt: number;
 }
 
@@ -37,10 +38,12 @@ const SCENARIO_LABELS: Record<string, string> = {
 };
 
 export function metaOf(slot: number, s: GameState): SlotMeta {
+  // Les anciennes fins de partie (victoire, défaite) sont désormais des chapitres
+  const status = s.status === 'mort' ? 'mort' : 'en_cours';
   return {
     slot, name: s.player.name, rank: RANKS[s.player.rankId]?.label ?? s.player.rankId, week: s.week,
     scenario: SCENARIO_LABELS[s.scenario] ?? s.scenario, party: s.party.name, partyColor: s.party.color,
-    status: s.status, updatedAt: Date.now(),
+    status, age: s.player.age ? Math.floor(s.player.age) : undefined, updatedAt: Date.now(),
   };
 }
 

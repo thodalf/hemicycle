@@ -1,6 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Decision, DecisionChoice, STAT_LABELS, StatKey, Tone } from '../models/game.models';
+import { Decision, DecisionChoice, Effect, GameState, STAT_LABELS, StatKey, Tone } from '../models/game.models';
 import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } from '../engine/effects';
+import { retire, settleEndings, weeklyLife } from '../engine/life';
+import { canDeclare, declareCandidacy, endPresidency, weeklyPresidency, weeklyPresidential } from '../engine/presidency';
+import { effectValue } from '../data/actions';
+import { Rng } from '../engine/rng';
 import { refreshObjectives, weeklyObjectives } from '../engine/objectives';
 import { programPending } from '../engine/programme';
 import { weeklyScenario } from '../engine/scenarios';
@@ -21,6 +25,16 @@ export interface WeekReport {
   headlines: string[];
   newDecisions: number;
 }
+
+export interface SkipReport {
+  weeks: number;
+  reason: string;
+}
+
+/** Décisions qui interrompent une ellipse : le joueur doit les trancher lui-même */
+const STOP_TAGS = new Set(['alerte_sante', 'pres_censure', 'pres_destitution', 'pres_tentative', 'banqueroute', 'remaniement', 'congres', 'faillite_parti']);
+/** Pendant une ellipse, on ne s'engage dans rien : pas de scène, pas d'adhésion, pas d'achat */
+const ACTIVE_KINDS = new Set<Effect['kind']>(['scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'die', 'declare', 'resign', 'bankrupt', 'loan', 'end']);
 
 export interface DecisionOutcome {
   title: string;
@@ -48,6 +62,7 @@ export class TurnService {
   private readonly elections = inject(ElectionEngineService);
 
   readonly lastReport = signal<WeekReport | null>(null);
+  readonly lastSkip = signal<SkipReport | null>(null);
   readonly lastOutcome = signal<DecisionOutcome | null>(null);
 
   /** Décisions qu'il faut trancher avant de pouvoir finir la semaine */
@@ -68,17 +83,111 @@ export class TurnService {
 
     this.game.mutate((d, rng) => {
       this.planner.execute(d, rng);
-      d.week += 1;
-      this.progression.weekly(d, rng);
-      this.media.weekly(d, rng);
-      this.party.weekly(d, rng);
-      this.network.weekly(d, rng);
-      this.rivals.weekly(d, rng);
-      this.elections.weekly(d, rng);
-      weeklyObjectives(d, rng);
-      weeklyScenario(d, rng);
+      this.advance(d, rng);
     });
+    this.lastSkip.set(null);
+    this.report(before, beforeStats, beforeFunds, beforeDecisions);
+  }
 
+  /** Une semaine de la vie politique (et de la vie tout court) */
+  private advance(d: GameState, rng: Rng): void {
+    d.week += 1;
+    this.progression.weekly(d, rng);
+    this.media.weekly(d, rng);
+    this.party.weekly(d, rng);
+    this.network.weekly(d, rng);
+    this.rivals.weekly(d, rng);
+    this.elections.weekly(d, rng);
+    weeklyPresidential(d, rng);
+    weeklyPresidency(d, rng);
+    weeklyObjectives(d, rng);
+    weeklyScenario(d, rng);
+    settleEndings(d);
+    weeklyLife(d, rng);
+  }
+
+  /** Une ellipse est possible hors campagne électorale */
+  readonly canSkip = computed(() => {
+    const s = this.game.s();
+    return this.canEndWeek() && s.player.finances.legalCeiling === null && !s.elections.some(e => !e.resolved);
+  });
+
+  /**
+   * Laisser passer le temps : les semaines s'enchaînent sans agenda, les petites décisions
+   * se règlent d'elles-mêmes (le choix le plus prudent), et l'ellipse s'arrête dès qu'il se
+   * passe quelque chose d'important (campagne, promotion, crise grave, alerte médicale, décès…).
+   */
+  skip(weeks: number): void {
+    if (!this.canSkip()) return;
+    const before = this.game.s();
+    const beforeStats = { ...before.player.stats };
+    const beforeFunds = before.player.finances.personal + before.player.finances.campaign;
+    const beforeDecisions = new Set(before.pendingDecisions.map(d => d.id));
+    let report: SkipReport = { weeks: 0, reason: '' };
+    this.game.mutate((d, rng) => {
+      const rank = d.player.rankId;
+      const milestones = d.milestones.length;
+      const elections = new Set(d.elections.map(e => e.id));
+      this.planner.execute(d, rng);
+      for (let i = 0; i < weeks; i++) {
+        const stop = this.autoResolve(d, rng);
+        if (stop) { report.reason = `Décision à prendre : ${stop}`; break; }
+        this.advance(d, rng);
+        d.debate = null;
+        d.protest = null;
+        d.scene = null;
+        report.weeks += 1;
+        if (d.status === 'mort') { report.reason = 'Décès'; break; }
+        if (d.milestones.length > milestones) { report.reason = d.milestones.at(-1)!.title; break; }
+        if (d.player.rankId !== rank) { report.reason = 'Changement de rang'; break; }
+        if (d.elections.some(e => !elections.has(e.id) && !e.resolved)) { report.reason = 'Une campagne électorale s’ouvre'; break; }
+        if (d.elections.some(e => !elections.has(e.id) && e.resolved)) { report.reason = 'Résultats d’élection'; break; }
+        if (programPending(d) || nationalBudgetBlocking(d)) { report.reason = 'Un dossier exige votre attention'; break; }
+        const urgent = d.pendingDecisions.find(x => STOP_TAGS.has(x.tag));
+        if (urgent) { report.reason = `Décision à prendre : ${urgent.title}`; break; }
+      }
+      if (report.weeks) pushNews(d, 'systeme', 'neutral', `Le temps passe : ${report.weeks} semaine${report.weeks > 1 ? 's' : ''}`, report.reason ? `Interruption : ${report.reason}.` : undefined);
+    });
+    this.lastSkip.set(report);
+    this.report(before, beforeStats, beforeFunds, beforeDecisions);
+  }
+
+  /** Règle les décisions en suspens par le choix le plus prudent ; renvoie le titre d'une décision qui doit attendre le joueur */
+  private autoResolve(d: GameState, rng: Rng): string | null {
+    for (const decision of [...d.pendingDecisions]) {
+      if (STOP_TAGS.has(decision.tag)) return decision.title;
+      const usable = decision.choices.filter(c => meetsRequirement(d, c.requires, decision.domain));
+      const calm = usable.filter(c => !c.effects.some(e => ACTIVE_KINDS.has(e.kind)));
+      const pool = calm.length ? calm : usable;
+      const weight = (c: DecisionChoice) => (c.risk ? 100 : 0) + c.effects.reduce((t, e) => t + Math.abs(effectValue(e)), 0);
+      const choice = [...pool].sort((a, b) => weight(a) - weight(b))[0];
+      d.pendingDecisions = d.pendingDecisions.filter(x => x.id !== decision.id);
+      if (!choice) continue;
+      const ctx = { domain: decision.domain, targetId: decision.targetId };
+      const failed = rollRisk(d, choice.risk, ctx, rng);
+      applyEffects(d, failed ? choice.risk!.onFailure : choice.effects, ctx, rng);
+      pushNews(d, 'decision', failed ? 'negative' : 'neutral', `${decision.title} — ${choice.label}`, 'Réglé en votre absence.');
+    }
+    return null;
+  }
+
+  /** Se déclarer candidat·e à l'élection présidentielle */
+  readonly declaration = computed(() => canDeclare(this.game.s()));
+  declare(): void {
+    this.game.mutate(d => { declareCandidacy(d); });
+  }
+
+  /** Quitter l'Élysée avant le terme */
+  resign(): void {
+    this.game.mutate(d => endPresidency(d, 'demission'));
+  }
+
+  /** Se retirer de la vie publique : la fin de vie défile jusqu'à la nécrologie */
+  retire(): void {
+    this.game.mutate((d, rng) => retire(d, rng));
+  }
+
+  private report(before: GameState, beforeStats: GameState['player']['stats'], beforeFunds: number, beforeDecisions: Set<string>): void {
     const after = this.game.s();
     this.lastReport.set({
       week: before.week,

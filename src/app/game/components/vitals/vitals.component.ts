@@ -3,6 +3,7 @@ import { Component, computed, inject } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { ActionPlannerService } from '../../services/action-planner.service';
 import { loanDebt, moneyHealth } from '../../engine/bankruptcy';
+import { healthLabel } from '../../engine/life';
 
 /** Fatigue = manque d'énergie + stress accumulé (0 = reposé, 100 = burn-out) */
 export function fatigueOf(energy: number, stress: number): number {
@@ -34,6 +35,13 @@ const LEVELS: { max: number; label: string; tone: string }[] = [
       <span class="lbl">{{ level().label }}</span>
       <span class="sr">Fatigue {{ projected() }} sur 100 : {{ level().label }}. Énergie {{ energy() }}, stress {{ stress() }}.</span>
     </div>
+    <div class="vital health" [class]="'tone-' + healthInfo().tone" [class.alarm]="hp() < 30" [title]="healthTip()">
+      <span class="eyebrow">Santé</span>
+      <span class="gauge" aria-hidden="true"><span class="now" [style.width.%]="hp()"></span></span>
+      <strong class="mono">{{ hp() }}</strong>
+      <span class="lbl">{{ age() }} ans</span>
+      <span class="sr">Santé {{ hp() }} sur 100 : {{ healthInfo().label }}. Âge : {{ age() }} ans.</span>
+    </div>
     <div class="vital money" [class]="'h-' + health()" [title]="moneyTip()">
       <span class="eyebrow">Fonds</span>
       <strong class="mono">{{ funds() | number: '1.0-0' }} €</strong>
@@ -51,6 +59,7 @@ const LEVELS: { max: number; label: string; tone: string }[] = [
     .tone-good { --c: var(--good); }
     .tone-warn { --c: var(--warn); }
     .tone-bad { --c: var(--bad); .lbl { color: var(--bad); font-weight: 600; } }
+    .health .lbl { color: var(--ink-2); font-weight: 400; }
     .lbl { color: var(--ink-2); }
     .alarm { border-color: var(--bad); animation: alarm 1.4s ease-in-out infinite; }
     .money .tag { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--bad); color: var(--surface); }
@@ -80,6 +89,11 @@ export class VitalsComponent {
     `Énergie ${this.energy()} · stress ${this.stress()}` +
     (this.projected() !== this.fatigue() ? ` · après votre agenda : ${this.projected()}` : '') +
     ' · Au-delà de 80, le burn-out guette (stress 95 : semaine perdue).');
+
+  protected readonly hp = computed(() => Math.round(this.game.player().health));
+  protected readonly age = computed(() => Math.floor(this.game.player().age));
+  protected readonly healthInfo = computed(() => healthLabel(this.hp()));
+  protected readonly healthTip = computed(() => `${this.healthInfo().label} · ${this.age()} ans · Sous 38, alertes médicales ; plus la santé est basse, plus le risque de mourir grimpe.`);
 
   protected readonly funds = computed(() => this.game.player().finances.personal);
   protected readonly health = computed(() => moneyHealth(this.game.s()));
