@@ -1223,6 +1223,38 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'intl', tension: -6, prestige: 1 }],
   },
 
+  // ── Scénarios d'actions (scènes interactives) ───────────
+  {
+    id: 'operation_porte_a_porte', label: 'Grande opération porte-à-porte', category: 'terrain', minRank: 'militant',
+    description: 'Un immeuble entier, cage par cage. À jouer comme une scène.',
+    cost: { ap: 2, energy: 10 }, cooldownWeeks: 2,
+    effects: [{ kind: 'scene', sceneId: 'porte_a_porte' }],
+  },
+  {
+    id: 'live_reseaux', label: 'Lancer un live sur les réseaux', category: 'medias', minRank: 'militant',
+    description: 'Une heure en direct face à votre communauté… et aux trolls.',
+    cost: { ap: 1, energy: 6 }, cooldownWeeks: 2,
+    effects: [{ kind: 'scene', sceneId: 'live_reseaux' }],
+  },
+  {
+    id: 'tenir_conference_presse', label: 'Tenir une conférence de presse', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Trente journalistes, un pupitre, et des questions que vous n’avez pas prévues.',
+    cost: { ap: 1, energy: 8, money: 300 }, cooldownWeeks: 3,
+    effects: [{ kind: 'scene', sceneId: 'conference_presse_scene' }],
+  },
+  {
+    id: 'visite_usine', label: 'Visiter une usine', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Ouvriers, syndicats, direction : une visite où chacun attend quelque chose de vous.',
+    cost: { ap: 2, energy: 12 }, cooldownWeeks: 3,
+    effects: [{ kind: 'scene', sceneId: 'visite_usine' }],
+  },
+  {
+    id: 'qag_seance', label: 'Interpeller le gouvernement en séance', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
+    description: 'Deux minutes de question, en direct, face au ministre et au chahut.',
+    cost: { ap: 1, energy: 8 }, cooldownWeeks: 2,
+    effects: [{ kind: 'scene', sceneId: 'qag_scene' }],
+  },
+
   // ── Repos ────────────────────────────────────────────────
   {
     id: 'repos', label: 'Souffler', category: 'repos', minRank: 'militant',

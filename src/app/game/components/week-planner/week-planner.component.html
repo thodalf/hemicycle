@@ -33,6 +33,11 @@
               Fonds {{ report.fundsDelta > 0 ? '+' : '' }}{{ report.fundsDelta.toLocaleString('fr-FR') }} €
             </span>
           }
+          @if (report.project; as pr) {
+            <span class="chip" [class.good]="pr.finished" [class.accent]="!pr.finished">
+              {{ pr.finished ? 'Projet terminé' : 'Projet' }} : {{ pr.label }} · {{ pr.done }}/{{ pr.weeks }}
+            </span>
+          }
           @if (report.newDecisions) {
             <span class="chip warn">{{ report.newDecisions }} nouvelle(s) décision(s)</span>
           }
@@ -205,7 +210,8 @@
           <div class="pbar" [attr.aria-label]="c.done + ' semaines sur ' + c.weeks"><span [style.width.%]="c.done / c.weeks * 100"></span></div>
           <small class="muted">{{ c.done }} / {{ c.weeks }} semaines · {{ c.load }}</small>
           <button class="btn primary small" [disabled]="!turn.canDevote()" (click)="devote()">S’y consacrer jusqu’au bout</button>
-          @if (turn.canEndWeek() && !turn.canDevote()) { <small class="muted">Impossible de s’y consacrer pendant une campagne : le projet avance chaque semaine.</small> }
+          @if (turn.devoteBlock(); as why) { <small class="muted">{{ why }}.</small> }
+          <small class="muted">Le projet avance aussi d’une semaine chaque fois que vous terminez la semaine.</small>
           @if (confirmAbandon()) {
             <span class="confirm">Abandonner ? <button class="btn small" (click)="abandon()">Oui</button><button class="btn small" (click)="confirmAbandon.set(false)">Non</button></span>
           } @else {
@@ -226,7 +232,8 @@
 <!-- Téléphone : barre de fin de semaine toujours à portée de pouce -->
 <div class="mobile-end" role="region" aria-label="Fin de semaine">
   <button type="button" class="summary" (click)="scrollToPlan()">
-    <strong>{{ planner.plan().length }} action{{ planner.plan().length > 1 ? 's' : '' }}{{ current() ? ' + projet' : '' }}</strong>
+    <strong>{{ planner.plan().length }} action{{ planner.plan().length > 1 ? 's' : '' }}</strong>
+    @if (current(); as c) { <span class="proj-mini">Projet {{ c.done }}/{{ c.weeks }} <i [style.width.%]="c.done / c.weeks * 100"></i></span> }
     <span class="muted">{{ planner.apLeft() }} PA libre{{ planner.apLeft() > 1 ? 's' : '' }}</span>
   </button>
   @if (turn.blocking().length) {

@@ -55,6 +55,11 @@ Standalone components, zoneless, Signals partout.
   de politique générale, 49.3, remaniement, séminaire, conférence sociale ; frondes, désaccords avec l’Élysée, motion
   de censure qui peut vous renverser. Chef·fe de parti : investitures, bureau et conseil national, contestation,
   alliance, trésorerie. Candidat·e : Zénith, prime time, équipe de campagne, gaffes, ralliements, fuites.
+- **Scénarios d’actions** (`data/scenes-actions.ts`) : des actions jouées comme des scènes interactives —
+  grande opération porte-à-porte (interphone, chien, retraitée, gardienne, militant adverse), live sur les réseaux
+  (trolls, influenceur), conférence de presse (question piège, rumeur, micro resté ouvert), visite d’usine (chaîne,
+  délégués, PDG, apprenti), questions au gouvernement en séance (député·e) et promotion de votre livre, qui s’ouvre à
+  la fin du projet « livre-programme ». Seuils calibrés par simulation.
 - **Salon de l’agriculture** (`data/scene-salon.ts`) : chaque fin février, une journée porte de Versailles en scène
   interactive — vache égérie, fromages AOP, jeune agricultrice, éleveurs en colère, PAC, stand des vins (attention
   aux verres), concours porcin, selfies, caméras. Ne pas y aller se paie quand on est un premier rôle.
@@ -82,7 +87,8 @@ Standalone components, zoneless, Signals partout.
   à l’arrivée (parfois avec un risque). **S’y consacrer jusqu’au bout** fait défiler les semaines : les petites
   décisions se règlent seules (le choix le plus prudent) et l’on est rappelé·e dès qu’il se passe quelque chose
   d’important (campagne, résultats, promotion, chapitre, alerte médicale, crise grave, budget). Le projet continue
-  ensuite chaque semaine ; on peut l’abandonner. C’est ainsi que le temps passe vite, sans ellipse abstraite.
+  ensuite chaque semaine (bilan « Projet 3/12 » à chaque fin de semaine) ; on peut l’abandonner. Si une décision
+  importante attend, il faut la trancher avant de s’y consacrer. C’est ainsi que le temps passe vite, sans ellipse abstraite.
   **Se retirer de la vie publique** (dès 50 ans ou après l’Élysée) fait défiler les années jusqu’à la nécrologie.
 - **Élection présidentielle à date fixe** (`engine/presidency.ts`) : avril 2027 (semaine 16), puis tous les cinq ans.
   Bouton **« Se déclarer candidat·e à la présidence »** (jusqu’à 78 semaines avant, popularité 12 minimum) ; il faut
@@ -231,6 +237,7 @@ src/app/game/
 │   ├── projects.ts            Projets au long cours
 │   ├── intl-events.ts         Événements internationaux
 │   ├── scene-salon.ts         Scène du Salon de l’agriculture
+│   ├── scenes-actions.ts      Scénarios d’actions : porte-à-porte, live, conférence de presse, usine, QAG, livre
 │   ├── assets.ts              Biens achetables (patrimoine)
 │   ├── press.ts               Médias, grades et salaires du scénario Éditorialiste
 │   ├── staff.ts               Membres d’équipe recrutables

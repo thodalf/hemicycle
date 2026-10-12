@@ -151,6 +151,12 @@ const THRESHOLDS: Record<string, { succes: number; mitige: number }> = {
   bureau_secret: { succes: 21, mitige: 8 },
   deballage: { succes: 33, mitige: 29 },
   salon_agriculture: { succes: 27, mitige: 10 },
+  porte_a_porte: { succes: 37, mitige: 24 },
+  conference_presse_scene: { succes: 26, mitige: 15 },
+  visite_usine: { succes: 22, mitige: 12 },
+  qag_scene: { succes: 40, mitige: 26 },
+  live_reseaux: { succes: 22, mitige: 11 },
+  promo_livre: { succes: 29, mitige: 22 },
 };
 
 export function balanceScene(def: SceneDef): SceneDef {

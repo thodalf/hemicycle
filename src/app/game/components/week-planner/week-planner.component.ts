@@ -249,6 +249,12 @@ export class WeekPlannerComponent {
       const good = x.key === 'stress' ? x.delta < 0 : x.delta > 0;
       this.anim.floatAt(el, `${x.delta > 0 ? '+' : '−'}${Math.abs(x.delta)}`, good ? 'good' : 'bad', 500 + i * 140);
     });
+    if (report?.project) {
+      const pr = report.project;
+      const el = document.querySelector('app-week-planner .project-box') ?? document.querySelector('app-week-planner .mobile-end');
+      this.anim.floatAt(el, pr.finished ? `✓ ${pr.label}` : `Projet ${pr.done}/${pr.weeks}`, 'good', 400);
+      if (pr.finished) setTimeout(() => this.anim.stamp('Projet abouti', 'good', pr.label), 1000);
+    }
     const df = Math.round(after.player.finances.personal - funds);
     if (df) this.anim.floatAt(document.querySelector('app-vitals .money'), `${df > 0 ? '+' : '−'}${Math.abs(df).toLocaleString('fr-FR')} €`, df > 0 ? 'good' : 'bad', 700);
     if (Math.abs(df) >= 100 && !overlay) this.anim.coins(document.querySelector('app-vitals .money'), df > 0, Math.min(10, 3 + Math.round(Math.abs(df) / 1500)));

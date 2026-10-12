@@ -41,7 +41,7 @@ export const PROJECTS: ProjectDef[] = [
     description: 'Deux cents pages pour dire qui vous êtes et ce que vous voulez. Les soirées y passent.',
     domain: 'agenda',
     weekly: [st('energy', -3), st('stress', 1)],
-    final: [st('credibility', 6), st('popularity', 4), { kind: 'dossier', domain: '$domain', delta: 8 }, { kind: 'income', base: 8000 }, { kind: 'exposure', delta: 2 }],
+    final: [st('credibility', 6), st('popularity', 4), { kind: 'dossier', domain: '$domain', delta: 8 }, { kind: 'income', base: 8000 }, { kind: 'exposure', delta: 2 }, { kind: 'scene', sceneId: 'promo_livre' }],
     risk: { baseChance: 0.3, scaleWith: 'credibility', scaleWeight: 0.6, onFailure: [st('credibility', 2), st('popularity', -2)], failureNews: 'Le livre fait un flop : 1 200 exemplaires vendus.' },
   },
   {

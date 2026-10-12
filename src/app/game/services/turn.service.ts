@@ -5,6 +5,7 @@ import { retire, settleEndings, weeklyLife } from '../engine/life';
 import { weeklyGovernment } from '../engine/government';
 import { weeklyIntl } from '../engine/intl';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
+import { PROJECTS_BY_ID } from '../data/projects';
 import { canDeclare, declareCandidacy, endPresidency, weeklyPresidency, weeklyPresidential } from '../engine/presidency';
 import { effectValue } from '../data/actions';
 import { Rng } from '../engine/rng';
@@ -27,6 +28,8 @@ export interface WeekReport {
   fundsDelta: number;
   headlines: string[];
   newDecisions: number;
+  /** Avancement du projet au long cours pendant la période */
+  project?: { label: string; done: number; weeks: number; finished: boolean };
 }
 
 export interface SkipReport {
@@ -113,9 +116,17 @@ export class TurnService {
   }
 
   /** Se consacrer à son projet : possible hors campagne électorale, avec un projet en cours */
-  readonly canDevote = computed(() => {
+  readonly canDevote = computed(() => this.devoteBlock() === null);
+
+  /** Pourquoi on ne peut pas (encore) se consacrer à son projet */
+  readonly devoteBlock = computed((): string | null => {
     const s = this.game.s();
-    return !!s.project && this.canEndWeek() && s.player.finances.legalCeiling === null && !s.elections.some(e => !e.resolved);
+    if (!s.project) return 'Aucun projet en cours';
+    if (!this.canEndWeek()) return 'Terminez d’abord ce qui est en cours';
+    if (s.player.finances.legalCeiling !== null || s.elections.some(e => !e.resolved)) return 'Pendant une campagne électorale, le projet avance chaque semaine mais on ne peut pas s’y consacrer entièrement';
+    const urgent = s.pendingDecisions.find(x => STOP_TAGS.has(x.tag));
+    if (urgent) return `Tranchez d’abord : ${urgent.title}`;
+    return null;
   });
 
   lancer(projectId: string): boolean {
@@ -150,10 +161,9 @@ export class TurnService {
         const stop = this.autoResolve(d, rng);
         if (stop) { report.reason = `Décision à prendre : ${stop}`; break; }
         this.advance(d, rng);
-        d.debate = null;
-        d.protest = null;
-        d.scene = null;
         report.weeks += 1;
+        // Un projet qui aboutit peut ouvrir une scène (promotion du livre…) : on la laisse au joueur
+        if (d.project) { d.debate = null; d.protest = null; d.scene = null; }
         if (d.status === 'mort') { report.reason = 'Décès'; break; }
         if (!d.project) break;
         if (d.milestones.length > milestones) { report.reason = d.milestones.at(-1)!.title; break; }
@@ -218,7 +228,16 @@ export class TurnService {
       fundsDelta: after.player.finances.personal + after.player.finances.campaign - beforeFunds,
       headlines: after.news.filter(n => n.week === after.week && n.kind !== 'action').map(n => n.title).slice(0, 4),
       newDecisions: after.pendingDecisions.filter(d => !beforeDecisions.has(d.id)).length,
+      project: this.projectReport(before, after),
     });
+  }
+
+  private projectReport(before: GameState, after: GameState): WeekReport['project'] {
+    const was = before.project;
+    if (!was) return undefined;
+    const label = PROJECTS_BY_ID.get(was.id)?.label ?? was.id;
+    if (after.project?.id === was.id) return { label, done: after.project.done, weeks: after.project.weeks, finished: false };
+    return { label, done: was.weeks, weeks: was.weeks, finished: !!after.news.find(n => n.title.endsWith(label) && n.week >= before.week) };
   }
 
   isChoiceAvailable(decision: Decision, choice: DecisionChoice): boolean {
