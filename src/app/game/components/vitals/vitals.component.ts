@@ -88,7 +88,7 @@ export class VitalsComponent {
   protected readonly tip = computed(() =>
     `Énergie ${this.energy()} · stress ${this.stress()}` +
     (this.projected() !== this.fatigue() ? ` · après votre agenda : ${this.projected()}` : '') +
-    ' · Au-delà de 80, le burn-out guette (stress 95 : semaine perdue).');
+    ' · Au-delà de 80, le burn-out guette (stress 95 : semaine perdue). Un stress élevé use le cœur : risque d’infarctus.');
 
   protected readonly hp = computed(() => Math.round(this.game.player().health));
   protected readonly age = computed(() => Math.floor(this.game.player().age));

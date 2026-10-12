@@ -52,15 +52,6 @@ function generate(d: GameState, rng: Rng, exclude: Set<ObjectiveKind>): Draft | 
     };
   });
   options.push(() => {
-    const f = [...d.party.factions].sort((a, b) => a.supportForPlayer - b.supportForPlayer)[0];
-    const target = Math.min(95, Math.round(f.supportForPlayer + 10));
-    return {
-      kind: 'faction', param: f.id, label: `Rallier ${f.name.toLowerCase()} (${target} %)`, target, deadlineWeek: w + 5,
-      reward: [{ kind: 'stat', stat: 'politicalCapital', delta: 12 }, { kind: 'cohesion', delta: 4 }],
-      rewardLabel: '+12 capital, +4 cohésion',
-    };
-  });
-  options.push(() => {
     const pool = d.contacts.filter(c => c.trust < 60);
     if (!pool.length) return null;
     const c = rng.pick(pool);

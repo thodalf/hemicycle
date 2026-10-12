@@ -3,6 +3,7 @@ import { createPress } from './press';
 import { setupFoundedPartyAtStart } from '../engine/founding';
 import { initialHealth, startAge } from '../engine/life';
 import { initPresidential } from '../engine/presidency';
+import { initIntl } from '../engine/intl';
 import {
   BudgetDraft, DOMAINS, Domain, OutletKind, ScenarioId, DossierState, Faction, FactionId, GameState, NetworkContact, Npc, PartyInfo,
 } from '../models/game.models';
@@ -195,6 +196,9 @@ export function createInitialState(opts: NewGameOptions): GameState {
     milestones: [],
     death: null,
     presidency: null,
+    portfolio: null,
+    government: null,
+    intl: initIntl(),
     presidential: null as unknown as GameState['presidential'],
     player: {
       name: opts.name.trim() || 'Camille Martin',
@@ -298,6 +302,7 @@ function startAtBercy(s: GameState): void {
   for (const domain of DOMAINS) p.dossiers[domain].mastery = 30;
   p.dossiers.economie.mastery = 55;
   p.skills.economie = 2;
+  s.portfolio = 'economie';
   p.finances.personal = 15_000;
   s.party.factions.forEach(f => (f.supportForPlayer = 50));
   s.nationalBudget = {

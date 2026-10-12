@@ -17,6 +17,10 @@ export const RANKS: Record<RankId, RankDefinition> = {
     id: 'ministre', label: 'Ministre', order: 3, weeklyActionPoints: 7, monthlyIncome: 10600,
     promotion: { via: 'nomination', occasion: 'Congrès du parti', to: 'chef_parti', requires: { influence: 65 }, minPartySupport: 55 },
   },
+  premier_ministre: {
+    id: 'premier_ministre', label: 'Premier·e ministre', order: 3, weeklyActionPoints: 8, monthlyIncome: 14900,
+    promotion: { via: 'nomination', occasion: 'Congrès du parti', to: 'chef_parti', requires: { influence: 65 }, minPartySupport: 55 },
+  },
   chef_parti: {
     id: 'chef_parti', label: 'Chef·fe de parti', order: 4, weeklyActionPoints: 7, monthlyIncome: 10600,
     promotion: { via: 'election', election: 'primaire', to: 'candidat_presidence', requires: { popularity: 50, credibility: 50 } },

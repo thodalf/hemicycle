@@ -12,6 +12,7 @@ import { GameStateService } from '../../services/game-state.service';
 import { TurnService } from '../../services/turn.service';
 import { FxService } from '../../services/fx.service';
 import { ELECTIONS } from '../../data/ranks';
+import { PARTNERS, PARTNERS_BY_ID } from '../../engine/intl';
 
 /** Actions qui peuvent viser n'importe quelle personnalité, pas seulement votre parti */
 const ANY_NPC = ['dejeuner', 'diner_maison', 'off', 'grand_oral', 'clash_reseaux', 'demonter'];
@@ -45,6 +46,7 @@ export class WeekPlannerComponent {
     const all = (Object.entries(CATEGORY_LABELS) as [ActionCategory, string][]).filter(([c]) => present.has(c));
     const scenario = this.game.s().scenario;
     if (this.game.s().presidency) return [...all.filter(([c]) => c === 'elysee'), ...all.filter(([c]) => c !== 'elysee')];
+    if (present.has('fonction') && !['royaute', 'franc_macon', 'editorialiste', 'infiltre'].includes(scenario)) return [...all.filter(([c]) => c === 'fonction'), ...all.filter(([c]) => c !== 'fonction')];
     const first = scenario === 'royaute' ? 'couronne' : scenario === 'franc_macon' ? 'loge' : scenario === 'editorialiste' ? 'redaction' : scenario === 'infiltre' ? 'infiltration' : null;
     return first ? [...all.filter(([c]) => c === first), ...all.filter(([c]) => c !== first)] : all;
   });
@@ -83,6 +85,8 @@ export class WeekPlannerComponent {
         return s.contacts.map(c => ({ id: c.id, label: `${c.name} · conf. ${Math.round(c.trust)} · crédit ${c.balance}` }));
       case 'faction':
         return s.party.factions.map(f => ({ id: f.id, label: `${f.name} · ${Math.round(f.supportForPlayer)} %` }));
+      case 'partner':
+        return PARTNERS.map(p => ({ id: p.id, label: `${p.name} · ${Math.round(s.intl.relations[p.id] ?? 0)}` }));
       default:
         return [];
     }
@@ -159,7 +163,8 @@ export class WeekPlannerComponent {
     else if (p.targetId) {
       target = s.npcs.find(n => n.id === p.targetId)?.name
         ?? s.contacts.find(c => c.id === p.targetId)?.name.split(' (')[0]
-        ?? s.party.factions.find(f => f.id === p.targetId)?.name;
+        ?? s.party.factions.find(f => f.id === p.targetId)?.name
+        ?? PARTNERS_BY_ID.get(p.targetId)?.name;
     }
     return { label: a.label, target, ap: a.cost.ap, party: p.payer === 'parti' };
   }

@@ -2,6 +2,8 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Decision, DecisionChoice, Effect, GameState, STAT_LABELS, StatKey, Tone } from '../models/game.models';
 import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } from '../engine/effects';
 import { retire, settleEndings, weeklyLife } from '../engine/life';
+import { weeklyGovernment } from '../engine/government';
+import { weeklyIntl } from '../engine/intl';
 import { canDeclare, declareCandidacy, endPresidency, weeklyPresidency, weeklyPresidential } from '../engine/presidency';
 import { effectValue } from '../data/actions';
 import { Rng } from '../engine/rng';
@@ -32,7 +34,7 @@ export interface SkipReport {
 }
 
 /** Décisions qui interrompent une ellipse : le joueur doit les trancher lui-même */
-const STOP_TAGS = new Set(['alerte_sante', 'pres_censure', 'pres_destitution', 'pres_tentative', 'banqueroute', 'remaniement', 'congres', 'faillite_parti']);
+const STOP_TAGS = new Set(['former_gouvernement', 'pm_censure', 'ev_matignon', 'alerte_sante', 'pres_censure', 'pres_destitution', 'pres_tentative', 'banqueroute', 'remaniement', 'congres', 'faillite_parti']);
 /** Pendant une ellipse, on ne s'engage dans rien : pas de scène, pas d'adhésion, pas d'achat */
 const ACTIVE_KINDS = new Set<Effect['kind']>(['scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'die', 'declare', 'resign', 'bankrupt', 'loan', 'end']);
 
@@ -100,6 +102,8 @@ export class TurnService {
     this.elections.weekly(d, rng);
     weeklyPresidential(d, rng);
     weeklyPresidency(d, rng);
+    weeklyGovernment(d, rng);
+    weeklyIntl(d, rng);
     weeklyObjectives(d, rng);
     weeklyScenario(d, rng);
     settleEndings(d);

@@ -954,6 +954,275 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'flagAdd', key: 'protection', delta: 45 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
   },
 
+  // ── Fonction : les tâches propres à chaque rang ─────────
+  // Militant·e
+  {
+    id: 'stand_section', label: 'Tenir le stand de la section', category: 'fonction', minRank: 'militant', onlyRanks: ['militant'],
+    description: 'Café tiède, tracts, et les habitués du samedi matin.',
+    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'faction', factionId: 'moderes', delta: 2 }, { kind: 'cohesion', delta: 1 }],
+  },
+  {
+    id: 'reunion_section', label: 'Animer la réunion de section', category: 'fonction', minRank: 'militant', onlyRanks: ['militant'],
+    description: 'Ordre du jour, motions, et le débat qui déborde à 23 h.',
+    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    effects: [{ kind: 'faction', factionId: '*', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  {
+    id: 'petition', label: 'Porter une pétition locale', category: 'fonction', minRank: 'militant', onlyRanks: ['militant'],
+    description: 'Contre la fermeture du bureau de poste : 2 000 signatures à recueillir.',
+    cost: { ap: 1, energy: 10 }, cooldownWeeks: 3,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
+    risk: { baseChance: 0.25, onFailure: [{ kind: 'stat', stat: 'popularity', delta: -1 }, { kind: 'stat', stat: 'stress', delta: 3 }], failureNews: 'La pétition plafonne à 300 signatures.' },
+  },
+  // Conseiller·e municipal·e
+  {
+    id: 'conseil_municipal', label: 'Siéger au conseil municipal', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'], target: 'domain',
+    description: 'Délibérations, budget de la ville, joutes avec le maire.',
+    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'dossier', domain: '$domain', delta: 4 }, { kind: 'dossier', domain: 'territoires', delta: 2 }],
+  },
+  {
+    id: 'permanence_mairie', label: 'Tenir une permanence en mairie', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'],
+    description: 'Logement, voirie, voisins bruyants : le quotidien des habitants.',
+    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }],
+  },
+  {
+    id: 'projet_quartier', label: 'Porter un projet de quartier', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'],
+    description: 'Un jardin partagé, une aire de jeux : un chantier qui portera votre nom.',
+    cost: { ap: 2, energy: 12, money: 500 }, cooldownWeeks: 6,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
+    risk: { baseChance: 0.3, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'stress', delta: 5 }], failureNews: 'Le maire enterre votre projet en commission.' },
+  },
+  {
+    id: 'celebrer_mariage', label: 'Célébrer un mariage', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'],
+    description: 'L’écharpe tricolore, le discours, les photos avec les mariés.',
+    cost: { ap: 1, energy: 4 }, maxPerWeek: 1,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -3 }],
+  },
+  // Député·e
+  {
+    id: 'siege_commission', label: 'Siéger en commission', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'], target: 'domain',
+    description: 'Auditions, amendements, rapports : le vrai travail parlementaire.',
+    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    effects: [{ kind: 'dossier', domain: '$domain', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
+  },
+  {
+    id: 'amendement', label: 'Défendre un amendement en séance', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'], target: 'domain',
+    description: 'Deux minutes de temps de parole pour arracher un vote.',
+    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    effects: [{ kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
+    risk: { baseChance: 0.55, scaleWith: 'dossier', scaleWeight: 0.8, onFailure: [{ kind: 'stat', stat: 'credibility', delta: -1 }, { kind: 'stat', stat: 'stress', delta: 4 }], failureNews: 'Amendement rejeté, rapporteur ironique.' },
+  },
+  {
+    id: 'permanence_circo', label: 'Permanence en circonscription', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
+    description: 'Le vendredi, retour au pays : rendez-vous, marchés, fêtes de village.',
+    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
+  },
+  {
+    id: 'fronde', label: 'Voter contre votre groupe', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
+    description: 'Un vote de conscience. Le président de groupe ne l’oubliera pas.',
+    cost: { ap: 1 }, cooldownWeeks: 8,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'faction', factionId: '*', delta: -5 }, { kind: 'cohesion', delta: -4 }],
+  },
+  // Ministre (et Premier·e ministre)
+  {
+    id: 'projet_loi', label: 'Défendre votre projet de loi à l’Assemblée', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'], target: 'domain',
+    description: 'Le texte arrive en séance : débat face à l’opposition, sous les caméras de LCP.',
+    cost: { ap: 2, energy: 12, politicalCapital: 15 }, cooldownWeeks: 6,
+    effects: [{ kind: 'debate', stakes: 'hemicycle' }, { kind: 'dossier', domain: '$domain', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
+  },
+  {
+    id: 'qag', label: 'Répondre aux questions au gouvernement', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'], target: 'domain',
+    description: 'Mardi, 15 heures. Un député de l’opposition vous attend au tournant.',
+    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+    risk: { baseChance: 0.5, scaleWith: 'dossier', scaleWeight: 0.8, onFailure: [{ kind: 'stat', stat: 'credibility', delta: -3 }, { kind: 'stat', stat: 'popularity', delta: -1 }], failureNews: 'Vous bafouillez : l’hémicycle vous siffle.' },
+  },
+  {
+    id: 'deplacement_ministeriel', label: 'Déplacement ministériel en région', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'],
+    description: 'Préfet, élus locaux, visite d’usine et conférence de presse.',
+    cost: { ap: 2, energy: 14 }, maxPerWeek: 1,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'dossier', domain: 'territoires', delta: 2 }],
+  },
+  {
+    id: 'arbitrage_budget', label: 'Arracher un arbitrage budgétaire', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre'],
+    description: 'Bercy veut couper vos crédits. Vous montez à Matignon.',
+    cost: { ap: 1, politicalCapital: 15 }, cooldownWeeks: 8,
+    effects: [{ kind: 'stat', stat: 'influence', delta: 4 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
+    risk: { baseChance: 0.45, scaleWith: 'influence', scaleWeight: 0.6, onFailure: [{ kind: 'stat', stat: 'influence', delta: -3 }], failureNews: 'Matignon donne raison à Bercy.' },
+  },
+  {
+    id: 'syndicats_secteur', label: 'Recevoir les syndicats de votre secteur', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'],
+    description: 'Trois heures de réunion, un relevé de conclusions.',
+    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    effects: [{ kind: 'contact', contactId: 'ct-ust', trust: 5 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+  },
+  // Premier·e ministre
+  {
+    id: 'politique_generale', label: 'Déclaration de politique générale', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
+    description: 'Votre feuille de route devant les députés, suivie d’un vote de confiance.',
+    cost: { ap: 2, energy: 15 }, cooldownWeeks: 52,
+    effects: [{ kind: 'debate', stakes: 'hemicycle' }, { kind: 'government', majority: 8 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
+  },
+  {
+    id: 'remanier', label: 'Remanier le gouvernement', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
+    description: 'Changer de casting pour relancer l’action… ou calmer une fronde.',
+    cost: { ap: 1, politicalCapital: 15 }, cooldownWeeks: 26,
+    effects: [{ kind: 'decision', templateId: 'former_gouvernement' }],
+  },
+  {
+    id: 'seminaire_gouv', label: 'Séminaire gouvernemental', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
+    description: 'Un week-end au vert avec tous les ministres. Sans téléphone.',
+    cost: { ap: 1, energy: 8 }, cooldownWeeks: 4,
+    effects: [{ kind: 'government', cohesion: 10 }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  {
+    id: 'pm_49_3', label: 'Engager la responsabilité du gouvernement (49.3)', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'], target: 'domain',
+    description: 'Le texte passe sans vote. L’opposition dépose une motion de censure.',
+    cost: { ap: 1, politicalCapital: 25 }, cooldownWeeks: 8,
+    effects: [{ kind: 'dossier', domain: '$domain', delta: 8 }, { kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'government', majority: -8, cohesion: 3 }, { kind: 'stat', stat: 'popularity', delta: -3 }],
+  },
+  {
+    id: 'partenaires_sociaux', label: 'Grande conférence sociale', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
+    description: 'Syndicats et patronat autour de la table de Matignon.',
+    cost: { ap: 2, energy: 12 }, cooldownWeeks: 6,
+    effects: [{ kind: 'contact', contactId: 'ct-ust', trust: 6 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'government', majority: 3 }],
+  },
+  {
+    id: 'arbitrer_ministres', label: 'Arbitrer entre deux ministres', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
+    description: 'Ils se déchirent par voie de presse. Vous tranchez.',
+    cost: { ap: 1, energy: 5 }, maxPerWeek: 1,
+    effects: [{ kind: 'government', cohesion: 6 }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  // Chef·fe de parti
+  {
+    id: 'investitures', label: 'Arbitrer les investitures', category: 'fonction', minRank: 'chef_parti', onlyRanks: ['chef_parti'],
+    description: 'Qui sera candidat où ? Chaque choix fait un heureux et dix rancuniers.',
+    cost: { ap: 2, energy: 10 }, cooldownWeeks: 8,
+    effects: [{ kind: 'cohesion', delta: 5 }, { kind: 'faction', factionId: '*', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 3 }],
+    risk: { baseChance: 0.3, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'cohesion', delta: -6 }, { kind: 'stat', stat: 'stress', delta: 6 }], failureNews: 'Trois sortants non réinvestis claquent la porte.' },
+  },
+  {
+    id: 'bureau_national', label: 'Réunir le bureau national', category: 'fonction', minRank: 'chef_parti', onlyRanks: ['chef_parti'],
+    description: 'Fixer la ligne, distribuer les rôles, éteindre les incendies.',
+    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    effects: [{ kind: 'cohesion', delta: 4 }, { kind: 'stat', stat: 'politicalCapital', delta: 5 }],
+  },
+  {
+    id: 'conseil_national', label: 'Convoquer le conseil national du parti', category: 'fonction', minRank: 'chef_parti', onlyRanks: ['chef_parti'],
+    description: 'Mille délégués, un grand discours, une motion d’orientation.',
+    cost: { ap: 2, energy: 12, money: 2000 }, cooldownWeeks: 12,
+    effects: [{ kind: 'faction', factionId: '*', delta: 3 }, { kind: 'momentum', delta: 4 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+  },
+  // Candidat·e à la présidence
+  {
+    id: 'zenith', label: 'Grand meeting au Zénith', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
+    description: 'Huit mille personnes, des drapeaux, la musique de campagne.',
+    cost: { ap: 3, energy: 25, money: 20000 }, cooldownWeeks: 3,
+    effects: [{ kind: 'momentum', delta: 15 }, { kind: 'stat', stat: 'popularity', delta: 5 }],
+  },
+  {
+    id: 'emission_prime', label: 'Émission politique en prime time', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
+    description: 'Deux heures en direct, face à des Français et un contradicteur.',
+    cost: { ap: 2, energy: 15 }, cooldownWeeks: 4,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 5 }, { kind: 'momentum', delta: 8 }],
+    risk: { baseChance: 0.4, scaleWith: 'credibility', scaleWeight: 0.6, onFailure: [{ kind: 'stat', stat: 'popularity', delta: -3 }, { kind: 'momentum', delta: -4 }], failureNews: 'Une hésitation sur le prix du pain : le moment tourne en boucle.' },
+  },
+  {
+    id: 'equipe_campagne', label: 'Présenter votre équipe de campagne', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
+    description: 'Porte-parole, directeur de campagne, conseillers : le casting de votre quinquennat.',
+    cost: { ap: 1, energy: 5 }, cooldownWeeks: 26,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'cohesion', delta: 2 }],
+  },
+  {
+    id: 'deplacement_campagne', label: 'Déplacement de campagne en région', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
+    description: 'Usine le matin, marché à midi, réunion publique le soir.',
+    cost: { ap: 2, energy: 15, money: 3000 }, maxPerWeek: 1,
+    effects: [{ kind: 'momentum', delta: 7 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
+  },
+
+  // ── International ───────────────────────────────────────
+  {
+    id: 'mission_etranger', label: 'Mission parlementaire à l’étranger', category: 'international', minRank: 'depute', target: 'partner',
+    description: 'Une délégation de trois jours : ministres, ONG, entreprises françaises.',
+    cost: { ap: 2, energy: 15 }, cooldownWeeks: 4,
+    effects: [{ kind: 'intl', partner: '$target', relation: 5, prestige: 1 }, { kind: 'dossier', domain: 'diplomatie', delta: 4 }],
+  },
+  {
+    id: 'groupe_amitie', label: 'Animer un groupe d’amitié', category: 'international', minRank: 'depute', target: 'partner',
+    description: 'Dîners avec l’ambassadeur, échanges d’élus.',
+    cost: { ap: 1, energy: 5 }, maxPerWeek: 1,
+    effects: [{ kind: 'intl', partner: '$target', relation: 3 }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  {
+    id: 'tribune_etrangere', label: 'Signer une tribune dans la presse étrangère', category: 'international', minRank: 'depute',
+    description: 'Une page dans un grand quotidien international.',
+    cost: { ap: 1, energy: 6 }, cooldownWeeks: 6,
+    effects: [{ kind: 'intl', prestige: 2 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'exposure', delta: 2 }],
+  },
+  {
+    id: 'visite_bilaterale', label: 'Visite bilatérale', category: 'international', minRank: 'ministre', target: 'partner',
+    description: 'Entretiens officiels, accords de coopération, dîner à l’ambassade.',
+    cost: { ap: 2, energy: 15 }, maxPerWeek: 1,
+    effects: [{ kind: 'intl', partner: '$target', relation: 10, prestige: 2 }, { kind: 'dossier', domain: 'diplomatie', delta: 3 }],
+  },
+  {
+    id: 'accord_commercial', label: 'Négocier un accord commercial', category: 'international', minRank: 'ministre', target: 'partner',
+    description: 'Des débouchés pour nos entreprises… et l’inquiétude de nos agriculteurs.',
+    cost: { ap: 2, energy: 12, politicalCapital: 15 }, cooldownWeeks: 8,
+    effects: [{ kind: 'intl', partner: '$target', relation: 8, prestige: 2 }, { kind: 'dossier', domain: 'economie', delta: 5 }, { kind: 'stat', stat: 'popularity', delta: -2 }],
+    risk: { baseChance: 0.4, scaleWith: 'influence', scaleWeight: 0.6, onFailure: [{ kind: 'intl', partner: '$target', relation: -5 }, { kind: 'stat', stat: 'credibility', delta: -3 }], failureNews: 'Les négociations capotent sur les quotas de bœuf.' },
+  },
+  {
+    id: 'conseil_europeen', label: 'Peser au Conseil européen', category: 'international', minRank: 'ministre',
+    description: 'Une nuit de négociations à Bruxelles pour arracher un compromis.',
+    cost: { ap: 2, energy: 14 }, cooldownWeeks: 4,
+    effects: [{ kind: 'intl', partner: 'ue', relation: 8, prestige: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }],
+    risk: { baseChance: 0.3, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'intl', partner: 'ue', relation: -3 }, { kind: 'stat', stat: 'stress', delta: 6 }], failureNews: 'Isolé·e à Bruxelles : le compromis se fait sans la France.' },
+  },
+  {
+    id: 'aide_developpement', label: 'Annoncer une aide au développement', category: 'international', minRank: 'ministre',
+    description: 'Écoles, hôpitaux, réseaux d’eau : un engagement de long terme.',
+    cost: { ap: 1, politicalCapital: 10 }, cooldownWeeks: 12,
+    effects: [{ kind: 'intl', partner: 'afrique', relation: 10, prestige: 2 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
+  },
+  {
+    id: 'sanctions', label: 'Décider de sanctions économiques', category: 'international', minRank: 'president', onlyRanks: ['president'], target: 'partner',
+    description: 'Gel des avoirs, embargo ciblé. L’économie trinquera un peu.',
+    cost: { ap: 1, politicalCapital: 10 }, cooldownWeeks: 8,
+    effects: [{ kind: 'intl', partner: '$target', relation: -20, prestige: 3, tension: 6 }, { kind: 'presidency', approval: 2 }, { kind: 'assetValue', defIds: ['actions'], factor: 0.97 }],
+  },
+  {
+    id: 'intervention', label: 'Intervention militaire', category: 'international', minRank: 'president', onlyRanks: ['president'], requires: { crisis: true },
+    description: 'Engager nos forces pour mettre fin à la crise. Rien n’est jamais simple.',
+    cost: { ap: 2, politicalCapital: 30 }, cooldownWeeks: 12,
+    effects: [{ kind: 'intl', crisis: -30, prestige: 6, tension: 5 }, { kind: 'presidency', approval: 5, threat: 10 }],
+    risk: { baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [{ kind: 'intl', crisis: 10, prestige: -5 }, { kind: 'presidency', approval: -10, threat: 10 }], failureNews: 'Des soldats tombent dans une embuscade. L’opinion se retourne.' },
+  },
+  {
+    id: 'mediation_paix', label: 'Médiation de paix', category: 'international', minRank: 'president', onlyRanks: ['president'], requires: { crisis: true },
+    description: 'Réunir les belligérants à Paris. Un pari diplomatique.',
+    cost: { ap: 2, energy: 15 }, cooldownWeeks: 6,
+    effects: [{ kind: 'intl', crisis: -18, prestige: 5 }, { kind: 'presidency', approval: 2 }],
+    risk: { baseChance: 0.45, scaleWith: 'influence', scaleWeight: 0.6, onFailure: [{ kind: 'intl', prestige: -3 }, { kind: 'stat', stat: 'stress', delta: 8 }], failureNews: 'Les délégations quittent Paris sans accord.' },
+  },
+  {
+    id: 'accord_climat', label: 'Porter un accord mondial sur le climat', category: 'international', minRank: 'president', onlyRanks: ['president'],
+    description: 'Une conférence à Paris, deux cents pays, une nuit blanche de plus.',
+    cost: { ap: 2, energy: 12, politicalCapital: 20 }, cooldownWeeks: 52,
+    effects: [{ kind: 'intl', prestige: 6, allRelations: 3 }, { kind: 'dossier', domain: 'ecologie', delta: 5 }, { kind: 'faction', factionId: 'ligne_dure', delta: -4 }],
+    risk: { baseChance: 0.4, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'intl', prestige: -4 }], failureNews: 'L’accord accouche d’une déclaration sans engagement.' },
+  },
+  {
+    id: 'telephone_rouge', label: 'Appeler les grands dirigeants', category: 'international', minRank: 'president', onlyRanks: ['president'],
+    description: 'Une tournée téléphonique pour faire baisser la température.',
+    cost: { ap: 1, energy: 5 }, maxPerWeek: 1,
+    effects: [{ kind: 'intl', tension: -6, prestige: 1 }],
+  },
+
   // ── Repos ────────────────────────────────────────────────
   {
     id: 'repos', label: 'Souffler', category: 'repos', minRank: 'militant',
@@ -1013,6 +1282,8 @@ export function effectValue(e: Effect): number {
     case 'health': return 0.8 * e.delta;
     case 'presidency': return 0.8 * (e.approval ?? 0) + 0.4 * (e.majority ?? 0) + 0.2 * (e.security ?? 0) - 0.2 * (e.threat ?? 0) + (e.reform ? 4 : 0);
     case 'parrainages': return 0.06 * e.delta;
+    case 'intl': return 0.25 * (e.relation ?? 0) + 0.6 * (e.allRelations ?? 0) + 0.8 * (e.prestige ?? 0) - 0.3 * (e.tension ?? 0) - 0.3 * (e.crisis ?? 0);
+    case 'government': return 0.6 * (e.majority ?? 0) + 0.3 * (e.cohesion ?? 0);
     case 'partyTreasury': return e.delta * 0.1;
     case 'crown': return 0.5 * ((e.soutien ?? 0) + (e.legitimite ?? 0) + (e.armee ?? 0));
     case 'lodge': return 0.3 * ((e.fraternite ?? 0) + (e.discretion ?? 0) + (e.planches ?? 0) * 5);
@@ -1024,7 +1295,7 @@ export function effectValue(e: Effect): number {
 /** Part minimale de la valeur des gains rendue en malus visibles */
 const RATIO: Partial<Record<ActionCategory, number>> = {
   terrain: 0.7, medias: 0.75, dossiers: 0.7, parti: 0.75, reseau: 0.75, argent: 0.75, redaction: 0.7,
-  couronne: 0.6, loge: 0.6, repos: 0.5, elysee: 0.6,
+  couronne: 0.6, loge: 0.6, repos: 0.5, elysee: 0.6, fonction: 0.6, international: 0.6,
 };
 
 /** Malus de contrepartie selon la catégorie : [effet, valeur d'un point, plafond] */
@@ -1040,6 +1311,8 @@ const COUNTER: Partial<Record<ActionCategory, [(n: number) => Effect, number, nu
   parti: [n => ({ kind: 'faction', factionId: 'ligne_dure', delta: -n }), 0.4, 8],
   repos: [n => ({ kind: 'momentum', delta: -n }), 0.35, 8],
   elysee: [n => ({ kind: 'stat', stat: 'stress', delta: n }), 0.6, 8],
+  fonction: [n => ({ kind: 'stat', stat: 'stress', delta: n }), 0.6, 8],
+  international: [n => ({ kind: 'stat', stat: 'stress', delta: n }), 0.6, 8],
 };
 
 function sameSlot(a: Effect, b: Effect): boolean {

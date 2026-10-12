@@ -21,7 +21,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
     <section class="card">
       <div class="eyebrow">{{ game.s().party.name }}</div>
       <h2 class="name">{{ game.player().name }}</h2>
-      <div class="rank"><span class="dot" [style.background]="game.s().party.color"></span>{{ game.rank().label }}</div>
+      <div class="rank"><span class="dot" [style.background]="game.s().party.color"></span>{{ game.roleLabel() }}</div>
 
       <ul class="gauges">
         @for (g of gauges; track g.key) {

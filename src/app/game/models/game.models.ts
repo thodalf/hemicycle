@@ -10,6 +10,7 @@ export type RankId =
   | 'conseiller_municipal'
   | 'depute'
   | 'ministre'
+  | 'premier_ministre'
   | 'chef_parti'
   | 'candidat_presidence'
   | 'president'
@@ -45,9 +46,11 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'elysee' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
+  fonction: 'Fonction',
   elysee: 'Élysée',
+  international: 'International',
   terrain: 'Terrain',
   medias: 'Médias',
   dossiers: 'Dossiers',
@@ -228,6 +231,8 @@ export type Effect =
   | { kind: 'declare' }
   | { kind: 'resign'; why?: 'demission' | 'destitution' }
   | { kind: 'die'; cause: DeathCause; text: string }
+  | { kind: 'intl'; partner?: string; relation?: number; prestige?: number; tension?: number; crisis?: number; startCrisis?: string; allRelations?: number }
+  | { kind: 'government'; majority?: number; cohesion?: number; form?: string; fall?: boolean }
   | { kind: 'flag'; key: string; value: boolean | number };
 
 export interface EffectContext {
@@ -262,13 +267,13 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
   personalOnly?: boolean;
   cost: ActionCost;
-  target?: 'domain' | 'npc' | 'contact' | 'faction';
+  target?: 'domain' | 'npc' | 'contact' | 'faction' | 'partner';
   targetCondition?: { minTrust?: number };
   effects: Effect[];
   risk?: RiskProfile;
@@ -542,6 +547,36 @@ export interface PresidencyState {
   reforms: number;
   cohabitation: boolean;
   lastCrisisWeek: number;
+}
+
+/** Gouvernement dirigé par le joueur (Premier·e ministre) */
+export interface GovernmentState {
+  since: number;
+  /** Soutien de l'Assemblée au gouvernement (≥ 50 : majorité) */
+  majority: number;
+  /** Solidarité des ministres (0-100) */
+  cohesion: number;
+  /** Composition choisie : « d'ouverture », « de fidèles »… (vide tant que non formé) */
+  composition: string;
+}
+
+/** Politique internationale */
+export interface IntlCrisis {
+  name: string;
+  /** 0-100 : à 0, la crise est résolue */
+  intensity: number;
+  since: number;
+}
+
+export interface IntlState {
+  /** Rayonnement de la France et le vôtre à l'étranger (0-100) */
+  prestige: number;
+  /** Tensions internationales (0-100) */
+  tension: number;
+  /** Relations avec chaque partenaire : -100 … +100 */
+  relations: Record<string, number>;
+  crisis: IntlCrisis | null;
+  treaties: number;
 }
 
 // ── Équipe & objectifs ──────────────────────────────────────
@@ -863,6 +898,10 @@ export interface GameState {
   death: DeathInfo | null;
   presidential: PresidentialCalendar;
   presidency: PresidencyState | null;
+  /** Ministère du joueur quand il est ministre */
+  portfolio: Domain | null;
+  government: GovernmentState | null;
+  intl: IntlState;
   player: Player;
   party: Party;
   otherParties: PartyInfo[];

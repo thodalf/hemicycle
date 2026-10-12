@@ -31,6 +31,29 @@ Standalone components, zoneless, Signals partout.
   coup d’État raté : cinq ans d’inéligibilité ; « plus personne ne vous écoute » : traversée du désert. **Seule la mort
   termine la partie** : vieillesse, maladie, accident ou assassinat, suivie d’une **nécrologie** (dates, cause, plus
   haute fonction, mandats, réformes, patrimoine, épitaphe, tous les chapitres).
+- **Le stress tue** : au-delà de 55, il abîme la santé ; il multiplie la mortalité naturelle (×2 à 100) et expose à
+  l’infarctus ou à l’AVC de surmenage (risque affiché dans « Une vie », alerte médicale à partir de 88).
+- **Une fonction, des tâches** (`data/rank-events.ts`, onglet **Fonction**) : chaque rang a ses actions et ses
+  événements. Militant·e : stand, réunion de section, pétition, collage, liste municipale. Conseiller·e : conseil
+  municipal, permanence, projet de quartier, mariages, budget de la ville, permis contesté, délégation. Député·e :
+  commission, amendements, permanence, fronde, loi controversée, mission d’information, niche parlementaire, usine qui
+  ferme. Ministre (un portefeuille : « Ministre de la Santé »…) : défendre son projet de loi à l’Assemblée (débat),
+  questions au gouvernement, déplacements, arbitrages, syndicats, grève au ministère, Bercy qui rabote, note qui fuite,
+  recadrage — et Matignon qui vous tend les bras. **Premier·e ministre** (nouveau rang, `engine/government.ts`) :
+  former le gouvernement (ouverture, fidèles, courants, experts), majorité et solidarité gouvernementale, déclaration
+  de politique générale, 49.3, remaniement, séminaire, conférence sociale ; frondes, désaccords avec l’Élysée, motion
+  de censure qui peut vous renverser. Chef·fe de parti : investitures, bureau et conseil national, contestation,
+  alliance, trésorerie. Candidat·e : Zénith, prime time, équipe de campagne, gaffes, ralliements, fuites.
+- **Salon de l’agriculture** (`data/scene-salon.ts`) : chaque fin février, une journée porte de Versailles en scène
+  interactive — vache égérie, fromages AOP, jeune agricultrice, éleveurs en colère, PAC, stand des vins (attention
+  aux verres), concours porcin, selfies, caméras. Ne pas y aller se paie quand on est un premier rôle.
+- **Politique internationale** (`engine/intl.ts`, `data/intl-events.ts`, onglet **International**, panneau « Le
+  monde ») : prestige, tensions, relations avec l’UE, l’Allemagne, les États-Unis, le Royaume-Uni, la Chine et l’Union
+  africaine, crises entre États fictifs. Député·e : missions, groupes d’amitié, tribunes. Gouvernement : visites
+  bilatérales, accords commerciaux, Conseil européen, aide au développement. Élysée : sanctions, intervention
+  militaire, médiation de paix, accord climat, téléphone rouge. Événements : guerre commerciale, navire humanitaire,
+  coup d’État, otages, COP, JO, espion, emprunt européen, gazoduc saboté, dissident, invasion, veto à l’ONU. Le
+  prestige nourrit l’influence et la cote ; les tensions, la menace d’attentat.
 - **Âge et santé** : âge de départ selon le scénario (26 ans en carrière, 52 en présidentielle…), une année tous les
   52 tours. La santé suit la courbe naturelle de l’âge, abîmée par le stress, l’épuisement et l’exposition, entretenue
   par l’hygiène de vie (onglet **Santé** : bilan, suivi nutritionnel, arrêter la cigarette, cure, grand spécialiste,
@@ -164,7 +187,7 @@ Standalone components, zoneless, Signals partout.
   les électorats et les courants, vote à l’Assemblée, 49.3 et motion de censure. Scénario « Ministre à Bercy ».
 - **Équipe** : six recrues (conseillère technique, coach média, plume, trésorier, directrice de campagne, spin doctor),
   chacune avec un avantage et un salaire hebdomadaire.
-- **Objectifs** : trois défis actifs avec échéance et récompense (point de compétence, PA bonus, capital…).
+- **Objectifs** : trois défis actifs avec échéance et récompense (point de compétence, PA bonus, capital…) ; plus d’objectifs « rallier un courant ».
 - **Crises nationales** : inondations, grève, krach, sommet européen, violences urbaines ; verrouillent l’actualité trois semaines.
 
 ## Arborescence
@@ -184,6 +207,9 @@ src/app/game/
 │   ├── recruits.ts            Traits, raretés, noms des recrues
 │   ├── random-events.ts       Événements aléatoires
 │   ├── life-events.ts         Événements de la vie : santé, âge, menaces, course à l’Élysée
+│   ├── rank-events.ts         Événements propres à chaque fonction
+│   ├── intl-events.ts         Événements internationaux
+│   ├── scene-salon.ts         Scène du Salon de l’agriculture
 │   ├── assets.ts              Biens achetables (patrimoine)
 │   ├── press.ts               Médias, grades et salaires du scénario Éditorialiste
 │   ├── staff.ts               Membres d’équipe recrutables
@@ -204,6 +230,8 @@ src/app/game/
 │   ├── mole.ts                Scénario Infiltré·e : couverture, rapports, soupçons
 │   ├── life.ts                Âge, santé, mort, chapitres de vie, retraite, nécrologie
 │   ├── presidency.ts          Calendrier présidentiel, candidature, parrainages, présidence, crises
+│   ├── government.ts          Portefeuilles, Matignon, censure, Salon de l’agriculture
+│   ├── intl.ts                Relations, prestige, tensions, crises internationales
 │   ├── press.ts               Audience, réputation, propriétaire, promotions
 │   ├── founding.ts            Fonder son parti (au départ ou en cours de partie)
 │   └── effects.ts             applyEffects(), risques, dépenses, plafond légal
@@ -239,6 +267,8 @@ src/app/game/
     ├── vitals/           Fatigue, santé et fonds dans la barre du haut
     ├── life-panel/       Âge, santé, risques, chapitres, retraite
     ├── presidency-panel/ Présidentielle (déclaration, parrainages) et Palais de l’Élysée
+    ├── government-panel/ Matignon ou votre ministère
+    ├── world-panel/      Le monde : prestige, tensions, relations, crise
     ├── fx-layer/         Calque d’animations 2D
     ├── emblem/           Illustrations animées des décisions
     ├── election-night/   Soirée électorale animée

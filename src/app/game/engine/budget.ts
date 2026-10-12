@@ -139,7 +139,7 @@ export function budgetYear(week: number): number {
 }
 
 export function canHandleNationalBudget(d: GameState): boolean {
-  return d.player.rankId === 'ministre' || d.player.rankId === 'president';
+  return d.player.rankId === 'ministre' || d.player.rankId === 'premier_ministre' || d.player.rankId === 'president';
 }
 
 export function nationalBudgetBlocking(d: GameState): boolean {

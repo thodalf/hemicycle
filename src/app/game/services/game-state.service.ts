@@ -12,6 +12,8 @@ import { PartyDraft, foundPartyInGame } from '../engine/founding';
 import { MOLE_GOAL } from '../engine/mole';
 import { initialHealth, settleEndings, startAge } from '../engine/life';
 import { initPresidential } from '../engine/presidency';
+import { initIntl } from '../engine/intl';
+import { roleLabel } from '../engine/government';
 
 
 const RESUME_KEY = 'polsim.resume.v1';
@@ -19,7 +21,8 @@ const RESUME_KEY = 'polsim.resume.v1';
 /** Complète une sauvegarde créée avant l'ajout des débats, de l'équipe et des objectifs */
 function migrate(s: GameState): GameState {
   s.debate ??= null;
-  s.objectives ??= [];
+  // Les objectifs « Rallier un courant » ont été retirés
+  s.objectives = (s.objectives ?? []).filter(o => o.kind !== 'faction');
   s.program ??= null;
   s.protest ??= null;
   s.scene ??= null;
@@ -47,6 +50,9 @@ function migrate(s: GameState): GameState {
   s.milestones ??= [];
   s.death ??= null;
   s.presidency ??= null;
+  s.portfolio ??= null;
+  s.government ??= null;
+  s.intl ??= initIntl();
   if (!s.presidential) {
     s.presidential = initPresidential(s);
     // Une partie déjà avancée : le calendrier rattrape la date courante
@@ -101,6 +107,8 @@ export class GameStateService {
   readonly stats = computed(() => this.s().player.stats);
   readonly week = computed(() => this.s().week);
   readonly rank = computed(() => RANKS[this.s().player.rankId]);
+  /** Intitulé complet : « Ministre de la Santé », « Premier·e ministre »… */
+  readonly roleLabel = computed(() => roleLabel(this.s()));
   readonly funds = computed(() => availableFunds(this.s()));
   readonly partySupport = computed(() => Math.round(partySupport(this.s())));
   readonly date = computed(() => {

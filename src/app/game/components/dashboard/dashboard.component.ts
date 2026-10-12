@@ -29,6 +29,8 @@ import { PartyPanelComponent } from '../party-panel/party-panel.component';
 import { ProfilePanelComponent } from '../profile-panel/profile-panel.component';
 import { WeekPlannerComponent } from '../week-planner/week-planner.component';
 import { LifePanelComponent } from '../life-panel/life-panel.component';
+import { GovernmentPanelComponent } from '../government-panel/government-panel.component';
+import { WorldPanelComponent } from '../world-panel/world-panel.component';
 import { PresidencyPanelComponent } from '../presidency-panel/presidency-panel.component';
 import { DEATH_LABELS, lifeSummary } from '../../engine/life';
 import { Milestone } from '../../models/game.models';
@@ -40,7 +42,7 @@ import { Milestone } from '../../models/game.models';
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent,
-    LifePanelComponent, PresidencyPanelComponent,
+    LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
   ],
   template: `
     <header class="topbar">
@@ -48,7 +50,7 @@ import { Milestone } from '../../models/game.models';
       <div class="facts">
         <span><span class="eyebrow">Semaine</span> <strong class="mono">{{ game.week() }}</strong></span>
         <span><span class="eyebrow">À la une</span> <strong>{{ agenda() }}</strong></span>
-        <span><span class="eyebrow">Rang</span> <strong>{{ game.rank().label }}</strong></span>
+        <span><span class="eyebrow">Rang</span> <strong>{{ game.roleLabel() }}</strong></span>
       </div>
       <app-vitals />
       <span class="save" [class]="'s-' + game.saveStatus()" [title]="saveTip()">
@@ -92,6 +94,7 @@ import { Milestone } from '../../models/game.models';
       </div>
       <main class="col-main">
         <app-presidency-panel />
+        <app-government-panel />
         @if (game.s().crown || game.s().lodge || game.s().press || game.s().mole) {
           <app-scenario-panel />
         }
@@ -121,6 +124,7 @@ import { Milestone } from '../../models/game.models';
       </main>
       <div class="col-right">
         <app-news-feed />
+        <app-world-panel />
         <app-election-panel />
         <app-party-panel />
       </div>

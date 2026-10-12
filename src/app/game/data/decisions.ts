@@ -1,3 +1,4 @@
+import { formationDecision } from '../engine/government';
 import {
   DOMAIN_LABELS, Decision, DecisionChoice, Domain, EffectContext, GameState,
 } from '../models/game.models';
@@ -124,6 +125,7 @@ function answerChoices(domain: Domain, m: number): DecisionChoice[] {
 type Template = (d: GameState, rng: Rng, ctx: EffectContext) => Decision | null;
 
 const TEMPLATES: Record<string, Template> = {
+  former_gouvernement: d => formationDecision(d, !!d.government?.composition),
   interview: (d, rng) => {
     const domain = d.agendaDomain;
     return {

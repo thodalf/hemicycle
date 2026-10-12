@@ -14,6 +14,8 @@ import { adjustMole } from './mole';
 import { declareBankruptcy, takeLoan } from './bankruptcy';
 import { OUTLETS, PRESS_GRADES, PRESS_SALARIES, createPress } from '../data/press';
 import { adjustHealth, die } from './life';
+import { adjustIntl } from './intl';
+import { adjustGovernment, assignPortfolio, enterMatignon } from './government';
 import { addParrainages, adjustPresidency, declareCandidacy, endPresidency } from './presidency';
 
 /* ============================================================
@@ -312,9 +314,12 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
           d.player.boosters += 1;
           summary.push('Booster de recrutement +1');
         }
+        const was = d.player.rankId;
         d.player.rankId = e.rankId;
         d.player.actionPoints.max = RANKS[e.rankId].weeklyActionPoints;
         summary.push(`Nouveau rang : ${RANKS[e.rankId].label}`);
+        if (e.rankId === 'premier_ministre' && was !== 'premier_ministre') enterMatignon(d);
+        if (e.rankId === 'ministre' && was !== 'ministre') assignPortfolio(d);
         break;
       }
       case 'flag':
@@ -472,6 +477,12 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
           endPresidency(d, e.why ?? 'demission');
           summary.push(e.why === 'destitution' ? 'Destitué·e' : 'Démission');
         }
+        break;
+      case 'intl':
+        summary.push(...adjustIntl(d, e, ctx.targetId, rng));
+        break;
+      case 'government':
+        summary.push(...adjustGovernment(d, e));
         break;
       case 'die':
         die(d, e.cause, e.text);

@@ -61,7 +61,7 @@ export function accidentRisk(d: GameState): number {
 
 /** Risque annuel d'attentat selon le rang (hors président·e, voir plus bas) */
 const ASSASSINATION_BY_RANK: Record<RankId, number> = {
-  militant: 0, conseiller_municipal: 0.0001, depute: 0.0003, ministre: 0.001, chef_parti: 0.0008,
+  militant: 0, conseiller_municipal: 0.0001, depute: 0.0003, ministre: 0.001, premier_ministre: 0.002, chef_parti: 0.0008,
   candidat_presidence: 0.002, president: 0.01, ancien_president: 0.0006,
 };
 
@@ -78,10 +78,22 @@ export function assassinationRisk(d: GameState): number {
 }
 
 /** Résumé des risques, affiché au joueur */
-export function lifeRisks(d: GameState): { natural: number; accident: number; assassination: number } {
+/** Le stress use le cœur : multiplicateur de la mortalité naturelle */
+export function stressFactor(stress: number): number {
+  return 1 + Math.max(0, stress - 50) / 50;
+}
+
+/** Risque hebdomadaire d'accident cardiaque ou vasculaire dû au surmenage */
+export function stressRisk(d: GameState): number {
+  const over = Math.max(0, d.player.stats.stress - 55) / 45;
+  return over * over * 0.0006 * (1 + Math.max(0, d.player.age - 40) / 20) * (d.player.stats.energy < 20 ? 1.5 : 1);
+}
+
+export function lifeRisks(d: GameState): { natural: number; stress: number; accident: number; assassination: number } {
   const p = d.player;
   return {
-    natural: annualMortality(p.age, p.health),
+    natural: annualMortality(p.age, p.health) * stressFactor(p.stats.stress),
+    stress: 1 - Math.pow(1 - stressRisk(d), 52),
     accident: accidentRisk(d) * 52,
     assassination: assassinationRisk(d) * 52,
   };
@@ -115,6 +127,11 @@ const ILLNESS_TEXTS = [
   'Une maladie fulgurante, tenue secrète jusqu’au bout.',
   'Le cœur a lâché. Les médecins avaient pourtant prévenu.',
 ];
+const STRESS_TEXTS = [
+  'Une crise cardiaque en pleine nuit, après trois semaines sans dormir. Le surmenage a eu raison de lui·d’elle.',
+  'Un AVC au sortir d’une réunion de crise. Ses proches le·la suppliaient de ralentir.',
+  'Effondré·e à son bureau, le téléphone encore à la main. Les médecins parlent d’épuisement.',
+];
 const ACCIDENT_TEXTS = {
   sportive: 'Une sortie de route au volant de sa voiture de sport, sur une départementale mouillée.',
   yacht: 'Un coup de vent au large : le voilier est retrouvé vide.',
@@ -147,8 +164,12 @@ function deathRoll(d: GameState, rng: Rng): boolean {
     die(d, 'accident', accidentText(d, rng));
     return true;
   }
+  if (rng.chance(stressRisk(d))) {
+    die(d, 'maladie', rng.pick(STRESS_TEXTS));
+    return true;
+  }
   const acute = p.health < 15 ? (15 - p.health) * 0.003 : 0;
-  if (rng.chance(annualMortality(p.age, p.health) / 52 + acute)) {
+  if (rng.chance(annualMortality(p.age, p.health) * stressFactor(p.stats.stress) / 52 + acute)) {
     const old = p.age >= 72 && rng.chance(0.65);
     die(d, old ? 'vieillesse' : 'maladie', rng.pick(old ? OLD_AGE_TEXTS : ILLNESS_TEXTS));
     return true;
@@ -195,7 +216,7 @@ export function weeklyLife(d: GameState, rng: Rng): void {
 
   // Alerte médicale
   const lastAlert = Number(p.flags['lastHealthAlert'] ?? -99);
-  if (p.health < 38 && d.week - lastAlert >= 8 && !d.pendingDecisions.some(x => x.tag === 'alerte_sante') && rng.chance(0.25)) {
+  if ((p.health < 38 || p.stats.stress >= 88) && d.week - lastAlert >= 8 && !d.pendingDecisions.some(x => x.tag === 'alerte_sante') && rng.chance(0.25)) {
     p.flags['lastHealthAlert'] = d.week;
     d.pendingDecisions.push(healthAlert(d));
   }

@@ -2,6 +2,7 @@ import { Effect, GameState } from '../models/game.models';
 import { SceneChoiceDef, SceneDef } from './scene-types';
 import { balanceScene } from './balance';
 import { PARTIES, ofParty } from './world';
+import { SALON } from './scene-salon';
 
 /* ============================================================
  *  Six scènes interactives, du marché du dimanche à la cellule
@@ -1389,7 +1390,7 @@ const DEBALLAGE: SceneDef = {
 
 const RAW_SCENES: SceneDef[] = [
   MARCHE, MEETING, MEDIATION, COMMISSION, CRISE, ALLIANCE, MARCHE_PUBLIC,
-  TOURNEE_PRINCE, REFERENDUM, COUP, TENUE, CONVENT, ENQUETE, DIRECT, BUREAU_SECRET, DEBALLAGE,
+  TOURNEE_PRINCE, REFERENDUM, COUP, TENUE, CONVENT, ENQUETE, DIRECT, BUREAU_SECRET, DEBALLAGE, SALON,
 ];
 /* Chaque choix a un prix et aucun ne domine les autres (voir data/balance.ts) */
 export const SCENES: SceneDef[] = RAW_SCENES.map(balanceScene);

@@ -3,6 +3,7 @@ import { DECLARE_WINDOW, ELECTIONS, FIRST_PRESIDENTIAL_WEEK, MANDATE_WEEKS, PARR
 import { ofParty } from '../data/world';
 import { applyEffects, partySupport, pushNews } from './effects';
 import { addMilestone } from './life';
+import { fallFromMatignon } from './government';
 import { Rng, clamp, nextId } from './rng';
 
 /* ============================================================
@@ -215,7 +216,9 @@ function npcPresidential(d: GameState, rng: Rng): void {
 function alternance(d: GameState, formerParty?: string): void {
   const c = d.presidential;
   if (c.incumbentPartyId === d.party.id || formerParty === c.incumbentPartyId) return;
-  if (d.player.rankId === 'ministre') {
+  if (d.player.rankId === 'premier_ministre') {
+    fallFromMatignon(d, 'Alternance : vous quittez Matignon', 'Votre camp a perdu l’Élysée. Le nouveau président nomme son Premier ministre.');
+  } else if (d.player.rankId === 'ministre') {
     d.player.rankId = 'depute';
     d.player.actionPoints.max = RANKS.depute.weeklyActionPoints;
     pushNews(d, 'parti', 'negative', 'Alternance : vous quittez le gouvernement', 'Votre camp a perdu l’Élysée. Retour sur les bancs de l’Assemblée, dans l’opposition.');

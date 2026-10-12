@@ -69,6 +69,24 @@ export function describeEffect(e: Effect): EffectChip[] {
       if (e.deliver) out.push({ text: 'Transmet vos renseignements', tone: 'good' });
       return out;
     }
+    case 'intl': {
+      const out: EffectChip[] = [];
+      if (e.relation) out.push({ text: `${n(e.relation)} relations${e.partner === '$target' ? ' (pays ciblé)' : ''}`, tone: tone(e.relation) });
+      if (e.allRelations) out.push({ text: `${n(e.allRelations)} relations internationales`, tone: tone(e.allRelations) });
+      if (e.prestige) out.push({ text: `${n(e.prestige)} prestige international`, tone: tone(e.prestige) });
+      if (e.tension) out.push({ text: `${n(e.tension)} tensions`, tone: tone(e.tension, true) });
+      if (e.crisis) out.push({ text: e.crisis < 0 ? `Apaise la crise (${n(e.crisis)})` : `Aggrave la crise (${n(e.crisis)})`, tone: tone(e.crisis, true) });
+      if (e.startCrisis) out.push({ text: 'Crise internationale', tone: 'bad' });
+      return out;
+    }
+    case 'government': {
+      const out: EffectChip[] = [];
+      if (e.majority) out.push({ text: `${n(e.majority)} majorité`, tone: tone(e.majority) });
+      if (e.cohesion) out.push({ text: `${n(e.cohesion)} solidarité gouvernementale`, tone: tone(e.cohesion) });
+      if (e.form) out.push({ text: `Gouvernement ${e.form}`, tone: 'neutral' });
+      if (e.fall) out.push({ text: 'Chute du gouvernement', tone: 'bad' });
+      return out;
+    }
     case 'health': return [{ text: `${n(e.delta)} santé`, tone: tone(e.delta) }];
     case 'parrainages': return [{ text: `${n(e.delta)} parrainages`, tone: tone(e.delta) }];
     case 'declare': return [{ text: 'Candidature à la présidentielle', tone: 'neutral' }];

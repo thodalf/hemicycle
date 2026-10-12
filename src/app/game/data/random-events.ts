@@ -1,4 +1,4 @@
-import { Decision, DecisionChoice, Effect, GameState, RankId } from '../models/game.models';
+import { Decision, DecisionChoice, Domain, Effect, GameState, RankId } from '../models/game.models';
 import type { Rng } from '../engine/rng';
 import { rankOrder } from './ranks';
 import { netWorth, owns, wealthImage } from '../engine/patrimoine';
@@ -7,6 +7,9 @@ import { OUTLETS } from './press';
 import { ofParty } from './world';
 import { effectValue, withCounterweight } from './actions';
 import { LIFE_EVENTS } from './life-events';
+import { RANK_EVENTS } from './rank-events';
+import { INTL_EVENTS } from './intl-events';
+import { intlRelevant } from '../engine/intl';
 
 /* ============================================================
  *  Événements aléatoires : vie privée, médias, coulisses,
@@ -21,7 +24,7 @@ export interface RandomEvent {
   weight: number;
   /** Condition supplémentaire d'apparition */
   eligible?: (d: GameState) => boolean;
-  build: (d: GameState, rng: Rng) => { title: string; context: string; choices: EvChoice[] };
+  build: (d: GameState, rng: Rng) => { title: string; context: string; choices: EvChoice[]; domain?: Domain };
 }
 
 const s = (stat: 'popularity' | 'influence' | 'credibility' | 'politicalCapital' | 'stress' | 'energy', delta: number): Effect =>
@@ -1344,12 +1347,18 @@ const NEWS_EVENTS: { title: string; body: string; effects: Effect[]; tone: 'posi
   { title: 'Votre taux de présence épinglé', body: 'Un site citoyen vous classe parmi les élus les moins présents.', effects: [s('credibility', -2), s('popularity', -1)], tone: 'negative' },
   { title: 'Une biographie non autorisée', body: '300 pages, quelques erreurs, beaucoup d’anecdotes.', effects: [s('popularity', 1), { kind: 'exposure', delta: 3 }], tone: 'neutral' },
   { title: 'Hausse des taux d’intérêt', body: 'Les crédits coûtent plus cher, l’immobilier ralentit.', effects: [{ kind: 'assetValue', defIds: ['studio', 'locatif', 'maison', 'villa'], factor: 0.96 }], tone: 'negative' },
+  { title: 'Sommet européen à Bruxelles', body: 'Une nuit de négociations sur le budget de l’Union. La France obtient gain de cause sur la PAC.', effects: [{ kind: 'intl', partner: 'ue', relation: 2 }], tone: 'neutral' },
+  { title: 'Visite d’État du président américain', body: 'Défilé, dîner à Versailles, déclarations sur l’amitié transatlantique.', effects: [{ kind: 'intl', partner: 'etats_unis', relation: 3 }], tone: 'neutral' },
+  { title: 'Tensions en mer de Chine', body: 'Des incidents navals inquiètent les chancelleries.', effects: [{ kind: 'intl', tension: 4 }], tone: 'negative' },
+  { title: 'Accord de libre-échange contesté', body: 'Les agriculteurs bloquent des autoroutes contre un traité avec l’Amérique du Sud.', effects: [{ kind: 'intl', partner: 'ue', relation: -2 }, s('stress', 2)], tone: 'negative' },
+  { title: 'La France élue au Conseil des droits de l’homme', body: 'Un succès diplomatique discret.', effects: [{ kind: 'intl', prestige: 2 }], tone: 'positive' },
+  { title: 'Le Salon du Bourget bat des records', body: 'Des commandes d’avions historiques pour l’industrie française.', effects: [{ kind: 'intl', prestige: 1 }, { kind: 'assetValue', defIds: ['actions'], factor: 1.02 }], tone: 'positive' },
   { title: 'Votre ville élue la plus agréable du pays', body: 'Un classement national qui flatte votre bilan local.', effects: [s('popularity', 2), s('stress', -2)], tone: 'positive' },
 ];
 
 /* Tout a un prix : un choix d'événement très avantageux et sans risque reçoit une
  * contrepartie (exposition s'il rapporte de l'argent, stress sinon). */
-const SPECIAL = new Set(['declare', 'die', 'resign', 'scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'flag']);
+const SPECIAL = new Set(['rank', 'intl', 'government', 'declare', 'die', 'resign', 'scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'flag']);
 function balanceChoice(c: DecisionChoice): DecisionChoice {
   if (c.risk || c.effects.some(e => SPECIAL.has(e.kind))) return c;
   const money = c.effects.some(e => (e.kind === 'funds' && e.delta > 0) || e.kind === 'income');
@@ -1390,6 +1399,15 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     if (crownGates.length && rng.chance(0.04)) ev = pick(crownGates);
     else if (lodgeGates.length && rng.chance(0.04)) ev = pick(lodgeGates);
     else if (pressGates.length && rng.chance(0.045)) ev = pick(pressGates);
+  }
+  // Les affaires de la fonction occupée, puis celles du monde
+  if (!ev && d.week > 2 && rng.chance(0.16)) {
+    const pool = RANK_EVENTS.filter(e => canFire(e, 14));
+    if (pool.length) ev = pick(pool);
+  }
+  if (!ev && d.week > 2 && intlRelevant(d) && rng.chance(0.07)) {
+    const pool = INTL_EVENTS.filter(e => canFire(e, 26));
+    if (pool.length) ev = pick(pool);
   }
   if (!ev && d.week > 2 && rng.chance(0.28)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS].filter(e => canFire(e, 20)));
   if (ev) {

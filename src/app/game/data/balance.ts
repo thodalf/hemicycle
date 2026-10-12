@@ -150,6 +150,7 @@ const THRESHOLDS: Record<string, { succes: number; mitige: number }> = {
   direct: { succes: 62, mitige: 51 },
   bureau_secret: { succes: 21, mitige: 8 },
   deballage: { succes: 33, mitige: 29 },
+  salon_agriculture: { succes: 27, mitige: 10 },
 };
 
 export function balanceScene(def: SceneDef): SceneDef {
