@@ -43,7 +43,7 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
           @if (d.deadlineWeek <= game.week()) {
             <span class="chip bad">À trancher maintenant</span>
           } @else {
-            <span class="chip">Avant la semaine {{ d.deadlineWeek }}</span>
+            <span class="chip">Avant {{ game.month(d.deadlineWeek) }}</span>
           }
         </header>
         <h3>{{ d.title }}</h3>

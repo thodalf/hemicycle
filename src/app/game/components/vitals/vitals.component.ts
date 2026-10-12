@@ -86,7 +86,7 @@ export class VitalsComponent {
   protected readonly energy = computed(() => Math.round(this.game.stats().energy));
   protected readonly stress = computed(() => Math.round(this.game.stats().stress));
   protected readonly fatigue = computed(() => fatigueOf(this.energy(), this.stress()));
-  /** Fatigue une fois l'agenda de la semaine exécuté */
+  /** Fatigue une fois l'agenda du mois exécuté */
   protected readonly projected = computed(() => {
     const cost = this.planner.spent().energy;
     return fatigueOf(this.energy() - cost, this.stress() + cost / 3);
@@ -95,7 +95,7 @@ export class VitalsComponent {
   protected readonly tip = computed(() =>
     `Énergie ${this.energy()} · stress ${this.stress()}` +
     (this.projected() !== this.fatigue() ? ` · après votre agenda : ${this.projected()}` : '') +
-    ' · Au-delà de 80, le burn-out guette (stress 95 : semaine perdue). Un stress élevé use le cœur : risque d’infarctus.');
+    ' · Au-delà de 80, le burn-out guette (stress 95 : mois perdu). Un stress élevé use le cœur : risque d’infarctus.');
 
   protected readonly hp = computed(() => Math.round(this.game.player().health));
   protected readonly age = computed(() => Math.floor(this.game.player().age));
@@ -108,7 +108,7 @@ export class VitalsComponent {
     const debt = loanDebt(this.game.s());
     const weeks = Number(this.game.player().flags['overdraftWeeks'] ?? 0);
     return `Fonds personnels${debt ? ` · prêts à rembourser : ${debt.toLocaleString('fr-FR')} €` : ''}` +
-      (weeks ? ` · découvert depuis ${weeks} semaine(s)` : '') +
-      ' · Découvert prolongé (3 semaines) ou supérieur à 8 000 € : procédure de banqueroute.';
+      (weeks ? ` · découvert depuis ${weeks} mois` : '') +
+      ' · Découvert prolongé (2 mois) ou supérieur à 12 000 € : procédure de banqueroute.';
   });
 }

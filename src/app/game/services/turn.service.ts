@@ -4,6 +4,8 @@ import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } fro
 import { retire, settleEndings, weeklyLife } from '../engine/life';
 import { weeklyGovernment } from '../engine/government';
 import { weeklyIntl } from '../engine/intl';
+import { monthlyWar } from '../engine/war';
+import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
 import { PROJECTS_BY_ID } from '../data/projects';
 import { canDeclare, declareCandidacy, endPresidency, weeklyPresidency, weeklyPresidential } from '../engine/presidency';
@@ -29,16 +31,16 @@ export interface WeekReport {
   headlines: string[];
   newDecisions: number;
   /** Avancement du projet au long cours pendant la période */
-  project?: { label: string; done: number; weeks: number; finished: boolean };
+  project?: { label: string; done: number; months: number; finished: boolean };
 }
 
 export interface SkipReport {
-  weeks: number;
+  months: number;
   reason: string;
 }
 
 /** Décisions qui interrompent un projet auquel on se consacre : le joueur doit les trancher lui-même */
-const STOP_TAGS = new Set(['former_gouvernement', 'pm_censure', 'ev_matignon', 'alerte_sante', 'pres_censure', 'pres_destitution', 'pres_tentative', 'banqueroute', 'remaniement', 'congres', 'faillite_parti']);
+const STOP_TAGS = new Set(['guerre_bilan', 'former_gouvernement', 'pm_censure', 'ev_matignon', 'alerte_sante', 'pres_censure', 'pres_destitution', 'pres_tentative', 'banqueroute', 'remaniement', 'congres', 'faillite_parti']);
 /** Quand on se consacre à un projet, on ne s’engage dans rien d’autre : pas de scène, pas d’adhésion, pas d’achat */
 const ACTIVE_KINDS = new Set<Effect['kind']>(['scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'die', 'declare', 'resign', 'bankrupt', 'loan', 'end']);
 
@@ -51,7 +53,7 @@ export interface DecisionOutcome {
 
 /**
  * Chef d'orchestre du tour de jeu :
- *   1. exécute le plan d'actions de la semaine
+ *   1. exécute le plan d'actions du mois
  *   2. avance le calendrier
  *   3. fait tourner les systèmes (carrière, médias, parti, réseau, IA, scrutins)
  * Le tout dans UNE transaction GameStateService.mutate().
@@ -71,13 +73,14 @@ export class TurnService {
   readonly lastSkip = signal<SkipReport | null>(null);
   readonly lastOutcome = signal<DecisionOutcome | null>(null);
 
-  /** Décisions qu'il faut trancher avant de pouvoir finir la semaine */
+  /** Décisions qu'il faut trancher avant de pouvoir finir le mois */
   readonly blocking = computed(() => {
     const s = this.game.s();
     return s.pendingDecisions.filter(d => d.deadlineWeek <= s.week);
   });
   readonly canEndWeek = computed(() =>
     this.game.s().status === 'en_cours' && this.blocking().length === 0 && !this.game.s().debate && !this.game.s().protest && !this.game.s().scene
+    && !this.game.s().vote
     && !programPending(this.game.s()) && !nationalBudgetBlocking(this.game.s()));
 
   endWeek(): void {
@@ -95,7 +98,7 @@ export class TurnService {
     this.report(before, beforeStats, beforeFunds, beforeDecisions);
   }
 
-  /** Une semaine de la vie politique (et de la vie tout court) */
+  /** Un mois de la vie politique (et de la vie tout court) */
   private advance(d: GameState, rng: Rng): void {
     d.week += 1;
     this.progression.weekly(d, rng);
@@ -108,6 +111,8 @@ export class TurnService {
     weeklyPresidency(d, rng);
     weeklyGovernment(d, rng);
     weeklyIntl(d, rng);
+    monthlyWar(d, rng);
+    monthlyAssembly(d, rng);
     weeklyObjectives(d, rng);
     weeklyScenario(d, rng);
     settleEndings(d);
@@ -124,7 +129,7 @@ export class TurnService {
     const s = this.game.s();
     if (!s.project) return 'Aucun projet en cours';
     if (!this.canEndWeek()) return 'Terminez d’abord ce qui est en cours';
-    if (s.player.finances.legalCeiling !== null || s.elections.some(e => !e.resolved)) return 'Pendant une campagne électorale, le projet avance chaque semaine mais on ne peut pas s’y consacrer entièrement';
+    if (s.player.finances.legalCeiling !== null || s.elections.some(e => !e.resolved)) return 'Pendant une campagne électorale, le projet avance chaque mois mais on ne peut pas s’y consacrer entièrement';
     const urgent = s.pendingDecisions.find(x => STOP_TAGS.has(x.tag));
     if (urgent) return `Tranchez d’abord : ${urgent.title}`;
     return null;
@@ -141,7 +146,7 @@ export class TurnService {
   }
 
   /**
-   * Se consacrer à son projet : les semaines s'enchaînent jusqu'à son terme ; les petites
+   * Se consacrer à son projet : les mois s'enchaînent jusqu'à son terme ; les petites
    * décisions se règlent d'elles-mêmes (le choix le plus prudent), et l'on est rappelé·e dès
    * qu'il se passe quelque chose d'important (campagne, promotion, crise grave, alerte médicale…).
    */
@@ -152,21 +157,23 @@ export class TurnService {
     const beforeStats = { ...before.player.stats };
     const beforeFunds = before.player.finances.personal + before.player.finances.campaign;
     const beforeDecisions = new Set(before.pendingDecisions.map(d => d.id));
-    const report: SkipReport = { weeks: 0, reason: '' };
+    const report: SkipReport = { months: 0, reason: '' };
     this.game.mutate((d, rng) => {
       const rank = d.player.rankId;
       const milestones = d.milestones.length;
       const elections = new Set(d.elections.map(e => e.id));
       this.planner.execute(d, rng);
-      // Garde-fou : jamais plus de semaines que la durée restante du projet (+ marge)
-      const limit = project.weeks - project.done + 4;
-      while (d.project && d.project.id === project.id && report.weeks < limit) {
+      // Garde-fou : jamais plus de mois que la durée restante du projet (+ marge)
+      const limit = project.months - project.done + 2;
+      while (d.project && d.project.id === project.id && report.months < limit) {
         const stop = this.autoResolve(d, rng);
         if (stop) { report.reason = `Décision à prendre : ${stop}`; break; }
         this.advance(d, rng);
-        report.weeks += 1;
+        report.months += 1;
         // Un projet qui aboutit peut ouvrir une scène (promotion du livre…) : on la laisse au joueur
         if (d.project) { d.debate = null; d.protest = null; d.scene = null; }
+        // Les scrutins ordinaires : vous suivez la consigne du groupe ; les autres vous rappellent
+        if (d.vote && !autoVote(d, rng)) { report.reason = `Scrutin à l’Assemblée : ${d.vote.title}`; break; }
         if (d.status === 'mort') { report.reason = 'Décès'; break; }
         if (!d.project) break;
         if (d.milestones.length > milestones) { report.reason = d.milestones.at(-1)!.title; break; }
@@ -177,9 +184,9 @@ export class TurnService {
         const urgent = d.pendingDecisions.find(x => STOP_TAGS.has(x.tag));
         if (urgent) { report.reason = `Décision à prendre : ${urgent.title}`; break; }
       }
-      if (report.weeks && d.project) {
-        pushNews(d, 'systeme', 'neutral', `Projet interrompu après ${report.weeks} semaine${report.weeks > 1 ? 's' : ''}`,
-          `${report.reason}. Le projet continue : ${d.project.done}/${d.project.weeks} semaines.`);
+      if (report.months && d.project) {
+        pushNews(d, 'systeme', 'neutral', `Projet interrompu après ${report.months} mois`,
+          `${report.reason}. Le projet continue : ${d.project.done}/${d.project.months} mois.`);
       }
     });
     this.lastSkip.set(report);
@@ -239,8 +246,8 @@ export class TurnService {
     const was = before.project;
     if (!was) return undefined;
     const label = PROJECTS_BY_ID.get(was.id)?.label ?? was.id;
-    if (after.project?.id === was.id) return { label, done: after.project.done, weeks: after.project.weeks, finished: false };
-    return { label, done: was.weeks, weeks: was.weeks, finished: !!after.news.find(n => n.title.endsWith(label) && n.week >= before.week) };
+    if (after.project?.id === was.id) return { label, done: after.project.done, months: after.project.months, finished: false };
+    return { label, done: was.months, months: was.months, finished: !!after.news.find(n => n.title.endsWith(label) && n.week >= before.week) };
   }
 
   isChoiceAvailable(decision: Decision, choice: DecisionChoice): boolean {

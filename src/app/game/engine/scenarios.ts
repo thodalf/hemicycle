@@ -64,7 +64,7 @@ function weeklyLodge(d: GameState, rng: Rng): void {
   const l = d.lodge!;
   l.fraternite = clamp(l.fraternite - 0.6);
   l.discretion = clamp(l.discretion + 0.5);
-  // Un grade élevé ouvre des portes : un peu d'influence chaque semaine
+  // Un grade élevé ouvre des portes : un peu d'influence chaque mois
   if (l.grade >= 2) d.player.stats.influence = clamp(d.player.stats.influence + 0.15 * l.grade);
 
   if (nextGradeReady(d)) {
@@ -72,7 +72,7 @@ function weeklyLodge(d: GameState, rng: Rng): void {
     if (decision) d.pendingDecisions.push(decision);
   }
   const last = Number(d.player.flags['lastRevelation'] ?? -99);
-  if (l.discretion <= 20 && d.week - last >= 8 && rng.chance(0.35)) {
+  if (l.discretion <= 20 && d.week - last >= 4 && rng.chance(0.35)) {
     const decision = createDecision('revelation', d, rng, {});
     if (decision) {
       d.pendingDecisions.push(decision);

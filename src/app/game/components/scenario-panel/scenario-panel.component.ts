@@ -44,7 +44,7 @@ import { MOLE_GOAL } from '../../engine/mole';
         <div class="card-title"><span>{{ p.outlet }}</span>
           <span class="chip accent">{{ game.s().scenario === 'editorialiste' ? 'Objectif : diriger la rédaction' : outletLabel() }}</span></div>
         <p class="muted small">{{ outletLabel() }} · propriétaire : {{ p.owner }} · ligne {{ stance(p.ligne) }} ·
-          <strong class="mono">{{ p.salary | number: '1.0-0' }} €/sem.</strong></p>
+          <strong class="mono">{{ p.salary | number: '1.0-0' }} €/mois</strong></p>
         <ol class="grades">
           @for (g of pressGrades; track g; let i = $index) {
             <li [class.done]="i < p.grade" [class.now]="i === p.grade">{{ g }}</li>

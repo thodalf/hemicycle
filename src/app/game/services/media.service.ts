@@ -11,13 +11,13 @@ import { Rng, clamp } from '../engine/rng';
 @Injectable({ providedIn: 'root' })
 export class MediaService {
   weekly(d: GameState, rng: Rng): void {
-    // Crises nationales : verrouillent l'agenda trois semaines
-    if (d.week >= 6 && d.week > d.agendaLockedUntil && rng.chance(0.08)) {
+    // Crises nationales : verrouillent l'agenda deux mois
+    if (d.week >= 3 && d.week > d.agendaLockedUntil && rng.chance(0.08)) {
       const crisis = createDecision('crise', d, rng, {});
       if (crisis) {
         d.pendingDecisions.push(crisis);
         d.agendaDomain = crisis.domain!;
-        d.agendaLockedUntil = d.week + 3;
+        d.agendaLockedUntil = d.week + 2;
         pushNews(d, 'actu', 'negative', crisis.title, crisis.context);
       }
     }
@@ -47,7 +47,7 @@ export class MediaService {
 
     // Bouleversements : un dossier maîtrisé peut devenir obsolète du jour au lendemain
     const top = Math.max(...Object.values(d.player.dossiers).map(x => x.mastery));
-    if (d.week > 4 && top >= 50 && rng.chance(0.05 + (top - 50) / 400)) {
+    if (d.week > 2 && top >= 50 && rng.chance(0.05 + (top - 50) / 400)) {
       const decision = createDecision('bouleversement', d, rng, {});
       if (decision) d.pendingDecisions.push(decision);
     }

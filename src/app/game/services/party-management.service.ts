@@ -23,7 +23,7 @@ export class PartyManagementService {
     const avgSatisfaction = party.factions.reduce((s, f) => s + f.satisfaction, 0) / party.factions.length;
     party.cohesion = clamp(party.cohesion + (avgSatisfaction - party.cohesion) * 0.1);
 
-    if (d.week % 7 === 0) {
+    if (d.week % 5 === 0) {
       const decision = createDecision('ligne_parti', d, rng, {});
       if (decision) d.pendingDecisions.push(decision);
     }

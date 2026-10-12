@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, output, signal } from '@angular/core';
+import { monthLabel } from '../../engine/calendar';
 import { AuthService } from '../../services/auth.service';
 import { GameStateService } from '../../services/game-state.service';
 import { SLOTS, SlotMeta } from '../../services/save-store';
@@ -41,7 +42,7 @@ interface Downloads { save(o: { filename: string; data: string | Blob }): Promis
               <div class="info">
                 <strong>{{ m.name }}</strong>
                 <span>{{ m.rank }} · {{ m.party }}</span>
-                <span class="muted">{{ m.scenario }}{{ m.age ? ' · ' + m.age + ' ans' : '' }} · semaine {{ m.week }} · {{ ago(m.updatedAt) }}
+                <span class="muted">{{ m.scenario }}{{ m.age ? ' · ' + m.age + ' ans' : '' }} · {{ m.date ?? 'semaine ' + m.week }} · {{ ago(m.updatedAt) }}
                   @if (m.status === 'mort') { · <b>Décédé·e</b> }</span>
               </div>
               <div class="cta">
@@ -68,7 +69,7 @@ interface Downloads { save(o: { filename: string; data: string | Blob }): Promis
             @for (f of found(); track f.key) {
               <li>
                 <span class="sw" [style.background]="f.meta.partyColor"></span>
-                <span class="fi"><strong>{{ f.meta.name }}</strong> · {{ f.meta.rank }} · {{ f.meta.scenario }} · semaine {{ f.meta.week }}
+                <span class="fi"><strong>{{ f.meta.name }}</strong> · {{ f.meta.rank }} · {{ f.meta.scenario }} · {{ f.meta.date ?? 'semaine ' + f.meta.week }}
                   <small class="muted">{{ f.origin }}</small></span>
                 @if (freeSlot(); as n) {
                   <button class="btn small primary" (click)="recover(f.key, n)">Récupérer dans l’emplacement {{ n }}</button>
@@ -190,7 +191,7 @@ export class SlotsComponent {
     if (!state) return;
     const file: ExportFile = { format: 'hemicycle-save', version: 1, exportedAt: new Date().toISOString(), state };
     const data = JSON.stringify(file);
-    const filename = `hemicycle-${state.player.name.replace(/[^\p{L}\p{N}]+/gu, '-').toLowerCase()}-semaine-${state.week}.json`;
+    const filename = `hemicycle-${state.player.name.replace(/[^\p{L}\p{N}]+/gu, '-').toLowerCase()}-${monthLabel(state.week).replace(' ', '-')}.json`;
     // Dans la page publiée, le téléchargement passe par la plateforme ; ailleurs, par un lien
     const rt = (globalThis as unknown as { claude?: { use(n: string): Promise<unknown> } }).claude;
     const downloads = rt ? await rt.use('downloads') as Downloads | null : null;
@@ -221,7 +222,7 @@ export class SlotsComponent {
     try {
       const parsed = JSON.parse(await f.text()) as ExportFile | GameState;
       const state = 'format' in parsed && parsed.format === 'hemicycle-save' ? parsed.state : parsed as GameState;
-      if (state?.version !== 1 || !state.player || !state.party) throw new Error('format');
+      if (((state?.version as number) !== 1 && state?.version !== 2) || !state.player || !state.party) throw new Error('format');
       await this.auth.store()?.save(this.importTarget, state);
       this.say(`Partie de ${state.player.name} importée dans l’emplacement ${this.importTarget}.`);
       await this.refresh();

@@ -24,7 +24,7 @@ import { MINISTRIES } from '../../engine/government';
             <small class="muted">Séminaires et arbitrages la renforcent ; les frondes l’abîment.</small>
           </div>
         </div>
-        <p class="muted small">À Matignon depuis la semaine {{ g.since }} · onglet Fonction : politique générale, 49.3, remaniement, conférence sociale.</p>
+        <p class="muted small">À Matignon depuis {{ game.month(g.since) }} · onglet Fonction : politique générale, 49.3, remaniement, conférence sociale.</p>
       </section>
     } @else if (ministry(); as m) {
       <section class="card ministere">

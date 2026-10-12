@@ -7,7 +7,7 @@ import { Rng, nextId } from './rng';
 
 /* ============================================================
  *  Objectifs à court terme : trois défis actifs, avec échéance
- *  et récompense. Ils donnent un cap semaine après semaine.
+ *  et récompense. Ils donnent un cap mois après mois.
  * ============================================================ */
 
 const MAX_ACTIVE = 3;
@@ -39,7 +39,7 @@ function generate(d: GameState, rng: Rng, exclude: Set<ObjectiveKind>): Draft | 
     return {
       kind: 'category', param: cat, label: `Mener 3 actions « ${CATEGORY_LABELS[cat]} »`, target: 3, deadlineWeek: w + 3,
       reward: [{ kind: 'flag', key: 'bonusAp', value: 1 }, { kind: 'stat', stat: 'energy', delta: 15 }],
-      rewardLabel: '+1 PA la semaine suivante, +15 énergie',
+      rewardLabel: '+1 PA le mois suivant, +15 énergie',
     };
   });
   options.push(() => {
@@ -102,7 +102,7 @@ export function refreshObjectives(d: GameState, rng: Rng): void {
   }
 }
 
-/** Fin de semaine : objectifs expirés retirés, nouveaux objectifs proposés */
+/** Fin de mois : objectifs expirés retirés, nouveaux objectifs proposés */
 export function weeklyObjectives(d: GameState, rng: Rng): void {
   refreshObjectives(d, rng);
   for (const o of [...d.objectives]) {

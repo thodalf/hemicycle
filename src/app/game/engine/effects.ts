@@ -17,6 +17,9 @@ import { adjustHealth, die } from './life';
 import { adjustIntl } from './intl';
 import { adjustGovernment, assignPortfolio, enterMatignon } from './government';
 import { addParrainages, adjustPresidency, declareCandidacy, endPresidency } from './presidency';
+import { lawyerFactor } from './staff-perks';
+import { adjustWar } from './war';
+import { ownOrigin, scheduleVote } from './assembly';
 
 /* ============================================================
  *  Moteur d'effets — fonctions pures appliquées sur un brouillon
@@ -68,7 +71,7 @@ export function spend(d: GameState, amount: number): void {
 /* ── Caisse du parti ─────────────────────────────────────────
  * Une action militante peut être réglée par le parti. Si vous le dirigez,
  * c'est la trésorerie qui paie. Sinon, la fédération vous accorde une
- * enveloppe hebdomadaire selon votre rang et votre soutien interne, et
+ * enveloppe mensuelle selon votre rang et votre soutien interne, et
  * chaque tranche de 1 000 € coûte un point de capital politique. */
 const ENVELOPE_BY_RANK = [800, 2500, 6000, 9000, 12000, 15000, 20000];
 
@@ -102,7 +105,9 @@ export function failureChance(d: GameState, risk: RiskProfile, ctx: EffectContex
   let value = 0;
   if (risk.scaleWith === 'dossier') value = ctx.domain ? d.player.dossiers[ctx.domain].mastery : 0;
   else if (risk.scaleWith) value = d.player.stats[risk.scaleWith];
-  const p = risk.baseChance * (1 - (risk.scaleWeight ?? 0) * (value / 100));
+  // Avocate : les risques judiciaires (ceux qui exposent aux scandales) tournent plus souvent bien
+  const legal = d.player.staff.includes('juriste') && risk.onFailure.some(e => e.kind === 'exposure') ? 0.8 : 1;
+  const p = risk.baseChance * (1 - (risk.scaleWeight ?? 0) * (value / 100)) * legal;
   return clamp(p, 0.03, 0.95);
 }
 
@@ -142,7 +147,7 @@ export function scaleGains(effects: Effect[], f: number): Effect[] {
   });
 }
 
-/** Lassitude : répéter la même action d'une semaine sur l'autre rapporte de moins en moins */
+/** Lassitude : répéter la même action d'un mois sur l'autre rapporte de moins en moins */
 export function wearFactor(d: GameState, actionId: string): number {
   const last = Number(d.player.flags[`last_${actionId}`] ?? -99);
   if (d.week - last > 1) return 1;
@@ -238,9 +243,18 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         summary.push(owed ? 'Faveur soldée' : 'Vous lui devez désormais une faveur');
         break;
       }
-      case 'exposure':
-        d.player.scandalExposure = clamp(d.player.scandalExposure + e.delta);
-        if (e.delta > 0) summary.push(`Exposition ${signed(e.delta)}`);
+      case 'exposure': {
+        // Une avocate dans l'équipe amortit chaque affaire
+        const delta = e.delta > 0 ? Math.round(e.delta * lawyerFactor(d) * 10) / 10 : e.delta;
+        d.player.scandalExposure = clamp(d.player.scandalExposure + delta);
+        if (delta > 0) summary.push(`Exposition ${signed(delta)}`);
+        break;
+      }
+      case 'war':
+        summary.push(...adjustWar(d, e, ctx.targetId, rng));
+        break;
+      case 'vote':
+        summary.push(...scheduleVote(d, rng, e.billId, e.own ? ownOrigin(d) : undefined));
         break;
       case 'momentum':
         d.player.momentum = clamp(d.player.momentum + e.delta);
@@ -316,7 +330,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         }
         const was = d.player.rankId;
         d.player.rankId = e.rankId;
-        d.player.actionPoints.max = RANKS[e.rankId].weeklyActionPoints;
+        d.player.actionPoints.max = RANKS[e.rankId].monthlyActionPoints;
         summary.push(`Nouveau rang : ${RANKS[e.rankId].label}`);
         if (e.rankId === 'premier_ministre' && was !== 'premier_ministre') enterMatignon(d);
         if (e.rankId === 'ministre' && was !== 'ministre') assignPortfolio(d);
@@ -396,7 +410,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         summary.push(...adjustMole(d, e));
         break;
       case 'loan':
-        summary.push(...takeLoan(d, e.amount, e.total));
+        summary.push(...takeLoan(d, e.amount, e.total, e.lender));
         break;
       case 'bankrupt':
         summary.push(...declareBankruptcy(d));
@@ -419,7 +433,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         if (!d.press) {
           d.press = createPress(e.outlet, d.week);
           pushNews(d, 'actu', 'neutral', `${d.player.name} rejoint ${OUTLETS[e.outlet].name}`,
-            `Une chronique régulière, ${d.press.salary.toLocaleString('fr-FR')} € par semaine. Nouvel onglet : Rédaction.`);
+            `Une chronique régulière, ${d.press.salary.toLocaleString('fr-FR')} € par mois. Nouvel onglet : Rédaction.`);
           summary.push(`Entrée à ${OUTLETS[e.outlet].name}`);
         }
         break;

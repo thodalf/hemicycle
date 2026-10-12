@@ -10,7 +10,7 @@ import { STAFF_BY_ROLE } from '../../data/staff';
     <article class="rc" [class]="'rc ' + recruit().rarity" [class.compact]="compact()">
       <header>
         <span class="rarity">{{ rarity() }}</span>
-        <span class="salary mono">{{ recruit().salary }} €/sem.</span>
+        <span class="salary mono">{{ recruit().salary.toLocaleString('fr-FR') }} €/mois</span>
       </header>
       <strong class="name">{{ recruit().name }}</strong>
       <span class="role">{{ role().title }}</span>

@@ -38,7 +38,7 @@ const c = (id: string, label: string, effects: Effect[], outcome: string, extra:
 
 
 /* ── Portes d'entrée : Couronne et Loge dans une partie normale ─────
- * Ces événements ont leur propre tirage (4 % par semaine chacun) :
+ * Ces événements ont leur propre tirage (4 % par mois chacun) :
  * c'est le seul moyen de débloquer les onglets hors scénario. */
 const GATEWAY_EVENTS: RandomEvent[] = [
   {
@@ -356,7 +356,7 @@ const RANDOM_EVENTS: RandomEvent[] = [
     tag: 'greve_transports', weight: 0.8,
     build: () => ({
       title: 'Grève générale des transports',
-      context: 'Votre agenda de la semaine prochaine est compromis.',
+      context: 'Votre agenda du mois prochain est compromis.',
       choices: [
         c('velo', 'Tout faire à vélo, caméras incluses', [s('popularity', 3), s('energy', -15)], 'L’image d’un·e élu·e qui pédale plaît.'),
         c('soutien', 'Soutenir les grévistes', [s('popularity', 1), { kind: 'stance', delta: -4 }, { kind: 'contact', contactId: 'ct-ust', trust: 6 }], 'Les syndicats apprécient.'),
@@ -428,7 +428,7 @@ const RANDOM_EVENTS: RandomEvent[] = [
       title: 'Du fumier devant votre permanence',
       context: 'Des agriculteurs en colère bloquent la rue avec leurs tracteurs. Ils exigent d’être reçus.',
       choices: [
-        c('recevoir', 'Les recevoir et négocier', [{ kind: 'scene', sceneId: 'mediation' }], 'Café, chaises en cercle : la négociation commence en fin de semaine.'),
+        c('recevoir', 'Les recevoir et négocier', [{ kind: 'scene', sceneId: 'mediation' }], 'Café, chaises en cercle : la négociation commence en fin de mois.'),
         c('soutenir', 'Monter sur un tracteur avec eux', [s('popularity', 3), { kind: 'stance', delta: 3 }, { kind: 'contact', contactId: 'ct-maires', trust: 6 }, { kind: 'dossier', domain: 'territoires', delta: 2 }], 'La photo fait la une de la presse régionale.'),
         c('police', 'Demander l’évacuation', [s('popularity', -4), { kind: 'stance', delta: 2 }], 'Les tracteurs repartent. La rancune reste.'),
       ],
@@ -491,7 +491,7 @@ const RANDOM_EVENTS: RandomEvent[] = [
       context: 'Un nuage de fumée noire au-dessus de votre circonscription. Pas de victime, mais la population a peur.',
       choices: [
         c('terrain', 'Se rendre immédiatement sur place', [s('popularity', 4), s('energy', -10), { kind: 'dossier', domain: 'ecologie', delta: 3 }], 'Casque sur la tête, vous rassurez les riverains.'),
-        c('enquete', 'Exiger une commission d’enquête', [{ kind: 'scene', sceneId: 'commission' }], 'Les auditions commencent en fin de semaine.', { needRank: 'depute' }),
+        c('enquete', 'Exiger une commission d’enquête', [{ kind: 'scene', sceneId: 'commission' }], 'Les auditions commencent en fin de mois.', { needRank: 'depute' }),
         c('communique', 'Publier un communiqué', [s('popularity', -1)], 'Le service minimum.'),
       ],
     }),
@@ -772,7 +772,7 @@ const RANDOM_EVENTS: RandomEvent[] = [
       choices: [
         c('pour', 'Soutenir le projet', [{ kind: 'dossier', domain: 'ecologie', delta: 3 }, { kind: 'stance', delta: -2 }, s('popularity', -1), { kind: 'contact', contactId: 'ct-climat', trust: 6 }], 'Les écologistes applaudissent, les riverains grondent.'),
         c('contre', 'S’opposer au projet', [s('popularity', 2), { kind: 'stance', delta: 2 }, { kind: 'contact', contactId: 'ct-climat', trust: -6 }], 'Les riverains vous remercient.'),
-        c('concertation', 'Organiser une concertation', [{ kind: 'scene', sceneId: 'mediation' }], 'Tout le monde autour de la table en fin de semaine.'),
+        c('concertation', 'Organiser une concertation', [{ kind: 'scene', sceneId: 'mediation' }], 'Tout le monde autour de la table en fin de mois.'),
       ],
     }),
   },
@@ -948,7 +948,7 @@ const RANDOM_EVENTS: RandomEvent[] = [
   // ── Fonder son parti ──────────────────────────────────────────
   {
     tag: 'dissidents', weight: 1.4, minRank: 'conseiller_municipal',
-    eligible: d => !d.party.founder && d.scenario !== 'royaute' && d.week > 8 && !d.player.flags['foundOffer'],
+    eligible: d => !d.party.founder && d.scenario !== 'royaute' && d.week > 5 && !d.player.flags['foundOffer'],
     build: d => ({
       title: 'Des militants veulent vous suivre',
       context: `Une centaine de cadres ${ofParty(d.party.name)}, déçus par la direction, vous proposent de fonder un nouveau mouvement. Ils prendraient les frais en charge.`,
@@ -1238,7 +1238,7 @@ const RANDOM_EVENTS: RandomEvent[] = [
       title: 'Un prix Nobel vous contredit',
       context: `Un économiste de renom juge votre position sur ${d.agendaDomain === 'economie' ? 'l’économie' : 'le sujet du moment'} « naïve et dangereuse ».`,
       choices: [
-        c('debattre', 'Proposer un débat public', [{ kind: 'debate', stakes: 'face_a_face' }], 'Le duel est fixé à la fin de la semaine.'),
+        c('debattre', 'Proposer un débat public', [{ kind: 'debate', stakes: 'face_a_face' }], 'Le duel est fixé à la fin du mois.'),
         c('reconnaitre', 'Reconnaître une part de vérité', [s('credibility', 2), s('popularity', -2), { kind: 'stance', delta: 0 }], 'L’humilité surprend.'),
         c('ignorer', 'L’ignorer', [s('credibility', -3)], 'Son avis tourne en boucle.'),
       ],
@@ -1289,7 +1289,7 @@ const RANDOM_EVENTS: RandomEvent[] = [
       context: 'Il réclame votre aide pour retrouver son emploi et refuse de partir.',
       choices: [
         c('recevoir', 'Le recevoir et appeler son ancien employeur', [s('popularity', 3), s('energy', -6), { kind: 'contact', contactId: 'ct-btp', trust: -4 }], 'Son employeur accepte de le recevoir.'),
-        c('mediation', 'Lancer une médiation', [{ kind: 'scene', sceneId: 'mediation' }], 'La négociation commence en fin de semaine.'),
+        c('mediation', 'Lancer une médiation', [{ kind: 'scene', sceneId: 'mediation' }], 'La négociation commence en fin de mois.'),
         c('police', 'Faire évacuer le trottoir', [s('popularity', -5), s('stress', 2)], 'Les images de l’évacuation tournent en boucle.'),
       ],
     }),
@@ -1315,7 +1315,7 @@ const NEWS_EVENTS: { title: string; body: string; effects: Effect[]; tone: 'posi
   { title: 'Votre permanence taguée', body: 'Des inscriptions hostiles sur la vitrine. Les messages de soutien affluent.', effects: [s('popularity', 2), s('stress', 4)], tone: 'negative' },
   { title: 'Un livre-enquête vous égratigne', body: 'Un chapitre entier sur vos ambitions. Rien d’illégal, rien de flatteur.', effects: [s('credibility', -2), { kind: 'exposure', delta: 3 }], tone: 'negative' },
   { title: 'Une vieille photo de vous jeune militant·e', body: 'Cheveux longs, pancarte à la main : l’internet est attendri.', effects: [s('popularity', 2)], tone: 'positive' },
-  { title: 'Panne géante d’électricité', body: 'Votre semaine est perturbée.', effects: [s('energy', -8)], tone: 'neutral' },
+  { title: 'Panne géante d’électricité', body: 'Votre mois est perturbé.', effects: [s('energy', -8)], tone: 'neutral' },
   { title: 'Un ancien professeur raconte vos années d’études', body: '« Déjà brillant·e, déjà insupportable. »', effects: [s('popularity', 1), s('credibility', 1)], tone: 'positive' },
   { title: 'Rumeur de remaniement… sans vous', body: 'Votre nom ne figure sur aucune liste. On vous dit en perte de vitesse.', effects: [s('influence', -2), s('stress', 3)], tone: 'negative' },
   { title: 'Un rond-point baptisé à votre nom… par erreur', body: 'La mairie voulait honorer un homonyme décédé. La plaque est retirée dans l’hilarité.', effects: [s('popularity', 1)], tone: 'neutral' },
@@ -1373,7 +1373,7 @@ const PRESS_TAGS = new Set(['diffamation', 'rachat_media', 'source_menacee', 'au
 
 let seq = 0;
 
-/** Tire éventuellement un événement aléatoire pour la semaine */
+/** Tire éventuellement un événement aléatoire pour le mois */
 export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision; news?: typeof NEWS_EVENTS[number] } {
   const out: { decision?: Decision; news?: typeof NEWS_EVENTS[number] } = {};
   const canFire = (e: RandomEvent, cooldown: number) =>
@@ -1390,9 +1390,9 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
   };
 
   let ev: RandomEvent | undefined;
-  // Portes d'entrée Couronne / Loge : tirage à part, une seule par semaine
+  // Portes d'entrée Couronne / Loge : tirage à part, une seule par mois
   if (d.week >= 4) {
-    const gates = GATEWAY_EVENTS.filter(e => canFire(e, 12));
+    const gates = GATEWAY_EVENTS.filter(e => canFire(e, 8));
     const crownGates = gates.filter(e => e.tag === 'emissaire_royaliste' || e.tag === 'bal_legitimiste');
     const lodgeGates = gates.filter(e => e.tag === 'parrain_loge' || e.tag === 'tenue_blanche');
     const pressGates = gates.filter(e => e.tag === 'offre_chronique' || e.tag === 'offre_journal');
@@ -1401,15 +1401,15 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     else if (pressGates.length && rng.chance(0.045)) ev = pick(pressGates);
   }
   // Les affaires de la fonction occupée, puis celles du monde
-  if (!ev && d.week > 2 && rng.chance(0.16)) {
-    const pool = RANK_EVENTS.filter(e => canFire(e, 14));
+  if (!ev && d.week > 2 && rng.chance(0.2)) {
+    const pool = RANK_EVENTS.filter(e => canFire(e, 10));
     if (pool.length) ev = pick(pool);
   }
   if (!ev && d.week > 2 && intlRelevant(d) && rng.chance(0.07)) {
-    const pool = INTL_EVENTS.filter(e => canFire(e, 26));
+    const pool = INTL_EVENTS.filter(e => canFire(e, 12));
     if (pool.length) ev = pick(pool);
   }
-  if (!ev && d.week > 2 && rng.chance(0.28)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS].filter(e => canFire(e, 20)));
+  if (!ev && d.week > 2 && rng.chance(0.32)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS].filter(e => canFire(e, 14)));
   if (ev) {
     const { choices, ...built } = ev.build(d, rng);
     const usable = choices

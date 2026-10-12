@@ -1,8 +1,8 @@
 <section class="card planner">
   <header class="planner-head">
     <div>
-      <div class="eyebrow">Semaine {{ game.week() }} · {{ game.date() }}</div>
-      <h2>Agenda de la semaine</h2>
+      <div class="eyebrow"><span class="season" aria-hidden="true">{{ season() }}</span> {{ game.date() }} · mois {{ game.week() }}</div>
+      <h2>Agenda du mois</h2>
     </div>
     <div class="ap" [attr.aria-label]="planner.apLeft() + ' points d’action restants'">
       <span class="eyebrow">Points d’action</span>
@@ -18,7 +18,7 @@
     @if (reportOpen()) {
       <div class="report">
         <div class="report-head">
-          <strong>Bilan de la semaine {{ report.week }}</strong>
+          <strong>Bilan de {{ game.month(report.week) }}</strong>
           <button class="btn small" (click)="reportOpen.set(false)">Fermer</button>
         </div>
         <div class="report-deltas">
@@ -35,7 +35,7 @@
           }
           @if (report.project; as pr) {
             <span class="chip" [class.good]="pr.finished" [class.accent]="!pr.finished">
-              {{ pr.finished ? 'Projet terminé' : 'Projet' }} : {{ pr.label }} · {{ pr.done }}/{{ pr.weeks }}
+              {{ pr.finished ? 'Projet terminé' : 'Projet' }} : {{ pr.label }} · {{ pr.done }}/{{ pr.months }} mois
             </span>
           }
           @if (report.newDecisions) {
@@ -72,13 +72,13 @@
                 </div>
                 <p class="muted">{{ p.def.description }}</p>
                 <div class="costs mono">
-                  <span class="cost ap">{{ p.def.weeks }} sem.</span>
+                  <span class="cost ap">{{ p.duration }}</span>
                   <span class="cost" [class.heavy]="p.big">{{ p.load }}</span>
                   @if (p.def.money) { <span class="cost">{{ p.def.money.toLocaleString('fr-FR') }} €</span> }
                 </div>
                 <div class="fx">
-                  <span class="fx-label">Chaque semaine</span>
-                  @for (c of p.weekly; track c.text) { <span class="fx-chip" [class.good]="c.tone === 'good'" [class.bad]="c.tone === 'bad'">{{ c.text }}</span> }
+                  <span class="fx-label">Chaque mois</span>
+                  @for (c of p.monthly; track c.text) { <span class="fx-chip" [class.good]="c.tone === 'good'" [class.bad]="c.tone === 'bad'">{{ c.text }}</span> }
                 </div>
                 <div class="fx">
                   <span class="fx-label">À l’arrivée</span>
@@ -117,7 +117,7 @@
                   @for (c of f.losses; track c.text) { <span class="fx-chip bad">{{ c.text }}</span> }
                   @for (c of f.other; track c.text) { <span class="fx-chip">{{ c.text }}</span> }
                   @if (a.risk) { <span class="fx-chip risk" [title]="failText(a)">{{ failText(a) }}</span> }
-                  @if (wear(a) < 1) { <span class="fx-chip bad" title="Répéter la même action d’une semaine sur l’autre lasse : les gains diminuent.">Lassitude : gains −{{ 100 - wear(a) * 100 | number: '1.0-0' }} %</span> }
+                  @if (wear(a) < 1) { <span class="fx-chip bad" title="Répéter la même action d’un mois sur l’autre lasse : les gains diminuent.">Lassitude : gains −{{ 100 - wear(a) * 100 | number: '1.0-0' }} %</span> }
                 </div>
               }
               @if (fundable(a)) {
@@ -159,14 +159,14 @@
       }
     </div>
 
-    <!-- Plan de la semaine -->
+    <!-- Plan du mois -->
     <aside class="plan">
-      <div class="eyebrow">Votre semaine</div>
+      <div class="eyebrow">Votre mois</div>
       <ol class="plan-list">
         @if (current(); as c) {
           <li class="reserved">
             <span class="mono ap-tag">{{ planner.reserved() }}</span>
-            <span class="plan-label">{{ c.def.label }} <small class="muted">→ projet, semaine {{ c.done + 1 }} / {{ c.weeks }}</small></span>
+            <span class="plan-label">{{ c.def.label }} <small class="muted">→ projet, mois {{ c.done + 1 }} / {{ c.months }}</small></span>
           </li>
         }
         @for (p of planner.plan(); track p.uid) {
@@ -194,11 +194,11 @@
 
       @if (turn.blocking().length) {
         <p class="blocking">
-          {{ turn.blocking().length }} décision(s) urgente(s) à trancher avant de clore la semaine.
+          {{ turn.blocking().length }} décision(s) urgente(s) à trancher avant de clore le mois.
         </p>
       }
       <button class="btn primary end" [disabled]="!turn.canEndWeek()" (click)="endWeek()">
-        Terminer la semaine →
+        Terminer le mois →
       </button>
       @if (planner.apLeft() > 0 && turn.canEndWeek()) {
         <p class="muted hint">{{ planner.apLeft() }} PA non utilisés seront perdus.</p>
@@ -207,38 +207,38 @@
         <span class="eyebrow">Projet au long cours</span>
         @if (current(); as c) {
           <strong>{{ c.def.label }}</strong>
-          <div class="pbar" [attr.aria-label]="c.done + ' semaines sur ' + c.weeks"><span [style.width.%]="c.done / c.weeks * 100"></span></div>
-          <small class="muted">{{ c.done }} / {{ c.weeks }} semaines · {{ c.load }}</small>
+          <div class="pbar" [attr.aria-label]="c.done + ' mois sur ' + c.months"><span [style.width.%]="c.done / c.months * 100"></span></div>
+          <small class="muted">{{ c.done }} / {{ c.months }} mois · {{ c.load }}</small>
           <button class="btn primary small" [disabled]="!turn.canDevote()" (click)="devote()">S’y consacrer jusqu’au bout</button>
           @if (turn.devoteBlock(); as why) { <small class="muted">{{ why }}.</small> }
-          <small class="muted">Le projet avance aussi d’une semaine chaque fois que vous terminez la semaine.</small>
+          <small class="muted">Le projet avance aussi d’un mois chaque fois que vous terminez le mois.</small>
           @if (confirmAbandon()) {
             <span class="confirm">Abandonner ? <button class="btn small" (click)="abandon()">Oui</button><button class="btn small" (click)="confirmAbandon.set(false)">Non</button></span>
           } @else {
             <button class="link" (click)="confirmAbandon.set(true)">Abandonner le projet</button>
           }
         } @else {
-          <small class="muted">Un livre, un tour de France, une réforme, une année sabbatique… Les projets s’étalent sur plusieurs semaines ; vous pouvez vous y consacrer pour faire défiler le temps.</small>
+          <small class="muted">Un livre, un tour de France, une réforme, une année sabbatique… Les projets s’étalent sur plusieurs mois ; vous pouvez vous y consacrer pour faire défiler le temps.</small>
           <button class="btn small" (click)="category.set('projets')">Voir les projets</button>
         }
         @if (turn.lastSkip(); as r) {
-          <small class="muted">{{ r.weeks }} semaine(s) consacrée(s){{ r.reason ? ' — rappel : ' + r.reason : '' }}.</small>
+          <small class="muted">{{ r.months }} mois consacré{{ r.months > 1 ? 's' : '' }}{{ r.reason ? ' — rappel : ' + r.reason : '' }}.</small>
         }
       </div>
     </aside>
   </div>
 </section>
 
-<!-- Téléphone : barre de fin de semaine toujours à portée de pouce -->
-<div class="mobile-end" role="region" aria-label="Fin de semaine">
+<!-- Téléphone : barre de fin de mois toujours à portée de pouce -->
+<div class="mobile-end" role="region" aria-label="Fin du mois">
   <button type="button" class="summary" (click)="scrollToPlan()">
     <strong>{{ planner.plan().length }} action{{ planner.plan().length > 1 ? 's' : '' }}</strong>
-    @if (current(); as c) { <span class="proj-mini">Projet {{ c.done }}/{{ c.weeks }} <i [style.width.%]="c.done / c.weeks * 100"></i></span> }
+    @if (current(); as c) { <span class="proj-mini">Projet {{ c.done }}/{{ c.months }} <i [style.width.%]="c.done / c.months * 100"></i></span> }
     <span class="muted">{{ planner.apLeft() }} PA libre{{ planner.apLeft() > 1 ? 's' : '' }}</span>
   </button>
   @if (turn.blocking().length) {
     <button type="button" class="btn warn-btn" (click)="scrollToDecisions()">{{ turn.blocking().length }} décision{{ turn.blocking().length > 1 ? 's' : '' }} à trancher</button>
   } @else {
-    <button type="button" class="btn primary" [disabled]="!turn.canEndWeek()" (click)="endWeek()">Terminer la semaine →</button>
+    <button type="button" class="btn primary" [disabled]="!turn.canEndWeek()" (click)="endWeek()">Terminer le mois →</button>
   }
 </div>

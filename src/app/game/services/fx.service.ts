@@ -1,10 +1,12 @@
 import { Injectable, signal } from '@angular/core';
+import { monthIndex, monthLabel, yearOf } from '../engine/calendar';
 
 /* ============================================================
  *  Effets visuels 2D éphémères : chiffres flottants, gerbes de
  *  confettis, jetons qui volent vers l'agenda, tampons, page
- *  de calendrier, secousse. Purement décoratif : rien ici ne
- *  touche à l'état du jeu.
+ *  de calendrier, feux d'artifice, éclair, ligne de front,
+ *  billets, secousse. Purement décoratif : rien ici ne touche
+ *  à l'état du jeu.
  * ============================================================ */
 
 export type FxTone = 'good' | 'bad' | 'neutral';
@@ -13,7 +15,10 @@ export interface FxParticle { dx: number; dy: number; rot: number; color: string
 
 export interface FxItem {
   id: number;
-  kind: 'float' | 'burst' | 'fly' | 'stamp' | 'week' | 'ticker' | 'coin';
+  kind: 'float' | 'burst' | 'fly' | 'stamp' | 'week' | 'month' | 'ticker' | 'coin' | 'note' | 'banner' | 'flash' | 'front' | 'rocket';
+  /** Mois précédent (page de calendrier) */
+  old?: string;
+  icon?: string;
   x: number;
   y: number;
   text?: string;
@@ -108,9 +113,44 @@ export class FxService {
     this.add({ kind: 'stamp', text, sub, tone, x: window.innerWidth / 2, y: window.innerHeight * 0.38 }, 1500);
   }
 
-  /** Page de calendrier qui tourne en fin de semaine */
-  weekTurn(from: number, to: number, date: string): void {
-    this.add({ kind: 'week', text: `Semaine ${to}`, sub: date, x: window.innerWidth / 2, y: 90, dx: from }, 1700);
+  /** Page de calendrier qui tourne en fin de mois */
+  monthTurn(from: number, to: number): void {
+    const name = (t: number) => monthLabel(t).split(' ')[0];
+    const icon = ['❄️', '❄️', '🌱', '🌷', '🌸', '☀️', '☀️', '🏖️', '🍂', '🍂', '🍁', '🎄'][monthIndex(to)];
+    this.add({ kind: 'month', text: name(to), sub: String(yearOf(to)), old: name(from), icon, x: window.innerWidth / 2, y: 90 }, 1900);
+  }
+
+  /** Nouvel an : fusées, gerbes et bandeau */
+  newYear(year: number): void {
+    if (this.reduced || typeof window === 'undefined') return;
+    const w = window.innerWidth, h = window.innerHeight;
+    [0.2, 0.5, 0.8, 0.35, 0.65].forEach((x, i) => {
+      const delay = i * 260;
+      this.add({ kind: 'rocket', x: w * x, y: h, dy: -h * (0.55 + (i % 2) * 0.12), delay }, 900);
+      setTimeout(() => this.burst(w * x, h * (0.45 - (i % 2) * 0.12), 'good', 26), delay + 820);
+    });
+    this.add({ kind: 'banner', text: `Bonne année ${year}`, sub: 'Vœux à la presse, galettes et bonnes résolutions', x: w / 2, y: h * 0.3, delay: 500 }, 2600);
+  }
+
+  /** Éclair plein écran (déclaration de guerre, défaite) */
+  flash(tone: FxTone = 'bad'): void {
+    this.add({ kind: 'flash', tone, x: 0, y: 0 }, 900);
+  }
+
+  /** La ligne de front avance (chevrons verts) ou recule (chevrons rouges) */
+  frontline(advance: boolean): void {
+    if (typeof window === 'undefined') return;
+    this.add({ kind: 'front', tone: advance ? 'good' : 'bad', text: advance ? 'Le front avance' : 'Le front recule', x: 0, y: window.innerHeight * 0.42 }, 1800);
+  }
+
+  /** Billets qui volent vers le badge des fonds (emprunt) */
+  banknotes(target: Element | null, count = 6): void {
+    const c = this.center(target);
+    if (!c) return;
+    for (let i = 0; i < count; i++) {
+      const x = window.innerWidth * (0.3 + Math.random() * 0.4), y = window.innerHeight * (0.55 + Math.random() * 0.15);
+      this.add({ kind: 'note', x, y, dx: c.x - x, dy: c.y - y, delay: i * 90, tone: 'good' }, 1100);
+    }
   }
 
   /** Bandeau « Flash info » qui défile en haut de l'écran */

@@ -9,7 +9,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
   { key: 'influence', hint: 'Poids dans les cercles de pouvoir' },
   { key: 'credibility', hint: 'Sérieux perçu, maîtrise des sujets' },
   { key: 'politicalCapital', hint: 'Monnaie des manœuvres et nominations' },
-  { key: 'energy', hint: 'Se régénère chaque semaine' },
+  { key: 'energy', hint: 'Se régénère chaque mois' },
   { key: 'stress', inverse: true, hint: 'À 95 : burn-out' },
 ];
 

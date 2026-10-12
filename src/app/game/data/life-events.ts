@@ -186,7 +186,7 @@ export const LIFE_EVENTS: RandomEvent[] = [
   {
     tag: 'sondage_presidentiel', weight: 1.2,
     eligible: d => !d.presidential.declared && !d.presidency && d.player.stats.popularity >= 30
-      && d.presidential.nextWeek - d.week <= 78 && d.presidential.nextWeek - d.week > 12 && !d.player.flags['monarchie'],
+      && d.presidential.nextWeek - d.week <= 18 && d.presidential.nextWeek - d.week > 4 && !d.player.flags['monarchie'],
     build: d => ({
       title: 'Un sondage vous place en outsider',
       context: `${Math.round(d.player.stats.popularity / 3)} % d’intentions de vote à la présidentielle, sans même être candidat·e. Les journalistes vous harcèlent : « Irez-vous ? »`,
@@ -199,7 +199,7 @@ export const LIFE_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'association_elus', weight: 1,
-    eligible: d => d.presidential.declared && d.presidential.parrainages < PARRAINAGES_REQUIRED && d.week < d.presidential.nextWeek - 9,
+    eligible: d => d.presidential.declared && d.presidential.parrainages < PARRAINAGES_REQUIRED && d.week < d.presidential.nextWeek - 5,
     build: () => ({
       title: 'Une association d’élus hésite à vous parrainer',
       context: 'Cent vingt maires sont prêts à signer… si vous vous engagez sur la dotation des petites communes.',

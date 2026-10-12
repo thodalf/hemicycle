@@ -18,7 +18,7 @@ import { PARTNERS, intlPower, intlRelevant, relationLabel } from '../../engine/i
           <div class="crisis">
             <strong>Crise : {{ cr.name }}</strong>
             <div class="track"><span class="fill low" [style.width.%]="cr.intensity"></span></div>
-            <small class="muted">Intensité {{ cr.intensity | number: '1.0-0' }} · depuis la semaine {{ cr.since }}{{ isPresident() ? ' · médiation ou intervention possibles (onglet International)' : '' }}</small>
+            <small class="muted">Intensité {{ cr.intensity | number: '1.0-0' }} · depuis {{ game.month(cr.since) }}{{ isPresident() ? ' · médiation ou intervention possibles (onglet International)' : '' }}</small>
           </div>
         }
         <div class="duo">
@@ -71,7 +71,7 @@ import { PARTNERS, intlPower, intlRelevant, relationLabel } from '../../engine/i
   `,
 })
 export class WorldPanelComponent {
-  private readonly game = inject(GameStateService);
+  protected readonly game = inject(GameStateService);
   protected readonly Math = Math;
   protected readonly w = computed(() => this.game.s().intl);
   protected readonly relevant = computed(() => intlRelevant(this.game.s()));

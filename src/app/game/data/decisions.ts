@@ -524,7 +524,7 @@ const TEMPLATES: Record<string, Template> = {
     return {
       id: uid(d, 'dec'), tag: 'elevation', week: d.week, deadlineWeek: d.week + 2, source: 'evenement',
       title: `Augmentation de salaire : passage au grade de ${next}`,
-      context: `Vos frères et sœurs de la loge ${l.loge} jugent votre travail digne du grade de ${next}. La cérémonie a lieu cette semaine.`,
+      context: `Vos frères et sœurs de la loge ${l.loge} jugent votre travail digne du grade de ${next}. La cérémonie a lieu ce mois-ci.`,
       choices: [
         {
           id: 'accepter', label: 'Recevoir le grade',

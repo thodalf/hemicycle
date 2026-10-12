@@ -15,7 +15,7 @@ import { GameStateService } from '../../services/game-state.service';
             <div class="top">
               <strong>{{ o.label }}</strong>
               <span class="chip" [class.bad]="left <= 1" [class.warn]="left === 2">
-                {{ left <= 0 ? 'Dernière semaine' : left + ' sem.' }}
+                {{ left <= 0 ? 'Dernier mois' : left + ' mois' }}
               </span>
             </div>
             <div class="bar"><span [style.width.%]="ratio(o)"></span></div>
@@ -25,7 +25,7 @@ import { GameStateService } from '../../services/game-state.service';
             </div>
           </li>
         } @empty {
-          <li class="muted">De nouveaux objectifs arrivent la semaine prochaine.</li>
+          <li class="muted">De nouveaux objectifs arrivent le mois prochain.</li>
         }
       </ul>
     </section>

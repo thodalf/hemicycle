@@ -1,6 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Recruit } from '../models/game.models';
-import { dismissCandidate, fireRecruit, hireCheck, hireRecruit, openBooster, payroll } from '../engine/recruits';
+import { Recruit, StaffRole } from '../models/game.models';
+import { dismissCandidate, fireRecruit, headhunt, headhuntCheck, headhuntFee, hireCheck, hireRecruit, openBooster, payroll } from '../engine/recruits';
+import { STAFF } from '../data/staff';
+import { rankOrder } from '../data/ranks';
 import { GameStateService } from './game-state.service';
 
 /** Équipe, vivier de candidats et boosters */
@@ -22,6 +24,22 @@ export class TeamService {
     let cards: Recruit[] = [];
     this.game.mutate((d, rng) => { cards = openBooster(d, rng); });
     if (cards.length) this.revealed.set(cards);
+  }
+
+  /** Organigramme : chaque poste, son titulaire ou sa vacance */
+  readonly posts = computed(() => {
+    const s = this.game.s();
+    return STAFF.map(def => ({
+      def, holder: s.player.team.find(r => r.role === def.role) ?? null,
+      unlocked: rankOrder(s.player.rankId) >= rankOrder(def.minRank),
+      hunt: headhuntCheck(s, def.role), fee: headhuntFee(def.role),
+    }));
+  });
+
+  headhunt(role: StaffRole): boolean {
+    let ok = false;
+    this.game.mutate((d, rng) => { ok = !!headhunt(d, role, rng); });
+    return ok;
   }
 
   hire(id: string): void { this.game.mutate(d => hireRecruit(d, id)); }

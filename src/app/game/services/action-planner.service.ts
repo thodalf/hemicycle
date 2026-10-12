@@ -1,4 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { inMonth } from '../engine/calendar';
+import { boostMedia } from '../engine/staff-perks';
+import { leadsWar, warPowerBlock } from '../engine/war';
+import { STAFF_BY_ROLE } from '../data/staff';
 import {
   ActionCategory, ActionDefinition, Domain, GameState, Payer, PlannedAction,
 } from '../models/game.models';
@@ -28,9 +32,9 @@ export function partyFundable(a: ActionDefinition): boolean {
 }
 
 /**
- * Planification de la semaine : le joueur empile des actions (budget de PA,
+ * Planification du mois : le joueur empile des actions (budget de PA,
  * énergie, argent, capital politique), puis TurnService les exécute toutes
- * en fin de semaine.
+ * en fin de mois.
  */
 @Injectable({ providedIn: 'root' })
 export class ActionPlannerService {
@@ -58,7 +62,7 @@ export class ActionPlannerService {
     return totals;
   });
 
-  /** Enveloppe que le parti accepte de régler cette semaine */
+  /** Enveloppe que le parti accepte de régler ce mois-ci */
   readonly envelope = computed(() => partyEnvelope(this.game.s()));
   readonly envelopeLeft = computed(() => this.envelope() - this.spent().partyMoney);
   /** Vous dirigez le parti : c'est la trésorerie qui paie, sans capital politique */
@@ -104,7 +108,7 @@ export class ActionPlannerService {
     const spent = this.spent();
     const { cost } = action;
     if (rankOrder(action.minRank) > rankOrder(s.player.rankId)) return { ok: false, reason: 'Rang insuffisant' };
-    if ((s.cooldowns[action.id] ?? 0) > s.week) return { ok: false, reason: `Disponible semaine ${s.cooldowns[action.id]}` };
+    if ((s.cooldowns[action.id] ?? 0) > s.week) return { ok: false, reason: `De nouveau possible ${inMonth(s.cooldowns[action.id])}` };
     const req = action.requires;
     if (req) {
       const c = s.crown;
@@ -118,13 +122,18 @@ export class ActionPlannerService {
       if (req.declared && !s.presidential.declared) return { ok: false, reason: 'Déclarez d’abord votre candidature' };
       if (req.maxHealth !== undefined && s.player.health > req.maxHealth) return { ok: false, reason: 'Inutile : votre santé est bonne' };
       if (req.minAge !== undefined && s.player.age < req.minAge) return { ok: false, reason: `À partir de ${req.minAge} ans` };
+      if (req.war && !s.war) return { ok: false, reason: 'Le pays n’est pas en guerre' };
+      if (req.war && !leadsWar(s)) return { ok: false, reason: 'Le président, le Premier ministre et les ministres régaliens conduisent la guerre' };
+      if (req.peace && s.war) return { ok: false, reason: 'Le pays est déjà en guerre' };
+      if (req.warPower) { const why = warPowerBlock(s); if (why) return { ok: false, reason: why }; }
+      if (req.staff && !s.player.staff.includes(req.staff)) return { ok: false, reason: `Il faut un·e ${STAFF_BY_ROLE.get(req.staff)?.title.toLowerCase()} dans l’équipe` };
       if (req.asset && !owns(s, req.asset)) {
         return { ok: false, reason: `Nécessite : ${req.asset.map(id => ASSETS_BY_ID.get(id)?.label).join(' ou ')}` };
       }
     }
     const count = this._plan().filter(p => p.actionId === action.id).length;
-    if (action.maxPerWeek && count >= action.maxPerWeek) return { ok: false, reason: 'Limite hebdomadaire' };
-    if (action.cooldownWeeks && count >= 1) return { ok: false, reason: 'Une fois par semaine' };
+    if (action.maxPerMonth && count >= action.maxPerMonth) return { ok: false, reason: 'Limite mensuelle' };
+    if (action.cooldown && count >= 1) return { ok: false, reason: 'Une fois par mois' };
     if (this.apLeft() < cost.ap) return { ok: false, reason: 'Points d’action insuffisants' };
     if ((cost.energy ?? 0) + spent.energy > s.player.stats.energy) return { ok: false, reason: 'Trop épuisé·e' };
     const party = payer === 'parti';
@@ -164,7 +173,7 @@ export class ActionPlannerService {
     this._plan.set([]);
   }
 
-  /** Appelé par TurnService à l'intérieur de la transaction de fin de semaine */
+  /** Appelé par TurnService à l'intérieur de la transaction de fin de mois */
   execute(d: GameState, rng: Rng): void {
     for (const planned of this._plan()) {
       const action = ACTIONS_BY_ID.get(planned.actionId)!;
@@ -177,22 +186,24 @@ export class ActionPlannerService {
       d.player.stats.politicalCapital = Math.max(0, d.player.stats.politicalCapital - (cost.politicalCapital ?? 0));
       if (planned.payer === 'parti') spendParty(d, cost.money ?? 0);
       else spend(d, cost.money ?? 0);
-      if (action.cooldownWeeks) d.cooldowns[action.id] = d.week + action.cooldownWeeks;
+      if (action.cooldown) d.cooldowns[action.id] = d.week + action.cooldown;
 
       recordObjectiveEvent(d, 'category', action.category);
       const lastUse = Number(d.player.flags[`last_${action.id}`] ?? -99);
       const prevStreak = d.week - lastUse <= 1 ? Number(d.player.flags[`streak_${action.id}`] ?? 0) : -1;
       const record = () => { d.player.flags[`streak_${action.id}`] = prevStreak + 1; d.player.flags[`last_${action.id}`] = d.week; };
-      // L'as des réseaux sociaux divise par deux le risque de bad buzz
-      const risk = action.id === 'post_reseaux' && action.risk && d.player.team.some(r => r.traits.includes('reseaux_sociaux'))
-        ? { ...action.risk, baseChance: action.risk.baseChance / 2 } : action.risk;
+      // L'as des réseaux sociaux (ou le community manager) divise par deux le risque de bad buzz
+      const social = ['post_reseaux', 'live_reseaux', 'clash_reseaux'].includes(action.id)
+        && (d.player.team.some(r => r.traits.includes('reseaux_sociaux')) || d.player.staff.includes('community_manager'));
+      const risk = social && action.risk ? { ...action.risk, baseChance: action.risk.baseChance / 2 } : action.risk;
       if (rollRisk(d, risk, ctx, rng)) {
         const summary = applyEffects(d, action.risk!.onFailure, ctx, rng);
         pushNews(d, 'action', 'negative', `${action.label} : raté`, [action.risk!.failureNews, summary.join(' · ')].filter(Boolean).join(' — '));
       } else {
         // Lassitude : les gains s'émoussent si l'on répète la même action
         const wear = wearFactor(d, action.id);
-        const summary = applyEffects(d, scaleGains(action.effects, wear), ctx, rng);
+        const effects = action.category === 'medias' ? boostMedia(d, action.effects) : action.effects;
+        const summary = applyEffects(d, scaleGains(effects, wear), ctx, rng);
         if (wear < 1) summary.push(`lassitude −${Math.round((1 - wear) * 100)} %`);
         if (summary.length) pushNews(d, 'action', 'positive', action.label, summary.join(' · '));
       }

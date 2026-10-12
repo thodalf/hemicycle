@@ -79,7 +79,7 @@ export function fallFromMatignon(d: GameState, title: string, text: string): voi
   if (d.player.rankId !== 'premier_ministre') return;
   d.government = null;
   d.player.rankId = 'depute';
-  d.player.actionPoints.max = RANKS.depute.weeklyActionPoints;
+  d.player.actionPoints.max = RANKS.depute.monthlyActionPoints;
   d.player.actionPoints.current = Math.min(d.player.actionPoints.current, d.player.actionPoints.max);
   addMilestone(d, 'revers', title, text);
   pushNews(d, 'actu', 'negative', title, text);
@@ -93,7 +93,7 @@ export function enterMatignon(d: GameState): void {
   if (!d.pendingDecisions.some(x => x.tag === 'former_gouvernement')) d.pendingDecisions.push(formationDecision(d));
 }
 
-/** Semaine : majorité, censure, rendez-vous annuels */
+/** Mois : majorité, censure, rendez-vous annuels */
 export function weeklyGovernment(d: GameState, rng: Rng): void {
   const p = d.player;
   // Cohérence du rang et de l'état
@@ -116,10 +116,10 @@ export function weeklyGovernment(d: GameState, rng: Rng): void {
     }
   }
 
-  // Salon de l'agriculture : dernière semaine de février
+  // Salon de l'agriculture : fin février
   const date = dateOfWeek(d.week);
   const year = date.getFullYear();
-  if (date.getMonth() === 1 && date.getDate() >= 20 && Number(p.flags['salonYear'] ?? 0) !== year && d.status === 'en_cours' && !p.flags['retired']) {
+  if (date.getMonth() === 1 && Number(p.flags['salonYear'] ?? 0) !== year && d.status === 'en_cours' && !p.flags['retired']) {
     p.flags['salonYear'] = year;
     d.pendingDecisions.push(salonDecision(d));
   }
@@ -132,6 +132,6 @@ function salonDecision(d: GameState): Decision {
       : 'Le grand rendez-vous des campagnes à Paris. Une journée entière entre les vaches, les fromages et les colères paysannes.', [
       { id: 'journee', label: 'Y passer la journée entière', effects: [{ kind: 'scene', sceneId: 'salon_agriculture' }], outcome: 'Bottes aux pieds, vous voilà dans les allées.' },
       { id: 'eclair', label: 'Une visite éclair pour la photo', effects: [st('popularity', 1), st('credibility', -2), { kind: 'contact', contactId: 'ct-maires', trust: -2 }, st('energy', -5)], outcome: '« Venu·e pour la photo », grince un éleveur.' },
-      { id: 'absent', label: 'Ne pas y aller cette année', effects: [st('popularity', big ? -4 : -1), { kind: 'contact', contactId: 'ct-maires', trust: big ? -6 : -2 }, st('energy', 5)], outcome: big ? 'Votre absence est commentée toute la semaine.' : 'Personne ne remarque votre absence.' },
+      { id: 'absent', label: 'Ne pas y aller cette année', effects: [st('popularity', big ? -4 : -1), { kind: 'contact', contactId: 'ct-maires', trust: big ? -6 : -2 }, st('energy', 5)], outcome: big ? 'Votre absence est commentée pendant des jours.' : 'Personne ne remarque votre absence.' },
     ], 1);
 }

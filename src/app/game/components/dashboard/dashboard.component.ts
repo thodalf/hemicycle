@@ -32,6 +32,10 @@ import { LifePanelComponent } from '../life-panel/life-panel.component';
 import { GovernmentPanelComponent } from '../government-panel/government-panel.component';
 import { WorldPanelComponent } from '../world-panel/world-panel.component';
 import { PresidencyPanelComponent } from '../presidency-panel/presidency-panel.component';
+import { WarPanelComponent } from '../war-panel/war-panel.component';
+import { AssemblyVoteComponent } from '../assembly-vote/assembly-vote.component';
+import { BankComponent } from '../bank/bank.component';
+import { BankService } from '../../services/bank.service';
 import { DEATH_LABELS, lifeSummary } from '../../engine/life';
 import { Milestone } from '../../models/game.models';
 
@@ -43,12 +47,13 @@ import { Milestone } from '../../models/game.models';
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
+    WarPanelComponent, AssemblyVoteComponent, BankComponent,
   ],
   template: `
     <header class="topbar">
       <div class="brand">Hémicycle</div>
       <div class="facts">
-        <span><span class="eyebrow">Semaine</span> <strong class="mono">{{ game.week() }}</strong></span>
+        <span class="date"><span class="eyebrow">Date</span> <strong>{{ game.date() }}</strong></span>
         <span><span class="eyebrow">À la une</span> <strong>{{ agenda() }}</strong></span>
         <span><span class="eyebrow">Rang</span> <strong>{{ game.roleLabel() }}</strong></span>
       </div>
@@ -69,9 +74,15 @@ import { Milestone } from '../../models/game.models';
           <div class="b-row"><span>Patrimoine net</span><strong class="mono">{{ wealth.net() | number: '1.0-0' }} €</strong></div>
           <div class="b-row"><span>Biens</span><strong class="mono">{{ wealth.owned().length }}</strong></div>
           @if (wealth.image().popularity) {
-            <div class="b-row"><span>Effet sur l’opinion</span><strong class="mono" [class.neg]="wealth.image().popularity < 0">{{ wealth.image().popularity > 0 ? '+' : '' }}{{ wealth.image().popularity | number: '1.2-2' }}/sem.</strong></div>
+            <div class="b-row"><span>Effet sur l’opinion</span><strong class="mono" [class.neg]="wealth.image().popularity < 0">{{ wealth.image().popularity > 0 ? '+' : '' }}{{ wealth.image().popularity | number: '1.2-2' }}/mois</strong></div>
           }
-          <button class="btn small" (click)="wealthOpen.set(true)">Acheter, vendre</button>
+          @if (bank.debt()) {
+            <div class="b-row"><span>Emprunts</span><strong class="mono neg">{{ bank.debt() | number: '1.0-0' }} € · {{ bank.monthly() | number: '1.0-0' }} €/mois</strong></div>
+          }
+          <div class="row-btns">
+            <button class="btn small" (click)="wealthOpen.set(true)">Acheter, vendre</button>
+            <button class="btn small" (click)="bankOpen.set(true)">Emprunter</button>
+          </div>
         </section>
         @if (budget.anyAccess()) {
           <section class="card budget-card">
@@ -93,6 +104,7 @@ import { Milestone } from '../../models/game.models';
         <app-team-panel />
       </div>
       <main class="col-main">
+        <app-war-panel />
         <app-presidency-panel />
         <app-government-panel />
         @if (game.s().crown || game.s().lodge || game.s().press || game.s().mole) {
@@ -103,7 +115,7 @@ import { Milestone } from '../../models/game.models';
             <div>
               <span class="eyebrow">Campagne présidentielle</span>
               <strong>Votre programme : {{ program.report().answered }} / 20 questions</strong>
-              <span class="muted">À présenter avant de clore la semaine.</span>
+              <span class="muted">À présenter avant de clore le mois.</span>
             </div>
             <button class="btn primary" (click)="builderHidden.set(false)">Construire le programme</button>
           </section>
@@ -113,7 +125,7 @@ import { Milestone } from '../../models/game.models';
             <div>
               <span class="eyebrow">Bercy</span>
               <strong>Loi de finances {{ budget.national()!.year }} à soumettre</strong>
-              <span class="muted">Avant la semaine {{ budget.national()!.deadlineWeek }}{{ budget.national()!.rejected ? ' · rejetée par l’Assemblée' : '' }}.</span>
+              <span class="muted">Avant {{ game.month(budget.national()!.deadlineWeek) }}{{ budget.national()!.rejected ? ' · rejetée par l’Assemblée' : '' }}.</span>
             </div>
             <button class="btn primary" (click)="budgetOpen.set(true)">Préparer le budget</button>
           </section>
@@ -136,12 +148,16 @@ import { Milestone } from '../../models/game.models';
       <app-protest />
     } @else if (game.s().scene) {
       <app-scene />
+    } @else if (game.s().vote) {
+      <app-assembly-vote />
     } @else if (program.pending() && !builderHidden()) {
       <app-program-builder (closed)="builderHidden.set(true)" />
     } @else if (budgetOpen()) {
       <app-budget (closed)="budgetOpen.set(false)" />
     } @else if (wealthOpen()) {
       <app-patrimoine (closed)="wealthOpen.set(false)" />
+    } @else if (bankOpen()) {
+      <app-bank (closed)="bankOpen.set(false)" />
     }
 
     <!-- Téléphone : une colonne à la fois, onglets en bas d'écran -->
@@ -150,7 +166,7 @@ import { Milestone } from '../../models/game.models';
         <button type="button" [class.on]="tab() === t.id" [attr.aria-current]="tab() === t.id ? 'page' : null" (click)="setTab(t.id)">
           <span class="ico" aria-hidden="true">{{ t.icon }}</span>
           <span>{{ t.label }}</span>
-          @if (t.id === 'agenda' && game.s().pendingDecisions.length) { <b class="badge">{{ game.s().pendingDecisions.length }}</b> }
+          @if (t.id === 'agenda' && game.s().pendingDecisions.length + (game.s().vote ? 1 : 0)) { <b class="badge">{{ game.s().pendingDecisions.length + (game.s().vote ? 1 : 0) }}</b> }
           @if (t.id === 'actu' && unread()) { <b class="badge dot-badge" aria-label="Nouvelles"></b> }
         </button>
       }
@@ -191,7 +207,7 @@ import { Milestone } from '../../models/game.models';
     } @else if (chapter(); as m) {
       <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="chapter-title">
         <div class="card end chapter" [class]="'k-' + m.kind">
-          <div class="eyebrow">Nouveau chapitre · {{ m.age }} ans · semaine {{ m.week }}</div>
+          <div class="eyebrow">Nouveau chapitre · {{ m.age }} ans · {{ game.month(m.week) }}</div>
           <h2 id="chapter-title">{{ m.title }}</h2>
           <p>{{ m.text }}</p>
           <p class="muted small">{{ m.kind === 'revers' ? 'Un revers, pas une fin : la partie continue.' : 'La partie continue : seule la mort met fin à une vie politique.' }}</p>
@@ -217,6 +233,8 @@ import { Milestone } from '../../models/game.models';
       border-left: 4px solid var(--accent);
       > div { display: grid; gap: 2px; } strong { font-family: var(--font-display); font-size: 17px; } }
     .budget-card { display: grid; gap: 6px; .card-title { margin-bottom: 4px; } .btn { margin-top: 6px; justify-self: start; } }
+    .row-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .date strong { text-transform: capitalize; }
     .b-row { display: flex; justify-content: space-between; font-size: 13px; .neg { color: var(--bad); } }
     .col-left, .col-main, .col-right { display: grid; gap: 16px; align-content: start; min-width: 0; }
     .overlay { position: fixed; inset: 0; background: rgba(10, 12, 18, .55); display: grid; place-items: center; padding: 16px; z-index: 10; }
@@ -313,6 +331,8 @@ export class DashboardComponent {
   protected readonly team = inject(TeamService);
   protected readonly wealth = inject(PatrimoineService);
   protected readonly wealthOpen = signal(false);
+  protected readonly bank = inject(BankService);
+  protected readonly bankOpen = signal(false);
   private readonly fx = inject(FxService);
   private lastRank = this.game.player().rankId;
   private lastStatus = this.game.s().status;

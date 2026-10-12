@@ -36,7 +36,8 @@ export const OUTLETS: Record<OutletKind, OutletDef> = {
 };
 
 export const PRESS_GRADES = ['Pigiste', 'Chroniqueur·se', 'Éditorialiste', 'Éditorialiste vedette', 'Directeur·rice de la rédaction'];
-export const PRESS_SALARIES = [350, 700, 1300, 2500, 4000];
+/** Salaires mensuels */
+export const PRESS_SALARIES = [1500, 3000, 5600, 10800, 17300];
 
 /** Conditions pour passer au grade suivant */
 export const PRESS_REQUIREMENTS: { audience: number; reputation: number; scoops: number; influence?: number }[] = [

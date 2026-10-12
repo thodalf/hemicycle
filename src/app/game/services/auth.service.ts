@@ -269,7 +269,7 @@ export class AuthService {
       if (!raw) return null;
       const parsed = JSON.parse(raw) as GameState | { state: GameState };
       const state = 'state' in parsed ? parsed.state : parsed;
-      return state?.version === 1 && state.player && state.party ? state : null;
+      return ((state?.version as number) === 1 || state?.version === 2) && state.player && state.party ? state : null;
     } catch { return null; }
   }
 

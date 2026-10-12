@@ -1,11 +1,12 @@
 import { DecimalPipe } from '@angular/common';
+import { durationLabel, monthLabel } from '../../engine/calendar';
 import { Component, computed, inject, signal } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { TurnService } from '../../services/turn.service';
 import { FxService } from '../../services/fx.service';
 import { PARRAINAGES_REQUIRED } from '../../data/ranks';
 import { campaignOpensAt } from '../../engine/presidency';
-import { dateOfWeek, lifeRisks } from '../../engine/life';
+import { lifeRisks } from '../../engine/life';
 
 /** Calendrier présidentiel, candidature et tableau de bord de l'Élysée */
 @Component({
@@ -20,12 +21,12 @@ import { dateOfWeek, lifeRisks } from '../../engine/life';
         </div>
         <p class="muted small">Premier ministre : <strong>{{ pr.primeMinister }}</strong>
           @if (pr.cohabitation) { · <span class="chip bad">Cohabitation</span> }
-          · {{ pr.reforms }} réforme(s) adoptée(s) · fin du mandat semaine <span class="mono">{{ cal().nextWeek }}</span> ({{ year(cal().nextWeek) }})</p>
+          · {{ pr.reforms }} réforme(s) adoptée(s) · fin du mandat en {{ dateLabel(cal().nextWeek) }}</p>
         <div class="gauges">
           <div class="g">
             <div class="row"><span>Cote de confiance</span><span class="mono">{{ pr.approval | number: '1.0-0' }} %</span></div>
             <div class="track"><span class="fill" [class.low]="pr.approval < 25" [class.ok]="pr.approval >= 45" [style.width.%]="pr.approval"></span></div>
-            <small class="muted">S’use chaque semaine. Sous 12 %, avec une Assemblée hostile : destitution possible.</small>
+            <small class="muted">S’use chaque mois. Sous 12 %, avec une Assemblée hostile : destitution possible.</small>
           </div>
           <div class="g">
             <div class="row"><span>Majorité à l’Assemblée</span><span class="mono">{{ pr.majority | number: '1.0-0' }} %</span></div>
@@ -65,17 +66,17 @@ import { dateOfWeek, lifeRisks } from '../../engine/life';
       <section class="card race" [class.hot]="cal().declared">
         <div class="card-title">
           <span>Élection présidentielle</span>
-          <span class="chip" [class.accent]="weeksLeft() <= 78">dans {{ weeksLeft() }} sem.</span>
+          <span class="chip" [class.accent]="weeksLeft() <= 18">dans {{ left() }}</span>
         </div>
-        <p class="muted small">Scrutin en semaine <span class="mono">{{ cal().nextWeek }}</span> ({{ dateLabel(cal().nextWeek) }}) ·
+        <p class="muted small">Scrutin en {{ dateLabel(cal().nextWeek) }} ·
           à l’Élysée : <strong>{{ cal().incumbentName }}</strong>{{ cal().incumbentMandates >= 2 ? ' (ne peut se représenter)' : '' }}</p>
         @if (cal().declared) {
           <div class="g">
             <div class="row"><span>Parrainages d’élus</span><span class="mono">{{ parrainages() }} / {{ required }}</span></div>
             <div class="track"><span class="fill" [class.ok]="parrainages() >= required" [style.width.%]="Math.min(100, parrainages() / required * 100)"></span></div>
             <small class="muted">
-              @if (parrainages() >= required) { Candidature validée à l’ouverture de la campagne (semaine {{ opens() }}). }
-              @else { À réunir avant la semaine {{ opens() }} — onglets Parti et Terrain. }
+              @if (parrainages() >= required) { Candidature validée à l’ouverture de la campagne ({{ dateLabel(opens()) }}). }
+              @else { À réunir avant {{ dateLabel(opens()) }} — onglets Parti et Terrain. }
             </small>
           </div>
         } @else {
@@ -125,11 +126,9 @@ export class PresidencyPanelComponent {
   protected readonly risk = computed(() => lifeRisks(this.game.s()).assassination * 100);
 
   protected dateLabel(week: number): string {
-    return dateOfWeek(week).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    return monthLabel(week);
   }
-  protected year(week: number): number {
-    return dateOfWeek(week).getFullYear();
-  }
+  protected readonly left = computed(() => durationLabel(this.weeksLeft()));
 
   protected declare(event: Event): void {
     this.turn.declare();

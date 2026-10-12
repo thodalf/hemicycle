@@ -32,10 +32,30 @@ import { FxService } from '../../services/fx.service';
         @case ('coin') {
           <span class="coin" [class.lost]="i.tone === 'bad'" [style.left.px]="i.x" [style.top.px]="i.y" [style.--dx.px]="i.dx" [style.--dy.px]="i.dy" [style.animation-delay.ms]="i.delay">€</span>
         }
-        @case ('week') {
-          <span class="week" [style.left.px]="i.x" [style.top.px]="i.y">
-            <span class="page old"><b>{{ i.dx }}</b></span>
-            <span class="page new"><small>Semaine</small><b>{{ i.text?.replace('Semaine ', '') }}</b><em>{{ i.sub }}</em></span>
+        @case ('month') {
+          <span class="week month" [style.left.px]="i.x" [style.top.px]="i.y">
+            <span class="page old"><b>{{ i.old }}</b></span>
+            <span class="page new"><span class="ico">{{ i.icon }}</span><b>{{ i.text }}</b><em>{{ i.sub }}</em></span>
+          </span>
+        }
+        @case ('note') {
+          <span class="note" [style.left.px]="i.x" [style.top.px]="i.y" [style.--dx.px]="i.dx" [style.--dy.px]="i.dy" [style.animation-delay.ms]="i.delay">€</span>
+        }
+        @case ('rocket') {
+          <span class="rocket" [style.left.px]="i.x" [style.top.px]="i.y" [style.--dy.px]="i.dy" [style.animation-delay.ms]="i.delay"></span>
+        }
+        @case ('banner') {
+          <span class="banner" [style.left.px]="i.x" [style.top.px]="i.y" [style.animation-delay.ms]="i.delay">
+            <strong>{{ i.text }}</strong><small>{{ i.sub }}</small>
+          </span>
+        }
+        @case ('flash') {
+          <span class="flash" [class]="'t-' + i.tone"></span>
+        }
+        @case ('front') {
+          <span class="front" [class]="'t-' + i.tone" [style.top.px]="i.y">
+            <span class="chevrons">@for (c of chevrons; track $index) { <i>{{ i.tone === 'good' ? '›' : '‹' }}</i> }</span>
+            <strong>{{ i.text }}</strong>
           </span>
         }
       }
@@ -104,6 +124,48 @@ import { FxService } from '../../services/fx.service';
       30% { transform: translate(calc(var(--dx) * .3), -20px) rotate(90deg); }
       100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(400deg) scale(.7); }
     }
+    .month .page b { font-size: 26px; text-transform: capitalize; }
+    .month .page .ico { font-size: 18px; line-height: 1; margin-bottom: 2px; }
+    .month { width: 132px; }
+    .note { position: absolute; width: 30px; height: 16px; margin: -8px 0 0 -15px; border-radius: 3px; display: grid; place-items: center;
+      background: linear-gradient(135deg, #9fd3b0, #5fa77a); color: #1d4d31; font: 800 10px var(--font-body); border: 1px solid #3f7d57;
+      box-shadow: 0 2px 4px rgba(0,0,0,.25); opacity: 0; animation: note-in 1s cubic-bezier(.4,0,.3,1) forwards; }
+    @keyframes note-in {
+      0% { opacity: 0; transform: translate(0, 0) rotate(-20deg) scale(.5); }
+      20% { opacity: 1; transform: translate(10px, -40px) rotate(15deg) scale(1.1); }
+      60% { transform: translate(calc(var(--dx) * .6), calc(var(--dy) * .6 - 30px)) rotate(-10deg) scale(.9); }
+      100% { opacity: .8; transform: translate(var(--dx), var(--dy)) rotate(0) scale(.5); }
+    }
+    .rocket { position: absolute; width: 4px; height: 14px; margin-left: -2px; border-radius: 2px; opacity: 0;
+      background: linear-gradient(#fff6c8, #e6b45c); box-shadow: 0 6px 10px #e6b45c; animation: rocket .85s cubic-bezier(.2,.6,.4,1) forwards; }
+    @keyframes rocket { 0% { opacity: 1; transform: translateY(0); } 90% { opacity: 1; } 100% { opacity: 0; transform: translateY(var(--dy)); } }
+    .banner { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 4px; padding: 14px 30px;
+      border-radius: 14px; background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 14px 40px -12px rgba(0,0,0,.45);
+      border: 2px solid #e6b45c; opacity: 0; animation: banner 2.4s ease forwards;
+      strong { font: 700 30px/1.1 var(--font-display); color: #a77a1c; } small { font-size: 12.5px; color: var(--ink-2); } }
+    @keyframes banner {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+      15% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+      25%, 82% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -60%) scale(.98); }
+    }
+    .flash { position: absolute; inset: 0; opacity: 0; animation: flash .85s ease-out forwards; }
+    .flash.t-bad { background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.9), rgba(184,64,43,.55) 60%, rgba(60,10,10,.5)); }
+    .flash.t-good { background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.9), rgba(47,125,79,.4) 60%, transparent); }
+    .flash.t-neutral { background: rgba(255,255,255,.8); }
+    @keyframes flash { 0% { opacity: 0; } 8% { opacity: 1; } 30% { opacity: .5; } 45% { opacity: .8; } 100% { opacity: 0; } }
+    .front { position: absolute; left: 0; right: 0; height: 64px; margin-top: -32px; display: grid; place-items: center; overflow: hidden;
+      animation: front-life 1.8s ease forwards;
+      strong { position: relative; font: 700 20px var(--font-display); padding: 4px 16px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); } }
+    .front.t-good { background: linear-gradient(90deg, transparent, rgba(47,125,79,.28), transparent); strong { color: var(--good); } }
+    .front.t-bad { background: linear-gradient(90deg, transparent, rgba(184,64,43,.28), transparent); strong { color: var(--bad); } }
+    .chevrons { position: absolute; inset: 0; display: flex; align-items: center; gap: 22px; white-space: nowrap; font: 800 46px/1 var(--font-display); opacity: .55; }
+    .front.t-good .chevrons { color: var(--good); animation: march-right 1.8s linear forwards; }
+    .front.t-bad .chevrons { color: var(--bad); animation: march-left 1.8s linear forwards; }
+    .chevrons i { font-style: normal; }
+    @keyframes march-right { from { transform: translateX(-30%); } to { transform: translateX(10%); } }
+    @keyframes march-left { from { transform: translateX(10%); } to { transform: translateX(-30%); } }
+    @keyframes front-life { 0% { opacity: 0; transform: scaleY(.2); } 12%, 82% { opacity: 1; transform: scaleY(1); } 100% { opacity: 0; } }
     .week { position: absolute; transform: translateX(-50%); width: 110px; height: 104px; perspective: 500px; animation: week-life 1.7s ease forwards; }
     .page { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 0; border-radius: 10px; background: var(--surface);
       border: 1px solid var(--line); box-shadow: 0 10px 30px -10px rgba(0,0,0,.4); border-top: 14px solid var(--bad); backface-visibility: hidden;
@@ -120,4 +182,5 @@ import { FxService } from '../../services/fx.service';
 })
 export class FxLayerComponent {
   protected readonly fx = inject(FxService);
+  protected readonly chevrons = Array.from({ length: 40 });
 }

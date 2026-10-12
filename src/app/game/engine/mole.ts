@@ -69,7 +69,7 @@ export function weeklyMole(d: GameState, rng: Rng): void {
   const gap = stanceGap(d);
   const trust = partySupport(d);
   m.cover = clamp(m.cover - 1 - Math.max(0, gap - 15) / 25 + (trust - 50) / 100);
-  if (d.week - m.lastReport > 6) m.handlerTrust = clamp(m.handlerTrust - 2);
+  if (d.week - m.lastReport > 3) m.handlerTrust = clamp(m.handlerTrust - 2);
   // Un renseignement non transmis se périme
   if (m.intel > 0) m.intel = Math.floor(m.intel * 0.9);
 
@@ -106,7 +106,7 @@ export function weeklyMole(d: GameState, rng: Rng): void {
 
   if (m.handlerTrust < 25 && !pending(d, 'officier') && rng.chance(0.25)) {
     d.pendingDecisions.push(decision(d, 'officier', `${m.handler} s’impatiente`,
-      `« Ça fait des semaines qu’on n’a rien. ${m.homeName} commence à se demander de quel côté vous êtes. »`, [
+      `« Ça fait des mois qu’on n’a rien. ${m.homeName} commence à se demander de quel côté vous êtes. »`, [
         { id: 'livrer', label: 'Tout transmettre maintenant', effects: [{ kind: 'mole', deliver: true, cover: -4 }], outcome: 'Rapport livré en urgence.' },
         { id: 'temps', label: 'Demander du temps', effects: [{ kind: 'mole', handler: -6 }, { kind: 'stat', stat: 'stress', delta: 4 }], outcome: 'Il vous accorde un sursis.' },
         { id: 'menacer', label: 'Le menacer de tout révéler', effects: [{ kind: 'mole', handler: 15 }, { kind: 'stat', stat: 'stress', delta: 6 }], outcome: 'Il recule. Pour l’instant.',

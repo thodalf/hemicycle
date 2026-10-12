@@ -26,13 +26,13 @@ export class PatrimoineComponent {
     const k = def.perks;
     const out: string[] = [];
     const n = (v: number) => (v > 0 ? '+' : '−') + Math.abs(v).toLocaleString('fr-FR');
-    if (k.ap) out.push(`${n(k.ap)} PA/sem.`);
-    if (k.energy) out.push(`${n(k.energy)} énergie/sem.`);
-    if (k.stress) out.push(`${n(k.stress)} stress/sem.`);
-    if (k.influence) out.push(`${n(k.influence)} influence/sem.`);
-    if (k.popularity) out.push(`${n(k.popularity)} popularité/sem.`);
-    if (k.credibility) out.push(`${n(k.credibility)} crédibilité/sem.`);
-    if (k.rent) out.push(`${n(k.rent)} €/sem. de revenus`);
+    if (k.ap) out.push(`${n(k.ap)} PA/mois`);
+    if (k.energy) out.push(`${n(k.energy)} énergie/mois`);
+    if (k.stress) out.push(`${n(k.stress)} stress/mois`);
+    if (k.influence) out.push(`${n(k.influence)} influence/mois`);
+    if (k.popularity) out.push(`${n(k.popularity)} popularité/mois`);
+    if (k.credibility) out.push(`${n(k.credibility)} crédibilité/mois`);
+    if (k.rent) out.push(`${n(k.rent)} €/mois de revenus`);
     if (k.dossierDecay) out.push(`−${Math.round((1 - k.dossierDecay) * 100)} % d’oubli des dossiers`);
     for (const e of def.onBuy ?? []) {
       if (e.kind === 'stat') out.push(`À l’achat : ${n(e.delta)} ${STAT_LABELS[e.stat as StatKey].toLowerCase()}`);
@@ -50,7 +50,7 @@ export class PatrimoineComponent {
 
   protected perWeek(v: number): string {
     if (!v) return 'sans effet sur l’opinion';
-    return `${v > 0 ? '+' : '−'}${Math.abs(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} popularité/sem.`;
+    return `${v > 0 ? '+' : '−'}${Math.abs(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} popularité/mois`;
   }
 
   protected gain(a: { value: number; boughtPrice: number }): number {

@@ -22,7 +22,7 @@
           <div class="kpi"><span class="eyebrow">Adhérents</span><strong class="mono">{{ f.members | number: '1.0-0' }}</strong>
             <small class="muted">{{ r.membersRate >= 0 ? '+' : '' }}{{ r.membersRate * 100 | number: '1.1-1' }} %/mois</small></div>
           <div class="kpi"><span class="eyebrow">Solde mensuel prévu</span><strong class="mono" [class.good-t]="r.balance >= 0" [class.bad-t]="r.balance < 0">{{ signed(r.balance) }} k€</strong></div>
-          <div class="kpi"><span class="eyebrow">Prochaine clôture</span><strong class="mono">{{ r.weeksToSettle === 0 ? 'cette semaine' : 'dans ' + r.weeksToSettle + ' sem.' }}</strong></div>
+          <div class="kpi"><span class="eyebrow">Prochaine clôture</span><strong class="mono">{{ r.weeksToSettle === 0 ? 'ce mois-ci' : 'le mois prochain' }}</strong></div>
         </div>
 
         <div class="cols">
@@ -82,10 +82,10 @@
           </div>
           @if (nb.pending) {
             <span class="chip" [class.bad]="game.week() >= nb.deadlineWeek" [class.warn]="game.week() < nb.deadlineWeek">
-              À soumettre avant la semaine {{ nb.deadlineWeek }}
+              À soumettre avant {{ game.month(nb.deadlineWeek) }}
             </span>
           } @else {
-            <span class="chip good">Adopté · prochain budget en semaine {{ nb.nextDueWeek }}</span>
+            <span class="chip good">Adopté · prochain budget {{ game.inMonth(nb.nextDueWeek) }}</span>
           }
         </div>
 

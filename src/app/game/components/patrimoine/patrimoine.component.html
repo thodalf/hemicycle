@@ -16,7 +16,7 @@
         @if (svc.debt()) { <small class="muted">dont crédits restants {{ svc.debt() | number: '1.0-0' }} €</small> }</div>
       <div class="kpi"><span class="eyebrow">Patrimoine net</span><strong class="mono">{{ svc.net() | number: '1.0-0' }} €</strong></div>
       <div class="kpi"><span class="eyebrow">Charges nettes</span>
-        <strong class="mono" [class.good-t]="ch.net > 0" [class.bad-t]="ch.net < 0">{{ signed(ch.net) }} €/sem.</strong>
+        <strong class="mono" [class.good-t]="ch.net > 0" [class.bad-t]="ch.net < 0">{{ signed(ch.net) }} €/mois</strong>
         <small class="muted">entretien {{ ch.upkeep | number: '1.0-0' }} · crédits {{ ch.loans | number: '1.0-0' }} · revenus {{ ch.rent | number: '1.0-0' }}</small></div>
       <div class="kpi image" [class.bad]="img.popularity < 0" [class.good]="img.popularity > 0">
         <span class="eyebrow">Image publique</span>
@@ -40,7 +40,7 @@
                     <span [class.good-t]="gain(a) > 0" [class.bad-t]="gain(a) < 0">({{ signed(gain(a)) }})</span>
                   }
                 </span>
-                @if (a.debt > 0) { <small class="muted">Crédit : {{ a.debt | number: '1.0-0' }} € restants · {{ a.payment | number: '1.0-0' }} €/sem.</small> }
+                @if (a.debt > 0) { <small class="muted">Crédit : {{ a.debt | number: '1.0-0' }} € restants · {{ a.payment | number: '1.0-0' }} €/mois</small> }
                 <small class="muted">{{ perks(def).join(' · ') }}</small>
               </div>
               <button class="btn small" (click)="svc.sell(a.uid)">Vendre {{ svc.salePrice(a) | number: '1.0-0' }} €</button>
@@ -75,7 +75,7 @@
               <p class="muted">{{ def.description }}</p>
               <div class="chips">
                 @for (p of perks(def); track p) { <span class="chip">{{ p }}</span> }
-                @if (def.upkeep) { <span class="chip bad">Entretien {{ def.upkeep | number: '1.0-0' }} €/sem.</span> }
+                @if (def.upkeep) { <span class="chip bad">Entretien {{ def.upkeep | number: '1.0-0' }} €/mois</span> }
                 @if (def.unlocks) { <span class="chip accent">Débloque : {{ def.unlocks }}</span> }
               </div>
               <div class="s-foot">
@@ -92,7 +92,7 @@
                 <button class="btn small primary" [disabled]="!av.ok" (click)="svc.buy(def.id, false)">Acheter comptant</button>
                 @if (def.mortgage) {
                   <button class="btn small" [disabled]="!avLoan.ok" (click)="svc.buy(def.id, true)">
-                    À crédit : apport {{ svc.downPayment(def) | number: '1.0-0' }} €, puis {{ svc.payment(def) | number: '1.0-0' }} €/sem.
+                    À crédit : apport {{ svc.downPayment(def) | number: '1.0-0' }} €, puis {{ svc.payment(def) | number: '1.0-0' }} €/mois
                   </button>
                 }
                 @if (!av.ok) { <span class="reason">{{ (def.mortgage && avLoan.ok) ? 'Comptant : fonds insuffisants' : av.reason }}</span> }

@@ -1,5 +1,6 @@
 import { Decision, DecisionChoice, Effect, GameState, PresidentialCalendar, ScheduledElection } from '../models/game.models';
-import { DECLARE_WINDOW, ELECTIONS, FIRST_PRESIDENTIAL_WEEK, MANDATE_WEEKS, PARRAINAGES_REQUIRED, RANKS, rankOrder } from '../data/ranks';
+import { inMonth, monthLabel } from './calendar';
+import { DECLARE_WINDOW, ELECTIONS, FIRST_PRESIDENTIAL_WEEK, MANDATE_MONTHS, PARRAINAGES_REQUIRED, RANKS, rankOrder } from '../data/ranks';
 import { ofParty } from '../data/world';
 import { applyEffects, partySupport, pushNews } from './effects';
 import { addMilestone } from './life';
@@ -23,7 +24,7 @@ const PRIME_MINISTERS = [
 
 export function initPresidential(d: GameState): PresidentialCalendar {
   if (d.scenario === 'presidentielle') {
-    return { nextWeek: 9, incumbentId: null, incumbentName: 'le président sortant', incumbentMandates: 2, incumbentPartyId: d.party.id, declared: true, declaredWeek: 1, parrainages: PARRAINAGES_REQUIRED };
+    return { nextWeek: 6, incumbentId: null, incumbentName: 'le président sortant', incumbentMandates: 2, incumbentPartyId: d.party.id, declared: true, declaredWeek: 1, parrainages: PARRAINAGES_REQUIRED };
   }
   // Au départ, le président sortant (fictif) achève son second mandat ; son parti est celui du gouvernement
   const governing = d.scenario === 'royaute' || d.scenario === 'infiltre' ? d.otherParties[2]?.id ?? d.party.id : d.party.id;
@@ -34,9 +35,9 @@ export function weeksToPresidential(d: GameState): number {
   return d.presidential.nextWeek - d.week;
 }
 
-/** La campagne officielle s'ouvre huit semaines avant le scrutin */
+/** La campagne s'ouvre cinq mois avant le scrutin */
 export function campaignOpensAt(d: GameState): number {
-  return d.presidential.nextWeek - ELECTIONS.presidentielle.campaignWeeks;
+  return d.presidential.nextWeek - ELECTIONS.presidentielle.campaignMonths;
 }
 
 export function canDeclare(d: GameState): { ok: boolean; reason?: string } {
@@ -44,13 +45,13 @@ export function canDeclare(d: GameState): { ok: boolean; reason?: string } {
   const left = c.nextWeek - d.week;
   if (d.status !== 'en_cours') return { ok: false, reason: 'Partie terminée' };
   if (d.player.flags['monarchie']) return { ok: false, reason: 'La monarchie a aboli l’élection présidentielle' };
-  if (Number(d.player.flags['ineligibleUntil'] ?? 0) > d.week) return { ok: false, reason: `Inéligible jusqu’à la semaine ${d.player.flags['ineligibleUntil']}` };
+  if (Number(d.player.flags['ineligibleUntil'] ?? 0) > d.week) return { ok: false, reason: `Inéligible jusqu’en ${monthLabel(Number(d.player.flags['ineligibleUntil']))}` };
   if (d.player.flags['retired']) return { ok: false, reason: 'Vous vous êtes retiré·e' };
   if (c.declared) return { ok: false, reason: 'Candidature déjà déclarée' };
   if (d.elections.some(e => !e.resolved && e.type === 'presidentielle')) return { ok: false, reason: 'La campagne est déjà lancée' };
   if (d.presidency && d.presidency.mandates >= 2) return { ok: false, reason: 'Deux mandats consécutifs au plus' };
-  if (left > DECLARE_WINDOW) return { ok: false, reason: `Trop tôt : candidatures ouvertes à partir de la semaine ${c.nextWeek - DECLARE_WINDOW}` };
-  if (left <= ELECTIONS.presidentielle.campaignWeeks + 1) return { ok: false, reason: 'Dépôt des candidatures clos' };
+  if (left > DECLARE_WINDOW) return { ok: false, reason: `Trop tôt : candidatures ouvertes à partir de ${monthLabel(c.nextWeek - DECLARE_WINDOW)}` };
+  if (left <= ELECTIONS.presidentielle.campaignMonths + 1) return { ok: false, reason: 'Dépôt des candidatures clos' };
   if (d.player.stats.popularity < 12) return { ok: false, reason: 'Popularité 12 au moins : personne ne vous connaît' };
   return { ok: true };
 }
@@ -81,9 +82,9 @@ export function declareCandidacy(d: GameState): string[] {
   p.stats.stress = clamp(p.stats.stress + 6);
   p.flags['menace'] = Number(p.flags['menace'] ?? 0) + 5;
   addMilestone(d, 'carriere', d.presidency ? 'Candidat·e à sa propre succession' : 'Candidat·e à l’Élysée',
-    `${p.name} annonce sa candidature à l’élection présidentielle de la semaine ${c.nextWeek}.`);
+    `${p.name} annonce sa candidature à l’élection présidentielle de ${monthLabel(c.nextWeek)}.`);
   pushNews(d, 'election', 'positive', `${p.name} candidat·e à l’élection présidentielle`,
-    `Il faut ${PARRAINAGES_REQUIRED} parrainages d’élus avant la semaine ${campaignOpensAt(d)}. ${official ? 'Le parti se met en ordre de bataille.' : 'Votre parti avait déjà son candidat : la guerre est déclarée.'}`);
+    `Il faut ${PARRAINAGES_REQUIRED} parrainages d’élus avant ${monthLabel(campaignOpensAt(d))}. ${official ? 'Le parti se met en ordre de bataille.' : 'Votre parti avait déjà son candidat : la guerre est déclarée.'}`);
   return out;
 }
 
@@ -95,11 +96,11 @@ export function addParrainages(d: GameState, delta: number): string[] {
   return [`Parrainages ${c.parrainages - before >= 0 ? '+' : ''}${c.parrainages - before} (${Math.min(c.parrainages, PARRAINAGES_REQUIRED)}/${PARRAINAGES_REQUIRED})`];
 }
 
-/** Parrainages recueillis chaque semaine : réseau d'élus, appareil du parti */
+/** Parrainages recueillis chaque mois : réseau d'élus, appareil du parti */
 export function weeklyParrainages(d: GameState): number {
   const p = d.player;
   const leads = d.party.leaderNpcId === 'player' || p.rankId === 'candidat_presidence' || p.rankId === 'ancien_president' || !!d.presidency;
-  return Math.round(4 + p.stats.influence * 0.25 + (leads ? 22 : 0) + rankOrder(p.rankId) * 3 + (partySupport(d) - 50) * 0.2);
+  return Math.round(2.5 * (4 + p.stats.influence * 0.25 + (leads ? 22 : 0) + rankOrder(p.rankId) * 3 + (partySupport(d) - 50) * 0.2));
 }
 
 // ── Calendrier ────────────────────────────────────────────
@@ -143,7 +144,7 @@ function openPresidentialCampaign(d: GameState, opens: number): void {
   // Les autres scrutins en cours sont reportés après la présidentielle
   for (const e of d.elections.filter(x => !x.resolved)) e.resolved = true;
   d.elections = d.elections.filter(e => e.result || e.type === 'presidentielle');
-  d.player.flags['nextElectionWeek'] = c.nextWeek + 2;
+  d.player.flags['nextElectionWeek'] = c.nextWeek + 1;
   const election: ScheduledElection = {
     id: nextId(d, 'elec'), type: 'presidentielle', campaignStartWeek: opens, week: c.nextWeek,
     candidateIds: ['player', ...presidentialRivals(d)], resolved: false,
@@ -158,7 +159,7 @@ function openPresidentialCampaign(d: GameState, opens: number): void {
   // Nouveau programme à écrire pour cette campagne
   d.program = null;
   pushNews(d, 'election', 'positive', 'Candidature validée par le Conseil constitutionnel',
-    `Vous figurez sur la liste officielle. Premier tour en semaine ${c.nextWeek}.`);
+    `Vous figurez sur la liste officielle. Premier tour ${inMonth(c.nextWeek)}.`);
 }
 
 /** Adversaires : chefs des autres partis, président sortant, et le chef de votre parti si vous êtes dissident·e */
@@ -194,7 +195,7 @@ function npcPresidential(d: GameState, rng: Rng): void {
   const winner = scored[0]?.n;
   const wasPlayer = !!d.presidency;
   if (wasPlayer) endPresidency(d, 'fin');
-  if (!winner) { c.nextWeek += MANDATE_WEEKS; return; }
+  if (!winner) { c.nextWeek += MANDATE_MONTHS; return; }
   const again = winner.id === c.incumbentId;
   const formerParty = c.incumbentPartyId;
   c.incumbentId = winner.id;
@@ -202,13 +203,13 @@ function npcPresidential(d: GameState, rng: Rng): void {
   c.incumbentMandates = again ? c.incumbentMandates + 1 : 1;
   c.incumbentPartyId = winner.partyId;
   winner.influence = clamp(winner.influence + 10);
-  c.nextWeek += MANDATE_WEEKS;
+  c.nextWeek += MANDATE_MONTHS;
   c.declared = false;
   c.parrainages = 0;
   const party = parties.find(p => p.id === winner.partyId);
   pushNews(d, 'election', winner.partyId === d.party.id ? 'positive' : 'neutral',
     `${winner.name} ${again ? 'réélu·e' : 'élu·e'} président·e de la République`,
-    `${party ? `Victoire ${ofParty(party.name)}. ` : ''}Prochaine élection présidentielle en semaine ${c.nextWeek}.`);
+    `${party ? `Victoire ${ofParty(party.name)}. ` : ''}Prochaine élection présidentielle ${inMonth(c.nextWeek)}.`);
   alternance(d, formerParty);
 }
 
@@ -220,7 +221,7 @@ function alternance(d: GameState, formerParty?: string): void {
     fallFromMatignon(d, 'Alternance : vous quittez Matignon', 'Votre camp a perdu l’Élysée. Le nouveau président nomme son Premier ministre.');
   } else if (d.player.rankId === 'ministre') {
     d.player.rankId = 'depute';
-    d.player.actionPoints.max = RANKS.depute.weeklyActionPoints;
+    d.player.actionPoints.max = RANKS.depute.monthlyActionPoints;
     pushNews(d, 'parti', 'negative', 'Alternance : vous quittez le gouvernement', 'Votre camp a perdu l’Élysée. Retour sur les bancs de l’Assemblée, dans l’opposition.');
   }
 }
@@ -228,7 +229,7 @@ function alternance(d: GameState, formerParty?: string): void {
 /** Résultat d'une présidentielle où le joueur était candidat·e */
 export function presidentialResult(d: GameState, e: ScheduledElection, winnerId: string, score: number, rng: Rng): void {
   const c = d.presidential;
-  c.nextWeek = e.week + MANDATE_WEEKS;
+  c.nextWeek = e.week + MANDATE_MONTHS;
   c.declared = false;
   c.parrainages = 0;
   const p = d.player;
@@ -249,7 +250,7 @@ export function presidentialResult(d: GameState, e: ScheduledElection, winnerId:
     c.incumbentPartyId = d.party.id;
     c.prevRank = undefined;
     addMilestone(d, 'victoire', reelected ? 'Réélu·e président·e de la République' : 'Élu·e président·e de la République',
-      `${score} % des voix au second tour. ${reelected ? 'Cinq ans de plus à l’Élysée.' : 'Passation de pouvoirs dans une semaine.'}`);
+      `${score} % des voix au second tour. ${reelected ? 'Cinq ans de plus à l’Élysée.' : 'Passation de pouvoirs dans les jours qui viennent.'}`);
     pushNews(d, 'election', 'positive', reelected ? `${p.name} réélu·e avec ${score} %` : `${p.name} élu·e président·e de la République avec ${score} %`,
       `Premier ministre : ${d.presidency!.primeMinister}. ${d.presidency!.cohabitation ? 'Les législatives vous privent de majorité : cohabitation.' : `Majorité à l’Assemblée : ${Math.round(d.presidency!.majority)} %.`}`);
   } else {
@@ -261,13 +262,13 @@ export function presidentialResult(d: GameState, e: ScheduledElection, winnerId:
     } else {
       const back = c.prevRank ?? 'chef_parti';
       p.rankId = back;
-      p.actionPoints.max = RANKS[back].weeklyActionPoints;
+      p.actionPoints.max = RANKS[back].monthlyActionPoints;
       addMilestone(d, 'revers', 'Battu·e à la présidentielle', `${score} % des voix face à ${winner?.name ?? 'votre adversaire'}. Prochaine chance dans cinq ans.`);
     }
     p.stats.popularity = clamp(p.stats.popularity - 6);
     p.stats.influence = clamp(p.stats.influence - 4);
     p.stats.stress = clamp(p.stats.stress + 15);
-    pushNews(d, 'election', 'negative', `Défaite à l’élection présidentielle (${score} %)`, `${winner?.name ?? 'Votre adversaire'} s’installe à l’Élysée. Prochain scrutin en semaine ${c.nextWeek}.`);
+    pushNews(d, 'election', 'negative', `Défaite à l’élection présidentielle (${score} %)`, `${winner?.name ?? 'Votre adversaire'} s’installe à l’Élysée. Prochain scrutin ${inMonth(c.nextWeek)}.`);
     c.prevRank = undefined;
     if (winner) {
       c.incumbentMandates = c.incumbentId === winner.id ? c.incumbentMandates + 1 : 1;
@@ -301,7 +302,7 @@ export function endPresidency(d: GameState, why: 'fin' | 'defaite' | 'demission'
   const p = d.player;
   d.presidency = null;
   p.rankId = 'ancien_president';
-  p.actionPoints.max = RANKS.ancien_president.weeklyActionPoints;
+  p.actionPoints.max = RANKS.ancien_president.monthlyActionPoints;
   p.actionPoints.current = Math.min(p.actionPoints.current, p.actionPoints.max);
   p.stats.stress = clamp(p.stats.stress - 20);
   p.flags['reformsTotal'] = Number(p.flags['reformsTotal'] ?? 0);
@@ -312,14 +313,14 @@ export function endPresidency(d: GameState, why: 'fin' | 'defaite' | 'demission'
   if (why === 'demission' || why === 'destitution') {
     // Élection anticipée sous 35 jours ; l'intérim est assuré par le président du Sénat
     const c = d.presidential;
-    c.nextWeek = d.week + 6;
+    c.nextWeek = d.week + 2;
     c.incumbentId = null;
     c.incumbentName = 'le président du Sénat (intérim)';
     c.incumbentMandates = 2;
     c.declared = false;
     c.parrainages = 0;
     addMilestone(d, 'revers', why === 'demission' ? 'Démission de la présidence' : 'Destitué·e par le Parlement',
-      why === 'demission' ? 'Vous quittez l’Élysée avant le terme. Élection anticipée dans six semaines.' : 'La Haute Cour prononce votre destitution (article 68). Une première sous la Ve République.');
+      why === 'demission' ? 'Vous quittez l’Élysée avant le terme. Élection anticipée dans deux mois.' : 'La Haute Cour prononce votre destitution (article 68). Une première sous la Ve République.');
   }
 }
 
@@ -468,7 +469,7 @@ const CRISES: Crisis[] = [
   },
   {
     tag: 'pres_destitution', weight: 0,
-    build: d => decision(d, 'pres_destitution', 'Procédure de destitution', 'Le Parlement réuni en Haute Cour examine votre destitution (article 68) pour « manquement à vos devoirs ». Le vote a lieu cette semaine.', [
+    build: d => decision(d, 'pres_destitution', 'Procédure de destitution', 'Le Parlement réuni en Haute Cour examine votre destitution (article 68) pour « manquement à vos devoirs ». Le vote a lieu ce mois-ci.', [
       { id: 'convaincre', label: 'Plaider devant la Haute Cour', effects: [pr({ approval: 4, majority: 6 }), st('stress', 15)], outcome: 'La majorité des deux tiers n’est pas atteinte. Vous sauvez votre fauteuil.',
         risk: { baseChance: 0.45, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'resign', why: 'destitution' }], failureNews: 'La Haute Cour vote la destitution.' } },
       { id: 'demission', label: 'Démissionner avec dignité', effects: [{ kind: 'resign' }, st('credibility', 4)], outcome: 'Vous quittez l’Élysée avant d’en être chassé·e.' },

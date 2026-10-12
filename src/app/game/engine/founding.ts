@@ -144,5 +144,5 @@ export function foundPartyInGame(d: GameState, draft: PartyDraft): void {
 /** Malus électoral d'un parti jeune et peu implanté, qui s'efface en un an */
 export function youngPartyMalus(d: GameState): number {
   if (!d.party.founder) return 0;
-  return Math.max(0, 8 - (d.week - (d.party.foundedWeek ?? d.week)) / 6);
+  return Math.max(0, 8 - (d.week - (d.party.foundedWeek ?? d.week)) / 2);
 }

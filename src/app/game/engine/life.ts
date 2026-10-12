@@ -1,5 +1,6 @@
 import { DeathCause, Decision, GameState, Milestone, RankId } from '../models/game.models';
-import { RANKS, START_AGE, START_DATE, rankOrder } from '../data/ranks';
+import { RANKS, START_AGE, rankOrder } from '../data/ranks';
+import { WEEKS_PER_MONTH, dateOfTurn, monthlyChance } from './calendar';
 import { makeFactions, ofParty } from '../data/world';
 import { pushNews } from './effects';
 import { owns } from './patrimoine';
@@ -46,16 +47,18 @@ export function annualMortality(age: number, health: number): number {
   return Math.min(0.6, 0.008 * Math.exp(0.095 * (age - 60)) * Math.exp((65 - health) / 18));
 }
 
-/** Probabilité hebdomadaire d'accident mortel */
+/** Probabilité mensuelle d'accident mortel */
 export function accidentRisk(d: GameState): number {
   const p = d.player;
-  let r = 0.000025;
+  let r = 0.000025 * WEEKS_PER_MONTH;
   if (owns(d, ['sportive'])) r *= 3;
   if (owns(d, ['yacht'])) r *= 1.5;
   if (owns(d, ['berline'])) r *= 0.5;
   if (p.stats.energy < 20) r *= 2.5;
   if (p.age > 75) r *= 1.5;
   if (d.presidency) r *= 0.3;
+  if (p.staff.includes('chauffeur')) r *= 0.6;
+  if (p.staff.includes('garde_du_corps')) r *= 0.85;
   return r;
 }
 
@@ -65,7 +68,7 @@ const ASSASSINATION_BY_RANK: Record<RankId, number> = {
   candidat_presidence: 0.002, president: 0.01, ancien_president: 0.0006,
 };
 
-/** Probabilité hebdomadaire d'être assassiné·e */
+/** Probabilité mensuelle d'être assassiné·e */
 export function assassinationRisk(d: GameState): number {
   const p = d.player;
   const menace = Number(p.flags['menace'] ?? 0);
@@ -74,7 +77,9 @@ export function assassinationRisk(d: GameState): number {
   const threat = pres ? pres.threat / 40 : 1 + menace / 25;
   const security = pres ? pres.security : Number(p.flags['protection'] ?? 0);
   const exposure = 1 + Math.max(0, p.scandalExposure - 50) / 100 + (d.mole && d.mole.cover < 30 ? 1 : 0);
-  return (base * threat * exposure * (1 - security / 130)) / 52;
+  const guard = p.staff.includes('garde_du_corps') ? 0.5 : 1;
+  const war = d.war ? 1.3 : 1;
+  return (base * threat * exposure * war * guard * (1 - security / 130)) / 12;
 }
 
 /** Résumé des risques, affiché au joueur */
@@ -83,19 +88,19 @@ export function stressFactor(stress: number): number {
   return 1 + Math.max(0, stress - 50) / 50;
 }
 
-/** Risque hebdomadaire d'accident cardiaque ou vasculaire dû au surmenage */
+/** Risque mensuel d'accident cardiaque ou vasculaire dû au surmenage */
 export function stressRisk(d: GameState): number {
   const over = Math.max(0, d.player.stats.stress - 55) / 45;
-  return over * over * 0.0006 * (1 + Math.max(0, d.player.age - 40) / 20) * (d.player.stats.energy < 20 ? 1.5 : 1);
+  return monthlyChance(over * over * 0.0006 * (1 + Math.max(0, d.player.age - 40) / 20) * (d.player.stats.energy < 20 ? 1.5 : 1));
 }
 
 export function lifeRisks(d: GameState): { natural: number; stress: number; accident: number; assassination: number } {
   const p = d.player;
   return {
     natural: annualMortality(p.age, p.health) * stressFactor(p.stats.stress),
-    stress: 1 - Math.pow(1 - stressRisk(d), 52),
-    accident: accidentRisk(d) * 52,
-    assassination: assassinationRisk(d) * 52,
+    stress: 1 - Math.pow(1 - stressRisk(d), 12),
+    accident: accidentRisk(d) * 12,
+    assassination: assassinationRisk(d) * 12,
   };
 }
 
@@ -153,7 +158,7 @@ function accidentText(d: GameState, rng: Rng): string {
   return rankOrder(d.player.rankId) >= rankOrder('ministre') && rng.chance(0.4) ? ACCIDENT_TEXTS.helico : ACCIDENT_TEXTS.route;
 }
 
-/** Tirages de fin de vie de la semaine. Renvoie true si le personnage meurt. */
+/** Tirages de fin de vie du mois. Renvoie true si le personnage meurt. */
 function deathRoll(d: GameState, rng: Rng): boolean {
   const p = d.player;
   if (rng.chance(assassinationRisk(d))) {
@@ -168,8 +173,8 @@ function deathRoll(d: GameState, rng: Rng): boolean {
     die(d, 'maladie', rng.pick(STRESS_TEXTS));
     return true;
   }
-  const acute = p.health < 15 ? (15 - p.health) * 0.003 : 0;
-  if (rng.chance(annualMortality(p.age, p.health) * stressFactor(p.stats.stress) / 52 + acute)) {
+  const acute = p.health < 15 ? monthlyChance((15 - p.health) * 0.003) : 0;
+  if (rng.chance(annualMortality(p.age, p.health) * stressFactor(p.stats.stress) / 12 + acute)) {
     const old = p.age >= 72 && rng.chance(0.65);
     die(d, old ? 'vieillesse' : 'maladie', rng.pick(old ? OLD_AGE_TEXTS : ILLNESS_TEXTS));
     return true;
@@ -177,7 +182,7 @@ function deathRoll(d: GameState, rng: Rng): boolean {
   return false;
 }
 
-// ── Semaine ───────────────────────────────────────────────
+// ── Mois ───────────────────────────────────────────────
 
 export function adjustHealth(d: GameState, delta: number): string[] {
   const before = d.player.health;
@@ -190,7 +195,7 @@ export function weeklyLife(d: GameState, rng: Rng): void {
   if (d.status === 'mort') return;
   const p = d.player;
   const before = Math.floor(p.age);
-  p.age += 1 / 52;
+  p.age += 1 / 12;
   const now = Math.floor(p.age);
   if (now > before) {
     pushNews(d, 'systeme', 'neutral', `${now} ans`, now % 10 === 0
@@ -203,20 +208,20 @@ export function weeklyLife(d: GameState, rng: Rng): void {
   // Santé : elle suit la santé « naturelle » de l'âge, abîmée par le stress et l'épuisement,
   // entretenue par l'hygiène de vie (sport, cures, bilans)
   const hygiene = Math.min(12, Number(p.flags['hygiene'] ?? 0));
-  p.flags['hygiene'] = Math.max(0, Math.round((hygiene - 0.25) * 100) / 100);
+  p.flags['hygiene'] = Math.max(0, Math.round((hygiene - 1) * 100) / 100);
   const target = baselineHealth(p.age) + hygiene
     - Math.max(0, p.stats.stress - 55) * 0.45 - (p.stats.energy < 20 ? 8 : 0)
     - Math.max(0, p.scandalExposure - 70) * 0.1;
-  p.health = clamp(p.health + (target - p.health) * 0.05);
+  p.health = clamp(p.health + (target - p.health) * 0.2);
   // L'âge use aussi l'énergie
   if (p.age > 60) p.stats.energy = clamp(p.stats.energy - (p.age - 60) * 0.12);
   // La menace qui pèse sur vous s'estompe lentement ; la protection policière aussi
-  p.flags['menace'] = Math.min(100, Math.max(0, Number(p.flags['menace'] ?? 0) - 1));
-  p.flags['protection'] = Math.min(100, Math.max(0, Number(p.flags['protection'] ?? 0) - 0.5));
+  p.flags['menace'] = Math.min(100, Math.max(0, Number(p.flags['menace'] ?? 0) - 4));
+  p.flags['protection'] = Math.min(100, Math.max(0, Number(p.flags['protection'] ?? 0) - 2));
 
   // Alerte médicale
   const lastAlert = Number(p.flags['lastHealthAlert'] ?? -99);
-  if ((p.health < 38 || p.stats.stress >= 88) && d.week - lastAlert >= 8 && !d.pendingDecisions.some(x => x.tag === 'alerte_sante') && rng.chance(0.25)) {
+  if ((p.health < 38 || p.stats.stress >= 88) && d.week - lastAlert >= 3 && !d.pendingDecisions.some(x => x.tag === 'alerte_sante') && rng.chance(0.25)) {
     p.flags['lastHealthAlert'] = d.week;
     d.pendingDecisions.push(healthAlert(d));
   }
@@ -230,7 +235,7 @@ function healthAlert(d: GameState): Decision {
     title: 'Alerte médicale',
     context: `Malaise dans votre bureau. Votre médecin est formel : « ${d.player.age >= 65 ? 'À votre âge, ' : ''}si vous continuez à ce rythme, je ne réponds plus de rien. »`,
     choices: [
-      { id: 'hopital', label: 'Une semaine d’hospitalisation', effects: [{ kind: 'health', delta: 14 }, { kind: 'stat', stat: 'stress', delta: -20 }, { kind: 'stat', stat: 'energy', delta: -10 }, { kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'influence', delta: -4 }, ...(pres ? [{ kind: 'presidency' as const, approval: -3 }] : [])],
+      { id: 'hopital', label: 'Dix jours d’hospitalisation', effects: [{ kind: 'health', delta: 14 }, { kind: 'stat', stat: 'stress', delta: -20 }, { kind: 'stat', stat: 'energy', delta: -10 }, { kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'influence', delta: -4 }, ...(pres ? [{ kind: 'presidency' as const, approval: -3 }] : [])],
         outcome: 'Examens, repos forcé. Les rumeurs vont bon train, mais vous allez mieux.' },
       { id: 'lever', label: 'Lever le pied pendant un mois', effects: [{ kind: 'health', delta: 8 }, { kind: 'flagAdd', key: 'hygiene', delta: 4 }, { kind: 'stat', stat: 'stress', delta: -12 }, { kind: 'stat', stat: 'influence', delta: -3 }, { kind: 'momentum', delta: -5 }],
         outcome: 'Agenda allégé. Vos adversaires notent votre absence.' },
@@ -267,7 +272,7 @@ export function settleEndings(d: GameState): void {
   // Une victoire déjà acquise ne se fête pas deux fois
   if (victory && d.milestones.some(m => m.title === title)) return;
   // Un même revers à répétition ne fait pas un nouveau chapitre
-  const again = !victory && d.milestones.some(m => m.title === title && d.week - m.week < 104);
+  const again = !victory && d.milestones.some(m => m.title === title && d.week - m.week < 24);
   if (!again) addMilestone(d, victory ? 'victoire' : 'revers', title, text);
   pushNews(d, 'systeme', victory ? 'positive' : 'negative', again ? title : `Nouveau chapitre : ${title}`, `${text} La vie continue.`);
   if (!victory) aftermath(d, title);
@@ -280,7 +285,7 @@ function demote(d: GameState, to: RankId = 'militant'): void {
   if (d.presidency || d.player.rankId === 'ancien_president') return;
   if (rankOrder(d.player.rankId) > rankOrder(to)) {
     d.player.rankId = to;
-    d.player.actionPoints.max = RANKS[to].weeklyActionPoints;
+    d.player.actionPoints.max = RANKS[to].monthlyActionPoints;
     d.player.actionPoints.current = Math.min(d.player.actionPoints.current, d.player.actionPoints.max);
   }
 }
@@ -295,9 +300,10 @@ function aftermath(d: GameState, title: string): void {
       p.flags['loanDebt'] = 0;
       p.flags['overdraftWeeks'] = 0;
       p.flags['bankruptcies'] = 0;
+      p.loans = [];
       if (d.presidency) d.presidency.approval = clamp(d.presidency.approval - 15);
       else demote(d);
-      p.flags['desert'] = d.week + 26;
+      p.flags['desert'] = d.week + 6;
       pushNews(d, 'systeme', 'neutral', 'Repartir de zéro', 'Plus un sou, plus de mandat, mais une leçon apprise. Une traversée du désert commence.');
       break;
     case 'Démasqué·e':
@@ -306,7 +312,7 @@ function aftermath(d: GameState, title: string): void {
       demote(d);
       s.popularity = clamp(s.popularity - 6);
       s.credibility = clamp(s.credibility - 10);
-      p.flags['desert'] = d.week + 26;
+      p.flags['desert'] = d.week + 6;
       break;
     case 'Remercié·e':
       d.press = null;
@@ -318,7 +324,7 @@ function aftermath(d: GameState, title: string): void {
       d.crown = d.crown ? { ...d.crown, soutien: clamp(d.crown.soutien - 10), armee: clamp(d.crown.armee - 15) } : null;
       s.popularity = clamp(s.popularity - 8);
       s.credibility = clamp(s.credibility - 15);
-      p.flags['ineligibleUntil'] = d.week + 260;
+      p.flags['ineligibleUntil'] = d.week + 60;
       pushNews(d, 'scandale', 'negative', 'Condamné·e : cinq ans d’inéligibilité', 'Peine aménagée sous bracelet électronique. Aucune candidature possible avant cinq ans.');
       break;
     case 'La République tient bon':
@@ -328,7 +334,7 @@ function aftermath(d: GameState, title: string): void {
       // Traversée du désert : on n'écoute plus, mais on n'est pas mort
       s.popularity = Math.max(s.popularity, 12);
       s.credibility = Math.max(s.credibility, 18);
-      p.flags['desert'] = d.week + 26;
+      p.flags['desert'] = d.week + 6;
       demote(d, rankOrder(p.rankId) >= rankOrder('depute') ? 'conseiller_municipal' : 'militant');
   }
 }
@@ -375,15 +381,15 @@ export function retire(d: GameState, rng: Rng): void {
     const q = annualMortality(p.age, health) + 0.001;
     if (rng.chance(q) || p.age >= 108) {
       // Le décès survient au cours de l'année
-      const weeks = rng.int(1, 52);
-      d.week += weeks;
-      p.age += weeks / 52;
+      const months = rng.int(1, 12);
+      d.week += months;
+      p.age += months / 12;
       p.health = Math.round(health);
       const old = p.age >= 72 && rng.chance(0.7);
       die(d, old ? 'vieillesse' : 'maladie', rng.pick(old ? OLD_AGE_TEXTS : ILLNESS_TEXTS));
       return;
     }
-    d.week += 52;
+    d.week += 12;
     p.age += 1;
     health += (baselineHealth(p.age) - health) * 0.5;
     // Rentes, droits d'auteur, conférences
@@ -405,10 +411,9 @@ export interface LifeSummary {
   epitaph: string;
 }
 
+/** Date du tour (premier jour du mois) */
 export function dateOfWeek(week: number): Date {
-  const d = new Date(START_DATE);
-  d.setDate(d.getDate() + (week - 1) * 7);
-  return d;
+  return dateOfTurn(week);
 }
 
 export function lifeSummary(d: GameState): LifeSummary {

@@ -1,7 +1,7 @@
 import { ActionCategory, ActionDefinition, Effect } from '../models/game.models';
 
 /**
- * Catalogue des actions hebdomadaires.
+ * Catalogue des actions mensuelles.
  * risk.baseChance = probabilité d'échec avant modulation par la stat (ou la maîtrise du dossier).
  */
 const RAW_ACTIONS: ActionDefinition[] = [
@@ -9,7 +9,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'porte_a_porte', label: 'Porte-à-porte', category: 'terrain', minRank: 'militant',
     description: 'Arpenter les cages d’escalier. Lent, mais ça construit une base.',
-    cost: { ap: 1, energy: 8 }, maxPerWeek: 2,
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 2,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'momentum', delta: 3 }],
   },
   {
@@ -24,7 +24,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'meeting', label: 'Organiser un meeting', category: 'terrain', minRank: 'conseiller_municipal',
     description: 'Salle, sono, militants en renfort. Un bon meeting fait les gros titres locaux.',
-    cost: { ap: 2, energy: 15, money: 3000 }, maxPerWeek: 1,
+    cost: { ap: 2, energy: 15, money: 3000 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'momentum', delta: 9 }, { kind: 'stat', stat: 'stress', delta: 4 }],
     risk: {
       baseChance: 0.3, scaleWith: 'popularity', scaleWeight: 0.8,
@@ -34,20 +34,20 @@ const RAW_ACTIONS: ActionDefinition[] = [
   },
   {
     id: 'manifestation', label: 'Mener une manifestation', category: 'terrain', minRank: 'militant',
-    description: 'Choisir une cause, rallier des alliés, tenir le cortège jusqu’au discours. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 12 }, maxPerWeek: 1, cooldownWeeks: 4,
+    description: 'Choisir une cause, rallier des alliés, tenir le cortège jusqu’au discours. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 12 }, maxPerMonth: 1, cooldown: 4,
     effects: [{ kind: 'protest' }],
   },
   {
     id: 'marche', label: 'Tournée du marché du dimanche', category: 'terrain', minRank: 'militant',
-    description: 'Quatre rencontres entre les étals : écouter, promettre, convaincre. Se joue en fin de semaine.',
-    cost: { ap: 1, energy: 6 }, maxPerWeek: 1, cooldownWeeks: 2,
+    description: 'Quatre rencontres entre les étals : écouter, promettre, convaincre. Se joue en fin de mois.',
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1, cooldown: 2,
     effects: [{ kind: 'scene', sceneId: 'marche' }],
   },
   {
     id: 'grand_meeting', label: 'Organiser un grand meeting', category: 'terrain', minRank: 'conseiller_municipal',
-    description: 'La salle, la première partie, le discours, l’imprévu, le final. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 12 }, maxPerWeek: 1, cooldownWeeks: 3,
+    description: 'La salle, la première partie, le discours, l’imprévu, le final. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 12 }, maxPerMonth: 1, cooldown: 3,
     effects: [{ kind: 'scene', sceneId: 'meeting' }],
   },
   {
@@ -61,7 +61,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'post_reseaux', label: 'Campagne réseaux sociaux', category: 'medias', minRank: 'militant',
     description: 'Vidéo verticale, punchline, hashtag. Attention au bad buzz.',
-    cost: { ap: 1, energy: 3 }, maxPerWeek: 2,
+    cost: { ap: 1, energy: 3 }, maxPerMonth: 2,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'momentum', delta: 2 }],
     risk: {
       baseChance: 0.3, scaleWith: 'credibility', scaleWeight: 0.7,
@@ -86,25 +86,25 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'plateau_tv', label: 'Accepter un plateau TV', category: 'medias', minRank: 'conseiller_municipal',
     description: 'Une interview en direct sur le sujet du moment. Préparez vos éléments de langage.',
-    cost: { ap: 2, energy: 12 }, maxPerWeek: 1,
+    cost: { ap: 2, energy: 12 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'decision', templateId: 'interview' }],
   },
   {
     id: 'face_a_face', label: 'Face-à-face contradictoire', category: 'medias', minRank: 'militant',
-    description: 'Un débat en direct contre un adversaire : réunion publique d’abord, plateaux télé ensuite. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 12 }, maxPerWeek: 1, cooldownWeeks: 2,
+    description: 'Un débat en direct contre un adversaire : réunion publique d’abord, plateaux télé ensuite. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 12 }, maxPerMonth: 1, cooldown: 2,
     effects: [{ kind: 'debate', stakes: 'face_a_face' }],
   },
   {
     id: 'hemicycle', label: 'Joute dans l’hémicycle', category: 'medias', minRank: 'depute',
     description: 'Questions au gouvernement : trois manches sous l’œil des caméras de l’Assemblée.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 2,
+    cost: { ap: 2, energy: 10 }, cooldown: 2,
     effects: [{ kind: 'debate', stakes: 'hemicycle' }],
   },
   {
     id: 'commission', label: 'Mener une commission d’enquête', category: 'dossiers', minRank: 'depute',
-    description: 'Auditionner sous serment le PDG d’une grande entreprise. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 4,
+    description: 'Auditionner sous serment le PDG d’une grande entreprise. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 10 }, cooldown: 4,
     effects: [{ kind: 'scene', sceneId: 'commission' }],
   },
   {
@@ -124,13 +124,13 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'experts', label: 'Auditionner des experts', category: 'dossiers', minRank: 'conseiller_municipal', target: 'domain',
     description: 'Un think tank vous briefe pendant une journée entière.',
-    cost: { ap: 1, energy: 4, money: 1500 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 4, money: 1500 }, maxPerMonth: 1,
     effects: [{ kind: 'dossier', domain: '$domain', delta: 20 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'stat', stat: 'stress', delta: 4 }],
   },
   {
     id: 'formation', label: 'Formation intensive', category: 'dossiers', minRank: 'militant',
     description: 'Un séminaire de deux jours. Gagne un point de compétence.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 10 }, cooldown: 4,
     effects: [{ kind: 'skillPoints', delta: 1 }],
   },
 
@@ -150,19 +150,19 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'duel', label: 'Défier un cadre en bureau national', category: 'parti', minRank: 'conseiller_municipal', target: 'npc',
     description: 'Un duel d’arguments devant les instances du parti. Le vainqueur rallie les courants.',
-    cost: { ap: 2, politicalCapital: 8, energy: 8 }, cooldownWeeks: 3,
+    cost: { ap: 2, politicalCapital: 8, energy: 8 }, cooldown: 3,
     effects: [{ kind: 'debate', stakes: 'duel_interne', opponentId: '$target' }],
   },
   {
     id: 'alliance', label: 'Négocier une alliance électorale', category: 'parti', minRank: 'chef_parti',
     description: 'Programme commun, circonscriptions, tête de liste : bâtir une coalition sans perdre ses militants.',
-    cost: { ap: 2, politicalCapital: 10 }, cooldownWeeks: 8,
+    cost: { ap: 2, politicalCapital: 10 }, cooldown: 4,
     effects: [{ kind: 'scene', sceneId: 'alliance' }],
   },
   {
     id: 'placer_proche', label: 'Placer un proche', category: 'parti', minRank: 'depute',
     description: 'Une nomination à un poste clé : votre réseau se consolide, la presse veille.',
-    cost: { ap: 1, politicalCapital: 10 }, cooldownWeeks: 3,
+    cost: { ap: 1, politicalCapital: 10 }, cooldown: 3,
     effects: [
       { kind: 'stat', stat: 'influence', delta: 6 }, { kind: 'faction', factionId: '*', delta: -2 },
       { kind: 'exposure', delta: 7 },
@@ -171,7 +171,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'intrigue', label: 'Fragiliser un rival', category: 'parti', minRank: 'conseiller_municipal', target: 'npc',
     description: 'Une confidence off à un journaliste, un dossier qui ressort…',
-    cost: { ap: 2, politicalCapital: 12, energy: 8 }, cooldownWeeks: 2,
+    cost: { ap: 2, politicalCapital: 12, energy: 8 }, cooldown: 2,
     effects: [
       { kind: 'npcStat', npcId: '$target', stat: 'influence', delta: -8 },
       { kind: 'npcStat', npcId: '$target', stat: 'popularity', delta: -5 },
@@ -210,33 +210,33 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'mediation', label: 'Proposer une médiation sociale', category: 'reseau', minRank: 'depute',
     description: 'Une grève s’enlise dans une grande entreprise : mettez direction et syndicats autour de la table.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 10 }, cooldown: 4,
     effects: [{ kind: 'scene', sceneId: 'mediation' }],
   },
   {
     id: 'donateurs', label: 'Dîner de donateurs', category: 'reseau', minRank: 'militant',
     description: 'Lever des fonds pour la campagne. Gare aux mélanges des genres.',
-    cost: { ap: 1, energy: 7 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 7 }, maxPerMonth: 1,
     effects: [{ kind: 'funds', account: 'campaign', delta: 5000 }, { kind: 'exposure', delta: 3 }, { kind: 'stat', stat: 'stress', delta: 2 }],
   },
 
   // ── Argent ───────────────────────────────────────────────
   {
     id: 'chronique', label: 'Tenir une chronique dans un magazine', category: 'argent', minRank: 'militant',
-    description: 'Légal. Un billet par semaine, payé selon votre influence.',
-    cost: { ap: 1, energy: 4 }, maxPerWeek: 1,
+    description: 'Légal. Un billet par mois, payé selon votre influence.',
+    cost: { ap: 1, energy: 4 }, maxPerMonth: 1,
     effects: [{ kind: 'income', base: 600, scale: 'influence', mult: 25 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
   },
   {
     id: 'conference_payee', label: 'Donner une conférence rémunérée', category: 'argent', minRank: 'conseiller_municipal',
     description: 'Légal. Un cercle d’affaires vous invite à parler de votre vision. Plus vous êtes connu·e, mieux c’est payé.',
-    cost: { ap: 1, energy: 6 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 6 }, cooldown: 2,
     effects: [{ kind: 'income', base: 1500, scale: 'popularity', mult: 80 }, { kind: 'stat', stat: 'influence', delta: 1 }],
   },
   {
     id: 'livre', label: 'Écrire un livre', category: 'argent', minRank: 'militant', target: 'domain',
     description: 'Légal. Un essai sur un dossier : droits d’auteur, crédibilité, et un dossier mieux maîtrisé.',
-    cost: { ap: 2, energy: 12 }, cooldownWeeks: 8,
+    cost: { ap: 2, energy: 12 }, cooldown: 4,
     effects: [{ kind: 'income', base: 2000, scale: 'popularity', mult: 150 }, { kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'dossier', domain: '$domain', delta: 8 }, { kind: 'stat', stat: 'stress', delta: 5 }],
     risk: {
       baseChance: 0.3, scaleWith: 'dossier', scaleWeight: 0.8,
@@ -247,13 +247,13 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'conseil', label: 'Mission de conseil pour une entreprise', category: 'argent', minRank: 'depute',
     description: 'Légal mais douteux : une société vous rémunère pour vos « conseils ». Conflit d’intérêts en vue.',
-    cost: { ap: 1 }, cooldownWeeks: 3,
+    cost: { ap: 1 }, cooldown: 3,
     effects: [{ kind: 'income', base: 4000, scale: 'influence', mult: 120 }, { kind: 'exposure', delta: 7 }],
   },
   {
     id: 'enveloppe', label: 'Accepter une enveloppe', category: 'argent', minRank: 'conseiller_municipal',
     description: 'Illégal. Un promoteur « remercie » votre bienveillance sur un permis de construire.',
-    cost: { ap: 1 }, cooldownWeeks: 3,
+    cost: { ap: 1 }, cooldown: 3,
     effects: [
       { kind: 'income', base: 6000, scale: 'influence', mult: 150 }, { kind: 'exposure', delta: 16 },
       { kind: 'flagAdd', key: 'illegal', delta: 1 },
@@ -267,15 +267,15 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'emploi_fictif', label: 'Embaucher un proche en emploi fictif', category: 'argent', minRank: 'depute',
     description: 'Illégal. Un salaire d’assistant parlementaire versé à un proche qui ne travaille pas. Rapporte chaque mois… jusqu’au jour où.',
-    cost: { ap: 1 }, cooldownWeeks: 6,
+    cost: { ap: 1 }, cooldown: 4,
     effects: [
       { kind: 'income', base: 9000 }, { kind: 'exposure', delta: 14 }, { kind: 'flagAdd', key: 'illegal', delta: 1 },
     ],
   },
   {
     id: 'marche_public', label: 'Arranger un marché public', category: 'argent', minRank: 'conseiller_municipal',
-    description: 'Illégal. Faire gagner une entreprise amie, contre rétrocommission. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 6 }, cooldownWeeks: 6,
+    description: 'Illégal. Faire gagner une entreprise amie, contre rétrocommission. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 6 }, cooldown: 4,
     effects: [{ kind: 'scene', sceneId: 'marche_public' }],
   },
 
@@ -294,19 +294,19 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'chronique_antenne', label: 'Assurer votre chronique', category: 'redaction', minRank: 'militant',
     description: 'Trois minutes à l’antenne ou une colonne dans le journal : le rendez-vous de vos fidèles.',
-    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'press', audience: 5 }, { kind: 'stat', stat: 'popularity', delta: 1 }, { kind: 'stat', stat: 'stress', delta: 2 }],
   },
   {
     id: 'polemique', label: 'Lancer une polémique calculée', category: 'redaction', minRank: 'militant',
     description: 'Une formule outrancière, des millions de vues. Votre réputation en prend un coup.',
-    cost: { ap: 1, energy: 4 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 4 }, cooldown: 2,
     effects: [{ kind: 'press', audience: 9, reputation: -5 }, { kind: 'exposure', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
   },
   {
     id: 'enquete', label: 'Mener une enquête', category: 'redaction', minRank: 'militant',
-    description: 'Des semaines de travail pour un scoop. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 12 }, cooldownWeeks: 2,
+    description: 'Des semaines de travail pour un scoop. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 12 }, cooldown: 2,
     effects: [{ kind: 'scene', sceneId: 'enquete' }],
   },
   {
@@ -329,15 +329,15 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'emission_direct', label: 'Animer une émission en direct', category: 'redaction', minRank: 'militant',
     requires: { pressGrade: 1 },
-    description: 'Trois invités, un public, une heure de direct. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 12 }, cooldownWeeks: 2,
+    description: 'Trois invités, un public, une heure de direct. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 12 }, cooldown: 2,
     effects: [{ kind: 'scene', sceneId: 'direct' }],
   },
   {
     id: 'interview_exclu', label: 'Décrocher une interview exclusive', category: 'redaction', minRank: 'militant',
     requires: { pressGrade: 1 },
     description: 'Le ministre qui ne parle à personne… sauf à vous ?',
-    cost: { ap: 2, energy: 6 }, cooldownWeeks: 3,
+    cost: { ap: 2, energy: 6 }, cooldown: 3,
     effects: [{ kind: 'press', audience: 6, reputation: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'stat', stat: 'stress', delta: 3 }],
     risk: {
       baseChance: 0.4, scaleWith: 'influence', scaleWeight: 0.6,
@@ -349,13 +349,13 @@ const RAW_ACTIONS: ActionDefinition[] = [
     id: 'grand_oral', label: 'Interview contradictoire d’un poids lourd', category: 'redaction', minRank: 'militant', target: 'npc',
     requires: { pressGrade: 2 },
     description: 'Vous face à un responsable politique, question après question. Un vrai duel.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 3,
+    cost: { ap: 2, energy: 10 }, cooldown: 3,
     effects: [{ kind: 'press', audience: 4 }, { kind: 'debate', stakes: 'face_a_face', opponentId: '$target' }],
   },
   {
     id: 'clash_reseaux', label: 'Clasher un politique sur les réseaux', category: 'redaction', minRank: 'militant', target: 'npc',
     description: 'Un fil cinglant qui fait le tour d’internet.',
-    cost: { ap: 1, energy: 3 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 3 }, cooldown: 2,
     effects: [
       { kind: 'press', audience: 5, reputation: -2 }, { kind: 'npcRelation', npcId: '$target', delta: -15 },
       { kind: 'npcStat', npcId: '$target', stat: 'popularity', delta: -3 },
@@ -364,7 +364,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'contrat', label: 'Renégocier votre contrat', category: 'redaction', minRank: 'militant',
     description: 'Votre audience vaut de l’or. À vous de le faire savoir.',
-    cost: { ap: 1 }, cooldownWeeks: 12,
+    cost: { ap: 1 }, cooldown: 4,
     effects: [{ kind: 'press', salaryPct: 15, independance: -3 }],
     risk: {
       baseChance: 0.45, scaleWith: 'influence', scaleWeight: 0.5,
@@ -376,7 +376,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     id: 'livre_enquete', label: 'Publier un livre-enquête', category: 'redaction', minRank: 'militant',
     requires: { pressGrade: 2 },
     description: 'Vos révélations réunies en volume : succès de librairie assuré si le sujet est brûlant.',
-    cost: { ap: 2, energy: 15 }, cooldownWeeks: 20,
+    cost: { ap: 2, energy: 15 }, cooldown: 5,
     effects: [{ kind: 'income', base: 6000, scale: 'popularity', mult: 150 }, { kind: 'press', reputation: 6, audience: 5, scoops: 1 }, { kind: 'stat', stat: 'stress', delta: 6 }, { kind: 'exposure', delta: 3 }],
   },
 
@@ -384,25 +384,25 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'benevolat', label: 'Journée de bénévolat', category: 'terrain', minRank: 'militant',
     description: 'Une journée à la banque alimentaire, sans caméra… ou presque.',
-    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -2 }, { kind: 'dossier', domain: 'social', delta: 1 }],
   },
   {
     id: 'concert_soutien', label: 'Organiser un concert de soutien', category: 'terrain', minRank: 'depute',
     description: 'Des artistes engagés, une grande salle, une billetterie au profit de la campagne.',
-    cost: { ap: 2, energy: 10, money: 4000 }, cooldownWeeks: 8,
+    cost: { ap: 2, energy: 10, money: 4000 }, cooldown: 4,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'momentum', delta: 4 }, { kind: 'funds', account: 'campaign', delta: 3000 }, { kind: 'stat', stat: 'stress', delta: 3 }, { kind: 'exposure', delta: 2 }],
   },
   {
     id: 'presse_regionale', label: 'Interview à la presse régionale', category: 'medias', minRank: 'militant',
     description: 'Moins prestigieux qu’un JT, mais lu par tous vos électeurs.',
-    cost: { ap: 1, energy: 3 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 3 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 1 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
   },
   {
     id: 'demonter', label: 'Démonter les chiffres d’un rival', category: 'medias', minRank: 'conseiller_municipal', target: 'npc',
     description: 'Un fil documenté qui pointe ses erreurs. Il faut être sûr de soi.',
-    cost: { ap: 1, energy: 5 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 5 }, cooldown: 2,
     effects: [{ kind: 'npcStat', npcId: '$target', stat: 'popularity', delta: -4 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'npcRelation', npcId: '$target', delta: -10 }],
     risk: {
       baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.6,
@@ -413,19 +413,19 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'rapport_parlementaire', label: 'Rédiger un rapport parlementaire', category: 'dossiers', minRank: 'depute', target: 'domain',
     description: 'Six mois d’auditions résumés en 200 pages. Fait autorité.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 6,
+    cost: { ap: 2, energy: 10 }, cooldown: 4,
     effects: [{ kind: 'dossier', domain: '$domain', delta: 10 }, { kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'stat', stat: 'stress', delta: 5 }],
   },
   {
     id: 'colloque', label: 'Organiser un colloque', category: 'dossiers', minRank: 'conseiller_municipal', target: 'domain',
     description: 'Une journée d’experts, de tables rondes et de petits fours.',
-    cost: { ap: 1, energy: 6, money: 3000 }, cooldownWeeks: 4,
+    cost: { ap: 1, energy: 6, money: 3000 }, cooldown: 4,
     effects: [{ kind: 'dossier', domain: '$domain', delta: 5 }, { kind: 'stat', stat: 'influence', delta: 2 }],
   },
   {
     id: 'adhesions', label: 'Campagne d’adhésion', category: 'parti', minRank: 'militant',
     description: 'Affiches, stands, parrainages : faire grossir les rangs.',
-    cost: { ap: 1, energy: 5, money: 2000 }, cooldownWeeks: 3,
+    cost: { ap: 1, energy: 5, money: 2000 }, cooldown: 3,
     effects: [{ kind: 'cohesion', delta: 2 }, { kind: 'momentum', delta: 2 }, { kind: 'faction', factionId: '*', delta: 2 }, { kind: 'partyTreasury', delta: 3 }],
   },
   {
@@ -457,7 +457,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'fouiller', label: 'Fouiller les bureaux de la fédération', category: 'infiltration', minRank: 'militant',
     description: 'Le soir, quand le local se vide. Les tiroirs ne sont jamais fermés à clé.',
-    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'mole', intel: 6, cover: -7 }, { kind: 'stat', stat: 'stress', delta: 4 }],
     risk: {
       baseChance: 0.3, scaleWith: 'influence', scaleWeight: 0.4,
@@ -468,7 +468,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'copier_fichier', label: 'Copier le fichier des adhérents', category: 'infiltration', minRank: 'conseiller_municipal',
     description: 'Une clé USB, cinq minutes seul·e devant l’ordinateur du trésorier.',
-    cost: { ap: 2, energy: 8 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 8 }, cooldown: 4,
     effects: [{ kind: 'mole', intel: 14, cover: -12 }, { kind: 'stat', stat: 'stress', delta: 6 }, { kind: 'flagAdd', key: 'illegal', delta: 1 }],
     risk: {
       baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.4,
@@ -485,31 +485,31 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'rapport', label: 'Transmettre un rapport à votre officier', category: 'infiltration', minRank: 'militant',
     description: 'Un rendez-vous dans un square, une enveloppe sous un journal. Prime de 40 € par renseignement.',
-    cost: { ap: 1, energy: 3 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 3 }, maxPerMonth: 1,
     effects: [{ kind: 'mole', deliver: true, cover: -4 }],
   },
   {
     id: 'zizanie', label: 'Semer la zizanie entre les courants', category: 'infiltration', minRank: 'militant',
     description: 'Une rumeur ici, un courriel transféré là. Les courants s’entre-déchirent.',
-    cost: { ap: 1, energy: 5 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 5 }, cooldown: 2,
     effects: [{ kind: 'mole', sabotage: 8, cover: -6 }, { kind: 'faction', factionId: '*', delta: -2 }],
   },
   {
     id: 'fuite_presse', label: 'Organiser une fuite dans la presse', category: 'infiltration', minRank: 'militant',
     description: 'Un document interne explosif atterrit chez un journaliste. Le chef du parti vacille.',
-    cost: { ap: 1, energy: 4 }, cooldownWeeks: 3,
+    cost: { ap: 1, energy: 4 }, cooldown: 3,
     effects: [{ kind: 'mole', sabotage: 10, leaderPop: -6, cover: -9 }, { kind: 'exposure', delta: 3 }],
   },
   {
     id: 'desinformation', label: 'Jouer les agents doubles', category: 'infiltration', minRank: 'militant',
     description: 'Livrer à vos « camarades » de fausses informations sur votre vrai camp. Ils vous adorent ; votre officier beaucoup moins.',
-    cost: { ap: 1, energy: 5 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 5 }, cooldown: 2,
     effects: [{ kind: 'mole', cover: 15, handler: -10 }, { kind: 'stat', stat: 'stress', delta: 4 }],
   },
   {
     id: 'retourner', label: 'Retourner un cadre du parti', category: 'infiltration', minRank: 'conseiller_municipal', target: 'npc',
     description: 'Un cadre aigri par la direction pourrait devenir votre source. Ou vous dénoncer.',
-    cost: { ap: 2, energy: 6, politicalCapital: 10 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 6, politicalCapital: 10 }, cooldown: 4,
     effects: [{ kind: 'mole', intel: 10 }, { kind: 'npcRelation', npcId: '$target', delta: 10 }, { kind: 'stat', stat: 'stress', delta: 5 }],
     risk: {
       baseChance: 0.45, scaleWith: 'influence', scaleWeight: 0.6,
@@ -519,14 +519,14 @@ const RAW_ACTIONS: ActionDefinition[] = [
   },
   {
     id: 'reunion_secrete', label: 'Assister à une réunion secrète du bureau', category: 'infiltration', minRank: 'conseiller_municipal',
-    description: 'Stratégie, listes, finances : tout se décide là. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 3,
+    description: 'Stratégie, listes, finances : tout se décide là. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 10 }, cooldown: 3,
     effects: [{ kind: 'scene', sceneId: 'bureau_secret' }],
   },
   {
     id: 'deballage', label: 'Le grand déballage', category: 'infiltration', minRank: 'militant',
     requires: { moleDelivered: 150 },
-    description: 'Conférence de presse : vous révélez tout. Victoire ou désastre, il n’y aura pas de retour. Se joue en fin de semaine.',
+    description: 'Conférence de presse : vous révélez tout. Victoire ou désastre, il n’y aura pas de retour. Se joue en fin de mois.',
     cost: { ap: 3, energy: 15 },
     effects: [{ kind: 'scene', sceneId: 'deballage' }],
   },
@@ -534,8 +534,8 @@ const RAW_ACTIONS: ActionDefinition[] = [
   // ── Couronne : débloquée par le scénario ou un événement ───────────
   {
     id: 'tournee_prince', label: 'Organiser une tournée du prétendant', category: 'couronne', minRank: 'militant',
-    description: 'Le prince parcourt une région : bains de foule, messe, rencontre des maires. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 10, money: 2000 }, cooldownWeeks: 2,
+    description: 'Le prince parcourt une région : bains de foule, messe, rencontre des maires. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 10, money: 2000 }, cooldown: 2,
     effects: [{ kind: 'scene', sceneId: 'tournee_prince' }],
   },
   {
@@ -547,7 +547,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'affiches', label: 'Campagne « La France a besoin d’un roi »', category: 'couronne', minRank: 'militant',
     description: 'Affiches, vidéos, tribunes : rendre l’idée monarchique familière.',
-    cost: { ap: 1, money: 2500 }, maxPerWeek: 1,
+    cost: { ap: 1, money: 2500 }, maxPerMonth: 1,
     effects: [{ kind: 'crown', soutien: 3 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
     risk: {
       baseChance: 0.25, scaleWith: 'credibility', scaleWeight: 0.5,
@@ -558,7 +558,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'officiers', label: 'Dîner discret avec des officiers', category: 'couronne', minRank: 'militant',
     description: 'Sonder la loyauté de hauts gradés et de préfets envers la République.',
-    cost: { ap: 1, politicalCapital: 5 }, cooldownWeeks: 2,
+    cost: { ap: 1, politicalCapital: 5 }, cooldown: 2,
     effects: [{ kind: 'crown', armee: 6 }, { kind: 'exposure', delta: 5 }],
     risk: {
       baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.6,
@@ -569,13 +569,13 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'constitution', label: 'Rédiger la Constitution du Royaume', category: 'couronne', minRank: 'militant',
     description: 'Une monarchie constitutionnelle moderne : il faut convaincre les juristes.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 6,
+    cost: { ap: 2, energy: 10 }, cooldown: 4,
     effects: [{ kind: 'crown', legitimite: 7, soutien: 2 }, { kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'dossier', domain: 'justice', delta: 8 }, { kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stance', delta: 3 }],
   },
   {
     id: 'mariage', label: 'Célébrer le mariage princier', category: 'couronne', minRank: 'militant',
     description: 'Un mariage retransmis en direct : le moment de faire rêver le pays.',
-    cost: { ap: 2, money: 15000 }, cooldownWeeks: 30,
+    cost: { ap: 2, money: 15000 }, cooldown: 7,
     effects: [{ kind: 'crown', soutien: 8, legitimite: 6 }, { kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'booster', count: 1, reason: 'Le mariage attire de nouveaux talents au mouvement.' }],
   },
   {
@@ -596,8 +596,8 @@ const RAW_ACTIONS: ActionDefinition[] = [
   // ── Loge : débloquée par le scénario ou un événement ───────────────
   {
     id: 'tenue', label: 'Présenter une planche en tenue', category: 'loge', minRank: 'militant',
-    description: 'Un exposé devant vos frères et sœurs, suivi d’un débat. Indispensable pour monter en grade. Se joue en fin de semaine.',
-    cost: { ap: 2, energy: 8 }, cooldownWeeks: 2,
+    description: 'Un exposé devant vos frères et sœurs, suivi d’un débat. Indispensable pour monter en grade. Se joue en fin de mois.',
+    cost: { ap: 2, energy: 8 }, cooldown: 2,
     effects: [{ kind: 'scene', sceneId: 'tenue' }],
   },
   {
@@ -610,7 +610,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     id: 'solliciter', label: 'Solliciter un frère', category: 'loge', minRank: 'militant', target: 'domain',
     requires: { grade: 1 },
     description: 'Un frère haut placé peut vous ouvrir une porte… mais la fraternité n’est pas un réseau d’affaires.',
-    cost: { ap: 1 }, cooldownWeeks: 2,
+    cost: { ap: 1 }, cooldown: 2,
     effects: [{ kind: 'stat', stat: 'influence', delta: 4 }, { kind: 'dossier', domain: '$domain', delta: 10 }, { kind: 'income', base: 1500 }, { kind: 'lodge', discretion: -10, fraternite: -4 }, { kind: 'exposure', delta: 3 }],
     risk: {
       baseChance: 0.3, scaleWith: 'influence', scaleWeight: 0.4,
@@ -622,21 +622,21 @@ const RAW_ACTIONS: ActionDefinition[] = [
     id: 'parrainer', label: 'Parrainer un profane', category: 'loge', minRank: 'militant',
     requires: { grade: 2 },
     description: 'Présenter un·e candidat·e à l’initiation. Un allié de plus, si tout se passe bien.',
-    cost: { ap: 1 }, cooldownWeeks: 4,
+    cost: { ap: 1 }, cooldown: 4,
     effects: [{ kind: 'lodge', fraternite: 6, discretion: -3 }, { kind: 'stat', stat: 'influence', delta: 2 }],
   },
   {
     id: 'fraternelle', label: 'Animer une fraternelle parlementaire', category: 'loge', minRank: 'depute',
     requires: { grade: 2 },
     description: 'Réunir discrètement les élus maçons de tous les partis autour de grands textes.',
-    cost: { ap: 1, politicalCapital: 5 }, cooldownWeeks: 3,
+    cost: { ap: 1, politicalCapital: 5 }, cooldown: 3,
     effects: [{ kind: 'stat', stat: 'influence', delta: 5 }, { kind: 'faction', factionId: '*', delta: 2 }, { kind: 'lodge', discretion: -9, fraternite: 3 }, { kind: 'exposure', delta: 2 }],
   },
   {
     id: 'convent', label: 'Se présenter à la Grande Maîtrise', category: 'loge', minRank: 'militant',
     requires: { grade: 3 },
     description: 'Le convent élit le Grand Maître de l’obédience. Une campagne feutrée, mais redoutable.',
-    cost: { ap: 3, energy: 12 }, cooldownWeeks: 10,
+    cost: { ap: 3, energy: 12 }, cooldown: 4,
     effects: [{ kind: 'scene', sceneId: 'convent' }],
   },
 
@@ -644,25 +644,25 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'tractage', label: 'Distribuer des tracts', category: 'terrain', minRank: 'militant',
     description: 'Imprimer et distribuer 5 000 tracts à la sortie du métro. Le parti peut payer l’impression.',
-    cost: { ap: 1, energy: 5, money: 600 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 5, money: 600 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'momentum', delta: 3 }],
   },
   {
     id: 'permanence_citoyenne', label: 'Tenir une permanence citoyenne', category: 'terrain', minRank: 'militant',
     description: 'Trois heures à écouter les doléances : logement, voisinage, impôts. Épuisant, mais apprécié.',
-    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 1 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'stat', stat: 'stress', delta: 2 }],
   },
   {
     id: 'bus_tour', label: 'Tournée nationale en bus', category: 'terrain', minRank: 'depute',
     description: 'Douze villes en six jours, un bus floqué à votre nom. Cher et épuisant, mais tout le pays vous voit.',
-    cost: { ap: 3, energy: 25, money: 12000 }, cooldownWeeks: 6,
+    cost: { ap: 3, energy: 25, money: 12000 }, cooldown: 4,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'momentum', delta: 10 }, { kind: 'stat', stat: 'stress', delta: 8 }, { kind: 'faction', factionId: 'ligne_dure', delta: -2 }],
   },
   {
     id: 'live', label: 'Répondre en direct sur les réseaux', category: 'medias', minRank: 'militant',
     description: 'Une heure de questions-réponses en direct. Spontané… donc risqué.',
-    cost: { ap: 1, energy: 4 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 4 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 1 }],
     risk: {
       baseChance: 0.22, scaleWith: 'credibility', scaleWeight: 0.5,
@@ -679,7 +679,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'sondage', label: 'Commander un sondage', category: 'medias', minRank: 'conseiller_municipal',
     description: 'Un institut teste votre nom. Publié au bon moment, il crée une dynamique.',
-    cost: { ap: 1, money: 5000 }, cooldownWeeks: 4,
+    cost: { ap: 1, money: 5000 }, cooldown: 4,
     effects: [{ kind: 'momentum', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 1 }],
     risk: {
       baseChance: 0.2,
@@ -690,7 +690,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'clip', label: 'Tourner un clip de campagne', category: 'medias', minRank: 'depute',
     description: 'Drone, musique originale, plans au lever du soleil. Peut devenir culte… ou ridicule.',
-    cost: { ap: 2, energy: 8, money: 8000 }, cooldownWeeks: 5,
+    cost: { ap: 2, energy: 8, money: 8000 }, cooldown: 4,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'momentum', delta: 5 }, { kind: 'stat', stat: 'credibility', delta: -1 }],
     risk: {
       baseChance: 0.2,
@@ -713,7 +713,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'question_gouv', label: 'Poser une question au gouvernement', category: 'dossiers', minRank: 'depute', target: 'domain',
     description: 'Deux minutes en direct à l’Assemblée pour interpeller un ministre.',
-    cost: { ap: 1, energy: 4 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 4 }, maxPerMonth: 1,
     effects: [{ kind: 'dossier', domain: '$domain', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
     risk: {
       baseChance: 0.45, scaleWith: 'dossier', scaleWeight: 0.9,
@@ -725,25 +725,25 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'fete_section', label: 'Fête de la section', category: 'parti', minRank: 'conseiller_municipal',
     description: 'Merguez, fanfare et discours. Les militants adorent… et le parti peut payer.',
-    cost: { ap: 2, energy: 8, money: 2500 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 8, money: 2500 }, cooldown: 4,
     effects: [{ kind: 'faction', factionId: '*', delta: 4 }, { kind: 'cohesion', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
   },
   {
     id: 'motion', label: 'Déposer une motion de congrès', category: 'parti', minRank: 'conseiller_municipal', target: 'faction',
     description: 'Un texte d’orientation signé avec un courant. Les autres grincent.',
-    cost: { ap: 2, politicalCapital: 15 }, cooldownWeeks: 6,
+    cost: { ap: 2, politicalCapital: 15 }, cooldown: 4,
     effects: [{ kind: 'faction', factionId: '$target', delta: 8 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'cohesion', delta: -2 }],
   },
   {
     id: 'universite_ete', label: 'Organiser une université d’été', category: 'parti', minRank: 'depute',
     description: 'Trois jours d’ateliers et de discours au bord de la mer. Très cher, très fédérateur.',
-    cost: { ap: 3, energy: 15, money: 15000 }, cooldownWeeks: 26,
+    cost: { ap: 3, energy: 15, money: 15000 }, cooldown: 6,
     effects: [{ kind: 'faction', factionId: '*', delta: 8 }, { kind: 'cohesion', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'momentum', delta: 5 }, { kind: 'stat', stat: 'stress', delta: 6 }],
   },
   {
     id: 'gala', label: 'Gala de levée de fonds', category: 'reseau', minRank: 'depute',
     description: 'Une salle prestigieuse, des donateurs fortunés. L’investissement rapporte au compte de campagne.',
-    cost: { ap: 2, energy: 10, money: 5000 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 10, money: 5000 }, cooldown: 4,
     effects: [{ kind: 'funds', account: 'campaign', delta: 15000 }, { kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'exposure', delta: 5 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
   },
   {
@@ -764,20 +764,20 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'cours', label: 'Donner des cours en école', category: 'argent', minRank: 'conseiller_municipal',
     description: 'Légal. Un séminaire dans une grande école : un peu d’argent et du prestige.',
-    cost: { ap: 1, energy: 6 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 6 }, cooldown: 2,
     effects: [{ kind: 'income', base: 1000, scale: 'credibility', mult: 15 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
   },
   {
     id: 'louer_villa', label: 'Louer votre villa pour l’été', category: 'argent', minRank: 'militant',
     requires: { asset: ['villa'] },
     description: 'Légal. Des touristes fortunés paient très cher… et les voisins parlent.',
-    cost: { ap: 1 }, cooldownWeeks: 12,
+    cost: { ap: 1 }, cooldown: 4,
     effects: [{ kind: 'income', base: 18000 }, { kind: 'exposure', delta: 8 }, { kind: 'stat', stat: 'popularity', delta: -2 }],
   },
   {
     id: 'note_frais', label: 'Passer des frais perso en note de frais du parti', category: 'argent', minRank: 'conseiller_municipal',
     description: 'Illégal. Restaurants, taxis, vacances : le parti rembourse sans trop regarder… pour l’instant.',
-    cost: { ap: 1 }, cooldownWeeks: 3,
+    cost: { ap: 1 }, cooldown: 3,
     effects: [{ kind: 'income', base: 2500 }, { kind: 'exposure', delta: 8 }, { kind: 'flagAdd', key: 'illegal', delta: 1 }],
     risk: {
       baseChance: 0.2,
@@ -790,88 +790,88 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'allocution', label: 'Allocution télévisée', category: 'elysee', minRank: 'president',
     description: 'Vingt heures, toutes les chaînes. Le pays vous écoute… ou zappe.',
-    cost: { ap: 1, energy: 8 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
     effects: [{ kind: 'presidency', approval: 4 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
   },
   {
     id: 'conseil_ministres', label: 'Présider le Conseil des ministres', category: 'elysee', minRank: 'president', target: 'domain',
     description: 'Fixer le cap, recadrer les ministres, arbitrer sur un dossier.',
-    cost: { ap: 1, energy: 5 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 5 }, maxPerMonth: 1,
     effects: [{ kind: 'presidency', majority: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'dossier', domain: '$domain', delta: 3 }],
   },
   {
     id: 'reforme', label: 'Faire voter une réforme', category: 'elysee', minRank: 'president', target: 'domain',
     description: 'Un texte ambitieux soumis au Parlement. Sans majorité, il risque d’être rejeté.',
-    cost: { ap: 2, energy: 12, politicalCapital: 20 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 12, politicalCapital: 20 }, cooldown: 4,
     effects: [{ kind: 'presidency', reform: true, approval: -3, majority: -3 }, { kind: 'dossier', domain: '$domain', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
   },
   {
     id: 'article_49_3', label: 'Passer en force (49.3)', category: 'elysee', minRank: 'president',
     description: 'La réforme est adoptée sans vote. L’opposition hurle, la rue gronde.',
-    cost: { ap: 1, politicalCapital: 30 }, cooldownWeeks: 8,
+    cost: { ap: 1, politicalCapital: 30 }, cooldown: 4,
     effects: [{ kind: 'presidency', reform: true, force: true, approval: -7, majority: -8, threat: 5 }, { kind: 'stat', stat: 'credibility', delta: -2 }],
   },
   {
     id: 'dissolution', label: 'Dissoudre l’Assemblée nationale', category: 'elysee', minRank: 'president',
     description: 'Législatives anticipées : les Français choisiront votre majorité… ou une cohabitation.',
-    cost: { ap: 2, politicalCapital: 25 }, cooldownWeeks: 52,
+    cost: { ap: 2, politicalCapital: 25 }, cooldown: 12,
     effects: [{ kind: 'presidency', dissolve: true }, { kind: 'stat', stat: 'stress', delta: 10 }],
   },
   {
     id: 'referendum_national', label: 'Soumettre une question au référendum', category: 'elysee', minRank: 'president',
     description: 'Le peuple tranche. Un oui vous grandit, un non vous affaiblit durablement.',
-    cost: { ap: 2, energy: 15, politicalCapital: 20 }, cooldownWeeks: 26,
+    cost: { ap: 2, energy: 15, politicalCapital: 20 }, cooldown: 6,
     effects: [{ kind: 'presidency', approval: 8, reform: true, force: true }, { kind: 'stat', stat: 'influence', delta: 4 }],
     risk: { baseChance: 0.5, scaleWith: 'popularity', scaleWeight: 0.6, onFailure: [{ kind: 'presidency', approval: -12, majority: -6 }, { kind: 'stat', stat: 'credibility', delta: -6 }], failureNews: 'Le non l’emporte. On reparle de 1969.' },
   },
   {
     id: 'voyage_etat', label: 'Voyage d’État', category: 'elysee', minRank: 'president',
     description: 'Tapis rouge, contrats, conférence de presse commune.',
-    cost: { ap: 2, energy: 15 }, maxPerWeek: 1,
+    cost: { ap: 2, energy: 15 }, maxPerMonth: 1,
     effects: [{ kind: 'dossier', domain: 'diplomatie', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 5 }, { kind: 'presidency', approval: 2 }],
   },
   {
     id: 'conseil_defense', label: 'Réunir le Conseil de défense', category: 'elysee', minRank: 'president',
     description: 'Renseignement, armées, sécurité intérieure : point sur les menaces.',
-    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'presidency', security: 8, threat: -6 }, { kind: 'dossier', domain: 'securite', delta: 4 }],
   },
   {
     id: 'protection_gspr', label: 'Renforcer votre protection rapprochée', category: 'elysee', minRank: 'president',
     description: 'Plus d’officiers du GSPR, des parcours secrets. Et une image de président·e barricadé·e.',
-    cost: { ap: 1, politicalCapital: 5 }, cooldownWeeks: 4,
+    cost: { ap: 1, politicalCapital: 5 }, cooldown: 4,
     effects: [{ kind: 'presidency', security: 18, approval: -1 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
   },
   {
     id: 'bain_foule', label: 'Bain de foule', category: 'elysee', minRank: 'president',
     description: 'Serrer des mains, embrasser des enfants. Votre sécurité déteste ça.',
-    cost: { ap: 1, energy: 10 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 10 }, maxPerMonth: 1,
     effects: [{ kind: 'presidency', approval: 5, threat: 4 }, { kind: 'stat', stat: 'popularity', delta: 3 }],
     risk: { baseChance: 0.12, onFailure: [{ kind: 'health', delta: -8 }, { kind: 'stat', stat: 'stress', delta: 12 }, { kind: 'presidency', approval: 2, security: 5 }], failureNews: 'Un homme vous gifle devant les caméras. Vous tombez mal.' },
   },
   {
     id: 'conference_presse', label: 'Grande conférence de presse', category: 'elysee', minRank: 'president',
     description: 'Deux heures face à trois cents journalistes. Aucune question n’est interdite.',
-    cost: { ap: 1, energy: 8 }, cooldownWeeks: 4,
+    cost: { ap: 1, energy: 8 }, cooldown: 4,
     effects: [{ kind: 'presidency', approval: 3 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
     risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.6, onFailure: [{ kind: 'presidency', approval: -5 }, { kind: 'stat', stat: 'credibility', delta: -3 }], failureNews: 'Une réponse agacée tourne en boucle sur les chaînes d’info.' },
   },
   {
     id: 'remaniement_pm', label: 'Changer de Premier ministre', category: 'elysee', minRank: 'president',
     description: 'Un fusible saute, un nouveau gouvernement redonne de l’élan.',
-    cost: { ap: 1, politicalCapital: 20 }, cooldownWeeks: 26,
+    cost: { ap: 1, politicalCapital: 20 }, cooldown: 6,
     effects: [{ kind: 'presidency', pm: true, majority: 6, approval: 3 }],
   },
   {
     id: 'congres_versailles', label: 'Discours devant le Congrès à Versailles', category: 'elysee', minRank: 'president',
     description: 'Députés et sénateurs réunis. Une adresse solennelle à la Nation.',
-    cost: { ap: 2, energy: 10, politicalCapital: 15 }, cooldownWeeks: 52,
+    cost: { ap: 2, energy: 10, politicalCapital: 15 }, cooldown: 12,
     effects: [{ kind: 'presidency', approval: 6, majority: 5 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
   },
   {
     id: 'sommet_bilateral', label: 'Recevoir un chef d’État étranger', category: 'elysee', minRank: 'president',
     description: 'Dîner d’État, accords commerciaux, poignée de main sur le perron.',
-    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'dossier', domain: 'economie', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'presidency', approval: 1 }],
   },
 
@@ -885,7 +885,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'tournee_maires', label: 'Tournée des maires ruraux', category: 'terrain', minRank: 'militant', requires: { declared: true },
     description: 'Trois départements, quarante mairies, une centaine de signatures.',
-    cost: { ap: 2, energy: 18, money: 1500 }, maxPerWeek: 1,
+    cost: { ap: 2, energy: 18, money: 1500 }, maxPerMonth: 1,
     effects: [{ kind: 'parrainages', delta: 95 }, { kind: 'contact', contactId: 'ct-maires', trust: 4 }, { kind: 'stat', stat: 'stress', delta: 5 }],
   },
 
@@ -893,25 +893,25 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'conferences_inter', label: 'Cycle de conférences à l’étranger', category: 'argent', minRank: 'militant', onlyRanks: ['ancien_president'],
     description: 'Une heure de souvenirs devant des banquiers, à prix d’or.',
-    cost: { ap: 1, energy: 8 }, cooldownWeeks: 3,
+    cost: { ap: 1, energy: 8 }, cooldown: 3,
     effects: [{ kind: 'income', base: 25000 }, { kind: 'stat', stat: 'credibility', delta: -2 }, { kind: 'exposure', delta: 3 }],
   },
   {
     id: 'memoires', label: 'Écrire ses mémoires', category: 'medias', minRank: 'militant', onlyRanks: ['ancien_president'],
     description: 'Six cents pages, quelques règlements de comptes, un gros à-valoir.',
-    cost: { ap: 2, energy: 12 }, cooldownWeeks: 26,
+    cost: { ap: 2, energy: 12 }, cooldown: 6,
     effects: [{ kind: 'income', base: 40000 }, { kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'exposure', delta: 4 }],
   },
   {
     id: 'fondation', label: 'Animer votre fondation', category: 'reseau', minRank: 'militant', onlyRanks: ['ancien_president'],
     description: 'Colloques, bourses, rapports : rester utile, et visible.',
-    cost: { ap: 1, money: 3000 }, maxPerWeek: 1,
+    cost: { ap: 1, money: 3000 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }],
   },
   {
     id: 'adouber', label: 'Adouber un·e héritier·e', category: 'parti', minRank: 'militant', onlyRanks: ['ancien_president'],
     description: 'Votre soutien vaut de l’or dans une primaire. Le parti vous écoute encore.',
-    cost: { ap: 1, energy: 5 }, cooldownWeeks: 8,
+    cost: { ap: 1, energy: 5 }, cooldown: 4,
     effects: [{ kind: 'cohesion', delta: 4 }, { kind: 'faction', factionId: '*', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }],
   },
 
@@ -919,38 +919,38 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'bilan_sante', label: 'Bilan de santé complet', category: 'sante', minRank: 'militant',
     description: 'Prise de sang, électrocardiogramme, conseils avisés.',
-    cost: { ap: 1, money: 250 }, cooldownWeeks: 8,
+    cost: { ap: 1, money: 250 }, cooldown: 4,
     effects: [{ kind: 'health', delta: 4 }, { kind: 'flagAdd', key: 'hygiene', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -3 }],
   },
   {
     id: 'suivi_nutrition', label: 'Suivi nutritionnel', category: 'sante', minRank: 'militant',
     description: 'Fini les plateaux-repas et les buffets de vœux.',
-    cost: { ap: 1, money: 400 }, cooldownWeeks: 6,
+    cost: { ap: 1, money: 400 }, cooldown: 4,
     effects: [{ kind: 'flagAdd', key: 'hygiene', delta: 3 }, { kind: 'health', delta: 2 }, { kind: 'stat', stat: 'energy', delta: -4 }],
   },
   {
     id: 'arret_tabac', label: 'Arrêter la cigarette', category: 'sante', minRank: 'militant',
     description: 'Trois semaines d’irritabilité pour des années de vie.',
-    cost: { ap: 1 }, cooldownWeeks: 52,
+    cost: { ap: 1 }, cooldown: 12,
     effects: [{ kind: 'flagAdd', key: 'hygiene', delta: 6 }, { kind: 'stat', stat: 'stress', delta: 10 }, { kind: 'stat', stat: 'energy', delta: -6 }],
   },
   {
     id: 'cure', label: 'Cure de repos', category: 'sante', minRank: 'militant',
     description: 'Dix jours loin de tout, sous surveillance médicale. On parlera de votre absence.',
-    cost: { ap: 3, money: 2500 }, cooldownWeeks: 12,
+    cost: { ap: 3, money: 2500 }, cooldown: 4,
     effects: [{ kind: 'health', delta: 8 }, { kind: 'flagAdd', key: 'hygiene', delta: 4 }, { kind: 'stat', stat: 'energy', delta: 40 }, { kind: 'stat', stat: 'stress', delta: -30 }, { kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'influence', delta: -3 }, { kind: 'momentum', delta: -4 }],
   },
   {
     id: 'specialiste', label: 'Consulter un grand spécialiste', category: 'sante', minRank: 'militant', requires: { maxHealth: 55 },
     description: 'Un professeur de médecine réputé, des examens poussés, un traitement de pointe.',
-    cost: { ap: 2, money: 4000 }, cooldownWeeks: 6,
+    cost: { ap: 2, money: 4000 }, cooldown: 4,
     effects: [{ kind: 'health', delta: 10 }, { kind: 'stat', stat: 'stress', delta: -4 }],
     risk: { baseChance: 0.15, onFailure: [{ kind: 'health', delta: 3 }, { kind: 'exposure', delta: 6 }, { kind: 'stat', stat: 'popularity', delta: -2 }], failureNews: 'Un paparazzi vous photographie à la sortie de l’hôpital.' },
   },
   {
     id: 'protection_policiere', label: 'Demander une protection policière', category: 'sante', minRank: 'depute',
     description: 'Des officiers du SDLP vous accompagnent. Moins de spontanéité, plus de sécurité.',
-    cost: { ap: 1, politicalCapital: 6 }, cooldownWeeks: 12,
+    cost: { ap: 1, politicalCapital: 6 }, cooldown: 4,
     effects: [{ kind: 'flagAdd', key: 'protection', delta: 45 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
   },
 
@@ -959,19 +959,19 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'stand_section', label: 'Tenir le stand de la section', category: 'fonction', minRank: 'militant', onlyRanks: ['militant'],
     description: 'Café tiède, tracts, et les habitués du samedi matin.',
-    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'faction', factionId: 'moderes', delta: 2 }, { kind: 'cohesion', delta: 1 }],
   },
   {
     id: 'reunion_section', label: 'Animer la réunion de section', category: 'fonction', minRank: 'militant', onlyRanks: ['militant'],
     description: 'Ordre du jour, motions, et le débat qui déborde à 23 h.',
-    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'faction', factionId: '*', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 1 }],
   },
   {
     id: 'petition', label: 'Porter une pétition locale', category: 'fonction', minRank: 'militant', onlyRanks: ['militant'],
     description: 'Contre la fermeture du bureau de poste : 2 000 signatures à recueillir.',
-    cost: { ap: 1, energy: 10 }, cooldownWeeks: 3,
+    cost: { ap: 1, energy: 10 }, cooldown: 3,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
     risk: { baseChance: 0.25, onFailure: [{ kind: 'stat', stat: 'popularity', delta: -1 }, { kind: 'stat', stat: 'stress', delta: 3 }], failureNews: 'La pétition plafonne à 300 signatures.' },
   },
@@ -979,247 +979,322 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'conseil_municipal', label: 'Siéger au conseil municipal', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'], target: 'domain',
     description: 'Délibérations, budget de la ville, joutes avec le maire.',
-    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'dossier', domain: '$domain', delta: 4 }, { kind: 'dossier', domain: 'territoires', delta: 2 }],
   },
   {
     id: 'permanence_mairie', label: 'Tenir une permanence en mairie', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'],
     description: 'Logement, voirie, voisins bruyants : le quotidien des habitants.',
-    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }],
   },
   {
     id: 'projet_quartier', label: 'Porter un projet de quartier', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'],
     description: 'Un jardin partagé, une aire de jeux : un chantier qui portera votre nom.',
-    cost: { ap: 2, energy: 12, money: 500 }, cooldownWeeks: 6,
+    cost: { ap: 2, energy: 12, money: 500 }, cooldown: 4,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
     risk: { baseChance: 0.3, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'stress', delta: 5 }], failureNews: 'Le maire enterre votre projet en commission.' },
   },
   {
     id: 'celebrer_mariage', label: 'Célébrer un mariage', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'],
     description: 'L’écharpe tricolore, le discours, les photos avec les mariés.',
-    cost: { ap: 1, energy: 4 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 4 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -3 }],
   },
   // Député·e
   {
     id: 'siege_commission', label: 'Siéger en commission', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'], target: 'domain',
     description: 'Auditions, amendements, rapports : le vrai travail parlementaire.',
-    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'dossier', domain: '$domain', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
   },
   {
     id: 'amendement', label: 'Défendre un amendement en séance', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'], target: 'domain',
     description: 'Deux minutes de temps de parole pour arracher un vote.',
-    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
     risk: { baseChance: 0.55, scaleWith: 'dossier', scaleWeight: 0.8, onFailure: [{ kind: 'stat', stat: 'credibility', delta: -1 }, { kind: 'stat', stat: 'stress', delta: 4 }], failureNews: 'Amendement rejeté, rapporteur ironique.' },
   },
   {
     id: 'permanence_circo', label: 'Permanence en circonscription', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
     description: 'Le vendredi, retour au pays : rendez-vous, marchés, fêtes de village.',
-    cost: { ap: 1, energy: 8 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
   },
   {
     id: 'fronde', label: 'Voter contre votre groupe', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
     description: 'Un vote de conscience. Le président de groupe ne l’oubliera pas.',
-    cost: { ap: 1 }, cooldownWeeks: 8,
+    cost: { ap: 1 }, cooldown: 4,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'faction', factionId: '*', delta: -5 }, { kind: 'cohesion', delta: -4 }],
   },
   // Ministre (et Premier·e ministre)
   {
     id: 'projet_loi', label: 'Défendre votre projet de loi à l’Assemblée', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'], target: 'domain',
     description: 'Le texte arrive en séance : débat face à l’opposition, sous les caméras de LCP.',
-    cost: { ap: 2, energy: 12, politicalCapital: 15 }, cooldownWeeks: 6,
+    cost: { ap: 2, energy: 12, politicalCapital: 15 }, cooldown: 4,
     effects: [{ kind: 'debate', stakes: 'hemicycle' }, { kind: 'dossier', domain: '$domain', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
   },
   {
     id: 'qag', label: 'Répondre aux questions au gouvernement', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'], target: 'domain',
     description: 'Mardi, 15 heures. Un député de l’opposition vous attend au tournant.',
-    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
     risk: { baseChance: 0.5, scaleWith: 'dossier', scaleWeight: 0.8, onFailure: [{ kind: 'stat', stat: 'credibility', delta: -3 }, { kind: 'stat', stat: 'popularity', delta: -1 }], failureNews: 'Vous bafouillez : l’hémicycle vous siffle.' },
   },
   {
     id: 'deplacement_ministeriel', label: 'Déplacement ministériel en région', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'],
     description: 'Préfet, élus locaux, visite d’usine et conférence de presse.',
-    cost: { ap: 2, energy: 14 }, maxPerWeek: 1,
+    cost: { ap: 2, energy: 14 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'dossier', domain: 'territoires', delta: 2 }],
   },
   {
     id: 'arbitrage_budget', label: 'Arracher un arbitrage budgétaire', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre'],
     description: 'Bercy veut couper vos crédits. Vous montez à Matignon.',
-    cost: { ap: 1, politicalCapital: 15 }, cooldownWeeks: 8,
+    cost: { ap: 1, politicalCapital: 15 }, cooldown: 4,
     effects: [{ kind: 'stat', stat: 'influence', delta: 4 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
     risk: { baseChance: 0.45, scaleWith: 'influence', scaleWeight: 0.6, onFailure: [{ kind: 'stat', stat: 'influence', delta: -3 }], failureNews: 'Matignon donne raison à Bercy.' },
   },
   {
     id: 'syndicats_secteur', label: 'Recevoir les syndicats de votre secteur', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'],
     description: 'Trois heures de réunion, un relevé de conclusions.',
-    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'contact', contactId: 'ct-ust', trust: 5 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
   },
   // Premier·e ministre
   {
     id: 'politique_generale', label: 'Déclaration de politique générale', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
     description: 'Votre feuille de route devant les députés, suivie d’un vote de confiance.',
-    cost: { ap: 2, energy: 15 }, cooldownWeeks: 52,
+    cost: { ap: 2, energy: 15 }, cooldown: 12,
     effects: [{ kind: 'debate', stakes: 'hemicycle' }, { kind: 'government', majority: 8 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
   },
   {
     id: 'remanier', label: 'Remanier le gouvernement', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
     description: 'Changer de casting pour relancer l’action… ou calmer une fronde.',
-    cost: { ap: 1, politicalCapital: 15 }, cooldownWeeks: 26,
+    cost: { ap: 1, politicalCapital: 15 }, cooldown: 6,
     effects: [{ kind: 'decision', templateId: 'former_gouvernement' }],
   },
   {
     id: 'seminaire_gouv', label: 'Séminaire gouvernemental', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
     description: 'Un week-end au vert avec tous les ministres. Sans téléphone.',
-    cost: { ap: 1, energy: 8 }, cooldownWeeks: 4,
+    cost: { ap: 1, energy: 8 }, cooldown: 4,
     effects: [{ kind: 'government', cohesion: 10 }, { kind: 'stat', stat: 'influence', delta: 1 }],
   },
   {
     id: 'pm_49_3', label: 'Engager la responsabilité du gouvernement (49.3)', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'], target: 'domain',
     description: 'Le texte passe sans vote. L’opposition dépose une motion de censure.',
-    cost: { ap: 1, politicalCapital: 25 }, cooldownWeeks: 8,
+    cost: { ap: 1, politicalCapital: 25 }, cooldown: 4,
     effects: [{ kind: 'dossier', domain: '$domain', delta: 8 }, { kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'government', majority: -8, cohesion: 3 }, { kind: 'stat', stat: 'popularity', delta: -3 }],
   },
   {
     id: 'partenaires_sociaux', label: 'Grande conférence sociale', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
     description: 'Syndicats et patronat autour de la table de Matignon.',
-    cost: { ap: 2, energy: 12 }, cooldownWeeks: 6,
+    cost: { ap: 2, energy: 12 }, cooldown: 4,
     effects: [{ kind: 'contact', contactId: 'ct-ust', trust: 6 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'government', majority: 3 }],
   },
   {
     id: 'arbitrer_ministres', label: 'Arbitrer entre deux ministres', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
     description: 'Ils se déchirent par voie de presse. Vous tranchez.',
-    cost: { ap: 1, energy: 5 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 5 }, maxPerMonth: 1,
     effects: [{ kind: 'government', cohesion: 6 }, { kind: 'stat', stat: 'influence', delta: 1 }],
   },
   // Chef·fe de parti
   {
     id: 'investitures', label: 'Arbitrer les investitures', category: 'fonction', minRank: 'chef_parti', onlyRanks: ['chef_parti'],
     description: 'Qui sera candidat où ? Chaque choix fait un heureux et dix rancuniers.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 8,
+    cost: { ap: 2, energy: 10 }, cooldown: 4,
     effects: [{ kind: 'cohesion', delta: 5 }, { kind: 'faction', factionId: '*', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 3 }],
     risk: { baseChance: 0.3, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'cohesion', delta: -6 }, { kind: 'stat', stat: 'stress', delta: 6 }], failureNews: 'Trois sortants non réinvestis claquent la porte.' },
   },
   {
     id: 'bureau_national', label: 'Réunir le bureau national', category: 'fonction', minRank: 'chef_parti', onlyRanks: ['chef_parti'],
     description: 'Fixer la ligne, distribuer les rôles, éteindre les incendies.',
-    cost: { ap: 1, energy: 6 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'cohesion', delta: 4 }, { kind: 'stat', stat: 'politicalCapital', delta: 5 }],
   },
   {
     id: 'conseil_national', label: 'Convoquer le conseil national du parti', category: 'fonction', minRank: 'chef_parti', onlyRanks: ['chef_parti'],
     description: 'Mille délégués, un grand discours, une motion d’orientation.',
-    cost: { ap: 2, energy: 12, money: 2000 }, cooldownWeeks: 12,
+    cost: { ap: 2, energy: 12, money: 2000 }, cooldown: 4,
     effects: [{ kind: 'faction', factionId: '*', delta: 3 }, { kind: 'momentum', delta: 4 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
   },
   // Candidat·e à la présidence
   {
     id: 'zenith', label: 'Grand meeting au Zénith', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
     description: 'Huit mille personnes, des drapeaux, la musique de campagne.',
-    cost: { ap: 3, energy: 25, money: 20000 }, cooldownWeeks: 3,
+    cost: { ap: 3, energy: 25, money: 20000 }, cooldown: 3,
     effects: [{ kind: 'momentum', delta: 15 }, { kind: 'stat', stat: 'popularity', delta: 5 }],
   },
   {
     id: 'emission_prime', label: 'Émission politique en prime time', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
     description: 'Deux heures en direct, face à des Français et un contradicteur.',
-    cost: { ap: 2, energy: 15 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 15 }, cooldown: 4,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 5 }, { kind: 'momentum', delta: 8 }],
     risk: { baseChance: 0.4, scaleWith: 'credibility', scaleWeight: 0.6, onFailure: [{ kind: 'stat', stat: 'popularity', delta: -3 }, { kind: 'momentum', delta: -4 }], failureNews: 'Une hésitation sur le prix du pain : le moment tourne en boucle.' },
   },
   {
     id: 'equipe_campagne', label: 'Présenter votre équipe de campagne', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
     description: 'Porte-parole, directeur de campagne, conseillers : le casting de votre quinquennat.',
-    cost: { ap: 1, energy: 5 }, cooldownWeeks: 26,
+    cost: { ap: 1, energy: 5 }, cooldown: 6,
     effects: [{ kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'cohesion', delta: 2 }],
   },
   {
     id: 'deplacement_campagne', label: 'Déplacement de campagne en région', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
     description: 'Usine le matin, marché à midi, réunion publique le soir.',
-    cost: { ap: 2, energy: 15, money: 3000 }, maxPerWeek: 1,
+    cost: { ap: 2, energy: 15, money: 3000 }, maxPerMonth: 1,
     effects: [{ kind: 'momentum', delta: 7 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
+  },
+
+  // ── Assemblée : textes sur l'actualité ─────────────────
+  {
+    id: 'deposer_ppl', label: 'Déposer une proposition de loi sur l’actualité', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
+    description: 'Le sujet à la une mérite une loi. Vous rédigez, vous cosignez, et vous obtenez une niche à l’ordre du jour : scrutin public le mois prochain.',
+    cost: { ap: 2, energy: 10, politicalCapital: 10 }, cooldown: 3,
+    effects: [{ kind: 'vote', own: true }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  {
+    id: 'projet_de_loi', label: 'Présenter un projet de loi sur l’actualité', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre', 'president'],
+    description: 'Conseil des ministres, avis du Conseil d’État, puis l’hémicycle : un texte du gouvernement sur le sujet du moment.',
+    cost: { ap: 2, energy: 12, politicalCapital: 15 }, cooldown: 3,
+    effects: [{ kind: 'vote', own: true }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+
+  // ── Guerre ──────────────────────────────────────────────
+  {
+    id: 'declarer_guerre', label: 'Déclarer la guerre', category: 'international', minRank: 'ministre', target: 'enemy',
+    requires: { peace: true, warPower: true },
+    description: 'Un casus belli, un Conseil de défense, puis le Parlement doit autoriser l’engagement des armées (article 35). Les adversaires sont des États fictifs.',
+    cost: { ap: 2, energy: 10, politicalCapital: 20 },
+    effects: [{ kind: 'war', declare: '$target' }, { kind: 'stat', stat: 'stress', delta: 6 }],
+  },
+  {
+    id: 'guerre_offensive', label: 'Lancer une grande offensive', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    description: 'Tout l’état-major sur une percée. Si elle réussit, le front bouge enfin ; sinon, les pertes seront lourdes.',
+    cost: { ap: 3, energy: 15, politicalCapital: 10 }, cooldown: 2,
+    effects: [{ kind: 'war', front: 7, losses: 180, support: -2 }, { kind: 'stat', stat: 'stress', delta: 5 }],
+    risk: { baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [{ kind: 'war', front: -5, losses: 420, support: -8 }, { kind: 'stat', stat: 'credibility', delta: -4 }], failureNews: 'L’offensive se brise sur les défenses ennemies. Des centaines de morts.' },
+  },
+  {
+    id: 'guerre_frappes', label: 'Frappes aériennes ciblées', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    description: 'Dépôts de munitions, centres de commandement, ponts : l’aviation frappe loin derrière les lignes.',
+    cost: { ap: 2, energy: 8 }, maxPerMonth: 1,
+    effects: [{ kind: 'war', front: 3, losses: 10 }, { kind: 'intl', tension: 3 }],
+    risk: { baseChance: 0.25, onFailure: [{ kind: 'war', support: -10 }, { kind: 'intl', prestige: -8 }, { kind: 'stat', stat: 'credibility', delta: -4 }], failureNews: 'Une frappe touche un hôpital. Les images font le tour du monde.' },
+  },
+  {
+    id: 'guerre_reserves', label: 'Mobiliser les réservistes', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    description: 'Cinquante mille réservistes rappelés : le front se renforce, les familles s’inquiètent.',
+    cost: { ap: 2, energy: 10, politicalCapital: 15 }, cooldown: 3,
+    effects: [{ kind: 'war', front: 3, support: -4 }, { kind: 'flagAdd', key: 'warBoost', delta: 8 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
+  },
+  {
+    id: 'guerre_allies', label: 'Demander l’entrée en guerre d’un allié', category: 'guerre', minRank: 'ministre', target: 'partner', requires: { war: true },
+    description: 'Un sommet de crise, des promesses, un peu de chantage : de bonnes relations rendent le « oui » plus probable.',
+    cost: { ap: 2, energy: 12, politicalCapital: 10 }, cooldown: 2,
+    effects: [{ kind: 'war', ally: '$target' }, { kind: 'dossier', domain: 'diplomatie', delta: 3 }],
+  },
+  {
+    id: 'guerre_nation', label: 'S’adresser à la Nation', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    description: 'Une allocution solennelle à 20 heures : expliquer, rassurer, mobiliser.',
+    cost: { ap: 1, energy: 6 }, cooldown: 2,
+    effects: [{ kind: 'war', support: 8 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+  {
+    id: 'guerre_troupes', label: 'Rendre visite aux troupes', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    description: 'Gilet pare-balles, hélicoptère, repas à la popote : le moral des soldats remonte, le vôtre aussi.',
+    cost: { ap: 2, energy: 15 }, cooldown: 3,
+    effects: [{ kind: 'war', front: 1, support: 4 }, { kind: 'stat', stat: 'influence', delta: 2 }],
+    risk: { baseChance: 0.12, onFailure: [{ kind: 'flagAdd', key: 'menace', delta: 15 }, { kind: 'stat', stat: 'stress', delta: 12 }, { kind: 'health', delta: -4 }], failureNews: 'Un tir de mortier tombe à deux cents mètres de votre convoi.' },
+  },
+  {
+    id: 'guerre_hommage', label: 'Hommage national aux soldats tombés', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    description: 'La cour des Invalides, les cercueils sous le drapeau, la Marseillaise.',
+    cost: { ap: 1, energy: 5 }, cooldown: 4,
+    effects: [{ kind: 'war', support: 5 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'stat', stat: 'stress', delta: 3 }],
+  },
+  {
+    id: 'guerre_cessez_le_feu', label: 'Négocier un cessez-le-feu', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    description: 'Une médiation, une table, des cartes. La paix se signe selon la ligne de front : victorieuse, de compromis ou humiliante.',
+    cost: { ap: 3, energy: 12, politicalCapital: 20 }, cooldown: 2,
+    effects: [{ kind: 'war', peace: true }],
+    risk: { baseChance: 0.45, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'war', support: -4, front: -3 }, { kind: 'stat', stat: 'credibility', delta: -2 }], failureNews: 'L’ennemi rejette vos propositions et relance l’offensive.' },
   },
 
   // ── International ───────────────────────────────────────
   {
     id: 'mission_etranger', label: 'Mission parlementaire à l’étranger', category: 'international', minRank: 'depute', target: 'partner',
     description: 'Une délégation de trois jours : ministres, ONG, entreprises françaises.',
-    cost: { ap: 2, energy: 15 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 15 }, cooldown: 4,
     effects: [{ kind: 'intl', partner: '$target', relation: 5, prestige: 1 }, { kind: 'dossier', domain: 'diplomatie', delta: 4 }],
   },
   {
     id: 'groupe_amitie', label: 'Animer un groupe d’amitié', category: 'international', minRank: 'depute', target: 'partner',
     description: 'Dîners avec l’ambassadeur, échanges d’élus.',
-    cost: { ap: 1, energy: 5 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 5 }, maxPerMonth: 1,
     effects: [{ kind: 'intl', partner: '$target', relation: 3 }, { kind: 'stat', stat: 'influence', delta: 1 }],
   },
   {
     id: 'tribune_etrangere', label: 'Signer une tribune dans la presse étrangère', category: 'international', minRank: 'depute',
     description: 'Une page dans un grand quotidien international.',
-    cost: { ap: 1, energy: 6 }, cooldownWeeks: 6,
+    cost: { ap: 1, energy: 6 }, cooldown: 4,
     effects: [{ kind: 'intl', prestige: 2 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'exposure', delta: 2 }],
   },
   {
     id: 'visite_bilaterale', label: 'Visite bilatérale', category: 'international', minRank: 'ministre', target: 'partner',
     description: 'Entretiens officiels, accords de coopération, dîner à l’ambassade.',
-    cost: { ap: 2, energy: 15 }, maxPerWeek: 1,
+    cost: { ap: 2, energy: 15 }, maxPerMonth: 1,
     effects: [{ kind: 'intl', partner: '$target', relation: 10, prestige: 2 }, { kind: 'dossier', domain: 'diplomatie', delta: 3 }],
   },
   {
     id: 'accord_commercial', label: 'Négocier un accord commercial', category: 'international', minRank: 'ministre', target: 'partner',
     description: 'Des débouchés pour nos entreprises… et l’inquiétude de nos agriculteurs.',
-    cost: { ap: 2, energy: 12, politicalCapital: 15 }, cooldownWeeks: 8,
+    cost: { ap: 2, energy: 12, politicalCapital: 15 }, cooldown: 4,
     effects: [{ kind: 'intl', partner: '$target', relation: 8, prestige: 2 }, { kind: 'dossier', domain: 'economie', delta: 5 }, { kind: 'stat', stat: 'popularity', delta: -2 }],
     risk: { baseChance: 0.4, scaleWith: 'influence', scaleWeight: 0.6, onFailure: [{ kind: 'intl', partner: '$target', relation: -5 }, { kind: 'stat', stat: 'credibility', delta: -3 }], failureNews: 'Les négociations capotent sur les quotas de bœuf.' },
   },
   {
     id: 'conseil_europeen', label: 'Peser au Conseil européen', category: 'international', minRank: 'ministre',
     description: 'Une nuit de négociations à Bruxelles pour arracher un compromis.',
-    cost: { ap: 2, energy: 14 }, cooldownWeeks: 4,
+    cost: { ap: 2, energy: 14 }, cooldown: 4,
     effects: [{ kind: 'intl', partner: 'ue', relation: 8, prestige: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }],
     risk: { baseChance: 0.3, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'intl', partner: 'ue', relation: -3 }, { kind: 'stat', stat: 'stress', delta: 6 }], failureNews: 'Isolé·e à Bruxelles : le compromis se fait sans la France.' },
   },
   {
     id: 'aide_developpement', label: 'Annoncer une aide au développement', category: 'international', minRank: 'ministre',
     description: 'Écoles, hôpitaux, réseaux d’eau : un engagement de long terme.',
-    cost: { ap: 1, politicalCapital: 10 }, cooldownWeeks: 12,
+    cost: { ap: 1, politicalCapital: 10 }, cooldown: 4,
     effects: [{ kind: 'intl', partner: 'afrique', relation: 10, prestige: 2 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
   },
   {
     id: 'sanctions', label: 'Décider de sanctions économiques', category: 'international', minRank: 'president', onlyRanks: ['president'], target: 'partner',
     description: 'Gel des avoirs, embargo ciblé. L’économie trinquera un peu.',
-    cost: { ap: 1, politicalCapital: 10 }, cooldownWeeks: 8,
+    cost: { ap: 1, politicalCapital: 10 }, cooldown: 4,
     effects: [{ kind: 'intl', partner: '$target', relation: -20, prestige: 3, tension: 6 }, { kind: 'presidency', approval: 2 }, { kind: 'assetValue', defIds: ['actions'], factor: 0.97 }],
   },
   {
     id: 'intervention', label: 'Intervention militaire', category: 'international', minRank: 'president', onlyRanks: ['president'], requires: { crisis: true },
     description: 'Engager nos forces pour mettre fin à la crise. Rien n’est jamais simple.',
-    cost: { ap: 2, politicalCapital: 30 }, cooldownWeeks: 12,
+    cost: { ap: 2, politicalCapital: 30 }, cooldown: 4,
     effects: [{ kind: 'intl', crisis: -30, prestige: 6, tension: 5 }, { kind: 'presidency', approval: 5, threat: 10 }],
     risk: { baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [{ kind: 'intl', crisis: 10, prestige: -5 }, { kind: 'presidency', approval: -10, threat: 10 }], failureNews: 'Des soldats tombent dans une embuscade. L’opinion se retourne.' },
   },
   {
     id: 'mediation_paix', label: 'Médiation de paix', category: 'international', minRank: 'president', onlyRanks: ['president'], requires: { crisis: true },
     description: 'Réunir les belligérants à Paris. Un pari diplomatique.',
-    cost: { ap: 2, energy: 15 }, cooldownWeeks: 6,
+    cost: { ap: 2, energy: 15 }, cooldown: 4,
     effects: [{ kind: 'intl', crisis: -18, prestige: 5 }, { kind: 'presidency', approval: 2 }],
     risk: { baseChance: 0.45, scaleWith: 'influence', scaleWeight: 0.6, onFailure: [{ kind: 'intl', prestige: -3 }, { kind: 'stat', stat: 'stress', delta: 8 }], failureNews: 'Les délégations quittent Paris sans accord.' },
   },
   {
     id: 'accord_climat', label: 'Porter un accord mondial sur le climat', category: 'international', minRank: 'president', onlyRanks: ['president'],
     description: 'Une conférence à Paris, deux cents pays, une nuit blanche de plus.',
-    cost: { ap: 2, energy: 12, politicalCapital: 20 }, cooldownWeeks: 52,
+    cost: { ap: 2, energy: 12, politicalCapital: 20 }, cooldown: 12,
     effects: [{ kind: 'intl', prestige: 6, allRelations: 3 }, { kind: 'dossier', domain: 'ecologie', delta: 5 }, { kind: 'faction', factionId: 'ligne_dure', delta: -4 }],
     risk: { baseChance: 0.4, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'intl', prestige: -4 }], failureNews: 'L’accord accouche d’une déclaration sans engagement.' },
   },
   {
     id: 'telephone_rouge', label: 'Appeler les grands dirigeants', category: 'international', minRank: 'president', onlyRanks: ['president'],
     description: 'Une tournée téléphonique pour faire baisser la température.',
-    cost: { ap: 1, energy: 5 }, maxPerWeek: 1,
+    cost: { ap: 1, energy: 5 }, maxPerMonth: 1,
     effects: [{ kind: 'intl', tension: -6, prestige: 1 }],
   },
 
@@ -1227,31 +1302,31 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'operation_porte_a_porte', label: 'Grande opération porte-à-porte', category: 'terrain', minRank: 'militant',
     description: 'Un immeuble entier, cage par cage. À jouer comme une scène.',
-    cost: { ap: 2, energy: 10 }, cooldownWeeks: 2,
+    cost: { ap: 2, energy: 10 }, cooldown: 2,
     effects: [{ kind: 'scene', sceneId: 'porte_a_porte' }],
   },
   {
     id: 'live_reseaux', label: 'Lancer un live sur les réseaux', category: 'medias', minRank: 'militant',
     description: 'Une heure en direct face à votre communauté… et aux trolls.',
-    cost: { ap: 1, energy: 6 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 6 }, cooldown: 2,
     effects: [{ kind: 'scene', sceneId: 'live_reseaux' }],
   },
   {
     id: 'tenir_conference_presse', label: 'Tenir une conférence de presse', category: 'medias', minRank: 'conseiller_municipal',
     description: 'Trente journalistes, un pupitre, et des questions que vous n’avez pas prévues.',
-    cost: { ap: 1, energy: 8, money: 300 }, cooldownWeeks: 3,
+    cost: { ap: 1, energy: 8, money: 300 }, cooldown: 3,
     effects: [{ kind: 'scene', sceneId: 'conference_presse_scene' }],
   },
   {
     id: 'visite_usine', label: 'Visiter une usine', category: 'terrain', minRank: 'conseiller_municipal',
     description: 'Ouvriers, syndicats, direction : une visite où chacun attend quelque chose de vous.',
-    cost: { ap: 2, energy: 12 }, cooldownWeeks: 3,
+    cost: { ap: 2, energy: 12 }, cooldown: 3,
     effects: [{ kind: 'scene', sceneId: 'visite_usine' }],
   },
   {
     id: 'qag_seance', label: 'Interpeller le gouvernement en séance', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
     description: 'Deux minutes de question, en direct, face au ministre et au chahut.',
-    cost: { ap: 1, energy: 8 }, cooldownWeeks: 2,
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
     effects: [{ kind: 'scene', sceneId: 'qag_scene' }],
   },
 
@@ -1265,26 +1340,26 @@ const RAW_ACTIONS: ActionDefinition[] = [
   {
     id: 'week_end', label: 'Week-end en famille', category: 'repos', minRank: 'militant',
     description: 'Disparaître 48 h. On vous le reprochera un peu.',
-    cost: { ap: 2 }, maxPerWeek: 1,
+    cost: { ap: 2 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'energy', delta: 35 }, { kind: 'stat', stat: 'stress', delta: -25 }, { kind: 'stat', stat: 'popularity', delta: -1 }, { kind: 'stat', stat: 'influence', delta: -1 }, { kind: 'momentum', delta: -3 }],
   },
   {
     id: 'footing', label: 'Footing matinal', category: 'repos', minRank: 'militant',
     description: 'Quarante minutes au bord du canal avant la première réunion.',
-    cost: { ap: 1 }, maxPerWeek: 1,
+    cost: { ap: 1 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'energy', delta: 10 }, { kind: 'stat', stat: 'stress', delta: -7 }, { kind: 'flagAdd', key: 'hygiene', delta: 0.6 }],
   },
   {
     id: 'sejour_campagne', label: 'Séjour dans votre maison', category: 'repos', minRank: 'militant',
     requires: { asset: ['maison', 'villa'] },
     description: 'Volets ouverts, téléphone éteint. Votre résidence secondaire vous ressource vraiment.',
-    cost: { ap: 2 }, maxPerWeek: 1,
+    cost: { ap: 2 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'energy', delta: 40 }, { kind: 'stat', stat: 'stress', delta: -25 }, { kind: 'stat', stat: 'influence', delta: -1 }, { kind: 'momentum', delta: -3 }],
   },
   {
     id: 'vacances', label: 'Partir une semaine en vacances', category: 'repos', minRank: 'militant',
     description: 'Une vraie coupure, loin de tout. Vos adversaires, eux, ne partent pas.',
-    cost: { ap: 3, money: 1500 }, maxPerWeek: 1,
+    cost: { ap: 3, money: 1500 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'energy', delta: 60 }, { kind: 'stat', stat: 'stress', delta: -45 }, { kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'influence', delta: -3 }, { kind: 'momentum', delta: -6 }, { kind: 'faction', factionId: '*', delta: -1 }],
   },
 ];
@@ -1320,6 +1395,7 @@ export function effectValue(e: Effect): number {
     case 'crown': return 0.5 * ((e.soutien ?? 0) + (e.legitimite ?? 0) + (e.armee ?? 0));
     case 'lodge': return 0.3 * ((e.fraternite ?? 0) + (e.discretion ?? 0) + (e.planches ?? 0) * 5);
     case 'mole': return 0.4 * ((e.intel ?? 0) + (e.cover ?? 0) + (e.sabotage ?? 0));
+    case 'war': return 0.5 * (e.front ?? 0) + 0.3 * (e.support ?? 0) - 0.01 * (e.losses ?? 0);
     default: return 0;
   }
 }

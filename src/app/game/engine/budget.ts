@@ -1,3 +1,4 @@
+import { monthLabel } from './calendar';
 import {
   BudgetDraft, Effect, FactionId, GameState, MissionId, NationalBudget, PartyLine, Segment, TaxId,
 } from '../models/game.models';
@@ -78,14 +79,14 @@ export function partyReport(d: GameState): PartyReport | null {
     expenses: { lines, fixed, total },
     balance: round1(income - total),
     membersRate,
-    weeksToSettle: Math.max(0, f.lastSettledWeek + 4 - d.week),
+    weeksToSettle: Math.max(0, f.lastSettledWeek + 1 - d.week),
   };
 }
 
 /** Clôture mensuelle : recettes, dépenses, effets des postes, adhérents */
 export function settlePartyMonth(d: GameState, rng: Rng): void {
   const f = d.partyFinance;
-  if (!f || !playerLeadsParty(d) || d.week - f.lastSettledWeek < 4) return;
+  if (!f || !playerLeadsParty(d) || d.week - f.lastSettledWeek < 1) return;
   const r = partyReport(d)!;
   const k = partyScale(d);
   // Les effets des postes se mesurent à la taille du parti
@@ -135,7 +136,7 @@ export function baseDraft(): BudgetDraft {
 }
 
 export function budgetYear(week: number): number {
-  return 2028 + Math.floor((week - 1) / 52);
+  return 2028 + Math.floor((week - 1) / 12);
 }
 
 export function canHandleNationalBudget(d: GameState): boolean {
@@ -147,13 +148,13 @@ export function nationalBudgetBlocking(d: GameState): boolean {
   return !!nb && nb.pending && canHandleNationalBudget(d) && d.week >= nb.deadlineWeek;
 }
 
-export function openBudgetCycle(d: GameState, deadlineIn = 3): void {
+export function openBudgetCycle(d: GameState, deadlineIn = 2): void {
   const previous = d.nationalBudget;
   const nb: NationalBudget = {
     year: budgetYear(d.week),
     pending: true,
     deadlineWeek: d.week + deadlineIn,
-    nextDueWeek: d.week + 26,
+    nextDueWeek: d.week + 12,
     draft: previous ? structuredClone(previous.draft) : baseDraft(),
     rejected: false,
     debtPenalty: previous?.debtPenalty ?? 0,
@@ -161,7 +162,7 @@ export function openBudgetCycle(d: GameState, deadlineIn = 3): void {
   };
   d.nationalBudget = nb;
   pushNews(d, 'actu', 'neutral', `Projet de loi de finances ${nb.year}`,
-    `À arbitrer et soumettre à l’Assemblée avant la semaine ${nb.deadlineWeek}.`);
+    `À arbitrer et soumettre à l’Assemblée avant ${monthLabel(nb.deadlineWeek)}.`);
 }
 
 export function weeklyNationalBudget(d: GameState): void {
@@ -281,7 +282,7 @@ function adopt(d: GameState, rng: Rng, via: 'vote' | '49.3'): string[] {
   nb.history.push({ year: nb.year, deficitPct: r.deficitPct, via });
   nb.pending = false;
   nb.rejected = false;
-  nb.nextDueWeek = d.week + 26;
+  nb.nextDueWeek = d.week + 12;
   pushNews(d, 'actu', r.deficitPct <= 4.5 ? 'positive' : 'negative',
     `Loi de finances ${nb.year} adoptée${via === '49.3' ? ' par le 49.3' : ''} : déficit ${r.deficitPct.toFixed(1).replace('.', ',')} % du PIB`,
     summary.join(' · '));

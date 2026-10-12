@@ -36,7 +36,7 @@ const CONTACT_LABELS: Record<ContactType, string> = {
       </ul>
       @if (game.s().party.founder) {
         <div class="founded" [style.border-color]="game.s().party.color">
-          <strong>Votre parti</strong> · fondé semaine {{ game.s().party.foundedWeek }}
+          <strong>Votre parti</strong> · fondé en {{ game.month(game.s().party.foundedWeek ?? 1) }}
           @if (malus() > 0) { <small class="muted">Jeune parti peu implanté : −{{ malus() | number: '1.0-1' }} aux scrutins (s’efface avec le temps).</small> }
         </div>
       } @else if (game.s().scenario !== 'royaute') {

@@ -8,7 +8,7 @@ const KIND_LABELS: Record<NewsKind, string> = {
   rival: 'Rivaux', parti: 'Parti', election: 'Élection', reseau: 'Réseau', systeme: 'Carrière',
 };
 
-/** Fil d'actualité groupé par semaine, de la plus récente à la plus ancienne */
+/** Fil d'actualité groupé par mois, du plus récent au plus ancien */
 @Component({
   selector: 'app-news-feed',
   template: `
@@ -20,7 +20,7 @@ const KIND_LABELS: Record<NewsKind, string> = {
       <div class="feed">
         @for (g of groups(); track g.week) {
           <h3 class="week-head">
-            <span>{{ g.week === current() ? 'Cette semaine' : g.week === current() - 1 ? 'Semaine dernière' : 'Semaine ' + g.week }}</span>
+            <span>{{ g.week === current() ? 'Ce mois-ci' : g.week === current() - 1 ? 'Le mois dernier' : game.month(g.week) }}</span>
             <span class="muted">{{ g.date }}</span>
           </h3>
           <ol>
@@ -61,7 +61,7 @@ const KIND_LABELS: Record<NewsKind, string> = {
   `,
 })
 export class NewsFeedComponent {
-  private readonly game = inject(GameStateService);
+  protected readonly game = inject(GameStateService);
   protected readonly hideOwn = signal(false);
   protected readonly current = computed(() => this.game.week());
 

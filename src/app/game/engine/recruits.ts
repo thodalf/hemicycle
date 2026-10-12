@@ -44,8 +44,8 @@ export function generateRecruit(d: GameState, rng: Rng, forced?: { role?: StaffR
   const badChance = rarity === 'legendaire' ? 0.55 : rarity === 'rare' ? 0.35 : 0.5;
   const traits: TraitId[] = [...pickDistinct(GOOD_TRAITS, goodCount, rng)];
   if (rng.chance(badChance)) traits.push(rng.pick(BAD_TRAITS));
-  const base = STAFF_BY_ROLE.get(role)!.weeklySalary;
-  const salary = Math.round((base * RARITY_SALARY[rarity] * (traits.includes('dispendieux') ? 1.5 : 1)) / 10) * 10;
+  const base = STAFF_BY_ROLE.get(role)!.monthlySalary;
+  const salary = Math.round((base * RARITY_SALARY[rarity] * (traits.includes('dispendieux') ? 1.5 : 1)) / 50) * 50;
   return {
     id: nextId(d, 'recrue'),
     name: `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`,
@@ -63,10 +63,37 @@ export function openBooster(d: GameState, rng: Rng): Recruit[] {
   return cards;
 }
 
+/** Chasse de têtes : un·e candidat·e pour un poste précis, contre honoraires */
+export function headhuntFee(role: StaffRole): number {
+  return Math.round(STAFF_BY_ROLE.get(role)!.monthlySalary * 1.5 / 100) * 100;
+}
+
+export function headhuntCheck(d: GameState, role: StaffRole): { ok: boolean; reason?: string } {
+  const def = STAFF_BY_ROLE.get(role)!;
+  if (rankOrder(d.player.rankId) < rankOrder(def.minRank)) return { ok: false, reason: `Dès le rang ${RANKS[def.minRank].label}` };
+  const last = Number(d.player.flags[`hunt_${role}`] ?? -99);
+  if (d.week - last < 3) return { ok: false, reason: 'Le cabinet de recrutement cherche encore' };
+  if (d.player.pool.length >= POOL_MAX) return { ok: false, reason: 'Vivier plein' };
+  if (d.player.finances.personal < headhuntFee(role)) return { ok: false, reason: 'Honoraires trop élevés pour vos fonds' };
+  return { ok: true };
+}
+
+export function headhunt(d: GameState, role: StaffRole, rng: Rng): Recruit | null {
+  if (!headhuntCheck(d, role).ok) return null;
+  const fee = headhuntFee(role);
+  d.player.finances.personal -= fee;
+  d.player.flags[`hunt_${role}`] = d.week;
+  // Un cabinet sérieux évite les profils trop communs
+  const r = generateRecruit(d, rng, { role, rarity: rng.chance(0.2) ? 'legendaire' : rng.chance(0.55) ? 'rare' : 'commun' });
+  d.player.pool = [r, ...d.player.pool].slice(0, POOL_MAX);
+  pushNews(d, 'systeme', 'neutral', `Chasse de têtes : ${STAFF_BY_ROLE.get(role)!.title.toLowerCase()}`, `${r.name} rejoint votre vivier de candidats (${fee.toLocaleString('fr-FR')} € d’honoraires).`);
+  return r;
+}
+
 export function hireCheck(d: GameState, r: Recruit): { ok: boolean; reason?: string } {
   const def = STAFF_BY_ROLE.get(r.role)!;
   if (rankOrder(d.player.rankId) < rankOrder(def.minRank)) return { ok: false, reason: `Dès le rang ${RANKS[def.minRank].label}` };
-  if (availableFunds(d) < r.salary * 3) return { ok: false, reason: '3 semaines de salaire nécessaires' };
+  if (availableFunds(d) < r.salary) return { ok: false, reason: 'Un mois de salaire d’avance nécessaire' };
   return { ok: true };
 }
 
@@ -94,7 +121,7 @@ export function dismissCandidate(d: GameState, id: string): void {
   d.player.pool = d.player.pool.filter(x => x.id !== id);
 }
 
-/** Effets hebdomadaires des personnalités */
+/** Effets mensuels des personnalités */
 export function weeklyTraits(d: GameState, rng: Rng): void {
   const s = d.player.stats;
   const n = (t: TraitId) => countTrait(d, t);
@@ -104,13 +131,13 @@ export function weeklyTraits(d: GameState, rng: Rng): void {
   s.politicalCapital = clamp(s.politicalCapital + n('stratege'));
   s.energy = clamp(s.energy - n('paresseux') * 3);
   if (d.player.finances.legalCeiling !== null) d.player.momentum = clamp(d.player.momentum + n('stratege') * 2);
-  d.player.finances.campaign += n('leveur') * 1500;
+  d.player.finances.campaign += n('leveur') * 4000;
   d.player.scandalExposure = clamp(d.player.scandalExposure + n('gaffeur') * 2 + n('casseroles') * 2.5);
   for (const f of d.party.factions) f.supportForPlayer = clamp(f.supportForPlayer - n('mal_vu') * 0.4);
 
   // Les ambitieux finissent parfois par partir… avec vos secrets
   for (const r of d.player.team.filter(x => x.traits.includes('ambitieux'))) {
-    if (rng.chance(0.04)) {
+    if (rng.chance(0.06)) {
       fireRecruit(d, r.id);
       d.player.scandalExposure = clamp(d.player.scandalExposure + 12);
       pushNews(d, 'rival', 'negative', `${r.name} passe chez vos rivaux`, 'Votre ancien·ne collaborateur·rice raconte vos coulisses à qui veut l’entendre.');
@@ -123,7 +150,7 @@ export function migrateTeam(d: GameState): void {
   if (d.player.team) return;
   d.player.team = (d.player.staff ?? []).map(role => {
     const def = STAFF_BY_ROLE.get(role)!;
-    return { id: `recrue-${role}`, name: def.name, role, rarity: 'commun' as Rarity, salary: def.weeklySalary, traits: [], bio: def.title };
+    return { id: `recrue-${role}`, name: def.name, role, rarity: 'commun' as Rarity, salary: def.monthlySalary, traits: [], bio: def.title };
   });
   d.player.pool = [];
   d.player.boosters = 1;

@@ -1,6 +1,6 @@
 # Hémicycle — simulateur de carrière politique (Angular 21)
 
-Prototype jouable : de militant·e à Président·e, une semaine par tour — et une vie entière, jusqu’à la mort.
+Prototype jouable : de militant·e à Président·e, **un mois par tour** — et une vie entière, jusqu’à la mort.
 
 ```bash
 npm install
@@ -24,9 +24,9 @@ Standalone components, zoneless, Signals partout.
 
 ## Sur téléphone
 
-- Barre du haut compacte (semaine, fatigue, santé, fonds) et **onglets en bas d’écran** : Agenda, Profil, Actualité
+- Barre du haut compacte (date, fatigue, santé, fonds) et **onglets en bas d’écran** : Agenda, Profil, Actualité
   (pastilles pour les décisions en attente et les nouvelles).
-- **Barre « Terminer la semaine »** toujours à portée de pouce, avec le nombre d’actions et de PA libres ; si une
+- **Barre « Terminer le mois »** toujours à portée de pouce, avec le nombre d’actions et de PA libres ; si une
   décision bloque, elle y renvoie.
 - Onglets d’actions en ruban qui défile au doigt ; scènes, débats, manifestations, budgets et patrimoine en plein
   écran et défilent au doigt (la page derrière reste immobile) ; au débat, la main de cartes passe juste sous la scène.
@@ -34,6 +34,42 @@ Standalone components, zoneless, Signals partout.
   d’accueil), nombres à la française (« 4 000 € »).
 
 ## Mécaniques
+
+- **Un mois par tour** (`engine/calendar.ts`) : le tour 1 est janvier 2027, la date s’affiche en mois (« mars 2029 »),
+  bandeau de saison sur l’agenda, page de calendrier qui tourne en fin de mois et feux d’artifice au Nouvel An.
+  L’âge avance d’un douzième d’an par tour, les risques de mort sont mensuels, salaires, revenus, loyers, entretiens et
+  mensualités sont mensuels, la loi de finances est annuelle et le parti clôt ses comptes chaque mois. Campagnes de 4
+  (municipales), 5 (législatives, présidentielle) et 3 mois (primaire) ; présidentielle tous les 60 mois. Les anciennes
+  parties hebdomadaires sont converties à l’ouverture (dates, projets, salaires, crédits).
+- **Votes à l’Assemblée sur l’actualité** (`engine/assembly.ts`, `data/bills.ts`, `components/assembly-vote`,
+  `components/hemicycle`) : chaque mois, un texte lié au **sujet à la une** peut être inscrit à l’ordre du jour (30 textes
+  sur les dix domaines, de gauche, de droite ou transpartisans). Projet de loi du gouvernement, proposition de la
+  majorité ou de l’opposition. Député·e : on vote pour, contre ou on s’abstient, en suivant ou non la **consigne du
+  groupe** (la suivre plaît au parti, s’en écarter fait parler de vous) ; rapporteur·e si l’on maîtrise le dossier.
+  Au gouvernement : défendre le texte, accepter des amendements, négocier avec un groupe charnière, **49.3** (Matignon,
+  Élysée) avec motion de censure, ou retirer le texte ; sur les propositions de loi, donner l’**avis du gouvernement**.
+  Chef·fe de parti : fixer la consigne. Avant le vote, prendre la parole (selon la maîtrise du dossier, la plume, la
+  collaboratrice parlementaire) ou faire basculer des collègues. **Pointage** groupe par groupe (précis avec un sondeur,
+  sinon incertain : l’humeur de la majorité reste cachée), puis **dépouillement animé** dans un hémicycle de 577 sièges,
+  compteurs qui défilent, tampon « Adopté » ou « Rejeté », détail par groupe. Actions « Déposer une proposition de loi »
+  (député·e) et « Présenter un projet de loi » (gouvernement). Pendant un projet au long cours, on suit la consigne.
+- **Guerre** (`engine/war.ts`, `components/war-panel`, onglet **Guerre**) : le président, le Premier ministre et les
+  ministres régaliens (Affaires étrangères, Intérieur) peuvent **déclarer la guerre** à un État fictif (Karstanie,
+  Méridia, Kantor, Zamérie, Valdovie) s’il y a des tensions ; le Parlement doit l’autoriser (article 35, vote animé).
+  Ligne de front mois après mois (rapport de force : prestige, alliés, budget de la défense, conseiller diplomatique),
+  soutien de l’opinion qui s’use avec les pertes, coût en milliards, menace d’attentat accrue, bilan tous les six mois.
+  Offensive, frappes aériennes, réservistes, demander l’entrée en guerre d’un allié, s’adresser à la Nation, visiter les
+  troupes, hommage national, cessez-le-feu. Fins : victoire, défaite (le gouvernement tombe), paix victorieuse, de
+  compromis ou humiliante selon le front.
+- **Emprunts** (`engine/loans.ts`, écran **Banque & emprunts**) : prêt personnel (taux selon votre solidité financière,
+  35 % d’endettement au plus), crédit renouvelable (cher, et la presse finit par le savoir), prêt d’un proche (sans
+  intérêts). En campagne : **prêt de campagne** versé sur le compte de campagne et avance du parti ; au-delà de 5 % des
+  voix, l’État rembourse une partie des dépenses et solde d’abord ces prêts. Mensualités chaque mois, remboursement
+  anticipé, fichage bancaire après une faillite.
+- **Équipe** : quinze postes (`data/staff.ts`) — conseillère technique, community manager, chauffeur, coach média,
+  plume, trésorier, attachée de presse, sondeur, collaboratrice parlementaire, directrice de campagne, spin doctor,
+  avocate, officier de sécurité, directrice de cabinet, conseiller diplomatique — chacun avec un vrai effet. Organigramme
+  dans le panneau Équipe, et **chasseur de têtes** pour pourvoir un poste vacant.
 
 - **Une vie, pas une partie** (`engine/life.ts`) : les victoires et défaites de scénario (Grand Maître, « Vive le Roi ! »,
   taupe démasquée, banqueroute, rédaction qui vous remercie, défaite à la présidentielle…) ne terminent plus rien.
@@ -77,24 +113,24 @@ Standalone components, zoneless, Signals partout.
   aggravée par une mauvaise santé, accidents (voiture de sport, voilier, fatigue au volant ; chauffeur protecteur),
   attentats (selon le rang, la menace et la protection). Espérance de vie simulée : 77 ans en moyenne.
 - **Projets au long cours** (`data/projects.ts`, `engine/projects.ts`, onglet **Projets**) : des actions qui
-  s’étalent sur plusieurs semaines et réservent des points d’action chaque semaine — écrire un livre-programme, tour de
+  s’étalent sur plusieurs mois et réservent des points d’action chaque mois — écrire un livre-programme, tour de
   France des territoires, campagne d’implantation, tisser son réseau, reprendre des études, fonder un think tank,
   mission d’information et proposition de loi (député·e), grande réforme (ministre), plan de relance (Matignon),
   refondation du parti, grand chantier et tournée diplomatique (Élysée), grande enquête (journaliste), mémoires
-  (ancien·ne président·e), six mois au vert et année sabbatique. Les petits projets réservent 2 à 4 PA par semaine ;
-  les **gros projets** accaparent l’agenda : il ne reste que **3 PA** par semaine (12 semaines et plus), **2 PA** au-delà
-  de six mois. Un peu d’effet chaque semaine, beaucoup
-  à l’arrivée (parfois avec un risque). **S’y consacrer jusqu’au bout** fait défiler les semaines : les petites
+  (ancien·ne président·e), six mois au vert et année sabbatique (de 2 à 12 mois). Les petits projets réservent 2 à 4 PA
+  par mois ; les **gros projets** accaparent l’agenda : il ne reste que **3 PA** par mois (quatre mois et plus), **2 PA**
+  à partir de six mois. Un peu d’effet chaque mois, beaucoup
+  à l’arrivée (parfois avec un risque). **S’y consacrer jusqu’au bout** fait défiler les mois : les petites
   décisions se règlent seules (le choix le plus prudent) et l’on est rappelé·e dès qu’il se passe quelque chose
   d’important (campagne, résultats, promotion, chapitre, alerte médicale, crise grave, budget). Le projet continue
-  ensuite chaque semaine (bilan « Projet 3/12 » à chaque fin de semaine) ; on peut l’abandonner. Si une décision
+  ensuite chaque mois (bilan « Projet 3/6 mois » à chaque fin de mois) ; on peut l’abandonner. Si une décision
   importante attend, il faut la trancher avant de s’y consacrer. C’est ainsi que le temps passe vite, sans ellipse abstraite.
   **Se retirer de la vie publique** (dès 50 ans ou après l’Élysée) fait défiler les années jusqu’à la nécrologie.
-- **Élection présidentielle à date fixe** (`engine/presidency.ts`) : avril 2027 (semaine 16), puis tous les cinq ans.
-  Bouton **« Se déclarer candidat·e à la présidence »** (jusqu’à 78 semaines avant, popularité 12 minimum) ; il faut
+- **Élection présidentielle à date fixe** (`engine/presidency.ts`) : avril 2027, puis tous les cinq ans.
+  Bouton **« Se déclarer candidat·e à la présidence »** (jusqu’à 18 mois avant, popularité 12 minimum) ; il faut
   **500 parrainages** d’élus avant l’ouverture de la campagne (actions « Chercher des parrainages », « Tournée des maires
   ruraux », appareil du parti, événements). Sans l’appui du parti, c’est une candidature dissidente (le chef du parti se
-  présente aussi). La primaire se tient dans l’année qui précède et vaut déclaration. Campagne de huit semaines,
+  présente aussi). La primaire se tient dans l’année qui précède et vaut déclaration. Campagne de cinq mois,
   programme, sondages, débat décisif, soirée électorale. Sans vous, les PNJ se disputent l’Élysée ; l’alternance
   fait tomber les ministres du camp battu.
 - **Présidence** : panneau « Palais de l’Élysée » — cote de confiance (usure du pouvoir), majorité à l’Assemblée
@@ -110,7 +146,7 @@ Standalone components, zoneless, Signals partout.
   « trop vieux pour gouverner ? », petit-enfant, ami disparu, héritage, marathon, menaces de mort, agression, colis
   piégé, chauffeur qui s’endort, sondage d’outsider, élus qui marchandent leurs parrainages, pressions sur les parrains,
   l’Élysée vous consulte, médiation internationale.
-- **Semaine** : planifier des actions (points d’action, énergie, argent, capital politique), puis clore la semaine.
+- **Mois** : planifier des actions (points d’action, énergie, argent, capital politique), puis clore le mois.
 - **Débats au tour par tour** : 3 à 5 manches, chacune sur un sujet. Main de 5 arguments construite à partir de vos stats et dossiers.
   Triangle Faits > Émotion > Attaque > Faits, la Parade renvoie l’Attaque, les Faits ne valent que sur le sujet de la manche.
   Jauges de sang-froid (K.-O. possible), audience de −100 à +100, séries, intention adverse parfois devinée (et parfois feinte),
@@ -163,13 +199,13 @@ Standalone components, zoneless, Signals partout.
   déballage, ou prendre la tête du parti infiltré. Revers : démasqué·e (retour dans votre vrai camp).
 - **Équilibre bonus / malus** : contrepoids automatiques sur toutes les actions (au moins 70 à 75 % de la valeur des
   gains rendue en malus visibles selon la nature de l’action : stress, exposition, courants, dynamique…), lassitude
-  (répéter une action d’une semaine sur l’autre : gains −20 %, −40 %…, jusqu’à −60 %), pertes amplifiées quand une
+  (répéter une action d’un mois sur l’autre : gains −20 %, −40 %…, jusqu’à −60 %), pertes amplifiées quand une
   jauge est haute, et contreparties sur les choix d’événements trop avantageux.
 - **Scènes et manifestations équilibrées** (`data/balance.ts`) : chaque choix a un prix (pertes au moins égales à
   40 % des gains, posées de préférence sur la jauge « danger »), et aucun choix ne domine : la valeur nette de chaque
   option reste proche de la moyenne de l’étape. Seuils de réussite recalibrés par simulation.
 - **Couronne et Loge dans une partie normale** : les onglets n’existent pas au départ. Ils ne s’ouvrent que par un
-  événement aléatoire (4 % par semaine chacun, à partir de la semaine 4) : émissaire du prétendant ou bal légitimiste
+  événement aléatoire (4 % par mois chacun, à partir du quatrième mois) : émissaire du prétendant ou bal légitimiste
   pour la Couronne, parrainage ou tenue blanche pour la Loge. Une fois membre, d’autres événements (« vos amitiés
   royalistes font la une », « un frère vous demande un service ») permettent aussi d’en sortir.
 - **Événements aléatoires** (`data/random-events.ts`) : 6 portes d’entrée (Couronne, Loge, Rédaction) et 86 événements
@@ -179,17 +215,19 @@ Standalone components, zoneless, Signals partout.
   une manifestation. Plus 38 actualités sans choix (dont Bourse, immobilier, médias). Délai avant répétition,
   conditions de rang et d’argent par choix ; dans le scénario Éditorialiste, les événements de rédaction sont trois fois
   plus fréquents.
-- **Banqueroute** (`engine/bankruptcy.ts`) : sous zéro, découvert et agios (1,5 %/semaine) ; après 3 semaines ou
-  8 000 € de découvert, la banque saisit le tribunal : vendre vos biens, emprunter à un proche ou à la banque, demander
+- **Banqueroute** (`engine/bankruptcy.ts`) : sous zéro, découvert et agios (4 %/mois) ; après 2 mois ou
+  12 000 € de découvert, la banque saisit le tribunal : vendre vos biens, emprunter à un proche ou à la banque, demander
   une avance au parti, ou déclarer la faillite personnelle (biens vendus, équipe partie, réputation en lambeaux).
-  Deuxième faillite ou 25 000 € de dettes : fin de carrière.
+  Deuxième faillite ou 40 000 € de dettes : fin de carrière.
 - **Indicateurs vitaux** en haut de l’écran : fatigue (énergie et stress combinés, projection après l’agenda prévu,
   alerte au-delà de 80), santé et âge, fonds personnels (découvert, banqueroute).
 - **Gains et pertes affichés** sur chaque action (pastilles vertes et rouges, conséquences d’un échec au survol du
   « risque »). Les actions aux gros bonus portent désormais des contreparties nettes : stress, exposition, perte de
   dynamique ou d’influence, image écornée (`engine/describe.ts`).
 - **Animations 2D** (`services/fx.service.ts`, `components/fx-layer`, `components/emblem`) : jeton qui vole vers
-  l’agenda, page de calendrier en fin de semaine, chiffres flottants au-dessus des jauges et des fonds, confettis ou
+  l’agenda, page de calendrier en fin de mois (avec la saison), feux d’artifice et vœux au Nouvel An, hémicycle qui se
+  colore siège par siège au dépouillement, éclair et tampon « Mobilisation générale », ligne de front qui avance ou
+  recule (chevrons), fumée sur le panneau de guerre, billets qui volent vers vos fonds à l’emprunt, chiffres flottants au-dessus des jauges et des fonds, confettis ou
   éclats et secousse à la résolution des décisions, illustrations animées des décisions (télé, journal, gyrophare,
   drapeau, épées, poignée de main, trophée, éclair, pièces), tampons « Promotion ! », « Nouveau chapitre », « Revers », « In memoriam ».
   Soirée électorale animée (compte à rebours de 20 h, barres qui montent, second tour, verdict avec confettis ou
@@ -206,7 +244,7 @@ Standalone components, zoneless, Signals partout.
   épargne, actions, cryptos…). Bonus hebdomadaires, entretien, crédit immobilier (20 % d’apport), valeur qui évolue,
   revente, vente forcée en cas de découvert. Certains biens débloquent des actions (dîner chez vous, vernissage,
   séjour à la campagne, location de la villa). Patrimoine net et ostentation forment une **image publique**
-  (modeste → ostentatoire) qui fait perdre de la popularité chaque semaine, d’autant plus que vous êtes connu·e et à gauche.
+  (modeste → ostentatoire) qui fait perdre de la popularité chaque mois, d’autant plus que vous êtes connu·e et à gauche.
 - **Budget du parti** (quand vous le dirigez) : cotisations, financement public, dons ; six postes de dépenses ;
   adhérents ; clôture mensuelle ; faillite et dons suspects.
 - **Budget de l’État** (au gouvernement) : neuf missions à ±20 %, cinq leviers fiscaux, déficit en % du PIB, effet sur
@@ -214,7 +252,7 @@ Standalone components, zoneless, Signals partout.
 - **Équipe** : six recrues (conseillère technique, coach média, plume, trésorier, directrice de campagne, spin doctor),
   chacune avec un avantage et un salaire hebdomadaire.
 - **Objectifs** : trois défis actifs avec échéance et récompense (point de compétence, PA bonus, capital…) ; plus d’objectifs « rallier un courant ».
-- **Crises nationales** : inondations, grève, krach, sommet européen, violences urbaines ; verrouillent l’actualité trois semaines.
+- **Crises nationales** : inondations, grève, krach, sommet européen, violences urbaines ; verrouillent l’actualité deux mois.
 
 ## Arborescence
 
@@ -254,6 +292,11 @@ src/app/game/
 │   ├── scenarios.ts           Mécaniques des scénarios royauté, franc-maçon, éditorialiste
 │   ├── patrimoine.ts          Achat, crédit, revente, image publique de la richesse
 │   ├── bankruptcy.ts          Découvert, agios, procédure, faillite personnelle
+│   ├── calendar.ts            Un tour = un mois : dates, durées, conversions
+│   ├── loans.ts               Emprunts : offres, mensualités, prêt de campagne, remboursement de l’État
+│   ├── assembly.ts            Votes à l’Assemblée : groupes, pointage, interventions, dépouillement
+│   ├── war.ts                 Guerre : déclaration, front, alliés, paix
+│   ├── staff-perks.ts         Effets mensuels des postes de l’équipe
 │   ├── describe.ts            Effets en langage clair (gains / pertes)
 │   ├── mole.ts                Scénario Infiltré·e : couverture, rapports, soupçons
 │   ├── life.ts                Âge, santé, mort, chapitres de vie, retraite, nécrologie
@@ -266,8 +309,8 @@ src/app/game/
 │   └── effects.ts             applyEffects(), risques, dépenses, plafond légal
 ├── services/
 │   ├── game-state.service.ts        Signal unique GameState + mutate() transactionnel
-│   ├── action-planner.service.ts    Plan de la semaine (PA, énergie, €, capital)
-│   ├── turn.service.ts              Orchestration fin de semaine + décisions
+│   ├── action-planner.service.ts    Plan du mois (PA, énergie, €, capital)
+│   ├── turn.service.ts              Orchestration fin de mois + décisions
 │   ├── progression.service.ts       Rangs, énergie/stress/burn-out, revenus, compétences, nominations
 │   ├── media.service.ts             Agenda médiatique, invitations, fuites/scandales
 │   ├── party-management.service.ts  Courants, cohésion, direction, motion de défiance
@@ -298,6 +341,10 @@ src/app/game/
     ├── presidency-panel/ Présidentielle (déclaration, parrainages) et Palais de l’Élysée
     ├── government-panel/ Matignon ou votre ministère
     ├── world-panel/      Le monde : prestige, tensions, relations, crise
+    ├── war-panel/        Guerre : ligne de front, opinion, pertes, alliés
+    ├── assembly-vote/    Scrutin public : texte, pointage, interventions, vote, résultat
+    ├── hemicycle/        Hémicycle SVG de 577 sièges, dépouillement animé
+    ├── bank/             Banque & emprunts
     ├── fx-layer/         Calque d’animations 2D
     ├── emblem/           Illustrations animées des décisions
     ├── election-night/   Soirée électorale animée
@@ -306,7 +353,7 @@ src/app/game/
     ├── scenario-panel/   Tableau de bord Couronne / Loge
     ├── stance-axis/      Axe gauche-droite réutilisable
     ├── team-panel/       Équipe
-    ├── week-planner/     ★ Prototype : gestion de la semaine
+    ├── week-planner/     ★ Gestion du mois
     ├── decision-panel/   ★ Prototype : prise de décision
     ├── profile-panel/    Jauges, finances, prochain palier, dossiers & compétences
     ├── party-panel/      Courants, rivaux, réseau
@@ -318,7 +365,7 @@ src/app/game/
 ## Principes
 
 1. **Un seul signal d'état.** `GameStateService.mutate(fn)` clone l'état, applique `fn(draft, rng)`, publie et sauvegarde. Les composants ne lisent que des `computed`.
-2. **Les systèmes sont des fonctions `weekly(draft, rng)`.** `TurnService.endWeek()` les enchaîne dans une seule transaction : actions → semaine+1 → carrière → médias → parti → réseau → rivaux → scrutins.
+2. **Les systèmes sont des fonctions `weekly(draft, rng)`.** `TurnService.endWeek()` les enchaîne dans une seule transaction : actions → mois+1 → carrière → médias → parti → réseau → rivaux → scrutins.
 3. **Un langage d'effets commun.** Actions, choix de décisions, faveurs et résultats d'élection produisent tous des `Effect[]`. Pour ajouter du contenu, on modifie surtout `data/`.
 4. **Les risques sont affichés.** Chaque `RiskProfile` est modulé par une stat ou par la maîtrise du dossier, et le pourcentage de succès est affiché sur chaque choix. Débattre sans avoir étudié le sujet reste possible, mais c'est risqué.
 

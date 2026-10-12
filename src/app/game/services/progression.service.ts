@@ -8,6 +8,8 @@ import { Rng, clamp } from '../engine/rng';
 import { weeklyNationalBudget } from '../engine/budget';
 import { weeklyBankruptcy } from '../engine/bankruptcy';
 import { assetAp, dossierDecayFactor, weeklyAssets } from '../engine/patrimoine';
+import { monthlyLoans } from '../engine/loans';
+import { staffMonthly, staffAp } from '../engine/staff-perks';
 import { GameStateService } from './game-state.service';
 
 // ── Carrière, énergie, revenus, compétences ─────────────────
@@ -58,8 +60,8 @@ export class ProgressionService {
     const p = d.player;
     const rank = RANKS[p.rankId];
 
-    // Revenus hebdomadaires (part épargnée) puis salaires de l'équipe
-    p.finances.personal += Math.round(rank.monthlyIncome * 0.08);
+    // Revenus du mois (part épargnée), salaires de l'équipe, mensualités des prêts
+    p.finances.personal += Math.round(rank.monthlyIncome * 0.35);
     const salaries = payroll(d);
     if (salaries) {
       spend(d, salaries);
@@ -69,7 +71,9 @@ export class ProgressionService {
         pushNews(d, 'systeme', 'negative', `${leaving.name} démissionne`, 'Faute de salaire versé, votre collaborateur·rice s’en va.');
       }
     }
+    monthlyLoans(d, rng);
     weeklyTraits(d, rng);
+    staffMonthly(d, rng);
     weeklyAssets(d, rng);
     weeklyBankruptcy(d, rng);
 
@@ -82,12 +86,12 @@ export class ProgressionService {
     if (burnout) {
       s.stress = 60;
       s.popularity = clamp(s.popularity - 3);
-      pushNews(d, 'systeme', 'negative', 'Burn-out', 'Vous annulez tous vos rendez-vous. Cette semaine, vos points d’action sont divisés par deux.');
+      pushNews(d, 'systeme', 'negative', 'Burn-out', 'Vous annulez tous vos rendez-vous. Ce mois-ci, vos points d’action sont divisés par deux.');
     }
     const bonus = Number(p.flags['bonusAp'] ?? 0) + (p.staff.includes('directeur_campagne') && p.finances.legalCeiling !== null ? 1 : 0)
-      + countTrait(d, 'bourreau') + assetAp(d);
+      + countTrait(d, 'bourreau') + assetAp(d) + staffAp(d);
     p.flags['bonusAp'] = 0;
-    p.actionPoints.max = rank.weeklyActionPoints + bonus;
+    p.actionPoints.max = rank.monthlyActionPoints + bonus;
     p.actionPoints.current = burnout ? Math.ceil(p.actionPoints.max / 2) : p.actionPoints.max;
 
     // Usure : la notoriété s'érode si on ne l'entretient pas
@@ -109,12 +113,12 @@ export class ProgressionService {
         dossier.mastery = clamp(dossier.mastery - base * (p.staff.includes('conseiller') ? 0.5 : 1) * decay);
       }
     }
-    if (d.week % 8 === 0) p.skillPoints += 1;
+    if (d.week % 4 === 0) p.skillPoints += 1;
 
     // Nominations (remaniement, congrès)
     const rule = rank.promotion;
     const lastOffer = Number(p.flags['lastOffer'] ?? -99);
-    if (rule?.via === 'nomination' && d.week - lastOffer >= 6) {
+    if (rule?.via === 'nomination' && d.week - lastOffer >= 4) {
       const met = (Object.entries(rule.requires) as [StatKey, number][]).every(([k, v]) => s[k] >= v)
         && partySupport(d) >= rule.minPartySupport;
       if (met && rng.chance(0.35)) {
@@ -131,7 +135,7 @@ export class ProgressionService {
 
     // Conditions de défaite
     // Revers (devient un chapitre : la partie continue, en repartant de plus bas)
-    if (d.week > 10 && s.popularity <= 2 && s.credibility <= 5 && d.week >= Number(p.flags['desert'] ?? 0)) {
+    if (d.week > 6 && s.popularity <= 2 && s.credibility <= 5 && d.week >= Number(p.flags['desert'] ?? 0)) {
       d.status = 'defaite';
       d.endTitle = 'Traversée du désert';
       d.endReason = 'Plus personne ne vous écoute. Vous disparaissez des écrans… pour un temps.';

@@ -15,6 +15,8 @@ import { ELECTIONS } from '../../data/ranks';
 import { PARTNERS, PARTNERS_BY_ID } from '../../engine/intl';
 import { PROJECTS, PROJECTS_BY_ID, projectLeaves, projectLoadLabel, projectVisible } from '../../data/projects';
 import { projectAvailability } from '../../engine/projects';
+import { ENEMIES, ENEMIES_BY_ID } from '../../engine/war';
+import { durationLabel, monthIndex, yearOf } from '../../engine/calendar';
 
 /** Actions qui peuvent viser n'importe quelle personnalité, pas seulement votre parti */
 const ANY_NPC = ['dejeuner', 'diner_maison', 'off', 'grand_oral', 'clash_reseaux', 'demonter'];
@@ -24,10 +26,13 @@ interface TargetOption {
   label: string;
 }
 
+/** Saisons du calendrier (bandeau de l'agenda) */
+const SEASONS = ['❄️', '❄️', '🌱', '🌷', '🌸', '☀️', '☀️', '🏖️', '🍂', '🍂', '🍁', '🎄'];
+
 /**
- * Prototype : gestion de la semaine.
+ * Gestion du mois.
  * Le joueur compose son agenda (budget de points d'action), voit les coûts
- * cumulés en temps réel, puis clôt la semaine — sauf si une décision urgente
+ * cumulés en temps réel, puis clôt le mois — sauf si une décision urgente
  * attend une réponse.
  */
 @Component({
@@ -47,7 +52,16 @@ export class WeekPlannerComponent {
     const present = new Set([...this.planner.unlocked(), ...this.planner.locked()].map(a => a.category));
     const all = (Object.entries(CATEGORY_LABELS) as [ActionCategory, string][]).filter(([c]) => present.has(c));
     const scenario = this.game.s().scenario;
+    // L'onglet Guerre n'existe qu'en temps de guerre, et passe alors en tête
+    if (this.game.s().war) {
+      const war = all.filter(([c]) => c === 'guerre');
+      const rest = all.filter(([c]) => c !== 'guerre');
+      all.splice(0, all.length, ...war, ...rest);
+    } else {
+      all.splice(0, all.length, ...all.filter(([c]) => c !== 'guerre'));
+    }
     const withProjects = (list: [ActionCategory | 'projets', string][]) => [...list.slice(0, 1), ['projets', 'Projets'] as [ActionCategory | 'projets', string], ...list.slice(1)];
+    if (this.game.s().war && all[0]?.[0] === 'guerre') return withProjects(all);
     if (this.game.s().presidency) return withProjects([...all.filter(([c]) => c === 'elysee'), ...all.filter(([c]) => c !== 'elysee')]);
     if (present.has('fonction') && !['royaute', 'franc_macon', 'editorialiste', 'infiltre'].includes(scenario)) return withProjects([...all.filter(([c]) => c === 'fonction'), ...all.filter(([c]) => c !== 'fonction')]);
     const first = scenario === 'royaute' ? 'couronne' : scenario === 'franc_macon' ? 'loge' : scenario === 'editorialiste' ? 'redaction' : scenario === 'infiltre' ? 'infiltration' : null;
@@ -60,7 +74,7 @@ export class WeekPlannerComponent {
   protected readonly current = computed(() => {
     const s = this.game.s();
     const def = s.project ? PROJECTS_BY_ID.get(s.project.id) : null;
-    return def && s.project ? { def, done: s.project.done, weeks: s.project.weeks, load: projectLoadLabel(def) } : null;
+    return def && s.project ? { def, done: s.project.done, months: s.project.months, load: projectLoadLabel(def) } : null;
   });
 
   /** Projets proposés à votre rang */
@@ -68,11 +82,11 @@ export class WeekPlannerComponent {
     const s = this.game.s();
     return PROJECTS.filter(p => projectVisible(s, p)).map(def => {
       const f = describeEffects(def.final);
-      const w = describeEffects(def.weekly);
+      const w = describeEffects(def.monthly);
       const risk = def.risk ? describeEffects(def.risk.onFailure) : null;
       return {
-        def, av: projectAvailability(s, def), load: projectLoadLabel(def), big: projectLeaves(def) !== null,
-        weekly: [...w.gains, ...w.losses, ...w.other], final: [...f.gains, ...f.losses, ...f.other],
+        def, av: projectAvailability(s, def), load: projectLoadLabel(def), big: projectLeaves(def) !== null, duration: durationLabel(def.months),
+        monthly: [...w.gains, ...w.losses, ...w.other], final: [...f.gains, ...f.losses, ...f.other],
         riskText: risk ? 'En cas d’échec : ' + [...risk.losses, ...risk.gains, ...risk.other].map(c => c.text).join(', ') : '',
       };
     });
@@ -112,7 +126,9 @@ export class WeekPlannerComponent {
       case 'faction':
         return s.party.factions.map(f => ({ id: f.id, label: `${f.name} · ${Math.round(f.supportForPlayer)} %` }));
       case 'partner':
-        return PARTNERS.map(p => ({ id: p.id, label: `${p.name} · ${Math.round(s.intl.relations[p.id] ?? 0)}` }));
+        return PARTNERS.filter(p => !s.war?.allies.includes(p.id)).map(p => ({ id: p.id, label: `${p.name} · ${Math.round(s.intl.relations[p.id] ?? 0)}` }));
+      case 'enemy':
+        return ENEMIES.map(e => ({ id: e.id, label: `${e.name} · puissance ${Math.round(e.strength * 100)}` }));
       default:
         return [];
     }
@@ -136,7 +152,7 @@ export class WeekPlannerComponent {
     if (!v) { v = describeEffects(action.effects); this.fxCache.set(action.id, v); }
     return v;
   }
-  /** Lassitude prévue si l'action est répétée (et une fois de plus si déjà planifiée cette semaine) */
+  /** Lassitude prévue si l'action est répétée (et une fois de plus si déjà planifiée ce mois-ci) */
   protected wear(action: ActionDefinition): number {
     const s = this.game.s();
     const planned = this.planner.plan().filter(p => p.actionId === action.id).length;
@@ -177,7 +193,7 @@ export class WeekPlannerComponent {
     const ok = this.planner.add(action.id, action.target === 'domain'
       ? { domain: target as Domain }
       : action.target ? { targetId: target } : undefined, this.payer(action));
-    // Un jeton « −n PA » s'envole de la carte vers l'agenda de la semaine
+    // Un jeton « −n PA » s'envole de la carte vers l'agenda du mois
     if (ok && event) this.anim.fly(event.currentTarget as Element, document.querySelector('app-week-planner .plan-list'), `${action.cost.ap} PA`);
   }
 
@@ -190,7 +206,8 @@ export class WeekPlannerComponent {
       target = s.npcs.find(n => n.id === p.targetId)?.name
         ?? s.contacts.find(c => c.id === p.targetId)?.name.split(' (')[0]
         ?? s.party.factions.find(f => f.id === p.targetId)?.name
-        ?? PARTNERS_BY_ID.get(p.targetId)?.name;
+        ?? PARTNERS_BY_ID.get(p.targetId)?.name
+        ?? ENEMIES_BY_ID.get(p.targetId)?.name;
     }
     return { label: a.label, target, ap: a.cost.ap, party: p.payer === 'parti' };
   }
@@ -226,9 +243,12 @@ export class WeekPlannerComponent {
     this.turn.devote();
     this.reportOpen.set(true);
     const after = this.game.s();
-    if (after.week !== from && after.status !== 'mort') this.anim.weekTurn(from, after.week, this.game.date());
+    if (after.week !== from && after.status !== 'mort') this.anim.monthTurn(from, after.week);
     if (!after.project && after.status !== 'mort') setTimeout(() => this.anim.stamp('Projet abouti', 'good', label), 900);
   }
+
+  /** Icône de saison du mois en cours */
+  protected readonly season = computed(() => SEASONS[monthIndex(this.game.week())]);
 
   protected endWeek(): void {
     const before = this.game.s();
@@ -241,8 +261,9 @@ export class WeekPlannerComponent {
     // Animations : page de calendrier, variations au-dessus des jauges, secousse si coup dur
     const after = this.game.s();
     if (after.week === from) return;
-    const overlay = !!(after.scene || after.debate || after.protest);
-    if (!overlay) this.anim.weekTurn(from, after.week, this.game.date());
+    const overlay = !!(after.scene || after.debate || after.protest || after.vote);
+    if (!overlay) this.anim.monthTurn(from, after.week);
+    if (yearOf(after.week) !== yearOf(from)) setTimeout(() => this.anim.newYear(yearOf(after.week)), overlay ? 300 : 1500);
     const report = this.turn.lastReport();
     report?.deltas.forEach((x, i) => {
       const el = document.querySelector(`app-profile-panel [data-stat="${x.key}"]`);
@@ -252,14 +273,14 @@ export class WeekPlannerComponent {
     if (report?.project) {
       const pr = report.project;
       const el = document.querySelector('app-week-planner .project-box') ?? document.querySelector('app-week-planner .mobile-end');
-      this.anim.floatAt(el, pr.finished ? `✓ ${pr.label}` : `Projet ${pr.done}/${pr.weeks}`, 'good', 400);
+      this.anim.floatAt(el, pr.finished ? `✓ ${pr.label}` : `Projet ${pr.done}/${pr.months} mois`, 'good', 400);
       if (pr.finished) setTimeout(() => this.anim.stamp('Projet abouti', 'good', pr.label), 1000);
     }
     const df = Math.round(after.player.finances.personal - funds);
     if (df) this.anim.floatAt(document.querySelector('app-vitals .money'), `${df > 0 ? '+' : '−'}${Math.abs(df).toLocaleString('fr-FR')} €`, df > 0 ? 'good' : 'bad', 700);
     if (Math.abs(df) >= 100 && !overlay) this.anim.coins(document.querySelector('app-vitals .money'), df > 0, Math.min(10, 3 + Math.round(Math.abs(df) / 1500)));
 
-    // Flash info sur les coups durs de la semaine
+    // Flash info sur les coups durs du mois
     const fresh = after.news.filter(n => n.week === after.week);
     const flash = fresh.find(n => n.kind === 'scandale' || (n.kind === 'actu' && n.tone === 'negative'));
     if (flash) setTimeout(() => this.anim.ticker(`${flash.title}${flash.body ? ' — ' + flash.body : ''}`), 900);
@@ -296,6 +317,11 @@ export class WeekPlannerComponent {
       }), 600);
     }
 
+    // Guerre : le front a bougé
+    if (after.war && before.war) {
+      const move = after.war.front - before.war.front;
+      if (Math.abs(move) >= 3) setTimeout(() => this.anim.frontline(move > 0), 800);
+    }
     const hard = after.pendingDecisions.filter(d => !known.has(d.id)).some(d => ['scandale', 'crise', 'banqueroute', 'revelation', 'enquete', 'defiance'].includes(d.tag));
     if (hard || (after.player.finances.personal < 0 && funds >= 0)) setTimeout(() => this.anim.shake(), 650);
   }

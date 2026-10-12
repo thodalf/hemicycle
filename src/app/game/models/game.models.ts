@@ -46,10 +46,11 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'guerre' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
+  guerre: 'Guerre',
   international: 'International',
   terrain: 'Terrain',
   medias: 'Médias',
@@ -98,7 +99,7 @@ export interface OwnedAsset {
   value: number;
   /** Capital restant dû (crédit immobilier) */
   debt: number;
-  /** Mensualité hebdomadaire du crédit */
+  /** Mensualité du crédit */
   payment: number;
   boughtWeek: number;
   boughtPrice: number;
@@ -127,7 +128,7 @@ export interface Player {
   actionPoints: { max: number; current: number };
   /** Risque latent de fuite / scandale (0‑100) */
   scandalExposure: number;
-  /** Dynamique de campagne : alimente les sondages, décroît chaque semaine */
+  /** Dynamique de campagne : alimente les sondages, décroît chaque mois */
   momentum: number;
   /** Positionnement idéologique : -100 (gauche) … +100 (droite) */
   stance: number;
@@ -141,8 +142,10 @@ export interface Player {
   boosters: number;
   /** Biens personnels (patrimoine) */
   assets: OwnedAsset[];
-  /** Âge en années (avance d'1/52 par semaine) */
+  /** Âge en années (avance d'1/12 par mois) */
   age: number;
+  /** Emprunts en cours */
+  loans: Loan[];
   /** Santé 0-100 : sous 35, les alertes médicales et le risque de mort grimpent */
   health: number;
   flags: Record<string, boolean | number>;
@@ -158,7 +161,7 @@ export interface RankDefinition {
   id: RankId;
   label: string;
   order: number;
-  weeklyActionPoints: number;
+  monthlyActionPoints: number;
   monthlyIncome: number;
   promotion: PromotionRule | null;
 }
@@ -169,8 +172,8 @@ export interface ElectionConfig {
   opponents: number;
   /** Primaire : adversaires issus du parti */
   internal: boolean;
-  campaignWeeks: number;
-  /** Semaines entre deux scrutins du même type */
+  campaignMonths: number;
+  /** Mois entre deux scrutins du même type */
   interval: number;
   legalCeiling: number;
 }
@@ -197,6 +200,8 @@ export type Effect =
   | { kind: 'decision'; templateId: string }
   | { kind: 'debate'; stakes: DebateStakes; opponentId?: TargetRef }
   | { kind: 'agenda'; domain: DomainRef; weeks: number }
+  | { kind: 'war'; front?: number; support?: number; losses?: number; ally?: string; peace?: boolean; declare?: string }
+  | { kind: 'vote'; billId?: string; own?: boolean }
   | { kind: 'stance'; delta: number }
   | { kind: 'protest' }
   | { kind: 'scene'; sceneId: string }
@@ -216,7 +221,7 @@ export type Effect =
   | { kind: 'press'; audience?: number; reputation?: number; independance?: number; scoops?: number; ligne?: number; salaryPct?: number }
   | { kind: 'pressGrade'; delta: number }
   | { kind: 'gainAsset'; defId: string }
-  | { kind: 'loan'; amount: number; total: number }
+  | { kind: 'loan'; amount: number; total: number; lender?: string }
   | { kind: 'mole'; cover?: number; intel?: number; deliver?: boolean; sabotage?: number; leaderPop?: number; handler?: number }
   | { kind: 'bankrupt' }
   | { kind: 'assetValue'; defIds?: string[]; factor: number }
@@ -249,7 +254,7 @@ export interface RiskProfile {
   failureNews?: string;
 }
 
-// ── Actions hebdomadaires ───────────────────────────────────
+// ── Actions mensuelles ───────────────────────────────────
 
 export interface ActionCost {
   ap: number;
@@ -267,18 +272,19 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
   personalOnly?: boolean;
   cost: ActionCost;
-  target?: 'domain' | 'npc' | 'contact' | 'faction' | 'partner';
+  target?: 'domain' | 'npc' | 'contact' | 'faction' | 'partner' | 'enemy';
   targetCondition?: { minTrust?: number };
   effects: Effect[];
   risk?: RiskProfile;
-  maxPerWeek?: number;
-  cooldownWeeks?: number;
+  maxPerMonth?: number;
+  /** Mois avant de pouvoir refaire l'action */
+  cooldown?: number;
   successNews?: string;
 }
 
@@ -512,7 +518,7 @@ export interface DeathInfo {
   text: string;
 }
 
-/** Calendrier présidentiel : un scrutin tous les cinq ans (260 semaines) */
+/** Calendrier présidentiel : un scrutin tous les cinq ans (60 mois) */
 export interface PresidentialCalendar {
   /** Semaine du prochain scrutin */
   nextWeek: number;
@@ -553,9 +559,10 @@ export interface PresidencyState {
 export interface ActiveProject {
   id: string;
   startWeek: number;
-  /** Semaines déjà accomplies */
+  /** Mois déjà accomplis */
   done: number;
-  weeks: number;
+  /** Durée totale, en mois */
+  months: number;
   /** Domaine travaillé, figé au lancement */
   domain?: Domain;
 }
@@ -592,7 +599,9 @@ export interface IntlState {
 
 // ── Équipe & objectifs ──────────────────────────────────────
 
-export type StaffRole = 'conseiller' | 'coach' | 'plume' | 'tresorier' | 'directeur_campagne' | 'spin_doctor';
+export type StaffRole = 'conseiller' | 'coach' | 'plume' | 'tresorier' | 'directeur_campagne' | 'spin_doctor'
+  | 'community_manager' | 'chauffeur' | 'attache_presse' | 'sondeur' | 'assistant_parlementaire' | 'juriste'
+  | 'garde_du_corps' | 'chef_cabinet' | 'sherpa';
 
 export type Rarity = 'commun' | 'rare' | 'legendaire';
 export type TraitId =
@@ -604,7 +613,7 @@ export interface Recruit {
   name: string;
   role: StaffRole;
   rarity: Rarity;
-  /** Salaire hebdomadaire (€) */
+  /** Salaire mensuel (€) */
   salary: number;
   traits: TraitId[];
   bio: string;
@@ -672,12 +681,12 @@ export interface PressState {
   independance: number;
   /** Ligne éditoriale du média sur l'axe gauche-droite */
   ligne: number;
-  /** Salaire hebdomadaire, en euros */
+  /** Salaire mensuel, en euros */
   salary: number;
   scoops: number;
-  /** Semaine d'arrivée */
+  /** Mois d'arrivée */
   since: number;
-  /** Semaine de la dernière promotion */
+  /** Mois de la dernière promotion */
   gradeWeek?: number;
 }
 
@@ -686,7 +695,7 @@ export interface StaffDefinition {
   name: string;
   title: string;
   perk: string;
-  weeklySalary: number;
+  monthlySalary: number;
   minRank: RankId;
 }
 
@@ -880,14 +889,16 @@ export interface NationalBudget {
 // ── État global ─────────────────────────────────────────────
 
 export interface GameState {
-  version: 1;
+  /** 2 : un tour = un mois (1 : un tour = une semaine) */
+  version: 2;
   seed: number;
   rngState: number;
+  /** Tour en cours, en mois (1 = janvier 2027) */
   week: number;
   idCounter: number;
-  /** Sujet qui domine l'actualité cette semaine (oriente interviews et débats) */
+  /** Sujet qui domine l'actualité ce mois-ci (oriente interviews, débats et votes) */
   agendaDomain: Domain;
-  /** Semaine jusqu'à laquelle l'agenda est verrouillé par une crise */
+  /** Mois jusqu'auquel l'agenda est verrouillé par une crise */
   agendaLockedUntil: number;
   debate: DebateState | null;
   objectives: Objective[];
@@ -914,6 +925,12 @@ export interface GameState {
   government: GovernmentState | null;
   intl: IntlState;
   project: ActiveProject | null;
+  /** Guerre en cours */
+  war: WarState | null;
+  /** Scrutin public en cours à l'Assemblée */
+  vote: AssemblyVote | null;
+  /** Derniers votes du joueur à l'Assemblée */
+  voteHistory: VoteRecord[];
   player: Player;
   party: Party;
   otherParties: PartyInfo[];
@@ -923,6 +940,127 @@ export interface GameState {
   pendingDecisions: Decision[];
   polls: PollSnapshot[];
   elections: ScheduledElection[];
-  /** actionId → semaine à partir de laquelle l'action redevient disponible */
+  /** actionId → mois à partir duquel l'action redevient disponible */
   cooldowns: Record<string, number>;
+}
+
+// ── Emprunts ────────────────────────────────────────────────
+
+export type LoanAccount = 'personal' | 'campaign';
+export type LoanKind = 'banque' | 'revolving' | 'proche' | 'campagne' | 'parti' | 'ancien';
+
+export interface Loan {
+  id: string;
+  kind: LoanKind;
+  lender: string;
+  /** Compte crédité, et qui rembourse en priorité */
+  account: LoanAccount;
+  principal: number;
+  /** Capital restant dû */
+  remaining: number;
+  /** Taux annuel (0.05 = 5 %) */
+  rate: number;
+  /** Mensualité */
+  monthly: number;
+  months: number;
+  startWeek: number;
+}
+
+// ── Guerre ──────────────────────────────────────────────────
+
+export interface WarLogEntry {
+  week: number;
+  text: string;
+  front: number;
+  tone: Tone;
+}
+
+export interface WarState {
+  enemyId: string;
+  enemy: string;
+  /** « contre la Karstanie » */
+  against: string;
+  casus: string;
+  since: number;
+  /** 0 (défaite) … 100 (victoire) ; 50 = statu quo */
+  front: number;
+  /** Soutien de l'opinion à la guerre (0-100) */
+  support: number;
+  /** Soldats tombés */
+  losses: number;
+  /** Coût cumulé, en milliards d'euros */
+  cost: number;
+  /** Partenaires engagés à vos côtés */
+  allies: string[];
+  /** Autorisée par le Parlement (art. 35) */
+  authorized: boolean;
+  log: WarLogEntry[];
+}
+
+// ── Votes à l'Assemblée ─────────────────────────────────────
+
+export type Ballot = 'pour' | 'contre' | 'abstention';
+
+export interface AssemblyGroup {
+  partyId: string;
+  name: string;
+  color: string;
+  seats: number;
+  position: number;
+  /** Groupe de la majorité gouvernementale */
+  majority: boolean;
+}
+
+export interface VoteTally {
+  pour: number;
+  contre: number;
+  abstention: number;
+}
+
+export interface AssemblyVote {
+  id: string;
+  week: number;
+  billId: string;
+  title: string;
+  summary: string;
+  domain: Domain;
+  /** Orientation du texte : -100 (gauche) … +100 (droite) */
+  lean: number;
+  /** Part des Français favorables au texte */
+  opinion: number;
+  /** Texte du gouvernement ou proposition d'un groupe */
+  origin: 'gouvernement' | 'opposition' | 'majorite';
+  /** Rôle du joueur dans ce scrutin */
+  role: 'depute' | 'rapporteur' | 'gouvernement' | 'chef';
+  /** Consigne de votre groupe */
+  partyLine: Ballot;
+  /** Points de bascule obtenus par vos interventions */
+  swing: number;
+  /** Humeur cachée de la majorité (fronde, discipline) : seul un sondeur la devine */
+  mood?: number;
+  /** Étapes déjà jouées : intervention, négociation… */
+  moves: string[];
+  /** Texte déposé par le joueur (ou son groupe à son initiative) */
+  own?: boolean;
+  /** Autorisation d'entrer en guerre (art. 35) : ennemi visé */
+  warEnemy?: string;
+  status: 'debat' | 'resultat';
+  playerBallot?: Ballot;
+  result?: {
+    tally: VoteTally;
+    adopted: boolean;
+    /** Vote de chaque siège, dans l'ordre de l'hémicycle (gauche → droite) */
+    seats: Ballot[];
+    groups: { partyId: string; name: string; color: string; seats: number; tally: VoteTally }[];
+    via: 'vote' | '49.3';
+    summary: string[];
+  };
+}
+
+export interface VoteRecord {
+  week: number;
+  title: string;
+  ballot: Ballot | '49.3';
+  adopted: boolean;
+  rebel: boolean;
 }

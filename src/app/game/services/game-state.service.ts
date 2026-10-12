@@ -1,7 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { DOMAINS, GameState, StatKey } from '../models/game.models';
-import { RANKS, START_DATE } from '../data/ranks';
+import { RANKS } from '../data/ranks';
+import { PROJECTS_BY_ID } from '../data/projects';
+import { WEEKS_PER_MONTH, inMonth, monthLabel, weekToTurn } from '../engine/calendar';
+import { migrateLoans } from '../engine/loans';
 import { NEW_CONTACTS, NewGameOptions, PARTIES, createInitialState, factionPositions, ofParty, toParty } from '../data/world';
 import { availableFunds, partySupport } from '../engine/effects';
 import { Rng } from '../engine/rng';
@@ -18,8 +21,70 @@ import { roleLabel } from '../engine/government';
 
 const RESUME_KEY = 'polsim.resume.v1';
 
+/** Flags qui contiennent un numéro de tour */
+const WEEK_FLAGS = /^(lastOffer|lastHealthAlert|desert|ineligibleUntil|nextElectionWeek|retired|lastRevelation|lastProjectDone|lastVote|lastWar|familyLoan|bankBan|ev_.+|proj_.+|last_.+|bill_.+)$/;
+
+/**
+ * Version 1 → 2 : le tour de jeu passe de la semaine au mois.
+ * Toutes les dates (numéros de semaine) deviennent des numéros de mois ;
+ * salaires et mensualités hebdomadaires deviennent mensuels.
+ */
+function toMonths(s: GameState): void {
+  const T = weekToTurn;
+  const money = (v: number) => Math.round(v * WEEKS_PER_MONTH / 10) * 10;
+  s.week = T(s.week);
+  s.agendaLockedUntil = T(s.agendaLockedUntil ?? 0);
+  for (const n of s.news ?? []) n.week = T(n.week);
+  for (const x of s.pendingDecisions ?? []) { x.week = T(x.week); x.deadlineWeek = T(x.deadlineWeek); }
+  for (const x of s.polls ?? []) x.week = T(x.week);
+  for (const e of s.elections ?? []) { e.week = T(e.week); e.campaignStartWeek = T(e.campaignStartWeek); }
+  for (const k of Object.keys(s.cooldowns ?? {})) s.cooldowns[k] = T(s.cooldowns[k]);
+  for (const o of s.objectives ?? []) o.deadlineWeek = T(o.deadlineWeek);
+  for (const m of s.milestones ?? []) m.week = T(m.week);
+  if (s.death) s.death.week = T(s.death.week);
+  if (s.presidential) {
+    s.presidential.nextWeek = T(s.presidential.nextWeek);
+    if (s.presidential.declaredWeek) s.presidential.declaredWeek = T(s.presidential.declaredWeek);
+  }
+  if (s.presidency) { s.presidency.since = T(s.presidency.since); s.presidency.lastCrisisWeek = T(s.presidency.lastCrisisWeek); }
+  if (s.government) s.government.since = T(s.government.since);
+  if (s.intl?.crisis) s.intl.crisis.since = T(s.intl.crisis.since);
+  if (s.project) {
+    const old = s.project as typeof s.project & { weeks?: number };
+    const def = PROJECTS_BY_ID.get(old.id);
+    const months = def?.months ?? Math.max(1, Math.round((old.weeks ?? 4) / WEEKS_PER_MONTH));
+    const done = Math.min(months - 1, Math.round((old.done / Math.max(1, old.weeks ?? months)) * months));
+    s.project = { id: old.id, startWeek: T(old.startWeek), done, months, ...(old.domain ? { domain: old.domain } : {}) };
+  }
+  if (s.party?.foundedWeek) s.party.foundedWeek = T(s.party.foundedWeek);
+  if (s.partyFinance) {
+    s.partyFinance.lastSettledWeek = T(s.partyFinance.lastSettledWeek);
+    for (const h of s.partyFinance.history) h.week = T(h.week);
+  }
+  if (s.nationalBudget) { s.nationalBudget.deadlineWeek = T(s.nationalBudget.deadlineWeek); s.nationalBudget.nextDueWeek = T(s.nationalBudget.nextDueWeek); }
+  if (s.press) {
+    s.press.since = T(s.press.since);
+    if (s.press.gradeWeek) s.press.gradeWeek = T(s.press.gradeWeek);
+    s.press.salary = money(s.press.salary);
+  }
+  if (s.mole) s.mole.lastReport = T(s.mole.lastReport);
+  if (s.program?.validatedWeek) s.program.validatedWeek = T(s.program.validatedWeek);
+  const p = s.player;
+  for (const d of Object.values(p.dossiers)) if (d.lastStudiedWeek !== null) d.lastStudiedWeek = T(d.lastStudiedWeek);
+  for (const a of p.assets ?? []) { a.boughtWeek = T(a.boughtWeek); a.payment = money(a.payment); }
+  for (const r of [...(p.team ?? []), ...(p.pool ?? [])]) r.salary = Math.round(r.salary * WEEKS_PER_MONTH / 50) * 50;
+  for (const [k, v] of Object.entries(p.flags)) {
+    if (typeof v === 'number' && v > 0 && WEEK_FLAGS.test(k)) p.flags[k] = T(v);
+  }
+  if (p.flags['overdraftWeeks']) p.flags['overdraftWeeks'] = Math.ceil(Number(p.flags['overdraftWeeks']) / WEEKS_PER_MONTH);
+  p.actionPoints.max = RANKS[p.rankId].monthlyActionPoints;
+  p.actionPoints.current = p.actionPoints.max;
+  (s as { version: number }).version = 2;
+}
+
 /** Complète une sauvegarde créée avant l'ajout des débats, de l'équipe et des objectifs */
-function migrate(s: GameState): GameState {
+export function migrate(s: GameState): GameState {
+  if ((s as { version: number }).version === 1) toMonths(s);
   s.debate ??= null;
   // Les objectifs « Rallier un courant » ont été retirés
   s.objectives = (s.objectives ?? []).filter(o => o.kind !== 'faction');
@@ -45,7 +110,7 @@ function migrate(s: GameState): GameState {
   s.press ??= null;
   s.mole ??= null;
   // Âge, santé, chapitres de vie, calendrier présidentiel
-  s.player.age ??= startAge(s.scenario) + (s.week - 1) / 52;
+  s.player.age ??= startAge(s.scenario) + (s.week - 1) / 12;
   s.player.health ??= initialHealth(s.player.age);
   s.milestones ??= [];
   s.death ??= null;
@@ -54,10 +119,14 @@ function migrate(s: GameState): GameState {
   s.government ??= null;
   s.intl ??= initIntl();
   s.project ??= null;
+  s.war ??= null;
+  s.vote ??= null;
+  s.voteHistory ??= [];
+  migrateLoans(s);
   if (!s.presidential) {
     s.presidential = initPresidential(s);
     // Une partie déjà avancée : le calendrier rattrape la date courante
-    while (s.presidential.nextWeek <= s.week) s.presidential.nextWeek += 260;
+    while (s.presidential.nextWeek <= s.week) s.presidential.nextWeek += 60;
   }
   // Une ancienne fin de partie devient un chapitre : la vie continue
   if (s.status === 'victoire' || s.status === 'defaite') {
@@ -68,7 +137,7 @@ function migrate(s: GameState): GameState {
       s.presidential.incumbentId = 'player';
       s.presidential.incumbentName = s.player.name;
       s.presidential.incumbentMandates = 1;
-      s.presidential.nextWeek = s.week + 260;
+      s.presidential.nextWeek = s.week + 60;
     }
     settleEndings(s);
   }
@@ -112,11 +181,11 @@ export class GameStateService {
   readonly roleLabel = computed(() => roleLabel(this.s()));
   readonly funds = computed(() => availableFunds(this.s()));
   readonly partySupport = computed(() => Math.round(partySupport(this.s())));
-  readonly date = computed(() => {
-    const d = new Date(START_DATE);
-    d.setDate(d.getDate() + (this.s().week - 1) * 7);
-    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  });
+  /** « mars 2029 » */
+  readonly date = computed(() => monthLabel(this.s().week));
+  /** Libellés de calendrier pour les gabarits */
+  month(turn: number): string { return monthLabel(turn); }
+  inMonth(turn: number): string { return inMonth(turn); }
 
   newGame(opts: NewGameOptions): void {
     const state = createInitialState(opts);
@@ -126,13 +195,13 @@ export class GameStateService {
       ? {
         id: 'news-0', week: 1, kind: 'actu', tone: 'neutral',
         title: `${state.player.name} nommé·e à Bercy`,
-        body: 'Premier dossier : la loi de finances 2028, à soumettre à l’Assemblée avant la semaine 4.',
+        body: 'Premier dossier : la loi de finances 2028, à soumettre à l’Assemblée avant avril 2027.',
       }
       : opts.scenario === 'presidentielle'
       ? {
         id: 'news-0', week: 1, kind: 'election', tone: 'neutral',
         title: `${state.player.name}, candidat·e ${ofParty(state.party.name)} à la présidentielle`,
-        body: 'Huit semaines de campagne. Première étape : bâtir votre programme en vingt questions.',
+        body: 'Cinq mois de campagne, vote en juin. Première étape : bâtir votre programme en vingt questions.',
       }
       : opts.scenario === 'infiltre' && state.mole
       ? {
@@ -184,7 +253,7 @@ export class GameStateService {
   }
 
   constructor() {
-    // Fermer l'onglet n'efface pas la dernière semaine jouée
+    // Fermer l'onglet n'efface pas le dernier mois joué
     if (typeof window !== 'undefined') window.addEventListener('pagehide', () => void this.flush());
   }
 
@@ -193,10 +262,14 @@ export class GameStateService {
     const store = this.auth.store();
     if (!store) return false;
     const state = await store.load(slot);
-    if (!state || state.version !== 1) return false;
+    if (!state || (state.version as number) > 2) return false;
     this.slot.set(slot);
-    this._state.set(migrate(state));
+    const weekly = (state.version as number) === 1;
+    const migrated = migrate(state);
+    this._state.set(migrated);
     this.saveStatus.set('saved');
+    // Ancienne partie hebdomadaire convertie au mois : on l'enregistre tout de suite
+    if (weekly) this.save(migrated);
     this.rememberResume(slot);
     return true;
   }

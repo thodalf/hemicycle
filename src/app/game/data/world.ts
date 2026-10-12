@@ -173,7 +173,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
   const skills = Object.fromEntries(DOMAINS.map(d => [d, 0])) as Record<Domain, number>;
 
   const state: GameState = {
-    version: 1,
+    version: 2,
     seed,
     rngState: seed,
     week: 1,
@@ -200,6 +200,9 @@ export function createInitialState(opts: NewGameOptions): GameState {
     government: null,
     intl: initIntl(),
     project: null,
+    war: null,
+    vote: null,
+    voteHistory: [],
     presidential: null as unknown as GameState['presidential'],
     player: {
       name: opts.name.trim() || 'Camille Martin',
@@ -210,7 +213,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
       skills,
       skillPoints: 1,
       finances: { personal: 4000, campaign: 0, campaignSpent: 0, legalCeiling: null },
-      actionPoints: { max: 4, current: 4 },
+      actionPoints: { max: 5, current: 5 },
       scandalExposure: 0,
       momentum: 0,
       stance: party.position,
@@ -219,6 +222,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
       pool: [],
       boosters: 1,
       assets: [],
+      loans: [],
       age: 0,
       health: 80,
       flags: {},
@@ -250,7 +254,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
 function startRoyalty(s: GameState): void {
   const p = s.player;
   p.rankId = 'chef_parti';
-  p.actionPoints = { max: 7, current: 7 };
+  p.actionPoints = { max: 8, current: 8 };
   p.stats = { popularity: 22, influence: 35, politicalCapital: 30, credibility: 30, stress: 20, energy: 90 };
   for (const domain of DOMAINS) p.dossiers[domain].mastery = 25;
   p.finances.personal = 20_000;
@@ -284,7 +288,7 @@ function startPress(s: GameState, kind: OutletKind): void {
 function startLodge(s: GameState): void {
   const p = s.player;
   p.rankId = 'conseiller_municipal';
-  p.actionPoints = { max: 5, current: 5 };
+  p.actionPoints = { max: 6, current: 6 };
   p.stats = { popularity: 22, influence: 20, politicalCapital: 20, credibility: 30, stress: 15, energy: 90 };
   for (const domain of DOMAINS) p.dossiers[domain].mastery = 20;
   p.finances.personal = 8_000;
@@ -294,11 +298,11 @@ function startLodge(s: GameState): void {
   };
 }
 
-/** Scénario court : ministre de l'Économie, premier budget à boucler en trois semaines */
+/** Scénario court : ministre de l'Économie, premier budget à boucler en trois mois */
 function startAtBercy(s: GameState): void {
   const p = s.player;
   p.rankId = 'ministre';
-  p.actionPoints = { max: 7, current: 7 };
+  p.actionPoints = { max: 8, current: 8 };
   p.stats = { popularity: 42, influence: 58, politicalCapital: 40, credibility: 50, stress: 25, energy: 90 };
   for (const domain of DOMAINS) p.dossiers[domain].mastery = 30;
   p.dossiers.economie.mastery = 55;
@@ -307,7 +311,7 @@ function startAtBercy(s: GameState): void {
   p.finances.personal = 15_000;
   s.party.factions.forEach(f => (f.supportForPlayer = 50));
   s.nationalBudget = {
-    year: 2028, pending: true, deadlineWeek: 4, nextDueWeek: 27,
+    year: 2028, pending: true, deadlineWeek: 4, nextDueWeek: 13,
     draft: {
       missions: Object.fromEntries(MISSIONS.map(m => [m.id, m.base])) as BudgetDraft['missions'],
       taxes: Object.fromEntries(TAXES.map(t => [t.id, t.base])) as BudgetDraft['taxes'],
@@ -316,11 +320,11 @@ function startAtBercy(s: GameState): void {
   };
 }
 
-/** Scénario court : candidat·e investi·e, campagne présidentielle de 8 semaines, programme à bâtir */
+/** Scénario court : candidat·e investi·e, campagne présidentielle de cinq mois, programme à bâtir */
 function startPresidentialCampaign(s: GameState): void {
   const p = s.player;
   p.rankId = 'candidat_presidence';
-  p.actionPoints = { max: 8, current: 8 };
+  p.actionPoints = { max: 9, current: 9 };
   p.stats = { popularity: 50, influence: 60, politicalCapital: 50, credibility: 52, stress: 25, energy: 90 };
   for (const domain of DOMAINS) p.dossiers[domain].mastery = 35;
   for (const domain of DOMAINS) p.skills[domain] = 1;
@@ -337,7 +341,7 @@ function startPresidentialCampaign(s: GameState): void {
     .slice(0, 3);
   leaders.forEach(n => (n.popularity = Math.max(n.popularity, 46)));
   s.elections.push({
-    id: 'elec-0', type: 'presidentielle', campaignStartWeek: 1, week: 9,
+    id: 'elec-0', type: 'presidentielle', campaignStartWeek: 1, week: 6,
     candidateIds: ['player', ...leaders.map(n => n.id)], resolved: false,
   });
   s.program = { answers: {}, validated: false };

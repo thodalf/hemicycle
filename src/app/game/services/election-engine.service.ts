@@ -1,4 +1,6 @@
 import { youngPartyMalus } from '../engine/founding';
+import { inMonth } from '../engine/calendar';
+import { campaignRefund } from '../engine/loans';
 import { campaignOpensAt, canDeclare, declareCandidacy, incumbentBonus, presidentialResult } from '../engine/presidency';
 import { Injectable, computed, inject } from '@angular/core';
 import { ElectionType, GameState, ScheduledElection } from '../models/game.models';
@@ -17,7 +19,7 @@ export interface Candidate {
 
 /**
  * Scrutins : programmation, ouverture de campagne (plafond légal),
- * sondages hebdomadaires, débat d'entre-deux-tours et dépouillement.
+ * sondages mensuels, débat d'entre-deux-tours et dépouillement.
  */
 @Injectable({ providedIn: 'root' })
 export class ElectionEngineService {
@@ -60,7 +62,7 @@ export class ElectionEngineService {
       d.player.finances.campaignSpent = 0;
       d.player.momentum = 0;
       pushNews(d, 'election', 'neutral', `La campagne des ${cfg.label.toLowerCase()} est ouverte`,
-        `Plafond légal des dépenses : ${cfg.legalCeiling.toLocaleString('fr-FR')} €. Vote en semaine ${election.week}.`);
+        `Plafond légal des dépenses : ${cfg.legalCeiling.toLocaleString('fr-FR')} €. Vote ${inMonth(election.week)}.`);
     }
 
     if (d.week >= election.campaignStartWeek && d.week < election.week) {
@@ -69,13 +71,13 @@ export class ElectionEngineService {
       if (d.week === election.week - 1) {
         const latest = d.polls.at(-1)!.results;
         const rival = election.candidateIds.filter(id => id !== 'player').sort((a, b) => latest[b] - latest[a])[0];
-        // Le débat décisif remplace tout autre débat programmé cette semaine
+        // Le débat décisif remplace tout autre débat programmé ce mois-ci
         const debate = createDebate(d, rng, 'debat_electoral', rival,
           election.type === 'primaire' ? d.party.position : undefined);
         if (debate) {
           d.debate = debate;
           pushNews(d, 'election', 'neutral', `Débat décisif face à ${debate.opponentName}`,
-            'Le vote a lieu la semaine prochaine. Ce débat peut tout faire basculer.');
+            'Le vote a lieu le mois prochain. Ce débat peut tout faire basculer.');
         }
       }
     }
@@ -93,11 +95,11 @@ export class ElectionEngineService {
     if (rule.election === 'presidentielle') return;
     if (d.player.flags['retired'] || Number(d.player.flags['ineligibleUntil'] ?? 0) > d.week) return;
     if (d.week < Number(d.player.flags['nextElectionWeek'] ?? 0)) return;
-    const campaign = ELECTIONS[rule.election].campaignWeeks;
+    const campaign = ELECTIONS[rule.election].campaignMonths;
     // La primaire se tient dans l'année qui précède la présidentielle
     if (rule.election === 'primaire') {
       const left = d.presidential.nextWeek - d.week;
-      if (d.player.flags['monarchie'] || left > 52 || left < campaign + ELECTIONS.presidentielle.campaignWeeks + 3) return;
+      if (d.player.flags['monarchie'] || left > 16 || left < campaign + ELECTIONS.presidentielle.campaignMonths + 1) return;
     } else if (d.presidential.declared && d.week + campaign + 1 >= campaignOpensAt(d)) {
       // Pas de scrutin local en travers de la campagne présidentielle
       return;
@@ -108,12 +110,12 @@ export class ElectionEngineService {
     const cfg = ELECTIONS[rule.election];
     const start = d.week + 1;
     const election: ScheduledElection = {
-      id: nextId(d, 'elec'), type: rule.election, campaignStartWeek: start, week: start + cfg.campaignWeeks,
+      id: nextId(d, 'elec'), type: rule.election, campaignStartWeek: start, week: start + cfg.campaignMonths,
       candidateIds: ['player', ...this.opponents(d, rule.election)], resolved: false,
     };
     d.elections.push(election);
     pushNews(d, 'election', 'positive', `Investiture obtenue : ${cfg.label}`,
-      `Votre parti vous investit. La campagne commence la semaine prochaine.`);
+      `Votre parti vous investit. La campagne commence le mois prochain.`);
   }
 
   private opponents(d: GameState, type: ElectionType): string[] {
@@ -170,6 +172,8 @@ export class ElectionEngineService {
 
     e.resolved = true;
     e.result = { firstRound, secondRound, winnerId };
+    // Remboursement forfaitaire de l'État (5 % des voix au premier tour)
+    campaignRefund(d, cfg.legalCeiling, firstRound['player'] ?? 0, invalidated);
     d.player.finances.legalCeiling = null;
     d.player.finances.campaignSpent = 0;
     d.player.momentum = 0;
@@ -198,7 +202,7 @@ export class ElectionEngineService {
       d.player.flags['nextElectionWeek'] = d.week + cfg.interval;
       pushNews(d, 'election', 'negative',
         invalidated ? 'Élection annulée par le juge électoral' : `Défaite aux ${cfg.label.toLowerCase()} (${firstRound['player']} %)`,
-        invalidated ? 'Vos comptes de campagne ont été rejetés. Victoire attribuée à votre adversaire.' : `Prochaine tentative possible en semaine ${d.week + cfg.interval}.`);
+        invalidated ? 'Vos comptes de campagne ont été rejetés. Victoire attribuée à votre adversaire.' : `Prochaine tentative possible ${inMonth(d.week + cfg.interval)}.`);
     }
   }
 }

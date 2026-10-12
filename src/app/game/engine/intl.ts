@@ -97,6 +97,7 @@ export function adjustIntl(d: GameState, e: Extract<Effect, { kind: 'intl' }>, p
 }
 
 export function weeklyIntl(d: GameState, rng: Rng): void {
+  if (d.war) d.intl.tension = clamp(d.intl.tension + 1.5);
   const w = d.intl;
   // Les relations retombent doucement vers leur niveau historique ; les tensions vers 30
   for (const p of PARTNERS) w.relations[p.id] = clamp(w.relations[p.id] + (p.start - w.relations[p.id]) * 0.01, -100, 100);
@@ -104,7 +105,7 @@ export function weeklyIntl(d: GameState, rng: Rng): void {
   w.prestige = clamp(w.prestige + (40 - w.prestige) * 0.01);
   if (w.crisis) {
     w.crisis.intensity = clamp(w.crisis.intensity + rng.range(-3, 3.5));
-    if (w.crisis.intensity <= 0 || d.week - w.crisis.since > 80) {
+    if (w.crisis.intensity <= 0 || d.week - w.crisis.since > 24) {
       pushNews(d, 'actu', 'neutral', 'La crise internationale s’éteint', `${w.crisis.name.charAt(0).toUpperCase()}${w.crisis.name.slice(1)} s’enlise puis s’apaise, sans la France.`);
       w.crisis = null;
     }

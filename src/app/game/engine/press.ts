@@ -9,8 +9,8 @@ import { Rng, clamp, nextId } from './rng';
  *  du propriétaire, promotions et licenciement.
  * ============================================================ */
 
-/** On ne grimpe pas plus vite qu'un grade toutes les huit semaines */
-export const MIN_WEEKS_PER_GRADE = 8;
+/** On ne grimpe pas plus vite qu'un grade tous les quatre mois */
+export const MIN_WEEKS_PER_GRADE = 4;
 
 export function pressReady(d: GameState): boolean {
   const p = d.press;
@@ -96,7 +96,7 @@ export function weeklyPress(d: GameState, rng: Rng): void {
   if (pressReady(d) && !pending(d, 'promotion_redaction')) {
     const next = PRESS_GRADES[p.grade + 1];
     d.pendingDecisions.push(decision(d, 'promotion_redaction', `Promotion : ${next}`,
-      `La direction de ${p.outlet} vous propose de devenir ${next.toLowerCase()}. Salaire : ${PRESS_SALARIES[p.grade + 1].toLocaleString('fr-FR')} € par semaine.`, [
+      `La direction de ${p.outlet} vous propose de devenir ${next.toLowerCase()}. Salaire : ${PRESS_SALARIES[p.grade + 1].toLocaleString('fr-FR')} € par mois.`, [
         { id: 'accepter', label: 'Accepter', effects: [{ kind: 'pressGrade', delta: 1 }, { kind: 'stat', stat: 'influence', delta: 3 },
           ...(p.grade >= 1 ? [{ kind: 'booster' as const, count: 1, reason: 'De nouveaux talents veulent rejoindre votre équipe.' }] : [])], outcome: 'Votre nom monte d’un cran dans l’ours du journal.' },
         { id: 'concurrent', label: 'Faire monter les enchères auprès d’un concurrent', effects: [{ kind: 'pressGrade', delta: 1 }, { kind: 'press', salaryPct: 25, independance: 5 }], outcome: 'Vous obtenez le poste et une belle augmentation.',
@@ -105,7 +105,7 @@ export function weeklyPress(d: GameState, rng: Rng): void {
   }
 
   // Licenciement quand plus personne ne vous lit ni ne vous écoute
-  if (p.audience < 8 && p.reputation < 25 && d.week - p.since > 8) {
+  if (p.audience < 8 && p.reputation < 25 && d.week - p.since > 5) {
     if (d.scenario === 'editorialiste') {
       d.status = 'defaite';
       d.endTitle = 'Remercié·e';

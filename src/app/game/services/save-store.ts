@@ -1,4 +1,5 @@
 import { GameState } from '../models/game.models';
+import { monthLabel } from '../engine/calendar';
 import { RANKS } from '../data/ranks';
 
 /* ============================================================
@@ -21,6 +22,8 @@ export interface SlotMeta {
   partyColor: string;
   status: string;
   age?: number;
+  /** « mars 2029 » (sauvegardes mensuelles) */
+  date?: string;
   updatedAt: number;
 }
 
@@ -43,7 +46,8 @@ export function metaOf(slot: number, s: GameState): SlotMeta {
   return {
     slot, name: s.player.name, rank: RANKS[s.player.rankId]?.label ?? s.player.rankId, week: s.week,
     scenario: SCENARIO_LABELS[s.scenario] ?? s.scenario, party: s.party.name, partyColor: s.party.color,
-    status, age: s.player.age ? Math.floor(s.player.age) : undefined, updatedAt: Date.now(),
+    status, age: s.player.age ? Math.floor(s.player.age) : undefined,
+    date: (s.version as number) === 2 ? monthLabel(s.week) : undefined, updatedAt: Date.now(),
   };
 }
 

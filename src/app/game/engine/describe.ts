@@ -112,6 +112,18 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'protest': return [{ text: 'Manifestation', tone: 'neutral' }];
     case 'decision': return [{ text: 'Décision à prendre', tone: 'neutral' }];
     case 'booster': return [{ text: `${e.count} booster`, tone: 'good' }];
+    case 'war': {
+      const out: EffectChip[] = [];
+      if (e.declare) out.push({ text: 'Vote du Parlement sur la guerre', tone: 'neutral' });
+      if (e.front) out.push({ text: `${n(e.front)} front`, tone: tone(e.front) });
+      if (e.support) out.push({ text: `${n(e.support)} soutien à la guerre`, tone: tone(e.support) });
+      if (e.losses) out.push({ text: `${e.losses.toLocaleString('fr-FR')} soldats tombés`, tone: 'bad' });
+      if (e.ally) out.push({ text: 'Tente de rallier un allié', tone: 'neutral' });
+      if (e.peace) out.push({ text: 'Fin de la guerre', tone: 'neutral' });
+      return out;
+    }
+    case 'vote': return [{ text: 'Scrutin à l’Assemblée', tone: 'neutral' }];
+    case 'loan': return [{ text: `Prêt de ${e.amount.toLocaleString('fr-FR')} €`, tone: 'neutral' }];
     default: return [];
   }
 }

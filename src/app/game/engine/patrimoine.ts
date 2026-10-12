@@ -3,6 +3,7 @@ import { ASSETS_BY_ID, AssetDef } from '../data/assets';
 import { RANKS, rankOrder } from '../data/ranks';
 import { Rng, clamp } from './rng';
 import { pushNews } from './effects';
+import { WEEKS_PER_MONTH } from './calendar';
 
 /* ============================================================
  *  Patrimoine : achats, crédit, revente, évolution des valeurs
@@ -10,7 +11,8 @@ import { pushNews } from './effects';
  * ============================================================ */
 
 export const MORTGAGE_DOWN = 0.2;
-const MORTGAGE_WEEKS = 520;
+/** Crédit immobilier sur dix ans */
+const MORTGAGE_MONTHS = 120;
 const MORTGAGE_COST = 1.2;
 
 const SELL_FEE: Record<string, number> = { immobilier: 0.07, vehicule: 0, luxe: 0.15, quotidien: 0.5, placement: 0.01 };
@@ -32,7 +34,7 @@ export function netWorth(d: GameState): number {
   return d.player.finances.personal + assetsValue(d) - assetsDebt(d);
 }
 
-/** Charges hebdomadaires : entretien + mensualités − loyers */
+/** Charges mensuelles : entretien + mensualités − loyers */
 export function weeklyCharges(d: GameState): { upkeep: number; loans: number; rent: number; net: number } {
   let upkeep = 0, loans = 0, rent = 0;
   for (const a of d.player.assets) {
@@ -47,9 +49,9 @@ export function weeklyCharges(d: GameState): { upkeep: number; loans: number; re
 export interface WealthImage {
   score: number;
   label: string;
-  /** Effet hebdomadaire sur la popularité */
+  /** Effet mensuel sur la popularité */
   popularity: number;
-  /** Exposition aux scandales ajoutée chaque semaine */
+  /** Exposition aux scandales ajoutée chaque mois */
   exposure: number;
   ostentation: number;
   explanation: string;
@@ -94,7 +96,7 @@ export function canBuy(d: GameState, def: AssetDef, mortgage = false): { ok: boo
 }
 
 export function mortgagePayment(def: AssetDef): number {
-  return Math.round(def.price * (1 - MORTGAGE_DOWN) * MORTGAGE_COST / MORTGAGE_WEEKS);
+  return Math.round(def.price * (1 - MORTGAGE_DOWN) * MORTGAGE_COST / MORTGAGE_MONTHS);
 }
 
 export function buyAsset(d: GameState, defId: string, mortgage: boolean): string[] {
@@ -106,7 +108,7 @@ export function buyAsset(d: GameState, defId: string, mortgage: boolean): string
   const debt = loan ? def.price - cash : 0;
   d.player.assets.push({
     uid: `as-${++d.idCounter}`, defId, value: def.price, debt,
-    payment: loan ? Math.round(debt * MORTGAGE_COST / MORTGAGE_WEEKS) : 0,
+    payment: loan ? Math.round(debt * MORTGAGE_COST / MORTGAGE_MONTHS) : 0,
     boughtWeek: d.week, boughtPrice: def.price,
   });
   pushNews(d, 'systeme', 'neutral', `Achat : ${def.label}`,
@@ -167,13 +169,13 @@ function gauss(rng: Rng): number {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
 
-/** Évolution hebdomadaire : valeurs, charges, crédits, bonus, image publique */
+/** Évolution mensuelle : valeurs, charges, crédits, bonus, image publique */
 export function weeklyAssets(d: GameState, rng: Rng): void {
   const p = d.player;
   const s = p.stats;
   for (const a of p.assets) {
     const def = assetDef(a);
-    a.value = Math.max(0, Math.round(a.value * (1 + def.drift / 52 + def.volatility * gauss(rng))));
+    a.value = Math.max(0, Math.round(a.value * (1 + def.drift / 12 + def.volatility * Math.sqrt(WEEKS_PER_MONTH) * gauss(rng))));
     if (a.debt > 0) {
       const pay = Math.min(a.debt, a.payment);
       p.finances.personal -= pay;
