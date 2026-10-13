@@ -61,6 +61,9 @@ import { PartyFormComponent } from '../party-form/party-form.component';
             <button type="button" class="scenario" [class.on]="scenario() === 'guerre_totale'" (click)="scenario.set('guerre_totale')">
               <strong>Guerre totale</strong><small>Président·e d’une France en guerre totale contre la Méridia : effort de guerre, moral de l’arrière, victoire ou effondrement. 56 ans.</small>
             </button>
+            <button type="button" class="scenario" [class.on]="scenario() === 'complot'" (click)="scenario.set('complot')">
+              <strong>Le complot</strong><small>Député·e menacé·e de mort après un rapport explosif : enquêter, se protéger, déjouer le complot avant qu’il ne frappe. 44 ans.</small>
+            </button>
             <button type="button" class="scenario" [class.on]="scenario() === 'infiltre'" (click)="scenario.set('infiltre')">
               <strong>Infiltré·e</strong><small>Encarté·e chez l’adversaire sous une fausse identité : espionner, saboter, transmettre… et ne jamais se faire prendre. 27 ans.</small>
             </button>

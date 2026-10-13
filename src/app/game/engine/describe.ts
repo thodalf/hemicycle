@@ -136,6 +136,14 @@ export function describeEffect(e: Effect): EffectChip[] {
     }
     case 'side': return e.stop ? [{ text: `Fin : ${e.label}`, tone: 'neutral' }] : [{ text: `+${e.amount.toLocaleString('fr-FR')} €/mois${e.months ? ` · ${e.months} mois` : ''}`, tone: 'good' }];
     case 'leaderPay': return [{ text: 'Votre salaire change', tone: 'neutral' }];
+    case 'plot': {
+      const out: EffectChip[] = [];
+      if (e.start) out.push({ text: 'Un complot se trame', tone: 'bad' });
+      if (e.danger) out.push({ text: `${n(e.danger)} imminence`, tone: tone(e.danger, true) });
+      if (e.intel) out.push({ text: `${n(e.intel)} enquête`, tone: tone(e.intel) });
+      if (e.vest) out.push({ text: 'Gilet pare-balles', tone: 'good' });
+      return out;
+    }
     case 'civil': {
       const out: EffectChip[] = [];
       if (e.join) out.push({ text: e.join === 'classement' ? 'Concours : le classement décide du corps' : 'Entrée dans la haute fonction publique', tone: 'good' });

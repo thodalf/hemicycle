@@ -59,6 +59,16 @@ Standalone components, zoneless, Signals partout.
   l’élu·e ou traitement du ministre, **salaire de chef·fe de parti** (versé par le parti, de 2 500 € à 6 500 € selon
   votre soutien interne, prélevé sur sa trésorerie), **traitement de haut fonctionnaire**, salaire de journaliste,
   loyers — avec la rémunération totale, la part mise de côté, les charges (équipe, prêts, biens) et le solde du mois.
+- **Complots** (`engine/plot.ts`, `components/plot-panel`, onglet **Sécurité**) : plus d’assassinat qui tombe sans
+  prévenir. Quand la menace se concrétise (selon le rang, les tensions, l’exposition, la guerre), un **complot** se noue
+  et se voit venir : menaces de mort, signes avant-coureurs chaque mois (lettres, filatures, colis suspect…), une jauge
+  d’**imminence** (à 100, la tentative) et une jauge d’**enquête** (à 30 le mobile, à 60 le commanditaire, à 100 le coup de
+  filet). Le panneau affiche votre protection et le risque mortel si l’attaque avait lieu ce mois-ci. Onglet Sécurité :
+  protection policière renforcée, saisir les services de renseignement, enquêteur privé, changer ses habitudes, annuler
+  les bains de foule, gilet pare-balles, appel à témoins, mettre sa famille à l’abri. Issue : complot déjoué, attentat
+  manqué, blessé·e mais vivant·e… ou pire, si l’on n’a rien fait. **Scénario « Le complot »** : député·e menacé·e de
+  mort après un rapport explosif (44 ans). Les parties perdues par un assassinat soudain, avant cette mise à jour,
+  reprennent vie au chargement : on se réveille à l’hôpital, protection renforcée.
 - **Salaires de l’équipe** (`engine/team-pay.ts`, panneau Équipe) : à l’embauche, on fait une **offre** (de 60 % à 200 %
   des prétentions ; en dessous, la chance d’accepter baisse, et un refus fait monter les prétentions de 5 %). En cours de
   contrat, boutons **− / +** pour augmenter ou raboter. Chaque recrue a un **moral** qui suit son salaire : sous 25, la
@@ -457,6 +467,7 @@ src/app/game/
 │   ├── alien.ts               Scénario Premier contact : phases, jauges, fins
 │   ├── civil.ts               Haute fonction publique : corps, grades, concours, disponibilité
 │   ├── phone.ts               Téléphone : SMS, appels, répertoire, soutiens et demandes d’argent
+│   ├── plot.ts                Complots : menaces, imminence, enquête, tentative, arrestations
 │   ├── team-pay.ts            Salaires et moral de l’équipe : offres, augmentations, démissions
 │   ├── side-income.ts         Revenus annexes et placements, incompatibilités
 │   ├── remuneration.ts        Rémunération du mois : mandat, parti, fonction publique, charges
@@ -511,6 +522,7 @@ src/app/game/
     ├── minigame/         Les quatorze mini-jeux (games/ : mot du jour, Départodoku, Trivial, protocole, plan de table, défense antiaérienne, déminage)
     ├── contact-panel/    Panneau du Premier contact (ciel, vaisseau, jauges)
     ├── pwa-banner/       Bandeaux d’installation, de mise à jour et hors ligne
+    ├── plot-panel/       Le complot en cours (imminence, enquête, protection, signes)
     ├── phone/            Le téléphone (messages, conversation, répertoire, appels)
     ├── fx-layer/         Calque d’animations 2D
     ├── emblem/           Illustrations animées des décisions

@@ -35,6 +35,7 @@ import { PresidencyPanelComponent } from '../presidency-panel/presidency-panel.c
 import { WarPanelComponent } from '../war-panel/war-panel.component';
 import { ALIEN_PHASES } from '../../engine/alien';
 import { PhoneComponent } from '../phone/phone.component';
+import { PlotPanelComponent } from '../plot-panel/plot-panel.component';
 import { PhoneService } from '../../services/phone.service';
 import { ContactPanelComponent } from '../contact-panel/contact-panel.component';
 import { AssemblyVoteComponent } from '../assembly-vote/assembly-vote.component';
@@ -52,7 +53,7 @@ import { Milestone } from '../../models/game.models';
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
-    WarPanelComponent, ContactPanelComponent, PhoneComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
+    WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
   template: `
     <header class="topbar">
@@ -117,6 +118,7 @@ import { Milestone } from '../../models/game.models';
         <app-team-panel />
       </div>
       <main class="col-main">
+        <app-plot-panel />
         <app-war-panel />
         @if (!game.s().presidency) { <app-presidency-panel /> }
         @if (program.pending()) {

@@ -100,7 +100,7 @@ export function lifeRisks(d: GameState): { natural: number; stress: number; acci
     natural: annualMortality(p.age, p.health) * stressFactor(p.stats.stress),
     stress: 1 - Math.pow(1 - stressRisk(d), 12),
     accident: accidentRisk(d) * 12,
-    assassination: assassinationRisk(d) * 12,
+    assassination: Math.min(1, assassinationRisk(d) * 8 * 12),
   };
 }
 
@@ -144,7 +144,7 @@ const ACCIDENT_TEXTS = {
   helico: 'L’hélicoptère qui le·la ramenait d’un déplacement s’écrase dans le brouillard.',
   chute: 'Une mauvaise chute dans un escalier, un dimanche ordinaire.',
 };
-const ASSASSINATION_TEXTS = [
+export const ASSASSINATION_TEXTS = [
   'Abattu·e à la sortie d’un meeting par un homme seul, aussitôt maîtrisé.',
   'Un attentat à la voiture piégée, revendiqué dans la nuit.',
   'Poignardé·e lors d’un bain de foule. Le pays est sous le choc.',
@@ -161,10 +161,7 @@ function accidentText(d: GameState, rng: Rng): string {
 /** Tirages de fin de vie du mois. Renvoie true si le personnage meurt. */
 function deathRoll(d: GameState, rng: Rng): boolean {
   const p = d.player;
-  if (rng.chance(assassinationRisk(d))) {
-    die(d, 'assassinat', rng.pick(ASSASSINATION_TEXTS));
-    return true;
-  }
+  // Plus d'assassinat soudain : la menace passe par un complot qui se voit venir (engine/plot.ts)
   if (rng.chance(accidentRisk(d))) {
     die(d, 'accident', accidentText(d, rng));
     return true;

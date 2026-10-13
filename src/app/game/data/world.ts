@@ -227,7 +227,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
       loans: [],
       age: 0,
       health: 80,
-      flags: {},
+      flags: { plotEra: 1 },
     },
     party: { ...party, factions: makeFactions(party.position), leaderNpcId: 'npc-vasseur', cohesion: 60 },
     otherParties: PARTIES.filter(p => p.id !== party.id),
@@ -247,6 +247,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
   if (opts.scenario === 'contact') startContact(state);
   if (opts.scenario === 'invasion') startInvasionScenario(state);
   if (opts.scenario === 'guerre_totale') startTotalWarScenario(state);
+  if (opts.scenario === 'complot') startComplotScenario(state);
   if (infiltre) startMole(state, home);
   if (custom && opts.customParty) setupFoundedPartyAtStart(state, opts.customParty);
   state.player.age = startAge(state.scenario);
@@ -256,6 +257,19 @@ export function createInitialState(opts: NewGameOptions): GameState {
     state.presidential = { nextWeek: 46, incumbentId: 'player', incumbentName: state.player.name, incumbentMandates: 1, incumbentPartyId: state.party.id, declared: false, parrainages: 0 };
   }
   return state;
+}
+
+/** Scénario « Le complot » : député·e menacé·e de mort, un complot à déjouer */
+function startComplotScenario(s: GameState): void {
+  const p = s.player;
+  p.rankId = 'depute';
+  p.actionPoints = { max: 7, current: 7 };
+  p.stats = { popularity: 38, influence: 35, politicalCapital: 30, credibility: 45, stress: 35, energy: 85 };
+  for (const domain of DOMAINS) p.dossiers[domain].mastery = 25;
+  p.dossiers.justice.mastery = 50;
+  p.dossiers.securite.mastery = 40;
+  p.finances.personal = 14_000;
+  p.flags['menace'] = 40;
 }
 
 /** Scénario « Guerre contre la Nation » : ministre de l'Intérieur quand la France est attaquée */

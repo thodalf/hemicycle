@@ -90,6 +90,7 @@ export class ActionPlannerService {
       if (a.category === 'contact') return !!s.alien;
       if (a.category === 'elysee') return !!s.presidency;
       if (a.category === 'arriere') return !!s.war;
+      if (a.category === 'securite') return !!s.plot;
       if (a.category === 'administration') return civilActive(s);
       if (a.category === 'international' && !intlRelevant(s)) return false;
       if (a.category === 'international' && rankOrder(a.minRank) >= rankOrder('ministre') && rankOrder(s.player.rankId) >= rankOrder('ministre') && !intlPower(s)) return false;

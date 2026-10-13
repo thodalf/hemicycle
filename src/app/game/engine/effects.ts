@@ -21,6 +21,7 @@ import { lawyerFactor } from './staff-perks';
 import { adjustHostile, adjustWar } from './war';
 import { adjustCivil } from './civil';
 import { adjustTeam } from './team-pay';
+import { adjustPlot } from './plot';
 import { adjustSide } from './side-income';
 import { setLeaderPay } from './remuneration';
 import { ownOrigin, scheduleVote } from './assembly';
@@ -270,6 +271,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       case 'team':
         summary.push(...adjustTeam(d, e));
+        break;
+      case 'plot':
+        summary.push(...adjustPlot(d, e, rng));
         break;
       case 'side':
         summary.push(...adjustSide(d, e));

@@ -1,6 +1,7 @@
 import { initHostile, startInvasion, startWar } from '../engine/war';
 import { welcomePhone } from '../engine/phone';
 import { migrateTeamPay } from '../engine/team-pay';
+import { reviveFromAssassination, startPlot } from '../engine/plot';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { DOMAINS, GameState, StatKey } from '../models/game.models';
@@ -129,6 +130,12 @@ export function migrate(s: GameState): GameState {
   s.alien ??= null;
   s.player.civil ??= null;
   migrateTeamPay(s);
+  s.plot ??= null;
+  // Avant les complots, l'assassinat tombait sans prévenir : ces parties-là reprennent vie
+  if (!s.player.flags['plotEra']) {
+    if (s.status === 'mort' && s.death?.cause === 'assassinat') reviveFromAssassination(s);
+    s.player.flags['plotEra'] = 1;
+  }
   s.intl.hostile ??= initHostile();
   migrateLoans(s);
   if (!s.presidential) {
@@ -201,6 +208,7 @@ export class GameStateService {
     ensurePartyFinance(state);
     welcomePhone(state);
     if (opts.scenario === 'invasion') startInvasion(state, 'karstanie');
+    if (opts.scenario === 'complot') startPlot(state, new Rng(state));
     if (opts.scenario === 'guerre_totale') { startWar(state, 'meridia', true, { total: true }); if (state.war) { state.war.front = 47; state.war.morale = 58; } }
     state.news.push(opts.scenario === 'bercy'
       ? {
@@ -225,6 +233,12 @@ export class GameStateService {
         id: 'news-0', week: 1, kind: 'actu', tone: 'neutral',
         title: `${state.player.name} fait ses débuts à ${state.press.outlet}`,
         body: 'Pigiste pour commencer. Objectif : diriger la rédaction et faire l’opinion (audience 65, influence 60).',
+      }
+      : opts.scenario === 'complot'
+      ? {
+        id: 'news-0', week: 1, kind: 'actu', tone: 'negative',
+        title: `${state.player.name}, député·e sous menace`,
+        body: 'Depuis votre rapport sur les marchés truqués, les menaces se multiplient. Quelqu’un veut votre mort. Enquêter, se protéger, tenir : déjouer le complot avant qu’il ne frappe.',
       }
       : opts.scenario === 'invasion'
       ? {
@@ -294,11 +308,12 @@ export class GameStateService {
     if (!state || (state.version as number) > 2) return false;
     this.slot.set(slot);
     const weekly = (state.version as number) === 1;
+    const wasDead = state.status === 'mort';
     const migrated = migrate(state);
     this._state.set(migrated);
     this.saveStatus.set('saved');
-    // Ancienne partie hebdomadaire convertie au mois : on l'enregistre tout de suite
-    if (weekly) this.save(migrated);
+    // Ancienne partie hebdomadaire convertie au mois, ou partie ressuscitée : on l'enregistre tout de suite
+    if (weekly || (wasDead && migrated.status !== 'mort')) this.save(migrated);
     this.rememberResume(slot);
     return true;
   }

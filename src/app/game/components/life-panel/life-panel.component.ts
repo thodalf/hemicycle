@@ -22,8 +22,8 @@ import { healthLabel, lifeRisks, lifeSummary } from '../../engine/life';
         <div class="b-row"><span>Maladie, vieillesse</span><strong class="mono">{{ risks().natural * 100 | number: '1.1-1' }} %</strong></div>
         <div class="b-row" [class.hot]="risks().stress > 0.005"><span>Surmenage (stress {{ game.stats().stress | number: '1.0-0' }})</span><strong class="mono">{{ risks().stress * 100 | number: '1.1-1' }} %</strong></div>
         <div class="b-row"><span>Accident</span><strong class="mono">{{ risks().accident * 100 | number: '1.2-2' }} %</strong></div>
-        <div class="b-row"><span>Assassinat</span><strong class="mono">{{ risks().assassination * 100 | number: '1.2-2' }} %</strong></div>
-        <p class="muted tip">Le stress tue : au-delà de 55, il abîme la santé, double la mortalité naturelle à 100 et expose à l’infarctus. L’épuisement et l’âge abîment aussi la santé ; bilans, sport et cures (onglet Santé) l’entretiennent. Les hautes fonctions exposent aux attentats ; une voiture de sport, aux accidents.</p>
+        <div class="b-row"><span>Complot contre vous</span><strong class="mono">{{ risks().assassination * 100 | number: '1.2-2' }} %</strong></div>
+        <p class="muted tip">Le stress tue : au-delà de 55, il abîme la santé, double la mortalité naturelle à 100 et expose à l’infarctus. L’épuisement et l’âge abîment aussi la santé ; bilans, sport et cures (onglet Santé) l’entretiennent. Les hautes fonctions exposent aux complots, qui se voient venir : on enquête et on se protège avant qu’ils ne frappent ; une voiture de sport, aux accidents.</p>
       </details>
 
       @if (milestones().length) {

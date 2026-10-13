@@ -1547,6 +1547,56 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'dossier', domain: '$domain', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'cohesion', delta: -1 }],
   },
 
+  // ── Sécurité (pendant un complot) ──────────────────────
+  {
+    id: 'plot_police', label: 'Exiger une protection policière renforcée', category: 'securite', minRank: 'militant',
+    description: 'Deux puis quatre policiers, une voiture banalisée, des itinéraires validés par le commissariat.',
+    cost: { ap: 1, energy: 4 }, cooldown: 2,
+    effects: [{ kind: 'flagAdd', key: 'protection', delta: 30 }, { kind: 'plot', intel: 3 }, { kind: 'stat', stat: 'stress', delta: -2 }],
+  },
+  {
+    id: 'plot_dgsi', label: 'Saisir les services de renseignement', category: 'securite', minRank: 'depute',
+    description: 'Le dossier remonte à la DGSI : écoutes, filatures, recoupements. Si quelqu’un peut les trouver, c’est eux.',
+    cost: { ap: 2, energy: 6, politicalCapital: 10 }, cooldown: 3,
+    effects: [{ kind: 'plot', intel: 15, danger: -3 }],
+  },
+  {
+    id: 'plot_detective', label: 'Engager un enquêteur privé', category: 'securite', minRank: 'militant',
+    description: 'Un ancien policier, discret et tenace, qui remonte les pistes que la police n’a pas le temps de suivre.',
+    cost: { ap: 1, energy: 4, money: 2500 }, cooldown: 3, personalOnly: true,
+    effects: [{ kind: 'plot', intel: 10 }],
+  },
+  {
+    id: 'plot_routine', label: 'Changer ses habitudes et ses trajets', category: 'securite', minRank: 'militant',
+    description: 'Plus jamais le même chemin, plus jamais la même heure. Épuisant, mais on devient insaisissable.',
+    cost: { ap: 1, energy: 10 }, cooldown: 2,
+    effects: [{ kind: 'plot', danger: -8 }, { kind: 'stat', stat: 'stress', delta: 3 }],
+  },
+  {
+    id: 'plot_discretion', label: 'Annuler les bains de foule', category: 'securite', minRank: 'militant',
+    description: 'Plus de marchés, plus de meetings en plein air pour un temps. Les militants comprennent… à moitié.',
+    cost: { ap: 1, energy: 2 }, cooldown: 2,
+    effects: [{ kind: 'plot', danger: -6 }, { kind: 'stat', stat: 'popularity', delta: -2 }],
+  },
+  {
+    id: 'plot_gilet', label: 'Porter un gilet pare-balles en public', category: 'securite', minRank: 'militant',
+    description: 'Lourd, chaud, visible sous la veste. Mais il peut tout changer.',
+    cost: { ap: 1, energy: 3, money: 800 }, cooldown: 12, personalOnly: true,
+    effects: [{ kind: 'plot', vest: true }, { kind: 'stat', stat: 'stress', delta: 2 }],
+  },
+  {
+    id: 'plot_appel', label: 'Lancer un appel à témoins', category: 'securite', minRank: 'militant',
+    description: 'Vous racontez les menaces à la télévision. Les témoignages affluent… et le commanditaire sait qu’on le cherche.',
+    cost: { ap: 1, energy: 6 }, cooldown: 3,
+    effects: [{ kind: 'plot', intel: 8, danger: 5 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  },
+  {
+    id: 'plot_famille', label: 'Mettre sa famille à l’abri', category: 'securite', minRank: 'militant',
+    description: 'Les enfants chez leurs grands-parents, loin d’ici, le temps que ça passe.',
+    cost: { ap: 1, energy: 4, money: 1500 }, cooldown: 6, personalOnly: true,
+    effects: [{ kind: 'stat', stat: 'stress', delta: -6 }, { kind: 'plot', danger: -3 }],
+  },
+
   // ── Revenus annexes ────────────────────────────────────
   {
     id: 'enseignement_univ', label: 'Enseigner à l’université (vacations)', category: 'argent', minRank: 'militant', requires: { noGovernment: true },
@@ -2031,6 +2081,7 @@ export function effectValue(e: Effect): number {
     case 'team': return (e.morale ?? 0) * 0.1;
     case 'side': return e.stop ? 0 : e.amount / (e.months ? 600 : 300);
     case 'leaderPay': return 0;
+    case 'plot': return 0.4 * (e.intel ?? 0) - 0.4 * (e.danger ?? 0) + (e.vest ? 3 : 0);
     case 'civil': return (e.join ? 8 : 0) + (e.grade ?? 0) * 6 + (e.study ?? 0) * 0.3;
     default: return 0;
   }

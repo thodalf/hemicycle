@@ -46,11 +46,12 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'securite' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
   contact: 'Premier contact',
+  securite: 'Sécurité',
   guerre: 'Guerre',
   arriere: 'Effort de guerre',
   administration: 'Administration',
@@ -69,7 +70,7 @@ export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   repos: 'Repos',
 };
 
-export type ScenarioId = 'carriere' | 'presidentielle' | 'bercy' | 'royaute' | 'franc_macon' | 'editorialiste' | 'infiltre' | 'contact' | 'invasion' | 'guerre_totale';
+export type ScenarioId = 'carriere' | 'presidentielle' | 'bercy' | 'royaute' | 'franc_macon' | 'editorialiste' | 'infiltre' | 'contact' | 'invasion' | 'guerre_totale' | 'complot';
 
 export type ContactType = 'lobby' | 'industriel' | 'syndicat' | 'journaliste' | 'association';
 export type FactionId = 'ligne_dure' | 'moderes' | 'reformistes';
@@ -237,6 +238,7 @@ export type Effect =
   | { kind: 'team'; recruitId?: string; morale?: number; salaryPct?: number; all?: boolean; leave?: boolean }
   | { kind: 'side'; id: string; label: string; amount: number; months?: number; exposure?: number; scale?: StatKey; mult?: number; compatible?: boolean; stop?: boolean }
   | { kind: 'leaderPay'; party?: number; president?: number }
+  | { kind: 'plot'; danger?: number; intel?: number; start?: boolean; vest?: boolean }
   | { kind: 'vote'; billId?: string; own?: boolean }
   | { kind: 'alien'; comprehension?: number; confiance?: number; panique?: number; rivalite?: number; join?: boolean; gift?: boolean }
   | { kind: 'minigame'; gameId: string; reward: Effect[]; penalty?: Effect[]; title?: string }
@@ -983,6 +985,7 @@ export interface GameState {
   /** Premier contact avec une civilisation extraterrestre */
   alien: AlienState | null;
   phone?: PhoneState;
+  plot?: PlotState | null;
   player: Player;
   party: Party;
   otherParties: PartyInfo[];
@@ -1055,6 +1058,23 @@ export interface PhoneState {
   callsWeek: number;
   /** Dernier appel à chacun (mois) */
   called: Record<string, number>;
+}
+
+// ── Complot ─────────────────────────────────────────────────
+
+export interface PlotState {
+  since: number;
+  /** Imminence du passage à l'acte (0-100) : à 100, la tentative */
+  danger: number;
+  /** Ce que vous savez du complot (0-100) : à 100, arrestations */
+  intel: number;
+  /** Profil du commanditaire (révélé par l'enquête) */
+  suspect: string;
+  motive: string;
+  /** Signes avant-coureurs */
+  signs: { week: number; text: string }[];
+  /** Mesures de protection prises : gilet pare-balles, trajets changés… */
+  vest?: boolean;
 }
 
 export interface WarLogEntry {
