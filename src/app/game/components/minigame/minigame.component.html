@@ -38,6 +38,9 @@
                 @case ('applaudimetre') { Touche Espace ou Entrée pour lancer la phrase. }
                 @case ('tri') { Flèches gauche et droite au clavier. }
                 @case ('poignees') { Touches 1 à 9 au clavier, ou au doigt. }
+                @case ('mot') { Tapez au clavier ou sur le clavier à l’écran, Entrée pour valider. }
+                @case ('quiz') { Touches 1 à 4 au clavier. }
+                @case ('grille') { Tapez un nom ou un numéro de département. }
               }
             </p>
             <div class="go">
@@ -47,7 +50,7 @@
           </div>
         } @else {
           <div class="play">
-            @if (def.kind !== 'tournee') { <div class="live mono">Score {{ liveScore() * 100 | number: '1.0-0' }}</div> }
+            @if (def.kind !== 'tournee' && def.kind !== 'mot' && def.kind !== 'quiz' && def.kind !== 'grille') { <div class="live mono">Score {{ liveScore() * 100 | number: '1.0-0' }}</div> }
             @switch (def.kind) {
               @case ('poignees') {
                 <div class="grid9">
@@ -138,6 +141,9 @@
                   <button class="btn" (click)="homeward()">Rentrer à Paris (terminer)</button>
                 </div>
               }
+              @case ('mot') { <app-mot-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('grille') { <app-grille-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('quiz') { <app-quiz-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('pointage') {
                 <svg class="mini-hemi" viewBox="0 0 100 58">
                   @for (s of seats(); track $index) {

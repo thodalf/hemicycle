@@ -42,13 +42,20 @@ Standalone components, zoneless, Signals partout.
   (municipales), 5 (législatives, présidentielle) et 3 mois (primaire) ; présidentielle tous les 60 mois. Les anciennes
   parties hebdomadaires sont converties à l’ouverture (dates, projets, salaires, crédits).
 - **Mini-jeux** (`data/minigames.ts`, `engine/minigame.ts`, `components/minigame`) : une trentaine d’actions et une
-  vingtaine d’événements se jouent. Sept mécaniques, déclinées en thèmes : **poignées de main** (bain de foule, tractage,
+  vingtaine d’événements se jouent. Dix mécaniques, déclinées en thèmes : **poignées de main** (bain de foule, tractage,
   selfies, fête du village, dédicace — attraper les bonnes cibles, éviter les tomates), **applaudimètre** (discours,
   allocution, joute d’éloquence, festival, discours aux étoiles — lancer la phrase quand le curseur est dans la zone), **mémoire** (réviser ses fiches, décoder des glyphes extraterrestres),
   **tri** (courrier de la permanence, questions au gouvernement, matinale radio, live sur les réseaux, consultation citoyenne, message à envoyer aux étoiles), **marchandage**
   (hausse salariale, mécène, partage des circonscriptions, traité avec les Vélari — trouver le seuil caché en cinq offres),
   **pointage** (rallier les députés indécis) et **tournée** (tournée des mairies, tournée de campagne en bus : tracer sa
-  route sur la carte de France, de village en village, avant la panne sèche, puis rentrer à Paris). Le score fixe le palier : brillant (gains ×1,5),
+  route sur la carte de France, de village en village, avant la panne sèche, puis rentrer à Paris).
+  Trois jeux de réflexion, inspirés des jeux du quotidien : **le mot du jour** (façon Sutom : un mot du vocabulaire
+  politique en six essais, première lettre donnée, rouge pour une lettre bien placée, jaune pour une lettre mal placée,
+  clavier AZERTY à l’écran), **Départodoku** (façon Metrodoku : une grille 3 × 3 croisant trois régions et trois
+  propriétés — littoral, frontalier, numéro pair, initiale, nom composé, préfecture chef-lieu de région… — à remplir
+  avec les 96 départements métropolitains, chacun une seule fois, en douze essais) et **Trivial politique** (façon
+  Trivial Pursuit : un dé tire une couleur parmi six catégories — institutions, histoire, géographie, économie, Europe
+  et monde, culture politique —, chaque bonne réponse rapporte un camembert, neuf questions au plus). Le score fixe le palier : brillant (gains ×1,5),
   réussi, mitigé (moitié), raté (presque rien, et des dégâts). La fatigue et le stress rendent le jeu plus dur. On peut
   laisser faire l’équipe (résultat moyen) ; pendant un projet au long cours, elle s’en charge. Clavier pris en charge.
 - **Nouvelles actions** : fête du village, débat devant des lycéens, nuit blanche sur un dossier, matinale radio,
@@ -62,6 +69,9 @@ Standalone components, zoneless, Signals partout.
   circonscription à vélo. **Encore des événements** : micro tendu au festival (été), tempête de neige (hiver), Téléthon
   (décembre), bloqué·e dans le métro, militant devenu viral, mariage d’un adversaire, plume fantôme, chien adopté à la
   permanence, sondage coquille, dîner de famille houleux, permanence cambriolée, cahier de doléances qui déborde.
+  Avec les jeux de réflexion : actions « Mot du jour à la radio », « Soirée quiz au bistrot », « Réviser la carte de
+  France », « Jeu télévisé au profit d’une association » ; événements « Invité·e d’un jeu télévisé », « L’interro surprise
+  sur la carte de France », « Le grand quiz de la rentrée politique » (septembre).
 - **Votes à l’Assemblée sur l’actualité** (`engine/assembly.ts`, `data/bills.ts`, `components/assembly-vote`,
   `components/hemicycle`) : chaque mois, un texte lié au **sujet à la une** peut être inscrit à l’ordre du jour (30 textes
   sur les dix domaines, de gauche, de droite ou transpartisans). Projet de loi du gouvernement, proposition de la
@@ -316,6 +326,8 @@ src/app/game/
 │   ├── assets.ts              Biens achetables (patrimoine)
 │   ├── press.ts               Médias, grades et salaires du scénario Éditorialiste
 │   ├── alien-events.ts        Événements du Premier contact (et le signal en partie normale)
+│   ├── departements.ts        Les 96 départements et les critères de la grille Départodoku
+│   ├── quiz.ts                Questions du Trivial politique, par catégorie
 │   ├── staff.ts               Membres d’équipe recrutables
 │   └── world.ts               Partis, PNJ, contacts, état initial
 ├── engine/                    Fonctions pures, testables sans Angular
@@ -385,7 +397,7 @@ src/app/game/
     ├── assembly-vote/    Scrutin public : texte, pointage, interventions, vote, résultat
     ├── hemicycle/        Hémicycle SVG de 577 sièges, dépouillement animé
     ├── bank/             Banque & emprunts
-    ├── minigame/         Les sept mini-jeux
+    ├── minigame/         Les dix mini-jeux (games/ : mot du jour, Départodoku, Trivial politique)
     ├── contact-panel/    Panneau du Premier contact (ciel, vaisseau, jauges)
     ├── fx-layer/         Calque d’animations 2D
     ├── emblem/           Illustrations animées des décisions

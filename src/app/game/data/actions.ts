@@ -1365,6 +1365,30 @@ const RAW_ACTIONS: ActionDefinition[] = [
     cost: { ap: 1, energy: 16 }, cooldown: 4,
     effects: [{ kind: 'health', delta: 2 }, { kind: 'flagAdd', key: 'hygiene', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
   },
+  {
+    id: 'mot_radio', minigame: 'mot_du_jour', label: 'Jouer au « mot du jour » à la radio', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'La radio locale vous défie en direct : six essais pour trouver le mot. Les auditeurs adorent les élus qui jouent le jeu.',
+    cost: { ap: 1, energy: 5 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'stat', stat: 'stress', delta: -2 }],
+  },
+  {
+    id: 'quiz_bistrot', minigame: 'trivial', label: 'Soirée quiz au bistrot', category: 'terrain', minRank: 'militant',
+    description: 'Le quiz du jeudi au café du coin : votre équipe contre les habitués. Six camemberts à décrocher.',
+    cost: { ap: 1, energy: 7, money: 60 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'cohesion', delta: 1 }, { kind: 'stat', stat: 'stress', delta: -2 }],
+  },
+  {
+    id: 'reviser_carte', minigame: 'departodoku', label: 'Réviser la carte de France', category: 'dossiers', minRank: 'militant',
+    description: 'Préfectures, régions, frontières : un élu qui sèche sur un département, c’est une vidéo virale assurée.',
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
+    effects: [{ kind: 'dossier', domain: 'territoires', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+  {
+    id: 'jeu_tele', minigame: 'quiz_tele', label: 'Jeu télévisé au profit d’une association', category: 'medias', minRank: 'depute',
+    description: 'Prime time, plateau lumineux, chèque géant : chaque camembert rapporte des dons à l’association de votre choix.',
+    cost: { ap: 2, energy: 12 }, cooldown: 4,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
 
   // ── Assemblée : textes sur l'actualité ─────────────────
   {

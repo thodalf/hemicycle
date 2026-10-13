@@ -395,4 +395,38 @@ export const EXTRA_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'jeu_motus', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Invité·e d’un jeu télévisé',
+      context: 'Un jeu de lettres culte vous invite pour une spéciale « élus ». Le présentateur promet de ne pas vous ménager.',
+      choices: [
+        c('jouer', 'Jouer le jeu', [play('motus_tele', 'Le mot en six essais', [s('popularity', 4), s('influence', 1)], [s('popularity', -2), s('credibility', -1)])], 'La boule noire vous attend.'),
+        c('decliner', 'Décliner poliment', [], 'Un autre élu prend votre place. Il gagne.'),
+      ],
+    }),
+  },
+  {
+    tag: 'interro_departements', weight: 0.7, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'L’interro surprise sur la carte de France',
+      context: 'En direct, un chroniqueur sort une grille : « Citez-moi un département frontalier en Occitanie… » La séquence peut devenir virale, dans un sens ou dans l’autre.',
+      choices: [
+        c('relever', 'Relever le défi', [play('interro_carte', 'La carte de France en direct', [s('credibility', 3), s('popularity', 2), { kind: 'dossier', domain: 'territoires', delta: 2 }], [s('credibility', -4), s('popularity', -2), s('stress', 3)])], 'Vous retroussez vos manches.'),
+        c('esquiver', 'Botter en touche avec humour', [s('credibility', -1)], '« Je préfère parler des Français que réciter des numéros. » On vous trouve fuyant·e.'),
+      ],
+    }),
+  },
+  {
+    tag: 'quiz_rentree', weight: 1.1, minRank: 'conseiller_municipal',
+    eligible: d => monthIndex(d.week) === 8,
+    build: () => ({
+      title: 'Le grand quiz de la rentrée politique',
+      context: 'Comme chaque septembre, une chaîne réunit des élus pour un quiz sur les institutions, l’histoire et la géographie. Une bonne note, et l’on vous trouve sérieux·se.',
+      choices: [
+        c('jouer', 'Participer', [play('quiz_tele', 'Le quiz de la rentrée', [s('credibility', 3), s('popularity', 3)], [s('credibility', -3), s('popularity', -1)])], 'Le buzzer est chaud.'),
+        c('non', 'Laisser la place aux autres', [], 'Vous regardez l’émission chez vous. Vous auriez su répondre.'),
+      ],
+    }),
+  },
 ];

@@ -1,10 +1,10 @@
 /* ============================================================
- *  Mini-jeux : six mécaniques, déclinées en thèmes.
+ *  Mini-jeux : dix mécaniques, déclinées en thèmes.
  *  Le score (0 à 1) décide de l'ampleur des gains de l'action
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz';
 
 export interface TriItem {
   text: string;
@@ -35,7 +35,23 @@ export interface MinigameDef {
   max?: number;
   /** Applaudimètre : les phrases du discours */
   lines?: string[];
+  /** Mot : la liste des mots à deviner (majuscules, sans accents) */
+  words?: string[];
+  /** Quiz : catégories retenues (toutes par défaut) */
+  cats?: string[];
 }
+
+/** Vocabulaire politique pour le « mot du jour » (6 à 10 lettres) */
+export const POLITICAL_WORDS = [
+  'SCRUTIN', 'MANDAT', 'MOTION', 'CENSURE', 'BUDGET', 'PREFET', 'MINISTRE', 'DEPUTE', 'ELECTION', 'CAMPAGNE', 'MAIRIE',
+  'REFERENDUM', 'REPUBLIQUE', 'PARLEMENT', 'HEMICYCLE', 'AMENDEMENT', 'MAJORITE', 'OPPOSITION', 'COALITION', 'SONDAGE',
+  'MEETING', 'TRACTAGE', 'MILITANT', 'CONGRES', 'DECRET', 'ORDONNANCE', 'CABINET', 'CANDIDAT', 'BULLETIN', 'ISOLOIR',
+  'ELECTEUR', 'SUFFRAGE', 'BALLOTTAGE', 'PRIMAIRE', 'PROGRAMME', 'DISCOURS', 'QUESTEUR', 'RAPPORTEUR', 'COMMISSION',
+  'SCANDALE', 'REFORME', 'FISCALITE', 'RETRAITE', 'LAICITE', 'CITOYEN', 'NATION', 'ELYSEE', 'MATIGNON', 'TRIBUNE',
+  'PERCHOIR', 'ASSEMBLEE', 'PARRAINAGE', 'ABSTENTION', 'VOTANT', 'CONSEIL', 'CANTON', 'REGION', 'COMMUNE', 'PREFECTURE',
+  'SYNDICAT', 'MANIFESTE', 'ALLIANCE', 'TRAHISON', 'RALLIEMENT', 'LOBBYISTE', 'POPULISME', 'CENTRISTE', 'FRONDEUR',
+  'MINISTERE', 'SECRETAIRE', 'GOUVERNER', 'DEMOCRATIE', 'MARIANNE', 'SENATEUR', 'DOLEANCES',
+];
 
 export const MINIGAMES: MinigameDef[] = [
   {
@@ -218,6 +234,32 @@ export const MINIGAMES: MinigameDef[] = [
     id: 'festival', kind: 'applaudimetre', icon: '🎸', title: 'Sur la scène du festival',
     rule: 'Le groupe vous tend le micro : chaque réplique au bon moment, sinon les huées.',
     lines: ['« Bonsoir le festival ! »', '« Vous êtes magnifiques ! »', '« La culture, c’est ce qui nous rassemble ! »', '« Je laisse la place aux artistes… »', '« Merci et bon concert ! »'],
+  },
+  {
+    id: 'mot_du_jour', kind: 'mot', icon: '🔤', title: 'Le mot du jour',
+    rule: 'Trouvez le mot politique en six essais. Rouge : bonne lettre bien placée ; jaune : bonne lettre mal placée.',
+    words: POLITICAL_WORDS,
+  },
+  {
+    id: 'motus_tele', kind: 'mot', icon: '📺', title: 'Le jeu télévisé',
+    rule: 'Le présentateur vous tend la première lettre : six essais pour trouver le mot, sous les yeux de la France entière.',
+    words: POLITICAL_WORDS,
+  },
+  {
+    id: 'departodoku', kind: 'grille', icon: '🗺️', title: 'Départodoku',
+    rule: 'Remplissez la grille : chaque case attend un département qui vérifie sa ligne et sa colonne. Un département ne sert qu’une fois.',
+  },
+  {
+    id: 'interro_carte', kind: 'grille', icon: '🎙️', title: 'L’interro surprise',
+    rule: 'Le journaliste vous teste en direct sur la carte de France : un département par case, sans vous tromper trop souvent.',
+  },
+  {
+    id: 'trivial', kind: 'quiz', icon: '🧀', title: 'Trivial politique',
+    rule: 'Lancez le dé, répondez à la question de la couleur tirée : chaque bonne réponse vous rapporte un camembert. Six à gagner.',
+  },
+  {
+    id: 'quiz_tele', kind: 'quiz', icon: '🎬', title: 'Questions pour un·e élu·e',
+    rule: 'Le grand quiz de la rentrée politique : une bonne réponse, un camembert. Les candidats adverses guettent vos erreurs.',
   },
   {
     id: 'consultation', kind: 'tri', icon: '🗳️', title: 'Consultation citoyenne',

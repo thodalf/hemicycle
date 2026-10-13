@@ -4,6 +4,9 @@ import { MinigameDef, TriItem } from '../../data/minigames';
 import { TIER_LABELS, tierOf } from '../../engine/minigame';
 import { MinigameService } from '../../services/minigame.service';
 import { FxService } from '../../services/fx.service';
+import { MotGameComponent } from './games/mot-game.component';
+import { GrilleGameComponent } from './games/grille-game.component';
+import { QuizGameComponent } from './games/quiz-game.component';
 
 type Phase = 'intro' | 'play' | 'over';
 
@@ -26,12 +29,13 @@ const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.
 const DURATION = 15000;
 
 /**
- * Les six mini-jeux : poignées de main, applaudimètre, mémoire, tri,
- * marchandage, pointage. Chacun produit un score de 0 à 1.
+ * Les dix mini-jeux : poignées de main, applaudimètre, mémoire, tri,
+ * marchandage, pointage, tournée, mot du jour, grille, quiz.
+ * Chacun produit un score de 0 à 1.
  */
 @Component({
   selector: 'app-minigame',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent],
   templateUrl: './minigame.component.html',
   styleUrl: './minigame.component.scss',
 })
@@ -94,6 +98,8 @@ export class MinigameComponent {
       case 'marchandage': this.startDeal(def); break;
       case 'pointage': this.startPointage(); break;
       case 'tournee': this.startTournee(); break;
+      // Mot, grille, quiz : chaque jeu gère son propre déroulé
+      default: this.stop(); this.timeLeft.set(1);
     }
   }
 
@@ -102,7 +108,17 @@ export class MinigameComponent {
     this.svc.delegate();
   }
 
-  private end(score: number): void {
+  /** Progression remontée par les jeux autonomes (mot, grille, quiz) */
+  protected onProgress(p: { live: number; time: number }): void {
+    this.liveScore.set(p.live);
+    this.timeLeft.set(p.time);
+  }
+
+  protected miss(): void {
+    this.bump();
+  }
+
+  protected end(score: number): void {
     this.stop();
     this.phase.set('over');
     const s = Math.max(0, Math.min(1, score));
