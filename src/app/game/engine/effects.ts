@@ -29,6 +29,7 @@ import { queueMinigame } from './minigame';
 import { adjustAlien } from './alien';
 import { addNumber, grantNumber } from './phone';
 import { adjustScheme } from './schemes';
+import { adjustZombie } from './zombie';
 
 /* ============================================================
  *  Moteur d'effets — fonctions pures appliquées sur un brouillon
@@ -410,6 +411,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         if (got) summary.push(got);
         break;
       }
+      case 'zombie':
+        summary.push(...adjustZombie(d, e));
+        break;
       case 'scheme':
         summary.push(...adjustScheme(d, e, ctx, rng));
         break;

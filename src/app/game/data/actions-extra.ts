@@ -53,12 +53,89 @@ const INTRIGUES: ActionDefinition[] = [
     effects: [{ kind: 'scheme', secrecy: 15 }],
   },
   {
-    id: 'numero_personnalite', label: 'Obtenir le numéro d’une personnalité', category: 'reseau', minRank: 'militant', target: 'npc',
+    id: 'numero_personnalite', label: 'Obtenir le numéro d’une personnalité', category: 'intrigue', minRank: 'militant', target: 'npc',
     description: 'Un cocktail, un conseiller complaisant, un ancien camarade de promo : son portable finit dans votre téléphone.',
     cost: { ap: 1, energy: 4 },
     effects: [{ kind: 'phoneBook', npcId: '$target' }, st('influence', 1)],
     risk: { baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.6, onFailure: [st('stress', 2)], failureNews: 'Personne ne veut vous donner ce numéro. Il faudra plus d’entregent.' },
   },
+  {
+    id: 'intrigue_carnet', label: 'Racheter le carnet d’adresses d’un ancien conseiller', category: 'intrigue', minRank: 'conseiller_municipal',
+    description: 'Un ex-conseiller ministériel, à court d’argent, vend son vieux téléphone. Trois numéros qui comptent, peut-être plus.',
+    cost: { ap: 1, money: 4000 }, cooldown: 4, personalOnly: true,
+    effects: [{ kind: 'phoneBook', npcId: '$any' }, { kind: 'phoneBook', npcId: '$any' }, { kind: 'phoneBook', npcId: '$any' }, { kind: 'exposure', delta: 2 }],
+    risk: { baseChance: 0.2, onFailure: [{ kind: 'exposure', delta: 6 }, st('credibility', -2)], failureNews: 'L’histoire du téléphone revendu fuite dans la presse.' },
+  },
+  {
+    id: 'intrigue_secretariat', label: 'Se faire un allié au secrétariat d’un rival', category: 'intrigue', minRank: 'depute', target: 'npc',
+    description: 'Une assistante mal payée, un café, des fleurs : son agenda et son numéro personnel.',
+    cost: { ap: 1, energy: 6, money: 1000 }, personalOnly: true,
+    effects: [{ kind: 'phoneBook', npcId: '$target' }, { kind: 'scheme', progress: 6 }],
+    risk: { baseChance: 0.25, onFailure: [{ kind: 'exposure', delta: 5 }, { kind: 'npcRelation', npcId: '$target', delta: -10 }], failureNews: 'L’assistante vous dénonce à son patron.' },
+  },
+];
+
+/* ── Épidémie Z ───────────────────────────────────────────── */
+const z = (x: Omit<Extract<Effect, { kind: 'zombie' }>, 'kind'>): Effect => ({ kind: 'zombie', ...x });
+
+const ZOMBIE: ActionDefinition[] = [
+  { id: 'z_barricades', label: 'Défendre votre quartier', category: 'zombie', minRank: 'militant',
+    description: 'Barricades, rondes de nuit, voisins solidaires : votre rue tient.',
+    cost: { ap: 1, energy: 12 }, maxPerMonth: 1, effects: [z({ infection: -2, panic: -2 }), st('popularity', 2)] },
+  { id: 'z_benevoles', label: 'Monter un réseau de bénévoles', category: 'zombie', minRank: 'militant',
+    description: 'Courses pour les personnes isolées, numéros d’urgence, entraide.',
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [z({ panic: -4 }), st('popularity', 1), st('credibility', 1)] },
+  { id: 'z_bastion', label: 'Vous mettre à l’abri dans un bastion', category: 'zombie', minRank: 'militant',
+    description: 'Un fort réaménagé, des murs épais : le risque d’être mordu·e chute. On vous reproche de vous cacher.',
+    cost: { ap: 1, energy: 4 }, cooldown: 120, effects: [z({ shelter: true }), st('popularity', -3), st('influence', -1)] },
+  { id: 'z_quarantaine', label: 'Imposer une quarantaine locale', category: 'zombie', minRank: 'conseiller_municipal',
+    description: 'Fermer la commune, contrôler les entrées, tester tout le monde.',
+    cost: { ap: 1, politicalCapital: 5 }, maxPerMonth: 1, effects: [z({ containment: 8 }), st('popularity', -1)] },
+  { id: 'z_refuges', label: 'Ouvrir des refuges', category: 'zombie', minRank: 'conseiller_municipal',
+    description: 'Gymnases, écoles, églises : des lieux sûrs pour les familles.',
+    cost: { ap: 1, money: 2000, energy: 6 }, maxPerMonth: 1, effects: [z({ panic: -6 }), st('popularity', 3)] },
+  { id: 'z_labo', label: 'Financer un laboratoire de recherche', category: 'zombie', minRank: 'depute',
+    description: 'Des séquenceurs, des chercheurs, des animaleries : la course au vaccin.',
+    cost: { ap: 1, money: 6000 }, maxPerMonth: 1, effects: [z({ cure: 8 }), st('credibility', 1)] },
+  { id: 'z_rassurer', label: 'S’adresser au pays pour le rassurer', category: 'zombie', minRank: 'depute',
+    description: 'Un discours calme, des consignes claires, pas de fausse promesse.',
+    cost: { ap: 1, energy: 6 }, cooldown: 2, effects: [z({ panic: -8 }), st('credibility', 1)],
+    risk: { baseChance: 0.25, scaleWith: 'credibility', scaleWeight: 0.6, onFailure: [z({ panic: 5 }), st('popularity', -2)], failureNews: 'Votre « tout est sous contrôle » devient un mème.' } },
+  { id: 'z_armee', label: 'Déployer l’armée sur les lignes de défense', category: 'zombie', minRank: 'ministre',
+    description: 'Blindés, génie, hélicoptères : on reprend du terrain.',
+    cost: { ap: 2, politicalCapital: 15 }, cooldown: 2, effects: [z({ containment: 15, infection: -5, panic: -3 })] },
+  { id: 'z_vaccin', label: 'Accélérer les essais du vaccin', category: 'zombie', minRank: 'ministre',
+    description: 'Sauter des étapes, recruter des volontaires, produire avant d’avoir fini.',
+    cost: { ap: 2, politicalCapital: 10 }, cooldown: 2, effects: [z({ cure: 12 })],
+    risk: { baseChance: 0.25, onFailure: [z({ cure: -4 }), st('popularity', -3)], failureNews: 'Effets secondaires graves : l’essai est suspendu.' } },
+  { id: 'z_frontieres', label: 'Fermer les frontières entre régions', category: 'zombie', minRank: 'ministre',
+    description: 'Plus de trains, plus d’autoroutes : chaque région devient une île.',
+    cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [z({ containment: 6 }), st('popularity', -1), { kind: 'dossier', domain: 'economie', delta: -2 }] },
+];
+
+/* ── Vie politique ordinaire ──────────────────────────────── */
+const ORDINARY: ActionDefinition[] = [
+  { id: 'parrainer_asso', label: 'Parrainer une association de quartier', category: 'terrain', minRank: 'militant',
+    description: 'Aide aux devoirs, épicerie solidaire, club de boxe : vous donnez de votre temps.',
+    cost: { ap: 1, energy: 8 }, cooldown: 3, effects: [st('popularity', 2), st('credibility', 1), { kind: 'dossier', domain: 'social', delta: 2 }] },
+  { id: 'tribune_quotidien', label: 'Signer une tribune dans un grand quotidien', category: 'medias', minRank: 'depute', target: 'domain',
+    description: 'Huit mille signes pour poser une idée dans le débat national.',
+    cost: { ap: 1, energy: 6 }, cooldown: 2, effects: [st('credibility', 3), st('influence', 1), { kind: 'dossier', domain: '$domain', delta: 2 }] },
+  { id: 'usine_menacee', label: 'Visiter une usine menacée de fermeture', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Les salariés en grève devant les grilles, un repreneur introuvable.',
+    cost: { ap: 1, energy: 10 }, cooldown: 2, effects: [st('popularity', 2), { kind: 'dossier', domain: 'economie', delta: 2 }, ct('ct-ust', 2)] },
+  { id: 'apero_militants', label: 'Apéro avec les militants de la section', category: 'parti', minRank: 'militant',
+    description: 'Cacahuètes, rosé, et les vrais problèmes de la section.',
+    cost: { ap: 1, energy: 4, money: 150 }, cooldown: 2, effects: [{ kind: 'cohesion', delta: 2 }, { kind: 'faction', factionId: '*', delta: 2 }, st('stress', -2)] },
+  { id: 'cours_anglais', label: 'Prendre des cours d’anglais intensifs', category: 'dossiers', minRank: 'militant',
+    description: 'Deux heures par jour avec une prof exigeante. Les sommets internationaux vous remercieront.',
+    cost: { ap: 1, energy: 8, money: 600 }, cooldown: 3, effects: [{ kind: 'dossier', domain: 'diplomatie', delta: 4 }, st('credibility', 1)] },
+  { id: 'conference_universite', label: 'Donner une conférence à Sciences Po', category: 'dossiers', minRank: 'depute', target: 'domain',
+    description: 'Un amphi plein, des étudiants qui ont tout lu, des questions qui piquent.',
+    cost: { ap: 1, energy: 8 }, cooldown: 3, effects: [{ kind: 'dossier', domain: '$domain', delta: 3 }, st('credibility', 2), st('influence', 1)] },
+  { id: 'footing_presse', label: 'Footing matinal avec des journalistes', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Huit kilomètres, des confidences essoufflées et une photo en baskets.',
+    cost: { ap: 1, energy: 10 }, cooldown: 2, effects: [st('popularity', 1), st('influence', 1), { kind: 'health', delta: 1 }] },
 ];
 
 /** Deux actions par ministère */
@@ -122,4 +199,4 @@ const MINISTRIES: ActionDefinition[] = [
     { ap: 2, energy: 10, politicalCapital: 10 }, [dos('justice', 5), ct('ct-avocats', 4), st('popularity', 2)], { cooldown: 6 }),
 ];
 
-export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...MINISTRIES];
+export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...MINISTRIES];

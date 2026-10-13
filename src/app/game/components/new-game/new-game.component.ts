@@ -1,8 +1,6 @@
-import { Component, computed, inject, output, signal } from '@angular/core';
-import { PARTIES, defaultTarget, stanceLabel } from '../../data/world';
+import { Component, inject, output, signal } from '@angular/core';
+import { PARTIES, stanceLabel } from '../../data/world';
 import { GameStateService } from '../../services/game-state.service';
-import { OutletKind, ScenarioId } from '../../models/game.models';
-import { OUTLETS } from '../../data/press';
 import { PARTY_COLORS } from '../../engine/founding';
 import { PartyFormComponent } from '../party-form/party-form.component';
 
@@ -32,59 +30,7 @@ import { PartyFormComponent } from '../party-form/party-form.component';
         </fieldset>
 
         <fieldset class="field">
-          <legend class="eyebrow">Scénario</legend>
-          <div class="scenarios">
-            <button type="button" class="scenario" [class.on]="scenario() === 'carriere'" (click)="scenario.set('carriere')">
-              <strong>Carrière complète</strong><small>De militant·e de section jusqu’à l’Élysée. Départ à 26 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'presidentielle'" (click)="scenario.set('presidentielle')">
-              <strong>Campagne présidentielle</strong><small>Candidat·e investi·e et chef·fe de parti : programme, cinq mois de campagne, budget du parti. 52 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'bercy'" (click)="scenario.set('bercy')">
-              <strong>Ministre à Bercy</strong><small>Bouclez le budget de la France et faites-le voter à l’Assemblée. 47 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'royaute'" (click)="scenario.set('royaute')">
-              <strong>Retour à la royauté</strong><small>Menez un mouvement royaliste : référendum ou coup de force pour abolir la République. 45 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'franc_macon'" (click)="scenario.set('franc_macon')">
-              <strong>Franc-maçon</strong><small>Élu·e initié·e : gravir les grades de la loge et les marches du pouvoir. 38 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'editorialiste'" (click)="scenario.set('editorialiste')">
-              <strong>Éditorialiste</strong><small>Journaliste politique : de pigiste à directeur·rice de la rédaction. Faire et défaire les carrières. 31 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'contact'" (click)="scenario.set('contact')">
-              <strong>Premier contact</strong><small>Un signal venu de Proxima : à la tête de la cellule du Premier contact, comprendre les Vélari, tenir le pays et devenir la voix de la Terre. 41 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'invasion'" (click)="scenario.set('invasion')">
-              <strong>Guerre contre la Nation</strong><small>À l’aube, la Karstanie attaque la France. Ministre de l’Intérieur : défendre le territoire, tenir l’arrière, libérer le pays. 49 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'guerre_totale'" (click)="scenario.set('guerre_totale')">
-              <strong>Guerre totale</strong><small>Président·e d’une France en guerre totale contre la Méridia : effort de guerre, moral de l’arrière, victoire ou effondrement. 56 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'complot'" (click)="scenario.set('complot')">
-              <strong>Le complot</strong><small>Député·e menacé·e de mort après un rapport explosif : enquêter, se protéger, déjouer le complot avant qu’il ne frappe. 44 ans.</small>
-            </button>
-            <button type="button" class="scenario" [class.on]="scenario() === 'infiltre'" (click)="scenario.set('infiltre')">
-              <strong>Infiltré·e</strong><small>Encarté·e chez l’adversaire sous une fausse identité : espionner, saboter, transmettre… et ne jamais se faire prendre. 27 ans.</small>
-            </button>
-          </div>
-        </fieldset>
-
-        @if (scenario() === 'editorialiste') {
-          <fieldset class="field">
-            <legend class="eyebrow">Votre média</legend>
-            <div class="scenarios">
-              @for (o of outlets; track o.kind) {
-                <button type="button" class="scenario" [class.on]="outlet() === o.kind" (click)="outlet.set(o.kind)">
-                  <strong>{{ o.name }} <span class="muted">· {{ o.label }}</span></strong><small>{{ o.pitch }}</small>
-                </button>
-              }
-            </div>
-          </fieldset>
-        }
-
-        <fieldset class="field">
-          <legend class="eyebrow">{{ scenario() === 'editorialiste' ? 'Votre sensibilité politique' : scenario() === 'infiltre' ? 'Votre vrai camp' : 'Votre parti' }} · de gauche à droite{{ scenario() === 'royaute' ? ' (ignoré : vous dirigez la Ligue de la Couronne)' : '' }}</legend>
+          <legend class="eyebrow">Votre parti · de gauche à droite</legend>
           <div class="parties">
             @for (p of parties; track p.id) {
               <button type="button" class="party" [class.on]="partyId() === p.id" (click)="partyId.set(p.id)">
@@ -92,34 +38,19 @@ import { PartyFormComponent } from '../party-form/party-form.component';
                 <span class="pname">{{ p.name }}<small>{{ label(p.position) }}</small></span>
               </button>
             }
-            @if (scenario() !== 'royaute' && scenario() !== 'infiltre') {
-              <button type="button" class="party create" [class.on]="partyId() === 'perso'" (click)="partyId.set('perso')">
-                <span class="swatch plus">+</span>
-                <span class="pname">Fonder mon propre parti<small>Vous en êtes le chef dès le départ. Petit, pauvre, mais à vous.</small></span>
-              </button>
-            }
+            <button type="button" class="party create" [class.on]="partyId() === 'perso'" (click)="partyId.set('perso')">
+              <span class="swatch plus">+</span>
+              <span class="pname">Fonder mon propre parti<small>Vous en êtes le chef dès le départ. Petit, pauvre, mais à vous.</small></span>
+            </button>
           </div>
-          @if (partyId() === 'perso' && scenario() !== 'royaute' && scenario() !== 'infiltre') {
+          @if (partyId() === 'perso') {
             <div class="custom card">
               <app-party-form [(name)]="partyName" [(color)]="partyColor" [(position)]="partyPosition" />
             </div>
           }
         </fieldset>
 
-        @if (scenario() === 'infiltre') {
-          <fieldset class="field">
-            <legend class="eyebrow">Parti à infiltrer</legend>
-            <div class="parties">
-              @for (p of targets(); track p.id) {
-                <button type="button" class="party" [class.on]="target() === p.id" (click)="targetId.set(p.id)">
-                  <span class="swatch" [style.background]="p.color"></span>
-                  <span class="pname">{{ p.name }}<small>{{ label(p.position) }} · écart idéologique {{ gap(p.position) }}</small></span>
-                </button>
-              }
-            </div>
-            <small class="muted hint">Plus l’écart est grand, plus il sera dur de jouer le jeu sans se trahir.</small>
-          </fieldset>
-        }
+        <p class="muted hint">Une seule partie, une vie entière : guerres, complots, premier contact, royauté, épidémies… tout peut arriver en cours de route.</p>
 
         <button class="btn primary go" type="submit">Prendre sa carte →</button>
       </form>
@@ -163,19 +94,6 @@ export class NewGameComponent {
   protected readonly name = signal('Camille Martin');
   protected readonly gender = signal<'femme' | 'homme'>('femme');
   protected readonly partyId = signal('ut');
-  protected readonly scenario = signal<ScenarioId>('carriere');
-  protected readonly outlet = signal<OutletKind>('radio');
-  protected readonly targetId = signal<string | null>(null);
-  private readonly home = computed(() => this.partyId() === 'perso' ? 'ut' : this.partyId());
-  protected readonly targets = computed(() => PARTIES.filter(p => p.id !== this.home()));
-  protected readonly target = computed(() => {
-    const t = this.targetId();
-    return t && t !== this.home() ? t : defaultTarget(this.home());
-  });
-  protected gap(pos: number): number {
-    return Math.abs(pos - (PARTIES.find(p => p.id === this.home())?.position ?? 0));
-  }
-  protected readonly outlets = Object.values(OUTLETS);
   protected readonly partyName = signal('');
   protected readonly partyColor = signal(PARTY_COLORS[5]);
   protected readonly partyPosition = signal(0);
@@ -187,11 +105,9 @@ export class NewGameComponent {
 
   protected start(e: Event): void {
     e.preventDefault();
-    const custom = this.partyId() === 'perso' && this.scenario() !== 'royaute' && this.scenario() !== 'infiltre';
+    const custom = this.partyId() === 'perso';
     this.game.newGame({
-      name: this.name(), gender: this.gender(), partyId: custom ? 'ut' : this.scenario() === 'infiltre' ? this.home() : this.partyId(), scenario: this.scenario(),
-      outlet: this.outlet(),
-      targetPartyId: this.scenario() === 'infiltre' ? this.target() : undefined,
+      name: this.name(), gender: this.gender(), partyId: custom ? 'ut' : this.partyId(), scenario: 'carriere',
       customParty: custom ? { name: this.partyName().trim() || 'Mouvement citoyen', color: this.partyColor(), position: this.partyPosition() } : undefined,
     });
   }

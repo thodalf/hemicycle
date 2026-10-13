@@ -244,4 +244,74 @@ export const MORE_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'panne_geante', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Panne d’électricité géante',
+      context: 'Un tiers du pays plongé dans le noir pendant douze heures. Hôpitaux sur groupes électrogènes, feux rouges éteints.',
+      choices: [
+        c('cellule', 'Monter une cellule de crise locale', [s('credibility', 3), s('popularity', 2), s('energy', -8)], 'Lampes frontales et talkies-walkies : vous coordonnez les secours.'),
+        c('enquete', 'Exiger une enquête sur le réseau', [{ kind: 'dossier', domain: 'ecologie', delta: 2 }, s('influence', 1)], 'Le gestionnaire du réseau est convoqué.'),
+        c('attendre', 'Attendre le retour du courant', [s('popularity', -2)], 'On vous cherche. On ne vous trouve pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tweet_stagiaire', weight: 0.7,
+    build: () => ({
+      title: 'Votre stagiaire tweete à votre place',
+      context: 'Depuis votre compte, une blague douteuse sur le fromage d’une autre région. Six mille partages.',
+      choices: [
+        c('assumer', 'En rire et offrir un plateau de ce fromage', [s('popularity', 2)], 'Le plateau de fromages fait plus parler que le tweet.'),
+        c('excuses', 'S’excuser platement', [s('credibility', 1), s('popularity', -1)], 'Excuses acceptées, l’affaire s’éteint.'),
+        c('pirate', 'Prétendre avoir été piraté·e', [s('credibility', -2)],
+          'Personne n’y croit vraiment.', { risk: { baseChance: 0.4, onFailure: [s('credibility', -3), { kind: 'exposure', delta: 3 }], failureNews: 'Le stagiaire raconte tout sur TikTok.' } }),
+      ],
+    }),
+  },
+  {
+    tag: 'karaoke_section', weight: 0.5,
+    build: () => ({
+      title: 'Le karaoké de la fête de section',
+      context: 'Les militants scandent votre nom : il faut chanter. Quelqu’un filme déjà.',
+      choices: [
+        c('chanter', 'Chanter à pleins poumons', [s('popularity', 3), { kind: 'cohesion', delta: 2 }, s('stress', -3)], 'Faux, mais avec cœur. La vidéo vous rend sympathique.'),
+        c('decliner', 'Décliner avec un sourire', [s('credibility', 1)], 'Les militants sont un peu déçus.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ecole_fermeture', weight: 0.7, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Une école de village menacée',
+      context: 'Douze élèves de moins et le rectorat ferme la classe unique. Les parents occupent l’école.',
+      choices: [
+        c('soutenir', 'Occuper l’école avec eux', [s('popularity', 3), { kind: 'contact', contactId: 'ct-enseignants', trust: 3 }, s('energy', -6)], 'Une photo de vous sur un petit banc fait le tour des réseaux.'),
+        c('regroupement', 'Proposer un regroupement intercommunal', [{ kind: 'dossier', domain: 'education', delta: 3 }, s('credibility', 2)], 'Une solution raisonnable, mal accueillie au début.'),
+        c('rectorat', 'Laisser le rectorat décider', [s('popularity', -2)], 'La classe ferme en juin.'),
+      ],
+    }),
+  },
+  {
+    tag: 'permanence_inondee', weight: 0.5, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Votre permanence inondée',
+      context: 'Un orage, une canalisation qui cède : vingt centimètres d’eau, les dossiers des administrés trempés.',
+      choices: [
+        c('ecoper', 'Écoper vous-même avec l’équipe', [s('popularity', 2), s('energy', -10), s('stress', 2)], 'Une photo de vous en bottes, seau à la main.'),
+        c('assurance', 'Fermer une semaine et appeler l’assurance', [{ kind: 'funds', account: 'personal', delta: -800 }, s('stress', -1)], 'La franchise pique un peu.'),
+      ],
+    }),
+  },
+  {
+    tag: 'loto_village', weight: 0.4,
+    build: () => ({
+      title: 'Le maire du village gagne au loto',
+      context: 'Dix-sept millions d’euros. Il veut tout donner à la commune… si vous l’aidez à monter les projets.',
+      choices: [
+        c('aider', 'L’aider à monter les projets', [{ kind: 'contact', contactId: 'ct-maires', trust: 5 }, { kind: 'dossier', domain: 'territoires', delta: 3 }, s('energy', -6)], 'Une médiathèque, une maison de santé, un terrain de foot.'),
+        c('photo', 'Juste la photo avec le chèque géant', [s('popularity', 2), s('credibility', -1)], 'Le chèque géant est plus grand que vous.'),
+      ],
+    }),
+  },
 ];

@@ -46,12 +46,13 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'zombie' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
   contact: 'Premier contact',
   securite: 'Sécurité',
+  zombie: 'Épidémie Z',
   intrigue: 'Intrigues',
   guerre: 'Guerre',
   arriere: 'Effort de guerre',
@@ -285,6 +286,7 @@ export type Effect =
   | { kind: 'government'; majority?: number; cohesion?: number; form?: string; fall?: boolean }
   | { kind: 'flag'; key: string; value: boolean | number }
   | { kind: 'phoneBook'; npcId: TargetRef }
+  | { kind: 'zombie'; start?: 'alerte' | 'minimiser' | 'confiner'; infection?: number; containment?: number; panic?: number; cure?: number; shelter?: boolean }
   | { kind: 'scheme'; type?: string; targetId?: TargetRef; progress?: number; secrecy?: number; abandon?: boolean };
 
 export interface EffectContext {
@@ -1018,6 +1020,8 @@ export interface GameState {
   phone?: PhoneState;
   /** Vos complots en cours */
   schemes?: Scheme[];
+  /** Épidémie Z en cours */
+  zombie?: ZombieState | null;
   plot?: PlotState | null;
   player: Player;
   party: Party;
@@ -1255,6 +1259,23 @@ export interface MinigameState {
 }
 
 // ── Premier contact ─────────────────────────────────────────
+
+/** Épidémie Z : un virus qui transforme les malades en morts-vivants */
+export interface ZombieState {
+  since: number;
+  /** Part du territoire touchée (0-100) */
+  infection: number;
+  /** Efficacité du confinement et des cordons sanitaires (0-100) */
+  containment: number;
+  /** Peur dans l'opinion (0-100) */
+  panic: number;
+  /** Avancée de la recherche d'un vaccin (0-100) */
+  cure: number;
+  /** Vaccin en cours de déploiement */
+  vaccine?: boolean;
+  /** Le pays est déjà tombé une fois */
+  fell?: boolean;
+}
 
 export interface AlienState {
   /** Nom de la civilisation (fictive) */

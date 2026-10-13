@@ -17,6 +17,8 @@ import { FxLayerComponent } from '../fx-layer/fx-layer.component';
 import { ElectionNightComponent } from '../election-night/election-night.component';
 import { PresidentialPollsComponent } from '../presidential-polls/presidential-polls.component';
 import { SchemesPanelComponent } from '../schemes-panel/schemes-panel.component';
+import { ZombiePanelComponent } from '../zombie-panel/zombie-panel.component';
+import { TutorialComponent } from '../tutorial/tutorial.component';
 import { FxService } from '../../services/fx.service';
 import { AuthService } from '../../services/auth.service';
 import { RANKS } from '../../data/ranks';
@@ -53,7 +55,7 @@ import { Milestone } from '../../models/game.models';
     DecimalPipe,
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
-    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent,
+    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ZombiePanelComponent, TutorialComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
     WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
@@ -70,6 +72,7 @@ import { Milestone } from '../../models/game.models';
         <span class="dot" aria-hidden="true"></span><span class="save-lbl">{{ saveLabel() }}</span>
       </span>
       <button class="btn small phone-btn" (click)="phone.show()" [attr.aria-label]="'Téléphone' + (phone.unread() ? ', ' + phone.unread() + ' non lus' : '')">📱@if (phone.unread()) { <b class="badge">{{ phone.unread() }}</b> }</button>
+      <button class="btn small help-btn" (click)="tuto.start()" aria-label="Revoir le tutoriel" title="Tutoriel">?</button>
       <button class="btn small quit" (click)="confirmQuit()" aria-label="Mes parties">Mes parties</button>
     </header>
 
@@ -120,6 +123,7 @@ import { Milestone } from '../../models/game.models';
         <app-team-panel />
       </div>
       <main class="col-main">
+        <app-zombie-panel />
         <app-plot-panel />
         <app-schemes-panel />
         <app-war-panel />
@@ -192,6 +196,7 @@ import { Milestone } from '../../models/game.models';
 
     <app-phone />
     <app-election-night />
+    <app-tutorial #tuto (tab)="setTab($event)" />
     <app-fx-layer />
 
     @if (team.revealed()) {
@@ -283,6 +288,9 @@ import { Milestone } from '../../models/game.models';
     .save.s-saving .dot { background: var(--warn); animation: save-pulse .8s ease-in-out infinite; }
     .save.s-error { color: var(--bad); .dot { background: var(--bad); } }
     @keyframes save-pulse { 50% { opacity: .3; } }
+    /* Panneaux sans contenu (pas de guerre, pas de complot…) : pas d'espace vide */
+    .col-main > :empty, .col-left > :empty, .col-right > :empty { display: none; }
+    .help-btn { font-weight: 700; min-width: 30px; padding: 4px 8px; }
     .phone-btn { position: relative; font-size: 15px; padding: 4px 10px;
       .badge { position: absolute; top: -6px; right: -6px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--bad); color: #fff;
         font: 700 10.5px var(--font-body); display: grid; place-items: center; } }
@@ -300,14 +308,14 @@ import { Milestone } from '../../models/game.models';
       .grid[data-tab='moi'] .col-main, .grid[data-tab='moi'] .col-right,
       .grid[data-tab='actu'] .col-left, .grid[data-tab='actu'] .col-main { display: none; }
       /* Barre du haut compacte */
-      .topbar { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 4px 10px; padding: 8px 12px; align-items: center; }
+      .topbar { display: grid; grid-template-columns: auto 1fr auto auto auto auto; gap: 4px 8px; padding: 8px 12px; align-items: center; }
       .brand { font-size: 17px; }
       .facts { gap: 10px; font-size: 12px; flex-wrap: nowrap; overflow: hidden; }
       .facts > span:nth-child(n+2) { display: none; }
       .save .save-lbl { display: none; }
       .quit { padding: 4px 8px; }
-      .brand { order: 1; } .facts { order: 2; } .save { order: 3; } .phone-btn { order: 4; } .quit { order: 5; justify-self: end; }
-      app-vitals { grid-column: 1 / -1; order: 6; }
+      .brand { order: 1; } .facts { order: 2; } .save { order: 3; } .phone-btn { order: 4; } .help-btn { order: 5; } .quit { order: 6; justify-self: end; }
+      app-vitals { grid-column: 1 / -1; order: 7; }
       .mobile-tabs {
         display: grid; grid-template-columns: repeat(3, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
         background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(10px);

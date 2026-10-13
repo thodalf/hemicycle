@@ -1,6 +1,8 @@
 import { ContactType, Effect, GameState, PhoneMessage, PhoneReply, PhoneState, StaffRole } from '../models/game.models';
 import { STAFF_BY_ROLE, STAFF_ICONS } from '../data/staff';
 import { RANKS } from '../data/ranks';
+import { DOMAINS } from '../models/game.models';
+import { MINISTRIES } from './government';
 import { applyEffects, campaignOpen, partySupport } from './effects';
 import { voteRole } from './assembly';
 import { Rng, clamp, nextId } from './rng';
@@ -18,7 +20,7 @@ export const CALLS_PER_MONTH = 4;
 export const EXTRA_CALL_ENERGY = 4;
 const MAX_MESSAGES = 60;
 
-export type CallerKind = 'equipe' | 'chef' | 'collegue' | 'personnalite' | 'contact' | 'proche';
+export type CallerKind = 'equipe' | 'chef' | 'gouvernement' | 'collegue' | 'personnalite' | 'contact' | 'proche';
 
 export interface PhoneEntry {
   key: string;
@@ -31,7 +33,7 @@ export interface PhoneEntry {
 }
 
 export interface CallOption {
-  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui';
+  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage';
   label: string;
   hint: string;
   ok: boolean;
@@ -80,6 +82,41 @@ export function grantNumber(d: GameState, rng: Rng): string | null {
   return pool.length ? addNumber(d, rng.pick(pool).id) : null;
 }
 
+/* ── Les numéros du gouvernement ──────────────────────────── */
+
+export function inGovernment(d: GameState): boolean {
+  return ['ministre', 'premier_ministre', 'president'].includes(d.player.rankId);
+}
+
+const GOV_FIRST = ['Anne', 'Bertrand', 'Claire', 'Damien', 'Élise', 'François', 'Géraldine', 'Hervé', 'Isabelle', 'Jérôme', 'Karine', 'Laurent', 'Marion', 'Nicolas', 'Patricia', 'Rachid'];
+const GOV_LAST = ['Aubry', 'Bertin', 'Chevalier', 'Darmon', 'Esnault', 'Fabre', 'Garnier', 'Hoarau', 'Imbert', 'Joly', 'Kervern', 'Laval', 'Mercier', 'Nguyen', 'Olivier', 'Perrot'];
+function hash(t: string): number { let h = 17; for (const ch of t) h = (h * 31 + ch.charCodeAt(0)) % 1000003; return h; }
+
+export interface GovMember { key: string; name: string; role: string }
+
+/** Les membres du gouvernement (noms stables tant que le président ne change pas) */
+export function governmentRoster(d: GameState): GovMember[] {
+  if (!inGovernment(d)) return [];
+  const p = d.player;
+  const salt = d.presidential.incumbentName + (d.presidency?.primeMinister ?? '');
+  const name = (slot: string) => `${GOV_FIRST[hash(slot + salt) % GOV_FIRST.length]} ${GOV_LAST[hash(salt + slot + 'x') % GOV_LAST.length]}`;
+  const out: GovMember[] = [];
+  if (p.rankId !== 'president' && d.presidential.incumbentId !== 'player') {
+    const pr = d.npcs.find(n => n.id === d.presidential.incumbentId);
+    out.push({ key: 'gouv:pr', name: pr?.name ?? (d.presidential.incumbentName.startsWith('le ') ? name('pr') : d.presidential.incumbentName), role: 'Président·e de la République' });
+  }
+  if (p.rankId !== 'premier_ministre') out.push({ key: 'gouv:pm', name: d.presidency?.primeMinister ?? name('pm'), role: 'Premier·e ministre' });
+  const npcMinisters = d.npcs.filter(n => n.rankId === 'ministre' && n.partyId === d.party.id);
+  let i = 0;
+  for (const dom of DOMAINS) {
+    if (p.rankId === 'ministre' && d.portfolio === dom) continue;
+    const npc = npcMinisters[i];
+    if (npc) i++;
+    out.push({ key: `gouv:${dom}`, name: npc?.name ?? name(dom), role: `Ministre ${MINISTRIES[dom]}` });
+  }
+  return out;
+}
+
 /** Une information compromettante sur une personnalité (confidences, complots) */
 export function kompromatTargets(d: GameState) {
   return d.npcs.filter(n => Number(d.player.flags[`kompromat_${n.id}`] ?? 0) > 0);
@@ -121,6 +158,7 @@ export function directory(d: GameState): PhoneEntry[] {
     .sort((a, b) => b.relationToPlayer - a.relationToPlayer)
     .slice(0, 4);
   for (const n of colleagues) out.push({ key: `collegue:${n.id}`, kind: 'collegue', name: n.name, role: 'Collègue du parti', icon: '🧑‍💼', bond: Math.round(n.relationToPlayer) });
+  for (const g of governmentRoster(d)) out.push({ key: g.key, kind: 'gouvernement', name: g.name, role: g.role, icon: g.key === 'gouv:pr' ? '🇫🇷' : g.key === 'gouv:pm' ? '🏛️' : '💼' });
   const shown = new Set([d.party.leaderNpcId, ...colleagues.map(n => n.id)]);
   const parties = [d.party, ...d.otherParties];
   for (const id of d.player.phoneBook ?? []) {
@@ -184,6 +222,12 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Entretenir la relation.', ok: !block, reason: block });
       break;
     }
+    case 'gouvernement':
+      opts.push({ id: 'soutien', label: supportLabel, hint: 'Solidarité gouvernementale : ses réseaux au Parlement.', ok: !block && !!target, reason: block ?? supportReason });
+      opts.push({ id: 'arbitrage', label: 'Demander un coup de pouce', hint: key === 'gouv:pm' || key === 'gouv:pr' ? 'Un arbitrage favorable pour vos dossiers.' : 'Une collaboration entre vos deux ministères.', ok: !block, reason: block });
+      opts.push({ id: 'tuyau', label: 'Prendre la température', hint: 'Remaniement, rumeurs, rapports de force au sein du gouvernement.', ok: !block, reason: block });
+      opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Entretenir la solidarité gouvernementale.', ok: !block, reason: block });
+      break;
     case 'personnalite': {
       const n = d.npcs.find(x => `perso:${x.id}` === key)!;
       const pactDone = Number(d.player.flags[`pacte_${n.id}`] ?? -99);
@@ -267,7 +311,7 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     remercier: 'Je voulais te remercier pour ton travail.', mission: 'J’ai besoin de toi tout de suite, c’est urgent.',
     rumeur: 'Tu as entendu ce qu’on raconte sur…', fuite: 'J’ai quelque chose pour vous. Mais ça ne vient pas de moi.',
     pacte: 'Et si on arrêtait de se taper dessus, toi et moi ?', tuyau: 'Alors, quoi de neuf dans ton camp ?', conseil: 'J’ai besoin de ton avis.',
-    appui: 'Votre parole compte beaucoup pour vos fidèles…',
+    appui: 'Votre parole compte beaucoup pour vos fidèles…', arbitrage: 'J’aurais besoin d’un coup de pouce…',
   };
   const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : ASK[optionId] ?? 'Je prenais des nouvelles.';
   addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: `📞 ${ask}`, outgoing: true, read: true });
@@ -346,6 +390,30 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     } else {
       answer = rng.pick(['On se voit à la buvette de l’Assemblée ?', 'Tu as vu le dernier sondage ? Tout le monde en parle.', 'Merci d’appeler, ça fait plaisir.']);
       effects.push({ kind: 'npcRelation', npcId: n.id, delta: 4 });
+    }
+  } else if (e.kind === 'gouvernement') {
+    const top = key === 'gouv:pm' || key === 'gouv:pr';
+    if (optionId === 'soutien') {
+      if (rng.chance(top ? 0.75 : 0.6)) {
+        note = rally(d, top ? 10 : 4);
+        answer = top ? 'Le gouvernement soutiendra ce texte. Je préviens le président du groupe.' : 'Compte sur moi, et sur les députés qui me suivent.';
+        effects.push({ kind: 'stat', stat: 'politicalCapital', delta: top ? -6 : -2 });
+      } else answer = 'Pas maintenant, j’ai mes propres arbitrages à défendre.';
+    } else if (optionId === 'arbitrage') {
+      if (rng.chance(top ? 0.45 : 0.6)) {
+        answer = top ? 'Entendu : l’arbitrage sera rendu en ta faveur. N’en abuse pas.' : 'On monte une mission conjointe entre nos deux ministères.';
+        effects.push({ kind: 'dossier', domain: d.portfolio ?? d.agendaDomain, delta: top ? 5 : 3 }, { kind: 'stat', stat: 'politicalCapital', delta: top ? -8 : -3 }, { kind: 'stat', stat: 'influence', delta: 1 });
+      } else answer = top ? 'Les caisses sont vides et tout le monde demande. Ce sera non.' : 'Mon cabinet est débordé. Une autre fois.';
+    } else if (optionId === 'tuyau') {
+      answer = rng.pick([
+        'Il se murmure qu’un remaniement est dans les tuyaux. Fais-toi discret·e quelques semaines.',
+        'Bercy prépare un coup de rabot. Défends ton budget avant qu’il ne soit trop tard.',
+        'Le président trouve que tu passes bien à la télé. C’est bon signe.',
+      ]);
+      effects.push({ kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'stat', stat: 'stress', delta: -1 });
+    } else {
+      answer = rng.pick(['Content·e d’avoir de tes nouvelles. On se voit au Conseil des ministres.', 'Merci de l’appel. On tient bon, malgré les vents contraires.']);
+      effects.push({ kind: 'stat', stat: 'influence', delta: 1 });
     }
   } else if (e.kind === 'personnalite') {
     const n = d.npcs.find(x => `perso:${x.id}` === key)!;

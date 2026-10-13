@@ -1,4 +1,5 @@
 import { GameState } from '../models/game.models';
+import { monthlyZombie } from './zombie';
 import { createDecision } from '../data/decisions';
 import { rankOrder } from '../data/ranks';
 import { applyEffects, pushNews } from './effects';
@@ -43,6 +44,7 @@ export function weeklyScenario(d: GameState, rng: Rng): void {
   if (d.press) weeklyPress(d, rng);
   if (d.mole) weeklyMole(d, rng);
   if (d.alien) monthlyAlien(d, rng);
+  if (d.zombie) monthlyZombie(d, rng);
 }
 
 function weeklyCrown(d: GameState, rng: Rng): void {

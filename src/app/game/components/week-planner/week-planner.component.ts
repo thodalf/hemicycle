@@ -66,6 +66,12 @@ export class WeekPlannerComponent {
       all.splice(0, all.length, ...all.filter(([c]) => c !== 'guerre' && c !== 'arriere'));
     }
     const withProjects = (list: [ActionCategory | 'projets', string][]) => [...list.slice(0, 1), ['projets', 'Projets'] as [ActionCategory | 'projets', string], ...list.slice(1)];
+    // Épidémie Z : l'onglet passe devant tout le reste
+    if (this.game.s().zombie) {
+      const zz = all.filter(([c]) => c === 'zombie');
+      all.splice(0, all.length, ...zz, ...all.filter(([c]) => c !== 'zombie'));
+      return withProjects(all);
+    }
     // Un complot en cours : l'onglet Sécurité passe devant
     if (this.game.s().plot) {
       const sec = all.filter(([c]) => c === 'securite');

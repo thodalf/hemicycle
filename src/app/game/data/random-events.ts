@@ -9,6 +9,7 @@ import { effectValue, withCounterweight } from './actions';
 import { LIFE_EVENTS } from './life-events';
 import { EXTRA_EVENTS } from './extra-events';
 import { CAMPAIGN_EVENTS, MORE_EVENTS, inPresidentialRace } from './campaign-events';
+import { ZOMBIE_EVENTS, ZOMBIE_GATE } from './zombie-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
 import { RANK_EVENTS } from './rank-events';
@@ -1409,6 +1410,12 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
   if (!ev && d.week >= 4 && canFire(ALIEN_GATE, 12) && rng.chance(d.scenario === 'carriere' ? 0.012 : 0.006)) ev = ALIEN_GATE;
   if (!ev && d.alien && rng.chance(0.4)) {
     const pool = ALIEN_EVENTS.filter(e => canFire(e, 10));
+    if (pool.length) ev = pick(pool);
+  }
+  // Épidémie Z : la porte d'entrée (rare), puis l'épidémie domine l'actualité
+  if (!ev && canFire(ZOMBIE_GATE, 12) && rng.chance(0.008)) ev = ZOMBIE_GATE;
+  if (!ev && d.zombie && rng.chance(0.45)) {
+    const pool = ZOMBIE_EVENTS.filter(e => canFire(e, 6));
     if (pool.length) ev = pick(pool);
   }
   // La guerre, puis les États hostiles en temps de paix

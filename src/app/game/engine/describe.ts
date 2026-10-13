@@ -34,6 +34,17 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'npcStat': return [{ text: `${n(e.delta)} ${e.stat === 'popularity' ? 'popularité' : 'influence'} de la cible`, tone: tone(e.delta, true) }];
     case 'contact': return e.trust ? [{ text: `${n(e.trust)} confiance${e.contactId === '$target' ? ' du contact' : ''}`, tone: tone(e.trust) }] : [];
     case 'stance': return [{ text: `Ligne ${e.delta > 0 ? 'vers la droite' : 'vers la gauche'} (${Math.abs(e.delta)})`, tone: 'neutral' }];
+    case 'zombie': {
+      if (e.start) return [{ text: 'Déclenche l’épidémie Z', tone: 'bad' }];
+      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      const sg = (v: number) => (v > 0 ? `+${v}` : `${v}`);
+      if (e.infection) out.push({ text: `Infection ${sg(e.infection)}`, tone: e.infection > 0 ? 'bad' : 'good' });
+      if (e.containment) out.push({ text: `Confinement ${sg(e.containment)}`, tone: e.containment > 0 ? 'good' : 'bad' });
+      if (e.panic) out.push({ text: `Panique ${sg(e.panic)}`, tone: e.panic > 0 ? 'bad' : 'good' });
+      if (e.cure) out.push({ text: `Recherche ${sg(e.cure)}`, tone: e.cure > 0 ? 'good' : 'bad' });
+      if (e.shelter) out.push({ text: 'À l’abri dans un bastion', tone: 'good' });
+      return out;
+    }
     case 'phoneBook': return [{ text: e.npcId === '$any' ? 'Un numéro de personnalité' : 'Son numéro de portable', tone: 'good' }];
     case 'scheme': return e.type ? [{ text: 'Lance un complot (risque d’être découvert)', tone: 'neutral' }]
       : [...(e.progress ? [{ text: `Complots : progression +${e.progress}`, tone: 'good' as const }] : []), ...(e.secrecy ? [{ text: `Complots : discrétion ${e.secrecy > 0 ? '+' : ''}${e.secrecy}`, tone: e.secrecy > 0 ? 'good' as const : 'bad' as const }] : [])];
