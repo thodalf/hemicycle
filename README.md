@@ -33,6 +33,22 @@ Standalone components, zoneless, Signals partout.
 - Champs à 16 px (pas de zoom automatique sur iOS), zones tactiles agrandies, marges de sécurité (encoche, barre
   d’accueil), nombres à la française (« 4 000 € »).
 
+## Webapp (PWA)
+
+- **Installable** sur l’écran d’accueil (Android, iPhone, ordinateur) : manifeste `public/manifest.webmanifest`,
+  icônes classiques et « maskable » (`public/icons`), captures d’écran pour la fiche d’installation, couleur de thème
+  claire ou sombre selon le système. Le jeu s’ouvre en plein écran, sans barre de navigateur.
+- **Hors connexion** : service worker Angular (`ngsw-config.json`) qui met en cache l’application et les polices ; la
+  partie continue sans réseau, sauvegardée sur l’appareil (un bandeau « Hors ligne » le signale).
+- **Bandeau d’installation** sur l’écran des parties : bouton « Installer » quand le navigateur le propose (Chrome,
+  Edge, Android), sinon la marche à suivre dans Safari (Partager → Sur l’écran d’accueil) ; « Plus tard » le masque.
+- **Mises à jour** : le service worker vérifie toutes les 30 minutes ; quand une version est prête, un bandeau propose
+  « Mettre à jour ».
+- Le service worker ne s’active qu’en production, sur le site servi avec son manifeste (Netlify : en-têtes `no-cache`
+  sur `ngsw-worker.js`, `ngsw.json` et le manifeste dans `netlify.toml`). La version en un seul fichier publiée sur
+  claude.ai reste une page classique.
+- Code : `services/pwa.service.ts`, `components/pwa-banner`.
+
 ## Mécaniques
 
 - **Un mois par tour** (`engine/calendar.ts`) : le tour 1 est janvier 2027, la date s’affiche en mois (« mars 2029 »),
@@ -55,7 +71,7 @@ Standalone components, zoneless, Signals partout.
   propriétés — littoral, frontalier, numéro pair, initiale, nom composé, préfecture chef-lieu de région… — à remplir
   avec les 96 départements métropolitains, chacun une seule fois, en douze essais) et **Trivial politique** (façon
   Trivial Pursuit : un dé tire une couleur parmi six catégories — institutions, histoire, géographie, économie, Europe
-  et monde, culture politique —, chaque bonne réponse rapporte un camembert, neuf questions au plus). Le score fixe le palier : brillant (gains ×1,5),
+  et monde, culture politique —, chaque bonne réponse rapporte un camembert, neuf questions au plus ; 117 questions). Le score fixe le palier : brillant (gains ×1,5),
   réussi, mitigé (moitié), raté (presque rien, et des dégâts). La fatigue et le stress rendent le jeu plus dur. On peut
   laisser faire l’équipe (résultat moyen) ; pendant un projet au long cours, elle s’en charge. Clavier pris en charge.
 - **Nouvelles actions** : fête du village, débat devant des lycéens, nuit blanche sur un dossier, matinale radio,
@@ -69,6 +85,14 @@ Standalone components, zoneless, Signals partout.
   circonscription à vélo. **Encore des événements** : micro tendu au festival (été), tempête de neige (hiver), Téléthon
   (décembre), bloqué·e dans le métro, militant devenu viral, mariage d’un adversaire, plume fantôme, chien adopté à la
   permanence, sondage coquille, dîner de famille houleux, permanence cambriolée, cahier de doléances qui déborde.
+  **Encore plus** : actions « Tourner au marché le dimanche matin » (mini-jeu), « Journée dans une exploitation
+  agricole », « Créer un conseil des jeunes », « Lancer sa lettre d’information », « Vidéo pédagogique » (risque d’erreur
+  de chiffre), « Déjeuner avec les journalistes politiques », « Prendre un·e jeune militant·e sous son aile », « Éplucher un
+  rapport de la Cour des comptes » (mini-jeu), « Débat public avec un adversaire » (mini-jeu), « Nuit de maraude »,
+  « Former son équipe aux outils numériques », « Visiter une caserne de pompiers », « Soirée quiz avec les militants »
+  (Trivial), « Cercle de lecture » ; événements crue (hiver), question du collégien, dernière boulangerie, addition salée,
+  vélo volé, podcast qui pique (Trivial), lettre anonyme, grêle sur les vignes (printemps-été), fusion de communes,
+  ancien camarade lobbyiste, mauvais chiffre en direct, défi du journal local (mot du jour).
   Avec les jeux de réflexion : actions « Mot du jour à la radio », « Soirée quiz au bistrot », « Réviser la carte de
   France », « Jeu télévisé au profit d’une association » ; événements « Invité·e d’un jeu télévisé », « L’interro surprise
   sur la carte de France », « Le grand quiz de la rentrée politique » (septembre).
@@ -376,6 +400,7 @@ src/app/game/
 │   ├── scene.service.ts             Scène interactive en cours
 │   ├── patrimoine.service.ts        Achats et ventes de biens
 │   ├── fx.service.ts                Effets visuels 2D éphémères
+│   ├── pwa.service.ts               Webapp : installation, mises à jour, hors ligne
 │   └── team.service.ts              Recrutement / renvoi
 └── components/
     ├── dashboard/        Grille 3 colonnes + écran de fin
@@ -399,6 +424,7 @@ src/app/game/
     ├── bank/             Banque & emprunts
     ├── minigame/         Les dix mini-jeux (games/ : mot du jour, Départodoku, Trivial politique)
     ├── contact-panel/    Panneau du Premier contact (ciel, vaisseau, jauges)
+    ├── pwa-banner/       Bandeaux d’installation, de mise à jour et hors ligne
     ├── fx-layer/         Calque d’animations 2D
     ├── emblem/           Illustrations animées des décisions
     ├── election-night/   Soirée électorale animée

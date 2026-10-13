@@ -5,11 +5,13 @@ import { AuthComponent } from './game/components/auth/auth.component';
 import { SlotsComponent } from './game/components/slots/slots.component';
 import { GameStateService } from './game/services/game-state.service';
 import { AuthService } from './game/services/auth.service';
+import { PwaBannerComponent } from './game/components/pwa-banner/pwa-banner.component';
 
 @Component({
   selector: 'app-root',
-  imports: [DashboardComponent, NewGameComponent, AuthComponent, SlotsComponent],
+  imports: [DashboardComponent, NewGameComponent, AuthComponent, SlotsComponent, PwaBannerComponent],
   template: `
+    <app-pwa-banner [inGame]="game.started()" />
     @if (!auth.signedIn()) {
       <app-auth />
     } @else if (game.started()) {

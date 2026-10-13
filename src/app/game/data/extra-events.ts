@@ -391,7 +391,7 @@ export const EXTRA_EVENTS: RandomEvent[] = [
       context: 'Votre consultation en ligne a reçu quatre mille contributions. Il faut en tirer des propositions avant la réunion publique.',
       choices: [
         c('trier', 'Trier soi-même les contributions', [play('consultation', 'Quatre mille contributions', [s('credibility', 3), s('popularity', 2), { kind: 'dossier', domain: 'social', delta: 2 }])], 'Café, surligneur, et c’est parti.'),
-        c('cabinet', 'Confier ça à un cabinet', [{ kind: 'funds', account: 'campaign', delta: -2000 }, s('credibility', 1)], 'Un rapport impeccable, que personne ne lit.', { needMoney: 2000 }),
+        c('cabinet', 'Confier ça à un cabinet', [{ kind: 'funds', account: 'campaign', delta: -2000 }, s('credibility', 1)], 'Un rapport impeccable, que personne ne lit.'),
       ],
     }),
   },
@@ -426,6 +426,148 @@ export const EXTRA_EVENTS: RandomEvent[] = [
       choices: [
         c('jouer', 'Participer', [play('quiz_tele', 'Le quiz de la rentrée', [s('credibility', 3), s('popularity', 3)], [s('credibility', -3), s('popularity', -1)])], 'Le buzzer est chaud.'),
         c('non', 'Laisser la place aux autres', [], 'Vous regardez l’émission chez vous. Vous auriez su répondre.'),
+      ],
+    }),
+  },
+  {
+    tag: 'crue', weight: 0.6,
+    eligible: d => [0, 1, 2, 10, 11].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'La rivière sort de son lit',
+      context: 'Trois jours de pluie : les caves sont inondées, la départementale est coupée, des familles dorment au gymnase.',
+      choices: [
+        c('sacs', 'Remplir des sacs de sable avec les bénévoles', [s('popularity', 4), s('energy', -10), { kind: 'contact', contactId: 'ct-maires', trust: 3 }], 'Les photos de vous, trempé·e, font le tour du département.'),
+        c('catnat', 'Obtenir l’état de catastrophe naturelle', [s('credibility', 3), s('influence', 1), s('stress', 3)], 'Coups de fil au préfet, dossier bouclé en dix jours : les assurances paieront.'),
+        c('com', 'Un communiqué de soutien', [s('popularity', -2)], '« Où était-il·elle ? » demandent les sinistrés.'),
+      ],
+    }),
+  },
+  {
+    tag: 'question_collegien', weight: 0.7,
+    build: () => ({
+      title: 'La question du collégien',
+      context: 'En visite dans une classe de 4e, un élève lève la main : « Est-ce que vous avez déjà menti pour être élu·e ? » Un parent filme.',
+      choices: [
+        c('franchise', 'Répondre avec franchise', [s('credibility', 3), s('popularity', 2)], '« J’ai parfois promis trop vite. » La vidéo est partagée pour de bonnes raisons.'),
+        c('pirouette', 'S’en tirer par une pirouette', [s('popularity', 1), s('credibility', -1)], 'La classe rit. L’élève, lui, n’est pas dupe.'),
+        c('jamais', '« Jamais ! »', [s('credibility', -3)], 'Les commentaires sous la vidéo exhument vos anciennes promesses.'),
+      ],
+    }),
+  },
+  {
+    tag: 'boulangerie', weight: 0.6,
+    build: () => ({
+      title: 'La dernière boulangerie ferme',
+      context: 'Le boulanger part à la retraite sans repreneur. Le village n’aura plus de pain, et les habitants vous regardent.',
+      choices: [
+        c('repreneur', 'Chercher un repreneur avec la chambre des métiers', [s('popularity', 3), { kind: 'dossier', domain: 'territoires', delta: 3 }, s('energy', -6)], 'Un jeune couple reprend le fournil. Inauguration à la galette.'),
+        c('local', 'Racheter le local avec la commune', [{ kind: 'funds', account: 'campaign', delta: -1500 }, s('popularity', 4)], 'Loyer modéré, artisan trouvé : la boulangerie rouvre.'),
+        c('rien', 'C’est le marché', [s('popularity', -3)], 'Le dépôt de pain de la supérette ne remplace pas la boulangerie.'),
+      ],
+    }),
+  },
+  {
+    tag: 'addition_salee', weight: 0.5, minRank: 'depute',
+    build: () => ({
+      title: 'L’addition salée',
+      context: 'Un site d’information publie la note d’un dîner à 420 € réglé avec vos frais de mandat. Le homard est en photo.',
+      choices: [
+        c('rembourser', 'Rembourser et s’excuser', [{ kind: 'funds', account: 'personal', delta: -420 }, s('credibility', 1), s('popularity', -1)], 'L’affaire s’éteint en deux jours.'),
+        c('justifier', 'Justifier : « Un dîner de travail »', [s('credibility', -3), { kind: 'exposure', delta: 4 }], 'Les convives démentent avoir parlé travail.'),
+      ],
+    }),
+  },
+  {
+    tag: 'velo_vole', weight: 0.5,
+    build: () => ({
+      title: 'On vous a volé votre vélo',
+      context: 'Votre vieux vélo, attaché devant la permanence, a disparu. Il ne reste que l’antivol, coupé net.',
+      choices: [
+        c('humour', 'En faire un post plein d’humour', [s('popularity', 3)], '« Avis de recherche : vélo rouge, très engagé politiquement. » 40 000 partages, et le vélo est retrouvé.'),
+        c('plainte', 'Porter plainte, comme tout le monde', [s('credibility', 1), s('stress', 1)], 'Le commissariat vous donne un récépissé et un sourire las.'),
+      ],
+    }),
+  },
+  {
+    tag: 'podcast_humour', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Le podcast qui pique',
+      context: 'Un podcast humoristique très écouté invite des élus à un quiz sur la vie politique. Les mauvaises réponses deviennent des mèmes.',
+      choices: [
+        c('jouer', 'Relever le défi', [play('trivial', 'Le quiz du podcast', [s('popularity', 4), s('credibility', 1)], [s('popularity', -2), s('credibility', -2)])], 'Le générique est déjà moqueur.'),
+        c('non', 'Décliner', [], 'Ils lisent votre refus à l’antenne, avec une voix de robot.'),
+      ],
+    }),
+  },
+  {
+    tag: 'lettre_anonyme', weight: 0.5, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Une lettre anonyme',
+      context: 'Une lettre non signée accuse l’un de vos proches collaborateurs de favoriser un entrepreneur ami.',
+      choices: [
+        c('enqueter', 'Vérifier discrètement', [s('stress', 3), s('credibility', 2)], 'Les marchés sont en règle. Vous savez désormais qui écrit des lettres anonymes.'),
+        c('procureur', 'Transmettre au procureur', [s('credibility', 3), { kind: 'cohesion', delta: -2 }], 'L’enquête blanchit votre collaborateur. Il vous en veut un peu.'),
+        c('ignorer', 'Jeter la lettre', [{ kind: 'exposure', delta: 3 }], 'Une copie arrive aussi à la presse locale.'),
+      ],
+    }),
+  },
+  {
+    tag: 'grele', weight: 0.6,
+    eligible: d => [4, 5, 6].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'La grêle a haché les vignes',
+      context: 'Vingt minutes d’orage et la récolte de l’année est perdue sur trois communes. Les viticulteurs vous attendent.',
+      choices: [
+        c('terrain', 'Aller sur les parcelles dès le lendemain', [s('popularity', 3), { kind: 'dossier', domain: 'ecologie', delta: 2 }, s('energy', -6)], 'Vous écoutez longtemps. Ils s’en souviendront.'),
+        c('fonds', 'Débloquer un fonds d’urgence', [{ kind: 'funds', account: 'campaign', delta: -1000 }, s('popularity', 2), s('credibility', 2)], 'Une aide versée en trois semaines, un record.'),
+        c('ministre', 'Interpeller le ministre de l’Agriculture', [s('influence', 2), s('credibility', 1)], 'Le ministre promet une visite. Il viendra, en septembre.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fusion_communes', weight: 0.5, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Projet de fusion de communes',
+      context: 'Trois petites communes veulent fusionner pour mutualiser leurs services. Les anciens craignent de perdre leur mairie et leur nom.',
+      choices: [
+        c('soutenir', 'Soutenir la fusion', [{ kind: 'dossier', domain: 'territoires', delta: 3 }, s('credibility', 2), { kind: 'contact', contactId: 'ct-maires', trust: -2 }], 'La commune nouvelle naît. Les clochers restent, les panneaux changent.'),
+        c('referendum', 'Proposer une consultation locale', [s('popularity', 2), s('credibility', 1)], 'Les habitants votent oui à 58 %. Personne ne peut contester.'),
+        c('opposer', 'S’y opposer', [s('popularity', 1), { kind: 'contact', contactId: 'ct-maires', trust: 3 }], 'Le projet est enterré. Les comptes, eux, restent dans le rouge.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ancien_camarade', weight: 0.5, minRank: 'depute',
+    build: () => ({
+      title: 'Un ancien camarade devenu lobbyiste',
+      context: 'Votre voisin d’amphi, aujourd’hui représentant d’un grand groupe pharmaceutique, vous invite dans un restaurant étoilé « pour le plaisir ».',
+      choices: [
+        c('accepter', 'Accepter le dîner', [s('influence', 2), { kind: 'exposure', delta: 3 }], 'Il n’a parlé de son amendement qu’au dessert.'),
+        c('declarer', 'Accepter et le déclarer à la déontologue', [s('credibility', 2), s('influence', 1)], 'Tout est transparent, et l’ambiance un peu froide.'),
+        c('decliner', 'Décliner', [s('credibility', 1)], 'Un café en terrasse, à vos frais, suffira.'),
+      ],
+    }),
+  },
+  {
+    tag: 'chiffre_faux', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Le mauvais chiffre en direct',
+      context: 'À la radio, vous annoncez « 30 % de chômage chez les jeunes du département ». Le chiffre réel est de 13 %. L’animateur vous reprend.',
+      choices: [
+        c('corriger', 'Corriger aussitôt', [s('credibility', 1)], '« Je me suis trompé·e, merci. » On vous en sait gré.'),
+        c('maintenir', 'Maintenir le chiffre', [s('credibility', -4), { kind: 'exposure', delta: 2 }], 'Les fact-checkeurs publient un article le soir même.'),
+        c('reviser', 'Promettre de réviser ses fiches', [play('fiches', 'Réviser ses fiches', [s('credibility', 3), { kind: 'dossier', domain: 'economie', delta: 2 }])], 'Vous passez la nuit sur les chiffres de l’Insee.'),
+      ],
+    }),
+  },
+  {
+    tag: 'mot_journal', weight: 0.5,
+    build: () => ({
+      title: 'Le défi du journal local',
+      context: 'La gazette lance un défi aux élus : trouver le mot du jour en six essais. Les scores seront publiés vendredi.',
+      choices: [
+        c('jouer', 'Relever le défi', [play('mot_du_jour', 'Le mot de la gazette', [s('popularity', 3)], [s('popularity', -1)])], 'Première lettre : à vous de jouer.'),
+        c('non', 'Laisser jouer les autres', [], 'Votre adversaire le trouve en deux coups. La gazette le souligne.'),
       ],
     }),
   },

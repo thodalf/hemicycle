@@ -4,6 +4,16 @@ import { QUIZ_CATEGORIES, QUIZ_QUESTIONS, QuizCategory } from '../../../data/qui
 
 const MAX_Q = 9;
 
+/** Mélange de Fisher-Yates (un tri aléatoire laisse souvent la bonne réponse en tête) */
+function shuffle<T>(list: readonly T[]): T[] {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 interface Asked { cat: QuizCategory; q: string; options: string[]; answer: string }
 
 /** Trivial politique : six camemberts, neuf questions au plus (façon Trivial Pursuit) */
@@ -112,7 +122,7 @@ export class QuizGameComponent {
   ngOnInit(): void {
     const only = this.def().cats;
     if (only?.length) this.cats = QUIZ_CATEGORIES.filter(c => only.includes(c.id));
-    for (const c of this.cats) this.pool[c.id] = QUIZ_QUESTIONS.filter(q => q.cat === c.id).sort(() => Math.random() - 0.5);
+    for (const c of this.cats) this.pool[c.id] = shuffle(QUIZ_QUESTIONS.filter(q => q.cat === c.id));
     this.roll();
   }
 
@@ -149,7 +159,7 @@ export class QuizGameComponent {
     if (this.over) return;
     const q = this.pool[cat.id].shift()!;
     this.asked.update(n => n + 1);
-    this.cur.set({ cat, q: q.q.replace(/ ([?!:;])/g, '\u00a0$1'), answer: q.a[0], options: [...q.a].sort(() => Math.random() - 0.5) });
+    this.cur.set({ cat, q: q.q.replace(/ ([?!:;])/g, '\u00a0$1'), answer: q.a[0], options: shuffle(q.a) });
     this.step.set('ask');
     this.emit();
     const limit = 16000 / this.diff();

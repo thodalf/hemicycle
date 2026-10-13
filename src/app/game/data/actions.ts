@@ -1389,6 +1389,91 @@ const RAW_ACTIONS: ActionDefinition[] = [
     cost: { ap: 2, energy: 12 }, cooldown: 4,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
   },
+  {
+    id: 'marche_dimanche', minigame: 'tractage', label: 'Tourner au marché le dimanche matin', category: 'terrain', minRank: 'militant',
+    description: 'Entre le fromager et le maraîcher, un tract, un mot, une poignée de main. Le café au comptoir est offert, la critique aussi.',
+    cost: { ap: 1, energy: 8 }, cooldown: 1,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'momentum', delta: 1 }],
+  },
+  {
+    id: 'visite_ferme', label: 'Passer une journée dans une exploitation agricole', category: 'terrain', minRank: 'militant',
+    description: 'Traite à 6 heures, comptes de la coopérative à midi, colère sur les normes le soir. Vous repartez avec des bottes sales et des dossiers.',
+    cost: { ap: 1, energy: 14 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'ecologie', delta: 3 }, { kind: 'dossier', domain: 'territoires', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  },
+  {
+    id: 'conseil_jeunes', label: 'Créer un conseil des jeunes', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Vingt collégiens et lycéens élus par leurs pairs, un budget symbolique, des idées qui décoiffent.',
+    cost: { ap: 2, energy: 10, money: 500 }, cooldown: 6,
+    effects: [{ kind: 'dossier', domain: 'education', delta: 4 }, { kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+  {
+    id: 'lettre_info', label: 'Lancer sa lettre d’information', category: 'medias', minRank: 'militant',
+    description: 'Une lettre par mois, à vos abonnés : votre bilan, vos combats, une photo du marché. Les fidèles la lisent jusqu’au bout.',
+    cost: { ap: 1, energy: 6, money: 200 }, cooldown: 3,
+    effects: [{ kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'stat', stat: 'popularity', delta: 1 }, { kind: 'momentum', delta: 2 }],
+  },
+  {
+    id: 'video_pedago', label: 'Tourner une vidéo pédagogique', category: 'medias', minRank: 'militant', target: 'domain',
+    description: 'Une minute trente, un tableau blanc, un sujet compliqué rendu limpide. Si ça prend, des centaines de milliers de vues.',
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
+    effects: [{ kind: 'dossier', domain: '$domain', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+    risk: { baseChance: 0.15, onFailure: [{ kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'credibility', delta: -2 }], failureNews: 'Une erreur de chiffre dans votre vidéo : les fact-checkeurs s’en donnent à cœur joie.' },
+  },
+  {
+    id: 'dejeuner_presse', label: 'Déjeuner avec les journalistes politiques', category: 'reseau', minRank: 'depute',
+    description: 'Une brasserie près de l’Assemblée, du « off » et des confidences calculées. Ils écriront peut-être sur vous.',
+    cost: { ap: 1, energy: 6, money: 180 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'exposure', delta: 1 }],
+  },
+  {
+    id: 'mentorat', label: 'Prendre un·e jeune militant·e sous son aile', category: 'parti', minRank: 'conseiller_municipal',
+    description: 'Lui ouvrir votre agenda, relire ses discours, lui apprendre le métier. Un jour, il ou elle vous le rendra, ou vous doublera.',
+    cost: { ap: 1, energy: 6 }, cooldown: 4,
+    effects: [{ kind: 'cohesion', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'stat', stat: 'stress', delta: -1 }],
+  },
+  {
+    id: 'rapport_cour_comptes', minigame: 'fiches', label: 'Éplucher un rapport de la Cour des comptes', category: 'dossiers', minRank: 'militant', target: 'domain',
+    description: 'Quatre cents pages, des tableaux, des recommandations restées lettre morte. De quoi nourrir vos interventions pour des mois.',
+    cost: { ap: 1, energy: 14 }, cooldown: 2,
+    effects: [{ kind: 'dossier', domain: '$domain', delta: 7 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'stat', stat: 'stress', delta: 2 }],
+  },
+  {
+    id: 'debat_contradictoire', minigame: 'eloquence', label: 'Organiser un débat public avec un adversaire', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Une salle municipale, deux micros, un modérateur et deux camps dans le public. Le meilleur argument gagne… en théorie.',
+    cost: { ap: 2, energy: 12 }, cooldown: 3,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'momentum', delta: 2 }],
+  },
+  {
+    id: 'maraude', label: 'Une nuit de maraude avec le Samu social', category: 'terrain', minRank: 'militant',
+    description: 'Thermos, couvertures et longues conversations sur le trottoir. Pas de caméra : vous l’avez demandé.',
+    cost: { ap: 1, energy: 14 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'social', delta: 4 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+  },
+  {
+    id: 'atelier_ia', label: 'Former son équipe aux outils numériques', category: 'dossiers', minRank: 'conseiller_municipal',
+    description: 'Une journée d’atelier : données ouvertes, cartographie, intelligence artificielle. Votre équipe gagne des heures chaque semaine.',
+    cost: { ap: 1, energy: 8, money: 800 }, cooldown: 6,
+    effects: [{ kind: 'dossier', domain: 'numerique', delta: 5 }, { kind: 'stat', stat: 'stress', delta: -2 }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  {
+    id: 'caserne_pompiers', label: 'Visiter une caserne de pompiers', category: 'terrain', minRank: 'militant',
+    description: 'Exercice de désincarcération, café à la cantine, et une liste de doléances sur les volontaires qui ne viennent plus.',
+    cost: { ap: 1, energy: 8 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'securite', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'contact', contactId: 'ct-maires', trust: 1 }],
+  },
+  {
+    id: 'quiz_militants', minigame: 'trivial', label: 'Soirée quiz avec les militants', category: 'parti', minRank: 'militant',
+    description: 'Pizzas, équipes mélangées et questions sur l’histoire de la République. Les anciens ont de beaux restes.',
+    cost: { ap: 1, energy: 6, money: 80 }, cooldown: 3,
+    effects: [{ kind: 'cohesion', delta: 3 }, { kind: 'stat', stat: 'stress', delta: -3 }],
+  },
+  {
+    id: 'club_lecture', label: 'Animer un cercle de lecture', category: 'repos', minRank: 'militant',
+    description: 'Un livre par mois, quelques fidèles, une librairie qui ferme ses rideaux pour vous. On y parle de tout, sauf de politique. Enfin, presque.',
+    cost: { ap: 1, energy: 3 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'stress', delta: -6 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
 
   // ── Assemblée : textes sur l'actualité ─────────────────
   {
