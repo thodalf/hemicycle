@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Recruit, StaffRole } from '../models/game.models';
 import { dismissCandidate, fireRecruit, headhunt, headhuntCheck, headhuntFee, hireCheck, hireRecruit, openBooster, payroll } from '../engine/recruits';
 import { STAFF } from '../data/staff';
+import { hireWithOffer, setSalary } from '../engine/team-pay';
 import { rankOrder } from '../data/ranks';
 import { GameStateService } from './game-state.service';
 
@@ -43,6 +44,19 @@ export class TeamService {
   }
 
   hire(id: string): void { this.game.mutate(d => hireRecruit(d, id)); }
+
+  /** Proposer un salaire ; renvoie la réponse du ou de la candidat·e */
+  offer(id: string, amount: number): { ok: boolean; text: string } {
+    let res = { ok: false, text: '' };
+    this.game.mutate((d, rng) => { res = hireWithOffer(d, id, amount, rng); });
+    return res;
+  }
+
+  setSalary(id: string, amount: number): string[] {
+    let out: string[] = [];
+    this.game.mutate((d, rng) => { out = setSalary(d, id, amount, rng); });
+    return out;
+  }
   fire(id: string): void { this.game.mutate(d => fireRecruit(d, id)); }
   dismiss(id: string): void { this.game.mutate(d => dismissCandidate(d, id)); }
 }

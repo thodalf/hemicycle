@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { PhoneService } from '../../services/phone.service';
 import { CALLS_PER_MONTH, EXTRA_CALL_ENERGY, PhoneEntry } from '../../engine/phone';
@@ -28,8 +28,8 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
               <div class="who"><strong>{{ t.name }}</strong><small>{{ t.role }}{{ t.bond !== undefined ? ' · relation ' + (t.bond > 0 ? '+' : '') + t.bond : '' }}</small></div>
               @if (t.callable) { <button type="button" class="call-btn" (click)="calling.set(!calling())" aria-label="Appeler">📞</button> }
             </header>
-            <div class="bubbles" role="log">
-              @for (m of messages(); track m.id) {
+            <div class="bubbles" role="log" #log>
+              @for (m of chrono(); track m.id) {
                 <div class="bubble" [class.out]="m.outgoing" [class.call]="m.kind === 'appel'">
                   <p>{{ m.kind === 'appel' && !m.outgoing ? '📞 ' : '' }}{{ m.text }}</p>
                   @if (m.summary?.length) { <div class="chips">@for (x of m.summary; track $index) { <span>{{ x }}</span> }</div> }
@@ -119,7 +119,7 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
       .who { display: grid; min-width: 0; small { font-size: 11.5px; color: var(--ink-3); } } }
     .back { border: 0; background: none; font-size: 28px; line-height: 1; color: var(--accent); cursor: pointer; padding: 0 4px; }
     .call-btn { border: 0; width: 38px; height: 38px; border-radius: 50%; background: var(--good); color: #fff; font-size: 17px; cursor: pointer; }
-    .bubbles { flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 8px; padding: 12px; }
+    .bubbles { flex: 1; overflow-y: auto; display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; padding: 12px; }
     .bubble { max-width: 82%; align-self: flex-start; background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px 16px 16px 4px; padding: 8px 11px;
       p { margin: 0; font-size: 13.5px; line-height: 1.35; } small { display: block; margin-top: 3px; font-size: 10px; color: var(--ink-3); } }
     .bubble.out { align-self: flex-end; background: var(--accent); color: #fff; border-color: transparent; border-radius: 16px 16px 4px 16px; small { color: rgba(255,255,255,.7); } }
@@ -168,6 +168,18 @@ export class PhoneComponent {
   });
 
   protected readonly messages = computed(() => this.all().filter(m => m.who === this.phone.thread()));
+  /** Conversation dans l'ordre chronologique, groupée en haut de l'écran */
+  protected readonly chrono = computed(() => [...this.messages()].reverse());
+  private readonly log = viewChild<ElementRef<HTMLElement>>('log');
+
+  constructor() {
+    // On garde le dernier message en vue quand la conversation déborde
+    effect(() => {
+      this.chrono();
+      const el = this.log()?.nativeElement;
+      if (el) setTimeout(() => (el.scrollTop = el.scrollHeight), 0);
+    });
+  }
   /** Le dernier SMS reçu qui attend une réponse */
   protected readonly pending = computed(() => this.messages().find(m => !m.outgoing && m.replies?.length && !m.answered) ?? null);
   protected readonly options = computed(() => { this.game.s(); const k = this.phone.thread(); return k ? this.phone.options(k) : []; });

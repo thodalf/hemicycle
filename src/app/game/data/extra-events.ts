@@ -654,4 +654,186 @@ export const EXTRA_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  // ── Équipe, salaires, revenus ───────────────────────────
+  {
+    tag: 'augmentation_demandee', weight: 1, minRank: 'militant',
+    eligible: d => d.player.team.length > 0,
+    build: (d, rng) => {
+      const r = rng.pick(d.player.team);
+      return {
+        title: `${r.name} demande une augmentation`,
+        context: `« Ça fait des mois que je fais le travail de deux personnes. » ${r.name} gagne ${r.salary.toLocaleString('fr-FR')} € par mois et vous regarde droit dans les yeux.`,
+        choices: [
+          c('accorder', 'Accorder 10 %', [{ kind: 'team', recruitId: r.id, salaryPct: 10, morale: 20 }], 'Un grand sourire, et une énergie retrouvée.'),
+          c('moitie', 'Proposer 5 %', [{ kind: 'team', recruitId: r.id, salaryPct: 5, morale: 6 }], '« C’est un début. »'),
+          c('refuser', 'Refuser : les caisses sont vides', [{ kind: 'team', recruitId: r.id, morale: -25 }], 'Un silence glacial. Il ou elle commence à regarder les offres d’emploi.'),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'debauchage', weight: 0.8, minRank: 'conseiller_municipal',
+    eligible: d => d.player.team.length > 0,
+    build: (d, rng) => {
+      const r = rng.pick(d.player.team);
+      return {
+        title: `Un rival veut débaucher ${r.name}`,
+        context: `Un adversaire propose à ${r.name} 30 % de plus pour rejoindre son équipe. Votre collaborateur·rice vous laisse une chance de surenchérir.`,
+        choices: [
+          c('surencherir', 'Surenchérir : +20 %', [{ kind: 'team', recruitId: r.id, salaryPct: 20, morale: 15 }], 'Fidélité retrouvée, masse salariale alourdie.'),
+          c('loyaute', 'En appeler à la loyauté', [{ kind: 'team', recruitId: r.id, morale: -10 }, s('influence', 1)], 'Il ou elle reste… pour l’instant.', {
+            risk: { baseChance: 0.4, onFailure: [{ kind: 'team', recruitId: r.id, morale: -60 }], failureNews: 'Les arguments n’ont pas suffi : le moral s’effondre, la porte n’est plus loin.' },
+          }),
+          c('laisser', 'Le ou la laisser partir avec élégance', [{ kind: 'team', recruitId: r.id, leave: true }, s('credibility', 1)], 'Un pot de départ, des bises, et un poste vacant.'),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'equipe_greve', weight: 0.9, minRank: 'conseiller_municipal',
+    eligible: d => d.player.team.length >= 3 && d.player.team.reduce((t, r) => t + (r.morale ?? 60), 0) / d.player.team.length < 40,
+    build: () => ({
+      title: 'Fronde dans votre équipe',
+      context: 'Salaires bas, horaires impossibles : votre équipe vous remet une lettre collective. Ils menacent de tout arrêter avant la fin du mois.',
+      choices: [
+        c('augmenter', 'Augmenter tout le monde de 8 %', [{ kind: 'team', all: true, salaryPct: 8, morale: 20 }], 'La lettre finit à la corbeille, le sourire revient.'),
+        c('dialogue', 'Réunion de crise et promesses', [{ kind: 'team', all: true, morale: 8 }, s('stress', 4)], 'On vous laisse une chance. Une seule.'),
+        c('fermete', 'Rappeler qui est le patron', [{ kind: 'team', all: true, morale: -15 }, s('influence', 1)], 'Le travail reprend, dans un silence pesant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'pot_equipe', weight: 0.6, minRank: 'militant',
+    eligible: d => d.player.team.length >= 2,
+    build: () => ({
+      title: 'Le pot de l’équipe',
+      context: 'C’est l’anniversaire de la permanence : votre équipe a organisé un pot surprise, avec un gâteau à votre effigie.',
+      choices: [
+        c('rester', 'Rester toute la soirée', [{ kind: 'team', all: true, morale: 10 }, s('stress', -3), s('energy', -3)], 'Karaoké jusqu’à minuit. Les liens se resserrent.'),
+        c('passer', 'Passer en coup de vent', [{ kind: 'team', all: true, morale: -3 }], 'Vous partez avant le gâteau. On le remarque.'),
+      ],
+    }),
+  },
+  {
+    tag: 'offre_conseil_admin', weight: 0.6, minRank: 'militant',
+    eligible: d => ['militant', 'conseiller_municipal', 'ancien_president'].includes(d.player.rankId) && !(d.player.sideIncomes ?? []).some(x => x.id === 'jetons') && d.player.stats.influence >= 25,
+    build: () => ({
+      title: 'Un siège au conseil d’administration',
+      context: 'Une entreprise régionale vous propose un siège d’administrateur : six réunions par an, 1 800 € par mois de jetons de présence.',
+      choices: [
+        c('accepter', 'Accepter', [{ kind: 'side', id: 'jetons', label: 'Jetons de présence', amount: 1800, exposure: 0.5 }, s('influence', 2)], 'Votre première séance porte sur un plan social. Ambiance.'),
+        c('refuser', 'Décliner pour rester libre', [s('credibility', 2)], 'Vous gardez votre indépendance.'),
+      ],
+    }),
+  },
+  {
+    tag: 'controle_fiscal', weight: 0.6, minRank: 'conseiller_municipal',
+    eligible: d => (d.player.sideIncomes ?? []).length > 0 || d.player.scandalExposure > 35,
+    build: () => ({
+      title: 'Contrôle fiscal',
+      context: 'Un inspecteur des finances publiques épluche vos revenus annexes des trois dernières années. Quelques lignes posent question.',
+      choices: [
+        c('payer', 'Régulariser sans discuter', [{ kind: 'funds', account: 'personal', delta: -4000 }, s('credibility', 1)], 'Redressement payé. Personne n’en saura rien.'),
+        c('contester', 'Contester avec un avocat fiscaliste', [{ kind: 'funds', account: 'personal', delta: -1500 }, s('stress', 4)], 'Le recours suit son cours.', {
+          risk: { baseChance: 0.4, onFailure: [{ kind: 'funds', account: 'personal', delta: -6000 }, { kind: 'exposure', delta: 6 }], failureNews: 'Recours rejeté, pénalités en plus, et la presse a eu vent de l’affaire.' },
+        }),
+      ],
+    }),
+  },
+  {
+    tag: 'adaptation_livre', weight: 0.5, minRank: 'militant',
+    eligible: d => (d.player.sideIncomes ?? []).some(x => x.id === 'droits'),
+    build: () => ({
+      title: 'Votre livre adapté à l’écran',
+      context: 'Une plateforme veut adapter votre livre en mini-série. Un acteur connu pour jouer… vous.',
+      choices: [
+        c('ceder', 'Céder les droits', [{ kind: 'funds', account: 'personal', delta: 15000 }, s('popularity', 3)], 'Le tournage commence l’été prochain.'),
+        c('controle', 'Exiger un droit de regard sur le scénario', [{ kind: 'funds', account: 'personal', delta: 8000 }, s('credibility', 1)], 'Moins d’argent, mais pas de caricature.'),
+        c('refuser', 'Refuser', [], 'On ne fait pas de série sur vous de votre vivant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'billet_gagnant', weight: 0.3, minRank: 'militant',
+    build: () => ({
+      title: 'Un billet gagnant',
+      context: 'Le jeu à gratter acheté au tabac du marché : 5 000 €. Le buraliste a déjà prévenu la presse locale.',
+      choices: [
+        c('association', 'Tout reverser à une association', [s('popularity', 3), s('credibility', 1)], 'La photo du chèque fait la une du journal local.'),
+        c('garder', 'Garder le gain', [{ kind: 'funds', account: 'personal', delta: 5000 }, s('popularity', -1)], '« Un élu qui joue à l’argent ? » Quelques remarques, rien de grave.'),
+      ],
+    }),
+  },
+  {
+    tag: 'salaire_polemique', weight: 1.2, minRank: 'militant',
+    eligible: d => Number(d.player.flags['partyPayPct'] ?? 0) > 20 || Number(d.player.flags['presPayPct'] ?? 0) > 20,
+    build: d => {
+      const pres = Number(d.player.flags['presPayPct'] ?? 0) > 20 && !!d.presidency;
+      return {
+        title: pres ? 'Le traitement du président fait polémique' : 'Votre salaire de chef de parti fuite',
+        context: pres ? 'Un hebdomadaire titre : « Le président le mieux payé de la Ve République ». Les syndicats s’en emparent.' : 'Un militant a publié votre fiche de paie sur les réseaux. Les fédérations s’agitent.',
+        choices: [
+          c('baisser', 'Revenir au salaire d’origine', [{ kind: 'leaderPay', ...(pres ? { president: 0 } : { party: 0 }) }, s('credibility', 1)], 'Le geste calme les esprits.'),
+          c('justifier', 'Justifier : « C’est le prix des responsabilités »', [s('popularity', -3), { kind: 'exposure', delta: 3 }], 'La justification passe mal.'),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'erreur_gps', weight: 0.5, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Perdu·e sur la route',
+      context: 'Le GPS vous envoie dans un chemin de terre. Vous arriverez avec quarante minutes de retard à l’inauguration de la médiathèque.',
+      choices: [
+        c('rire', 'En rire à votre arrivée', [s('popularity', 2)], '« La France des territoires, je la connais… même ses chemins vicinaux ! » La salle rit.'),
+        c('chauffeur', 'Accuser le chauffeur', [s('popularity', -2), { kind: 'team', all: true, morale: -5 }], 'L’anecdote fait le tour de la ville, et de votre équipe.'),
+      ],
+    }),
+  },
+  {
+    tag: 'faux_compte', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Un faux compte à votre nom',
+      context: 'Un compte se fait passer pour vous et publie des énormités. Des milliers d’abonnés y croient.',
+      choices: [
+        c('signaler', 'Le faire suspendre et porter plainte', [s('credibility', 2), s('stress', 2)], 'Le compte disparaît en deux jours.'),
+        c('humour', 'Répondre avec humour depuis votre vrai compte', [s('popularity', 3)], '« Moi, au moins, je ne promets pas la semaine de deux jours. » Le vrai vous gagne des abonnés.'),
+      ],
+    }),
+  },
+  {
+    tag: 'centenaire', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Les cent ans de Madame Lucienne',
+      context: 'La doyenne de la commune fête ses cent ans à l’EHPAD. Elle a demandé que vous veniez « parce que vous avez une bonne tête ».',
+      choices: [
+        c('aller', 'Y aller avec des fleurs', [s('popularity', 2), s('stress', -3), { kind: 'dossier', domain: 'sante', delta: 1 }], 'Elle vous raconte 1944. Vous restez deux heures.'),
+        c('lettre', 'Lui envoyer une lettre', [s('popularity', 1)], 'Elle l’affiche au-dessus de son lit.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fibre_village', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Le village sans internet',
+      context: 'Trois hameaux attendent la fibre depuis cinq ans. Les télétravailleurs menacent de déménager.',
+      choices: [
+        c('operateur', 'Convoquer l’opérateur', [{ kind: 'dossier', domain: 'numerique', delta: 3 }, s('credibility', 2), s('energy', -4)], 'Un calendrier de travaux, enfin.'),
+        c('relais', 'Installer un relais 4G provisoire', [{ kind: 'funds', account: 'campaign', delta: -1500 }, s('popularity', 3)], 'Les habitants respirent… et regardent leurs séries.'),
+        c('promettre', 'Promettre que ça viendra', [s('popularity', -1)], 'On vous l’a déjà dit, répondent-ils.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saisonniers', weight: 0.5, minRank: 'conseiller_municipal',
+    eligible: d => [5, 6, 7].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'Les saisonniers dorment dans leurs voitures',
+      context: 'Vendanges, cueillettes, campings : des centaines de saisonniers ne trouvent pas de logement. Les employeurs s’inquiètent.',
+      choices: [
+        c('internat', 'Ouvrir les internats vides l’été', [s('popularity', 3), { kind: 'dossier', domain: 'social', delta: 2 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }], 'Une solution simple, saluée par tous.'),
+        c('employeurs', 'Renvoyer la balle aux employeurs', [s('credibility', -1)], 'Ils vous en tiendront rigueur aux prochaines élections consulaires.'),
+      ],
+    }),
+  },
 ];

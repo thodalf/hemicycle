@@ -133,6 +133,10 @@ export class ActionPlannerService {
       if (req.war && !leadsWar(s)) return { ok: false, reason: 'Le président, le Premier ministre et les ministres régaliens conduisent la guerre' };
       if (req.peace && s.war) return { ok: false, reason: 'Le pays est déjà en guerre' };
       if (req.homeFront && !s.war) return { ok: false, reason: 'Le pays n’est pas en guerre' };
+      if (req.noGovernment && ['ministre', 'premier_ministre', 'president'].includes(s.player.rankId)) return { ok: false, reason: 'Incompatible avec une fonction gouvernementale' };
+      if (req.minFunds && s.player.finances.personal < req.minFunds) return { ok: false, reason: `Il faut au moins ${req.minFunds.toLocaleString('fr-FR')} € d’épargne` };
+      if (req.placement !== undefined && Number(s.player.flags['placement'] ?? 0) === req.placement) return { ok: false, reason: req.placement === 0 ? 'Rien n’est placé' : 'Déjà fait' };
+      if (req.team && !s.player.team.length) return { ok: false, reason: 'Il faut une équipe' };
       if (req.totalWar && !s.war?.total) return { ok: false, reason: 'Seulement en guerre totale' };
       if (req.civil === true && !civilActive(s)) return { ok: false, reason: 'Réservé aux hauts fonctionnaires en poste' };
       if (req.civil === false && s.player.civil) return { ok: false, reason: 'Vous êtes déjà haut fonctionnaire' };

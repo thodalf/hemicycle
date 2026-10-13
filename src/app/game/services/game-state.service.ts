@@ -1,5 +1,6 @@
 import { initHostile, startInvasion, startWar } from '../engine/war';
 import { welcomePhone } from '../engine/phone';
+import { migrateTeamPay } from '../engine/team-pay';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { DOMAINS, GameState, StatKey } from '../models/game.models';
@@ -127,6 +128,7 @@ export function migrate(s: GameState): GameState {
   s.minigames ??= [];
   s.alien ??= null;
   s.player.civil ??= null;
+  migrateTeamPay(s);
   s.intl.hostile ??= initHostile();
   migrateLoans(s);
   if (!s.presidential) {

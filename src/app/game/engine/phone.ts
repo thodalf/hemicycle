@@ -301,7 +301,7 @@ interface Incoming { text: string; replies?: PhoneReply[]; kind?: 'sms' | 'appel
 const st = (stat: 'popularity' | 'influence' | 'credibility' | 'politicalCapital' | 'stress' | 'energy', delta: number): Effect => ({ kind: 'stat', stat, delta });
 const rep = (id: string, label: string, effects: Effect[], answer?: string): PhoneReply => ({ id, label, effects, ...(answer ? { answer } : {}) });
 
-const TEAM_TIPS: Partial<Record<StaffRole, { text: string; effects: Effect[] }>> = {
+export const TEAM_TIPS: Partial<Record<StaffRole, { text: string; effects: Effect[] }>> = {
   conseiller: { text: 'J’ai relu vos fiches : deux chiffres à corriger avant votre prochaine interview.', effects: [st('credibility', 1)] },
   community_manager: { text: 'Votre dernière vidéo cartonne chez les 18-25 ans. J’en prépare une autre ?', effects: [st('popularity', 1)] },
   chauffeur: { text: 'La voiture est prête. Et j’ai trouvé un raccourci : vous gagnerez une heure demain.', effects: [st('energy', 4)] },

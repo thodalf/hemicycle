@@ -59,6 +59,23 @@ Standalone components, zoneless, Signals partout.
   l’élu·e ou traitement du ministre, **salaire de chef·fe de parti** (versé par le parti, de 2 500 € à 6 500 € selon
   votre soutien interne, prélevé sur sa trésorerie), **traitement de haut fonctionnaire**, salaire de journaliste,
   loyers — avec la rémunération totale, la part mise de côté, les charges (équipe, prêts, biens) et le solde du mois.
+- **Salaires de l’équipe** (`engine/team-pay.ts`, panneau Équipe) : à l’embauche, on fait une **offre** (de 60 % à 200 %
+  des prétentions ; en dessous, la chance d’accepter baisse, et un refus fait monter les prétentions de 5 %). En cours de
+  contrat, boutons **− / +** pour augmenter ou raboter. Chaque recrue a un **moral** qui suit son salaire : sous 25, la
+  démission guette ; au-dessus de 80, elle se surpasse (coup de pouce selon son poste). Les prétentions montent de 3 % par
+  an. Actions : prime à l’équipe, séminaire au vert, entretiens annuels. Événements : demande d’augmentation, débauchage
+  par un rival, fronde de l’équipe mal payée, pot de l’équipe.
+- **Fixer son propre salaire** (lien « Fixer mon salaire » dans la rémunération) : chef·fe de parti de −50 % à +100 %,
+  chef·fe de l’État de −30 % à +100 %, une fois tous les six mois. S’augmenter fâche les courants du parti ou fait chuter
+  la cote (et l’exposition monte) ; au-delà de +30 %, l’usure continue chaque mois ; se baisser est salué. Événement :
+  la polémique sur votre salaire.
+- **Revenus annexes** (`engine/side-income.ts`) : revenus mensuels qui s’ajoutent à la rémunération — vacations
+  d’enseignement à l’université, société de conseil (exposée), chronique télé, jetons de présence au conseil
+  d’administration d’une entreprise, podcast sponsorisé, formations en entreprise, conseil international (ancien·ne
+  président·e), droits d’auteur après un livre (deux ans), et l’épargne placée (livret à 3 % par an, ou Bourse : 6 % en
+  moyenne, avec des mois très rouges). Les activités privées sont **suspendues pendant une fonction gouvernementale** ;
+  droits d’auteur et placements continuent. Événements : siège d’administrateur proposé, contrôle fiscal, livre adapté
+  en série, billet gagnant.
 - **Rémunération de ministre** : traitement de ministre ou de Premier·e ministre (traitement brut et indemnité de
   fonction), indemnité de député·e suspendue pendant la fonction (le ou la suppléant·e siège) et, en quittant le
   gouvernement, **trois mois d’indemnité de fin de fonctions**.
@@ -72,7 +89,7 @@ Standalone components, zoneless, Signals partout.
   mobilise, un lobby fait pression — voix ajoutées au scrutin en cours, ou promises pour votre prochain texte) et
   **demander de l’argent** (avance du parti pendant une campagne, dîner de donateurs ou « honoraires de conseil »
   exposés auprès d’un lobby, coup de main de la famille une fois par an). Quatre appels par mois, ensuite chaque
-  appel fatigue. Pendant un scrutin, un bouton « Passer des coups de fil » ouvre le téléphone par-dessus l’hémicycle.
+  appel fatigue. Les conversations se lisent de haut en bas, dans l’ordre. Pendant un scrutin, un bouton « Passer des coups de fil » ouvre le téléphone par-dessus l’hémicycle.
 - **Haute fonction publique** (`engine/civil.ts`) : cinq corps (préfectoral, Conseil d’État, Inspection des finances,
   diplomatique, Cour des comptes), quatre grades chacun (de sous-préfet·e à préfet·e de région, de secrétaire des
   affaires étrangères à ambassadeur·rice…), traitement de 4 200 € à 10 200 €. On y entre par le **concours de l’INSP**
@@ -133,6 +150,9 @@ Standalone components, zoneless, Signals partout.
   « Accueillir un chef d’État étranger », « Donner un dîner d’État » (président·e), « Journée défense et citoyenneté » ;
   événements 11 Novembre (protocole), plan de table du dîner officiel, banquet républicain, visite d’État dans votre
   région, une bombe de 1944 sous le chantier du tramway (déminage).
+  **Et encore** : actions « Matinée à la banque alimentaire », « Lire une histoire en maternelle », « Ramassage citoyen
+  des déchets », « Cosigner une tribune collective » ; événements perdu·e sur la route, faux compte à votre nom, les cent
+  ans de la doyenne, le village sans internet, les saisonniers sans logement.
   Avec les jeux de réflexion : actions « Mot du jour à la radio », « Soirée quiz au bistrot », « Réviser la carte de
   France », « Jeu télévisé au profit d’une association » ; événements « Invité·e d’un jeu télévisé », « L’interro surprise
   sur la carte de France », « Le grand quiz de la rentrée politique » (septembre).
@@ -437,6 +457,8 @@ src/app/game/
 │   ├── alien.ts               Scénario Premier contact : phases, jauges, fins
 │   ├── civil.ts               Haute fonction publique : corps, grades, concours, disponibilité
 │   ├── phone.ts               Téléphone : SMS, appels, répertoire, soutiens et demandes d’argent
+│   ├── team-pay.ts            Salaires et moral de l’équipe : offres, augmentations, démissions
+│   ├── side-income.ts         Revenus annexes et placements, incompatibilités
 │   ├── remuneration.ts        Rémunération du mois : mandat, parti, fonction publique, charges
 │   ├── life.ts                Âge, santé, mort, chapitres de vie, retraite, nécrologie
 │   ├── presidency.ts          Calendrier présidentiel, candidature, parrainages, présidence, crises

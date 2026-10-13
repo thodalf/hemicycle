@@ -237,7 +237,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     id: 'livre', label: 'Écrire un livre', category: 'argent', minRank: 'militant', target: 'domain',
     description: 'Légal. Un essai sur un dossier : droits d’auteur, crédibilité, et un dossier mieux maîtrisé.',
     cost: { ap: 2, energy: 12 }, cooldown: 4,
-    effects: [{ kind: 'income', base: 2000, scale: 'popularity', mult: 150 }, { kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'dossier', domain: '$domain', delta: 8 }, { kind: 'stat', stat: 'stress', delta: 5 }],
+    effects: [{ kind: 'income', base: 2000, scale: 'popularity', mult: 150 }, { kind: 'side', id: 'droits', label: 'Droits d’auteur', amount: 250, scale: 'popularity', mult: 5, months: 24, compatible: true }, { kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'dossier', domain: '$domain', delta: 8 }, { kind: 'stat', stat: 'stress', delta: 5 }],
     risk: {
       baseChance: 0.3, scaleWith: 'dossier', scaleWeight: 0.8,
       onFailure: [{ kind: 'income', base: 500 }, { kind: 'stat', stat: 'credibility', delta: -2 }],
@@ -1521,6 +1521,114 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'dossier', domain: 'securite', delta: 2 }, { kind: 'dossier', domain: 'education', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
   },
 
+  // ── Terrain et médias (encore) ─────────────────────────
+  {
+    id: 'banque_alimentaire', label: 'Une matinée à la banque alimentaire', category: 'terrain', minRank: 'militant',
+    description: 'Trier des cartons, servir des familles, écouter. Pas de photographe, c’était la condition.',
+    cost: { ap: 1, energy: 8 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'social', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -1 }],
+  },
+  {
+    id: 'lecture_ecole', label: 'Lire une histoire en maternelle', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Vingt-cinq enfants assis en tailleur, un album, et des questions qui désarment.',
+    cost: { ap: 1, energy: 5 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'education', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -2 }],
+  },
+  {
+    id: 'ramassage_dechets', label: 'Organiser un ramassage citoyen des déchets', category: 'terrain', minRank: 'militant',
+    description: 'Gants, sacs, et toute une berge de rivière nettoyée en une matinée.',
+    cost: { ap: 1, energy: 10 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'ecologie', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  },
+  {
+    id: 'tribune_collective', label: 'Cosigner une tribune collective', category: 'medias', minRank: 'conseiller_municipal', target: 'domain',
+    description: 'Cent élus de tous bords dans un grand quotidien. Votre nom au milieu des autres.',
+    cost: { ap: 1, energy: 4 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: '$domain', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'cohesion', delta: -1 }],
+  },
+
+  // ── Revenus annexes ────────────────────────────────────
+  {
+    id: 'enseignement_univ', label: 'Enseigner à l’université (vacations)', category: 'argent', minRank: 'militant', requires: { noGovernment: true },
+    description: 'Un séminaire hebdomadaire en master de science politique. Légal pour un·e élu·e, et bon pour la crédibilité.',
+    cost: { ap: 1, energy: 8 }, cooldown: 10,
+    effects: [{ kind: 'side', id: 'enseignement', label: 'Vacations d’enseignement', amount: 600, scale: 'credibility', mult: 10, months: 10 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+  {
+    id: 'societe_conseil', label: 'Créer sa société de conseil', category: 'argent', minRank: 'conseiller_municipal', requires: { noGovernment: true },
+    description: 'Une SAS, un carnet d’adresses, des clients qui préfèrent rester discrets. Un revenu régulier… et des questions.',
+    cost: { ap: 2, energy: 10, money: 1500 }, cooldown: 24,
+    effects: [{ kind: 'side', id: 'conseil', label: 'Société de conseil', amount: 1500, scale: 'influence', mult: 30, exposure: 0.4 }, { kind: 'exposure', delta: 2 }],
+  },
+  {
+    id: 'chroniqueur_tv', label: 'Devenir chroniqueur·se télé', category: 'argent', minRank: 'militant', requires: { noGovernment: true },
+    description: 'Un fauteuil hebdomadaire sur un plateau de débat. La notoriété monte, le sérieux baisse un peu.',
+    cost: { ap: 1, energy: 8 }, cooldown: 12,
+    effects: [{ kind: 'side', id: 'chronique_tv', label: 'Chronique télé', amount: 1200, scale: 'popularity', mult: 20, months: 12 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: -1 }],
+  },
+  {
+    id: 'conseil_admin', label: 'Entrer au conseil d’administration d’une entreprise', category: 'argent', minRank: 'militant', onlyRanks: ['militant', 'conseiller_municipal', 'ancien_president'], requires: { noGovernment: true },
+    description: 'Six réunions par an, des jetons de présence confortables. La presse appelle ça un « parachute doré ».',
+    cost: { ap: 1, energy: 4 }, cooldown: 24,
+    effects: [{ kind: 'side', id: 'jetons', label: 'Jetons de présence', amount: 1800, exposure: 0.5 }, { kind: 'stat', stat: 'influence', delta: 2 }],
+  },
+  {
+    id: 'podcast_sponsor', label: 'Lancer un podcast sponsorisé', category: 'argent', minRank: 'militant', requires: { noGovernment: true },
+    description: 'Un micro, un invité par semaine, une marque de matelas en partenaire. Ça rapporte, si l’audience suit.',
+    cost: { ap: 1, energy: 8, money: 400 }, cooldown: 12,
+    effects: [{ kind: 'side', id: 'podcast', label: 'Podcast sponsorisé', amount: 300, scale: 'popularity', mult: 10, months: 12 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+  },
+  {
+    id: 'formations_entreprise', label: 'Animer des formations en entreprise', category: 'argent', minRank: 'conseiller_municipal', requires: { noGovernment: true },
+    description: 'Prise de parole, négociation, gestion de crise : des cadres paient cher pour vos recettes.',
+    cost: { ap: 1, energy: 10 }, cooldown: 6,
+    effects: [{ kind: 'side', id: 'formations', label: 'Formations en entreprise', amount: 500, scale: 'influence', mult: 12, months: 6 }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  {
+    id: 'placement_livret', label: 'Placer son épargne sur un livret', category: 'argent', minRank: 'militant', requires: { minFunds: 5000, placement: 1 },
+    description: 'Sûr et ennuyeux : environ 3 % par an, sans mauvaise surprise.',
+    cost: { ap: 1, energy: 2 }, cooldown: 1,
+    effects: [{ kind: 'flag', key: 'placement', value: 1 }, { kind: 'stat', stat: 'stress', delta: -1 }],
+  },
+  {
+    id: 'placement_bourse', label: 'Investir son épargne en Bourse', category: 'argent', minRank: 'militant', requires: { minFunds: 10000, placement: 2 },
+    description: 'Environ 6 % par an en moyenne… avec des mois très rouges. Et la presse adore les élus boursicoteurs.',
+    cost: { ap: 1, energy: 3 }, cooldown: 1,
+    effects: [{ kind: 'flag', key: 'placement', value: 2 }, { kind: 'exposure', delta: 1 }],
+  },
+  {
+    id: 'placement_retrait', label: 'Retirer ses placements', category: 'argent', minRank: 'militant', requires: { placement: 0 },
+    description: 'Tout ramener sur le compte courant.',
+    cost: { ap: 0, energy: 0 }, cooldown: 1,
+    effects: [{ kind: 'flag', key: 'placement', value: 0 }],
+  },
+  {
+    id: 'conseil_international', label: 'Conseiller des gouvernements étrangers', category: 'argent', minRank: 'militant', onlyRanks: ['ancien_president'],
+    description: 'Un cabinet à votre nom, des missions à Abou Dhabi et à Singapour. Très lucratif, un peu gênant.',
+    cost: { ap: 2, energy: 8 }, cooldown: 24,
+    effects: [{ kind: 'side', id: 'conseil_intl', label: 'Conseil international', amount: 9000, exposure: 0.5 }, { kind: 'stat', stat: 'credibility', delta: -2 }],
+  },
+
+  // ── Équipe ─────────────────────────────────────────────
+  {
+    id: 'prime_equipe', label: 'Verser une prime à l’équipe', category: 'argent', minRank: 'militant', requires: { team: true },
+    description: 'Une enveloppe pour chacun, en remerciement des nuits blanches. Le moral remonte d’un coup.',
+    cost: { ap: 1, energy: 2, money: 1500 }, cooldown: 4, personalOnly: true,
+    effects: [{ kind: 'team', all: true, morale: 20 }],
+  },
+  {
+    id: 'seminaire_equipe', label: 'Séminaire au vert avec l’équipe', category: 'repos', minRank: 'conseiller_municipal', requires: { team: true },
+    description: 'Deux jours dans un gîte, un tableau blanc, une partie de pétanque. On se parle enfin.',
+    cost: { ap: 2, energy: 6, money: 1200 }, cooldown: 6,
+    effects: [{ kind: 'team', all: true, morale: 15 }, { kind: 'stat', stat: 'stress', delta: -5 }],
+  },
+  {
+    id: 'entretiens_annuels', label: 'Mener les entretiens annuels', category: 'repos', minRank: 'militant', requires: { team: true },
+    description: 'Un tête-à-tête avec chacun : objectifs, frustrations, envies. Ça ne coûte que du temps.',
+    cost: { ap: 1, energy: 8 }, cooldown: 6,
+    effects: [{ kind: 'team', all: true, morale: 6 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+
   // ── Haute fonction publique ─────────────────────────────
   {
     id: 'concours_insp', minigame: 'concours_insp', label: 'Passer le concours de l’INSP', category: 'dossiers', minRank: 'militant', onlyRanks: ['militant', 'conseiller_municipal'],
@@ -1920,6 +2028,9 @@ export function effectValue(e: Effect): number {
     case 'alien': return 0.5 * ((e.comprehension ?? 0) + (e.confiance ?? 0)) - 0.4 * ((e.panique ?? 0) + (e.rivalite ?? 0));
     case 'war': return 0.5 * (e.front ?? 0) + 0.3 * (e.support ?? 0) - 0.01 * (e.losses ?? 0) + 0.3 * (e.effort ?? 0) + 0.3 * (e.morale ?? 0);
     case 'hostile': return 0.2 * e.delta;
+    case 'team': return (e.morale ?? 0) * 0.1;
+    case 'side': return e.stop ? 0 : e.amount / (e.months ? 600 : 300);
+    case 'leaderPay': return 0;
     case 'civil': return (e.join ? 8 : 0) + (e.grade ?? 0) * 6 + (e.study ?? 0) * 0.3;
     default: return 0;
   }

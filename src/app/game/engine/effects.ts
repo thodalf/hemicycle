@@ -20,6 +20,9 @@ import { addParrainages, adjustPresidency, declareCandidacy, endPresidency } fro
 import { lawyerFactor } from './staff-perks';
 import { adjustHostile, adjustWar } from './war';
 import { adjustCivil } from './civil';
+import { adjustTeam } from './team-pay';
+import { adjustSide } from './side-income';
+import { setLeaderPay } from './remuneration';
 import { ownOrigin, scheduleVote } from './assembly';
 import { queueMinigame } from './minigame';
 import { adjustAlien } from './alien';
@@ -264,6 +267,16 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       case 'civil':
         summary.push(...adjustCivil(d, e, rng));
+        break;
+      case 'team':
+        summary.push(...adjustTeam(d, e));
+        break;
+      case 'side':
+        summary.push(...adjustSide(d, e));
+        break;
+      case 'leaderPay':
+        if (e.party !== undefined) summary.push(...setLeaderPay(d, 'party', e.party, true));
+        if (e.president !== undefined && d.presidency) summary.push(...setLeaderPay(d, 'president', e.president, true));
         break;
       case 'minigame':
         summary.push(...queueMinigame(d, e.gameId, e.title ?? 'événement', e.reward, ctx, e.penalty, e.title));

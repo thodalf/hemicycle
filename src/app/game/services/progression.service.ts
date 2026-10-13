@@ -9,7 +9,9 @@ import { weeklyNationalBudget } from '../engine/budget';
 import { weeklyBankruptcy } from '../engine/bankruptcy';
 import { assetAp, dossierDecayFactor, weeklyAssets } from '../engine/patrimoine';
 import { monthlyLoans } from '../engine/loans';
-import { monthlySavings, partyLeaderPay, trackMinisterialExit } from '../engine/remuneration';
+import { monthlyLeaderPay, monthlySavings, partyLeaderPay, trackMinisterialExit } from '../engine/remuneration';
+import { monthlySide } from '../engine/side-income';
+import { monthlyTeam } from '../engine/team-pay';
 import { civilActive, monthlyCivil } from '../engine/civil';
 import { staffMonthly, staffAp } from '../engine/staff-perks';
 import { GameStateService } from './game-state.service';
@@ -69,6 +71,9 @@ export class ProgressionService {
     const leadPay = partyLeaderPay(d);
     if (leadPay && d.partyFinance) d.partyFinance.treasury -= leadPay / 1000;
     monthlyCivil(d);
+    monthlySide(d, rng);
+    monthlyTeam(d, rng);
+    monthlyLeaderPay(d);
     const salaries = payroll(d);
     if (salaries) {
       spend(d, salaries);

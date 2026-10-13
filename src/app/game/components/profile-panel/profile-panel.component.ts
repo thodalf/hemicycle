@@ -1,9 +1,9 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { ProgressionService } from '../../services/progression.service';
-import { remuneration } from '../../engine/remuneration';
+import { LEADER_PAY_LIMITS, leaderPayCheck, leaderPayPreview, remuneration, setLeaderPay } from '../../engine/remuneration';
 import { CORPS_BY_ID, civilActive, civilTitle, promoThreshold } from '../../engine/civil';
 
 const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
@@ -51,9 +51,24 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
         <ul class="pay-lines">
           @for (l of r.lines; track l.label) {
             <li [class.off]="!l.amount">
-              <span class="lbl">{{ l.label }}@if (l.note) { <small class="muted">{{ l.note }}</small> }</span>
+              <span class="lbl">{{ l.label }}@if (l.note) { <small class="muted">{{ l.note }}</small> }
+                @if (l.edit) { <button type="button" class="link-btn" (click)="openEdit(l.edit)">Fixer mon salaire</button> }</span>
               <span class="mono">{{ l.amount ? (l.amount | number: '1.0-0') + ' €' : '—' }}</span>
             </li>
+            @if (l.edit && editing() === l.edit) {
+              <li class="editor">
+                @let chk = payCheck(l.edit);
+                <label>
+                  <span>{{ l.edit === 'party' ? 'Salaire de chef·fe de parti' : 'Traitement présidentiel' }} : <b class="mono">{{ draft() > 0 ? '+' : '' }}{{ draft() }} %</b></span>
+                  <input type="range" [min]="limits[l.edit].min" [max]="limits[l.edit].max" step="10" [value]="draft()" (input)="draft.set($any($event.target).valueAsNumber)" [disabled]="!chk.ok" />
+                </label>
+                <small class="muted">{{ chk.ok ? preview(l.edit) : chk.reason }}</small>
+                <div class="ed-btns">
+                  <button type="button" class="btn small primary" [disabled]="!chk.ok" (click)="applyPay(l.edit)">Valider</button>
+                  <button type="button" class="btn small" (click)="editing.set(null)">Annuler</button>
+                </div>
+              </li>
+            }
           }
           <li class="sum"><span class="lbl">Rémunération totale</span><span class="mono">{{ r.total | number: '1.0-0' }} €</span></li>
         </ul>
@@ -126,6 +141,9 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
       .pos { color: var(--good); } .neg { color: var(--bad); } }
     .pay-lines.small { font-size: 12.5px; }
     .civ { margin: 0; font-size: 11.5px; }
+    .link-btn { justify-self: start; border: 0; background: none; padding: 0; color: var(--accent); font: 600 11.5px var(--font-body); cursor: pointer; text-decoration: underline; }
+    .pay-lines li.editor { display: grid; gap: 6px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2);
+      label { display: grid; gap: 4px; font-size: 12.5px; } input { width: 100%; } .ed-btns { display: flex; gap: 6px; } }
     .dossiers { gap: 7px; }
     .dossiers li { display: grid; grid-template-columns: minmax(0, 1fr) auto 26px 22px; column-gap: 8px; row-gap: 3px; align-items: center; font-size: 13px; }
     .dossiers li.hot .d-name { font-weight: 600; }
@@ -148,6 +166,19 @@ export class ProfilePanelComponent {
 
   private readonly skillPoints = computed(() => this.game.player().skillPoints);
   protected readonly pay = computed(() => remuneration(this.game.s()));
+  protected readonly limits = LEADER_PAY_LIMITS;
+  protected readonly editing = signal<'party' | 'president' | null>(null);
+  protected readonly draft = signal(0);
+  protected openEdit(which: 'party' | 'president'): void {
+    this.draft.set(Number(this.game.player().flags[which === 'party' ? 'partyPayPct' : 'presPayPct'] ?? 0));
+    this.editing.set(this.editing() === which ? null : which);
+  }
+  protected payCheck(which: 'party' | 'president') { return leaderPayCheck(this.game.s(), which); }
+  protected preview(which: 'party' | 'president'): string { return leaderPayPreview(this.game.s(), which, this.draft()); }
+  protected applyPay(which: 'party' | 'president'): void {
+    this.game.mutate(d => setLeaderPay(d, which, this.draft()));
+    this.editing.set(null);
+  }
   protected readonly civil = computed(() => {
     const s = this.game.s();
     const c = s.player.civil;

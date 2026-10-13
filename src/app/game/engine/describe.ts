@@ -128,6 +128,14 @@ export function describeEffect(e: Effect): EffectChip[] {
     }
     case 'vote': return [{ text: 'Scrutin à l’Assemblée', tone: 'neutral' }];
     case 'hostile': return [{ text: `${n(e.delta)} relations ${e.enemy === 'all' ? 'avec les États hostiles' : 'avec l’État visé'}`, tone: tone(e.delta) }];
+    case 'team': {
+      const out: EffectChip[] = [];
+      if (e.salaryPct) out.push({ text: `${n(e.salaryPct)} % salaire ${e.all ? 'de l’équipe' : ''}`.trim(), tone: 'neutral' });
+      if (e.morale) out.push({ text: `${n(e.morale)} moral ${e.all ? 'de l’équipe' : ''}`.trim(), tone: tone(e.morale) });
+      return out;
+    }
+    case 'side': return e.stop ? [{ text: `Fin : ${e.label}`, tone: 'neutral' }] : [{ text: `+${e.amount.toLocaleString('fr-FR')} €/mois${e.months ? ` · ${e.months} mois` : ''}`, tone: 'good' }];
+    case 'leaderPay': return [{ text: 'Votre salaire change', tone: 'neutral' }];
     case 'civil': {
       const out: EffectChip[] = [];
       if (e.join) out.push({ text: e.join === 'classement' ? 'Concours : le classement décide du corps' : 'Entrée dans la haute fonction publique', tone: 'good' });

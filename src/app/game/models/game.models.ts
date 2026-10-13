@@ -153,7 +153,23 @@ export interface Player {
   health: number;
   /** Haute fonction publique : corps, grade (en disponibilité pendant un mandat national) */
   civil?: CivilState | null;
+  /** Revenus annexes récurrents (enseignement, conseil, chronique, droits d'auteur…) */
+  sideIncomes?: SideIncome[];
   flags: Record<string, boolean | number>;
+}
+
+export interface SideIncome {
+  id: string;
+  label: string;
+  /** Montant mensuel net */
+  amount: number;
+  since: number;
+  /** Dernier mois versé (inclus) ; null : sans fin */
+  until: number | null;
+  /** Exposition aux scandales ajoutée chaque mois */
+  exposure?: number;
+  /** Compatible avec une fonction gouvernementale (droits d'auteur, placements) */
+  compatible?: boolean;
 }
 
 export type CorpsId = 'prefet' | 'conseil_etat' | 'finances' | 'diplomatie' | 'comptes';
@@ -218,6 +234,9 @@ export type Effect =
   | { kind: 'war'; front?: number; support?: number; losses?: number; ally?: string; peace?: boolean; declare?: string; invade?: string; total?: boolean; effort?: number; morale?: number }
   | { kind: 'hostile'; enemy: string; delta: number }
   | { kind: 'civil'; join?: CorpsId | 'classement' | 'sortie' | 'tour'; grade?: number; leave?: boolean; study?: number }
+  | { kind: 'team'; recruitId?: string; morale?: number; salaryPct?: number; all?: boolean; leave?: boolean }
+  | { kind: 'side'; id: string; label: string; amount: number; months?: number; exposure?: number; scale?: StatKey; mult?: number; compatible?: boolean; stop?: boolean }
+  | { kind: 'leaderPay'; party?: number; president?: number }
   | { kind: 'vote'; billId?: string; own?: boolean }
   | { kind: 'alien'; comprehension?: number; confiance?: number; panique?: number; rivalite?: number; join?: boolean; gift?: boolean }
   | { kind: 'minigame'; gameId: string; reward: Effect[]; penalty?: Effect[]; title?: string }
@@ -291,7 +310,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -640,6 +659,11 @@ export interface Recruit {
   salary: number;
   traits: TraitId[];
   bio: string;
+  /** Salaire attendu sur le marché (prétentions) */
+  ask?: number;
+  /** Moral 0-100 : sous 25, la démission guette ; au-dessus de 80, on se surpasse */
+  morale?: number;
+  hiredWeek?: number;
 }
 
 // ── Scénarios spéciaux ──────────────────────────────────────
