@@ -9,6 +9,7 @@ import { monthlyPhone } from '../engine/phone';
 import { monthlyPlot } from '../engine/plot';
 import { monthlySchemes } from '../engine/schemes';
 import { monthlyFamily, monthlyHeir } from '../engine/family';
+import { monthlyRomance } from '../engine/phone-extra';
 import { monthlyRivalCareers, monthlyRivalPlots } from '../engine/rivals';
 import { monthlyPromises } from '../engine/promises';
 import { monthlyTerritory } from '../engine/territory';
@@ -126,6 +127,7 @@ export class TurnService {
     monthlyPlot(d, rng);
     monthlySchemes(d, rng);
     monthlyFamily(d, rng);
+    monthlyRomance(d, rng);
     monthlyHeir(d, rng);
     monthlyRivalCareers(d, rng);
     monthlyRivalPlots(d, rng);

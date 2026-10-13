@@ -1031,6 +1031,7 @@ export interface GameState {
   /** Épidémie Z en cours */
   zombie?: ZombieState | null;
   family?: FamilyState;
+  romance?: Romance | null;
   heir?: HeirState | null;
   promises?: Promise[];
   territory?: TerritoryState;
@@ -1100,6 +1101,19 @@ export interface PhoneMessage {
   read?: boolean;
   /** Résumé des effets, affiché sous la bulle */
   summary?: string[];
+  /** Votre réaction (emoji) à un message reçu */
+  reaction?: string;
+}
+
+/** Une histoire en cours avec quelqu'un de votre téléphone */
+export interface Romance {
+  key: string;
+  name: string;
+  /** 0 premier dîner · 1 deuxième rendez-vous · 2 histoire sérieuse · 3 en couple / liaison */
+  stage: number;
+  since: number;
+  /** Liaison cachée (vous étiez déjà en couple) */
+  secret?: boolean;
 }
 
 export type SchemeType = 'espionnage' | 'calomnie' | 'sabotage' | 'debauchage' | 'chantage';
@@ -1124,6 +1138,10 @@ export interface PhoneState {
   callsWeek: number;
   /** Dernier appel à chacun (mois) */
   called: Record<string, number>;
+  /** Dernier SMS envoyé à chacun (mois) */
+  sms?: Record<string, number>;
+  /** Réseaux sociaux : réactions publiées ce mois-ci */
+  social?: { week: number; posts: number; reacted: string[] };
 }
 
 // ── Complot ─────────────────────────────────────────────────
@@ -1326,7 +1344,7 @@ export interface TerritoryState {
 export interface RivalPlot { npcId: string; since: number; progress: number; kind: 'dossier' | 'rumeurs' | 'investiture' }
 
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
-export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution';
+export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

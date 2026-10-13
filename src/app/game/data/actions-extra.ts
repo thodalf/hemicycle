@@ -1,4 +1,4 @@
-import { ActionDefinition, Domain, Effect } from '../models/game.models';
+import { ActionDefinition, CrisisArcId, Domain, Effect } from '../models/game.models';
 
 /* ============================================================
  *  Intrigues, carnet d'adresses et actions propres à chaque
@@ -140,7 +140,7 @@ const ORDINARY: ActionDefinition[] = [
 
 
 /* ── Territoire, promesses, dauphin, famille, rivaux ─────────── */
-const cr = (arc: 'cyber' | 'proces' | 'jo' | 'dissolution', gauge = 0, risk = 0): Effect => ({ kind: 'crisis', arc, ...(gauge ? { gauge } : {}), ...(risk ? { risk } : {}) });
+const cr = (arc: CrisisArcId, gauge = 0, risk = 0): Effect => ({ kind: 'crisis', arc, ...(gauge ? { gauge } : {}), ...(risk ? { risk } : {}) });
 
 const LIFE: ActionDefinition[] = [
   { id: 'terr_lancer', label: 'Lancer un grand projet pour le territoire', category: 'territoire', minRank: 'conseiller_municipal',
@@ -208,6 +208,34 @@ const LIFE: ActionDefinition[] = [
     description: 'Préaux d’école, salles des fêtes, gymnases.', cost: { ap: 1, energy: 10, money: 2000 }, maxPerMonth: 1, effects: [cr('dissolution', 8), { kind: 'momentum', delta: 5 }] },
   { id: 'di_desistement', label: 'Négocier un accord de désistement', category: 'crise', minRank: 'militant', requires: { arc: 'dissolution' },
     description: 'Un parti voisin retire son candidat chez vous ; vous lui rendez la pareille ailleurs.', cost: { ap: 1, politicalCapital: 10 }, maxPerMonth: 1, effects: [cr('dissolution', 0, -15), { kind: 'cohesion', delta: -3 }] },
+  // Krach financier
+  { id: 'kr_relance', label: 'Défendre un plan de relance', category: 'crise', minRank: 'militant', requires: { arc: 'krach' },
+    description: 'Investissements publics, chômage partiel, prêts garantis : l’État amortit le choc.', cost: { ap: 1, politicalCapital: 8 }, maxPerMonth: 1, effects: [cr('krach', 6, -10), st('popularity', 1)] },
+  { id: 'kr_banques', label: 'Garantir les dépôts bancaires', category: 'crise', minRank: 'militant', requires: { arc: 'krach' },
+    description: 'Une annonce solennelle : pas un euro d’épargne ne sera perdu.', cost: { ap: 1, energy: 6 }, maxPerMonth: 1, effects: [cr('krach', 12), st('credibility', 1)] },
+  { id: 'kr_marches', minigame: 'eloquence', label: 'Rassurer les marchés à la télévision', category: 'crise', minRank: 'militant', requires: { arc: 'krach' },
+    description: 'Costume sombre, ton grave, chiffres précis.', cost: { ap: 1, energy: 6 }, cooldown: 2, effects: [cr('krach', 12, -4)] },
+  // Méga-feux
+  { id: 'mf_canadair', label: 'Obtenir des Canadair européens', category: 'crise', minRank: 'militant', requires: { arc: 'megafeux' },
+    description: 'Grèce, Italie, Espagne : chaque avion compte.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [cr('megafeux', 12, -4)] },
+  { id: 'mf_evacuer', label: 'Organiser l’accueil des évacués', category: 'crise', minRank: 'militant', requires: { arc: 'megafeux' },
+    description: 'Gymnases, lits de camp, cellules psychologiques.', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('megafeux', 2, -10), st('popularity', 2)] },
+  { id: 'mf_secheresse', label: 'Présenter un plan contre la sécheresse', category: 'crise', minRank: 'militant', requires: { arc: 'megafeux' },
+    description: 'Débroussaillage, réserves d’eau, pompiers volontaires : préparer les étés suivants.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [cr('megafeux', 4, -4), st('credibility', 3)] },
+  // Révolte des campagnes
+  { id: 'ag_syndicats', label: 'Recevoir les syndicats agricoles', category: 'crise', minRank: 'militant', requires: { arc: 'agriculteurs' },
+    description: 'Une nuit de négociation, café et tableaux Excel.', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('agriculteurs', 12, -3)] },
+  { id: 'ag_aides', label: 'Débloquer des aides d’urgence', category: 'crise', minRank: 'militant', requires: { arc: 'agriculteurs' },
+    description: 'Report de charges, prêts bonifiés, gel de normes.', cost: { ap: 1, politicalCapital: 8 }, maxPerMonth: 1, effects: [cr('agriculteurs', 4, -12), st('credibility', -1)] },
+  { id: 'ag_ferme', label: 'Passer une journée dans une ferme', category: 'crise', minRank: 'militant', requires: { arc: 'agriculteurs' },
+    description: 'Traite à cinq heures, bottes dans la boue, caméras discrètes.', cost: { ap: 1, energy: 10 }, cooldown: 3, effects: [cr('agriculteurs', 6, -4), st('popularity', 3)] },
+  // Taupe
+  { id: 'tp_audit', label: 'Lancer un audit des habilitations', category: 'crise', minRank: 'militant', requires: { arc: 'taupe' },
+    description: 'Qui a accès à quoi ? Des centaines de dossiers à éplucher.', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('taupe', 10, -2)] },
+  { id: 'tp_piege', label: 'Tendre un piège à informations', category: 'crise', minRank: 'militant', requires: { arc: 'taupe' },
+    description: 'Une fausse note, une version différente par suspect : la fuite trahira le traître.', cost: { ap: 1, politicalCapital: 6 }, cooldown: 2, effects: [cr('taupe', 16, 3)] },
+  { id: 'tp_allies', label: 'Coopérer avec les services alliés', category: 'crise', minRank: 'militant', requires: { arc: 'taupe' },
+    description: 'Échanges d’informations avec les partenaires de confiance.', cost: { ap: 1, energy: 5 }, maxPerMonth: 1, effects: [cr('taupe', 6, -8)] },
 ];
 
 /** Deux actions par ministère */

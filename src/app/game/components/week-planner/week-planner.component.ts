@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, effect, computed, inject, signal } from '@angular/core';
 import {
   ActionCategory, ActionDefinition, CATEGORY_LABELS, DOMAINS, DOMAIN_LABELS, Domain, Payer, PlannedAction,
 } from '../../models/game.models';
@@ -40,6 +40,11 @@ const SEASONS = ['❄️', '❄️', '🌱', '🌷', '🌸', '☀️', '☀️',
  * cumulés en temps réel, puis clôt le mois — sauf si une décision urgente
  * attend une réponse.
  */
+/** Un écran interactif occupe la scène : on ne joue pas d'animation par-dessus */
+export function blockingOverlay(st: { scene?: unknown; debate?: unknown; protest?: unknown; vote?: unknown; minigames?: unknown[] }): boolean {
+  return !!(st.scene || st.debate || st.protest || st.vote || (st.minigames ?? []).length);
+}
+
 @Component({
   selector: 'app-week-planner',
   imports: [DecimalPipe],
@@ -272,6 +277,16 @@ export class WeekPlannerComponent {
     if (!after.project && after.status !== 'mort') setTimeout(() => this.anim.stamp('Projet abouti', 'good', label), 900);
   }
 
+  /** Les animations attendues, jouées quand plus rien ne couvre l'écran */
+  private deferred: (() => void) | null = null;
+  private readonly flushDeferred = effect(() => {
+    const st = this.game.state();
+    if (!st || !this.deferred || blockingOverlay(st)) return;
+    const fn = this.deferred;
+    this.deferred = null;
+    setTimeout(fn, 350);
+  });
+
   /** Icône de saison du mois en cours */
   protected readonly season = computed(() => SEASONS[monthIndex(this.game.week())]);
 
@@ -287,100 +302,106 @@ export class WeekPlannerComponent {
     // Animations : page de calendrier, variations au-dessus des jauges, secousse si coup dur
     const after = this.game.s();
     if (after.week === from) return;
-    const overlay = !!(after.scene || after.debate || after.protest || after.vote);
-    if (!overlay) this.anim.monthTurn(from, after.week);
-    if (yearOf(after.week) !== yearOf(from)) setTimeout(() => this.anim.newYear(yearOf(after.week)), overlay ? 300 : 1500);
-    else if (monthIndex(after.week) === 11 && !overlay) setTimeout(() => this.anim.rain(true), 600);
-    // Voyages : un avion traverse l'écran
-    const trip = planned.find(a => a.category === 'international' || TRIPS.has(a.id));
-    if (trip && !overlay) setTimeout(() => this.anim.plane(trip.label), 500);
-    // Nouvelles décisions marquantes : une de journal, battement de cœur
-    const fresh = after.pendingDecisions.filter(d => !known.has(d.id));
-    const scoop = fresh.find(d => SCANDAL_TAGS.test(d.tag));
-    if (scoop) setTimeout(() => this.anim.newspaper(scoop.title), 1300);
-    if (fresh.some(d => d.tag === 'alerte_sante')) setTimeout(() => this.anim.heartbeat(), 900);
-    // Popularité en chute libre : les tomates volent
-    const dropPop = (report0(this.turn.lastReport())?.find(x => x.key === 'popularity')?.delta ?? 0);
-    if (dropPop <= -5 && !overlay) setTimeout(() => this.anim.tomatoes(7), 1100);
-    const report = this.turn.lastReport();
-    report?.deltas.forEach((x, i) => {
-      const el = document.querySelector(`app-profile-panel [data-stat="${x.key}"]`);
-      const good = x.key === 'stress' ? x.delta < 0 : x.delta > 0;
-      this.anim.floatAt(el, `${x.delta > 0 ? '+' : '−'}${Math.abs(x.delta)}`, good ? 'good' : 'bad', 500 + i * 140);
-    });
-    if (report?.project) {
-      const pr = report.project;
-      const el = document.querySelector('app-week-planner .project-box') ?? document.querySelector('app-week-planner .mobile-end');
-      this.anim.floatAt(el, pr.finished ? `✓ ${pr.label}` : `Projet ${pr.done}/${pr.months} mois`, 'good', 400);
-      if (pr.finished) setTimeout(() => this.anim.stamp('Projet abouti', 'good', pr.label), 1000);
-    }
-    const df = Math.round(after.player.finances.personal - funds);
-    if (df) this.anim.floatAt(document.querySelector('app-vitals .money'), `${df > 0 ? '+' : '−'}${Math.abs(df).toLocaleString('fr-FR')} €`, df > 0 ? 'good' : 'bad', 700);
-    if (Math.abs(df) >= 100 && !overlay) this.anim.coins(document.querySelector('app-vitals .money'), df > 0, Math.min(10, 3 + Math.round(Math.abs(df) / 1500)));
+    // Les animations du mois attendent que les écrans interactifs (mini-jeu, scène, débat, vote) soient fermés
+    const play = () => {
+      const now = this.game.s();
+      const overlay = !!(now.scene || now.debate || now.protest || now.vote);
+      if (!overlay) this.anim.monthTurn(from, after.week);
+      if (yearOf(after.week) !== yearOf(from)) setTimeout(() => this.anim.newYear(yearOf(after.week)), overlay ? 300 : 1500);
+      else if (monthIndex(after.week) === 11 && !overlay) setTimeout(() => this.anim.rain(true), 600);
+      // Voyages : un avion traverse l'écran
+      const trip = planned.find(a => a.category === 'international' || TRIPS.has(a.id));
+      if (trip && !overlay) setTimeout(() => this.anim.plane(trip.label), 500);
+      // Nouvelles décisions marquantes : une de journal, battement de cœur
+      const fresh = after.pendingDecisions.filter(d => !known.has(d.id));
+      const scoop = fresh.find(d => SCANDAL_TAGS.test(d.tag));
+      if (scoop) setTimeout(() => this.anim.newspaper(scoop.title), 1300);
+      if (fresh.some(d => d.tag === 'alerte_sante')) setTimeout(() => this.anim.heartbeat(), 900);
+      // Popularité en chute libre : les tomates volent
+      const dropPop = (report0(this.turn.lastReport())?.find(x => x.key === 'popularity')?.delta ?? 0);
+      if (dropPop <= -5 && !overlay) setTimeout(() => this.anim.tomatoes(7), 1100);
+      const report = this.turn.lastReport();
+      report?.deltas.forEach((x, i) => {
+        const el = document.querySelector(`app-profile-panel [data-stat="${x.key}"]`);
+        const good = x.key === 'stress' ? x.delta < 0 : x.delta > 0;
+        this.anim.floatAt(el, `${x.delta > 0 ? '+' : '−'}${Math.abs(x.delta)}`, good ? 'good' : 'bad', 500 + i * 140);
+      });
+      if (report?.project) {
+        const pr = report.project;
+        const el = document.querySelector('app-week-planner .project-box') ?? document.querySelector('app-week-planner .mobile-end');
+        this.anim.floatAt(el, pr.finished ? `✓ ${pr.label}` : `Projet ${pr.done}/${pr.months} mois`, 'good', 400);
+        if (pr.finished) setTimeout(() => this.anim.stamp('Projet abouti', 'good', pr.label), 1000);
+      }
+      const df = Math.round(after.player.finances.personal - funds);
+      if (df) this.anim.floatAt(document.querySelector('app-vitals .money'), `${df > 0 ? '+' : '−'}${Math.abs(df).toLocaleString('fr-FR')} €`, df > 0 ? 'good' : 'bad', 700);
+      if (Math.abs(df) >= 100 && !overlay) this.anim.coins(document.querySelector('app-vitals .money'), df > 0, Math.min(10, 3 + Math.round(Math.abs(df) / 1500)));
 
-    // Flash info sur les coups durs du mois
-    const freshNews = after.news.filter(n => n.week === after.week);
-    const flash = freshNews.find(n => n.kind === 'scandale' || (n.kind === 'actu' && n.tone === 'negative'));
-    if (flash) setTimeout(() => this.anim.ticker(`${flash.title}${flash.body ? ' — ' + flash.body : ''}`), 900);
+      // Flash info sur les coups durs du mois
+      const freshNews = after.news.filter(n => n.week === after.week);
+      const flash = freshNews.find(n => n.kind === 'scandale' || (n.kind === 'actu' && n.tone === 'negative'));
+      if (flash) setTimeout(() => this.anim.ticker(`${flash.title}${flash.body ? ' — ' + flash.body : ''}`), 900);
 
-    // Objectifs atteints : gerbe de confettis sur le panneau
-    const done = freshNews.filter(n => n.title.startsWith('Objectif atteint'));
-    done.forEach((n, i) => setTimeout(() => {
-      const panel = document.querySelector('app-objectives-panel');
-      this.anim.burstAt(panel, 'good');
-      this.anim.floatAt(panel, n.title.replace('Objectif atteint : ', '✓ '), 'good');
-    }, 1100 + i * 400));
+      // Objectifs atteints : gerbe de confettis sur le panneau
+      const done = freshNews.filter(n => n.title.startsWith('Objectif atteint'));
+      done.forEach((n, i) => setTimeout(() => {
+        const panel = document.querySelector('app-objectives-panel');
+        this.anim.burstAt(panel, 'good');
+        this.anim.floatAt(panel, n.title.replace('Objectif atteint : ', '✓ '), 'good');
+      }, 1100 + i * 400));
 
-    // Taupe : rapport transmis
-    if (after.news.filter(n => n.week >= from).some(n => n.title === 'Transmettre un rapport à votre officier' && /Rapport transmis/.test(n.body ?? ''))) {
-      setTimeout(() => this.anim.stamp('Transmis', 'neutral', 'Top secret'), 1000);
-    }
+      // Taupe : rapport transmis
+      if (after.news.filter(n => n.week >= from).some(n => n.title === 'Transmettre un rapport à votre officier' && /Rapport transmis/.test(n.body ?? ''))) {
+        setTimeout(() => this.anim.stamp('Transmis', 'neutral', 'Top secret'), 1000);
+      }
 
-    // Soirée électorale
-    const justResolved = after.elections.filter(e => e.resolved && e.result && before.elections.some(b => b.id === e.id && !b.resolved));
-    const e = justResolved[0];
-    if (e?.result) {
-      this.anim.ballot();
-      if (e.result.winnerId !== 'player') setTimeout(() => this.anim.rain(), 4200);
-      const name = (id: string) => id === 'player' ? after.player.name : after.npcs.find(n => n.id === id)?.name ?? id;
-      const color = (id: string) => {
-        if (id === 'player') return after.party.color;
-        const pid = after.npcs.find(n => n.id === id)?.partyId;
-        return [after.party, ...after.otherParties].find(p => p.id === pid)?.color ?? '#8a8f9a';
-      };
-      const rows = (r: Record<string, number>) => Object.entries(r).sort((a, b) => b[1] - a[1])
-        .map(([id, share]) => ({ name: name(id), color: color(id), share, player: id === 'player' }));
-      const rounds = [{ label: e.result.secondRound ? 'Premier tour' : 'Résultats', rows: rows(e.result.firstRound) }];
-      if (e.result.secondRound) rounds.push({ label: 'Second tour', rows: rows(e.result.secondRound) });
-      setTimeout(() => this.anim.election.set({
-        title: ELECTIONS[e.type].label, rounds, winner: name(e.result!.winnerId), playerWon: e.result!.winnerId === 'player',
-      }), 600);
-    }
-    // Soirée du premier tour : qualifié·e pour le second
-    const qualified = after.elections.find(x => !x.resolved && x.firstRound && x.finalists && before.elections.some(b => b.id === x.id && !b.firstRound));
-    if (!e && qualified?.firstRound) {
-      this.anim.ballot();
-      const name = (id: string) => id === 'player' ? after.player.name : after.npcs.find(n => n.id === id)?.name ?? id;
-      const color = (id: string) => {
-        if (id === 'player') return after.party.color;
-        const pid = after.npcs.find(n => n.id === id)?.partyId;
-        return [after.party, ...after.otherParties].find(p => p.id === pid)?.color ?? '#8a8f9a';
-      };
-      const rows = Object.entries(qualified.firstRound).sort((a, b) => b[1] - a[1])
-        .map(([id, share]) => ({ name: name(id), color: color(id), share, player: id === 'player' }));
-      const rival = name(qualified.finalists!.find(id => id !== 'player')!);
-      setTimeout(() => this.anim.election.set({
-        title: 'Présidentielle · premier tour', rounds: [{ label: 'Premier tour', rows }], winner: name(qualified.finalists![0]), playerWon: true,
-        verdict: { title: 'Qualifié·e !', text: `Second tour face à ${rival}, le mois prochain. Avant cela : le débat.` },
-      }), 600);
-    }
+      // Soirée électorale
+      const justResolved = after.elections.filter(e => e.resolved && e.result && before.elections.some(b => b.id === e.id && !b.resolved));
+      const e = justResolved[0];
+      if (e?.result) {
+        this.anim.ballot();
+        if (e.result.winnerId !== 'player') setTimeout(() => this.anim.rain(), 4200);
+        const name = (id: string) => id === 'player' ? after.player.name : after.npcs.find(n => n.id === id)?.name ?? id;
+        const color = (id: string) => {
+          if (id === 'player') return after.party.color;
+          const pid = after.npcs.find(n => n.id === id)?.partyId;
+          return [after.party, ...after.otherParties].find(p => p.id === pid)?.color ?? '#8a8f9a';
+        };
+        const rows = (r: Record<string, number>) => Object.entries(r).sort((a, b) => b[1] - a[1])
+          .map(([id, share]) => ({ name: name(id), color: color(id), share, player: id === 'player' }));
+        const rounds = [{ label: e.result.secondRound ? 'Premier tour' : 'Résultats', rows: rows(e.result.firstRound) }];
+        if (e.result.secondRound) rounds.push({ label: 'Second tour', rows: rows(e.result.secondRound) });
+        setTimeout(() => this.anim.election.set({
+          title: ELECTIONS[e.type].label, rounds, winner: name(e.result!.winnerId), playerWon: e.result!.winnerId === 'player',
+        }), 600);
+      }
+      // Soirée du premier tour : qualifié·e pour le second
+      const qualified = after.elections.find(x => !x.resolved && x.firstRound && x.finalists && before.elections.some(b => b.id === x.id && !b.firstRound));
+      if (!e && qualified?.firstRound) {
+        this.anim.ballot();
+        const name = (id: string) => id === 'player' ? after.player.name : after.npcs.find(n => n.id === id)?.name ?? id;
+        const color = (id: string) => {
+          if (id === 'player') return after.party.color;
+          const pid = after.npcs.find(n => n.id === id)?.partyId;
+          return [after.party, ...after.otherParties].find(p => p.id === pid)?.color ?? '#8a8f9a';
+        };
+        const rows = Object.entries(qualified.firstRound).sort((a, b) => b[1] - a[1])
+          .map(([id, share]) => ({ name: name(id), color: color(id), share, player: id === 'player' }));
+        const rival = name(qualified.finalists!.find(id => id !== 'player')!);
+        setTimeout(() => this.anim.election.set({
+          title: 'Présidentielle · premier tour', rounds: [{ label: 'Premier tour', rows }], winner: name(qualified.finalists![0]), playerWon: true,
+          verdict: { title: 'Qualifié·e !', text: `Second tour face à ${rival}, le mois prochain. Avant cela : le débat.` },
+        }), 600);
+      }
 
-    // Guerre : le front a bougé
-    if (after.war && before.war) {
-      const move = after.war.front - before.war.front;
-      if (Math.abs(move) >= 3) setTimeout(() => this.anim.frontline(move > 0), 800);
-    }
-    const hard = after.pendingDecisions.filter(d => !known.has(d.id)).some(d => ['scandale', 'crise', 'banqueroute', 'revelation', 'enquete', 'defiance'].includes(d.tag));
-    if (hard || (after.player.finances.personal < 0 && funds >= 0)) setTimeout(() => this.anim.shake(), 650);
+      // Guerre : le front a bougé
+      if (after.war && before.war) {
+        const move = after.war.front - before.war.front;
+        if (Math.abs(move) >= 3) setTimeout(() => this.anim.frontline(move > 0), 800);
+      }
+      const hard = after.pendingDecisions.filter(d => !known.has(d.id)).some(d => ['scandale', 'crise', 'banqueroute', 'revelation', 'enquete', 'defiance'].includes(d.tag));
+      if (hard || (after.player.finances.personal < 0 && funds >= 0)) setTimeout(() => this.anim.shake(), 650);
+    };
+    if (blockingOverlay(after)) this.deferred = play;
+    else play();
   }
 }

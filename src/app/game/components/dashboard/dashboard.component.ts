@@ -19,6 +19,7 @@ import { PresidentialPollsComponent } from '../presidential-polls/presidential-p
 import { SchemesPanelComponent } from '../schemes-panel/schemes-panel.component';
 import { ZombiePanelComponent } from '../zombie-panel/zombie-panel.component';
 import { TutorialComponent } from '../tutorial/tutorial.component';
+import { blockingOverlay } from '../week-planner/week-planner.component';
 import { JournalComponent } from '../journal/journal.component';
 import { CrisisPanelComponent } from '../crisis-panel/crisis-panel.component';
 import { TerritoryPanelComponent } from '../territory-panel/territory-panel.component';
@@ -237,7 +238,7 @@ import { Milestone } from '../../models/game.models';
           @if (memoirs()) { <app-journal (closed)="memoirs.set(false)" /> }
         </article>
       </div>
-    } @else if (chapter(); as m) {
+    } @else if (!blocking() && chapter(); as m) {
       <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="chapter-title">
         <div class="card end chapter" [class]="'k-' + m.kind">
           <div class="eyebrow">Nouveau chapitre · {{ m.age }} ans · {{ game.month(m.week) }}</div>
@@ -381,6 +382,8 @@ export class DashboardComponent {
   private lastAlien = this.game.s().alien?.phase ?? -1;
   /** Dernier chapitre ouvert, affiché en grand */
   protected readonly chapter = signal<Milestone | null>(null);
+  /** Un écran interactif est ouvert : les cartes « nouveau chapitre » attendent */
+  protected readonly blocking = computed(() => blockingOverlay(this.game.s()));
   protected readonly summary = () => lifeSummary(this.game.s());
   protected deathLabel(c: keyof typeof DEATH_LABELS) { return DEATH_LABELS[c]; }
 
@@ -391,11 +394,11 @@ export class DashboardComponent {
     const milestones = this.game.s().milestones;
     const alien = this.game.s().alien?.phase ?? -1;
     untracked(() => {
-      if (alien > this.lastAlien) setTimeout(() => this.fx.ufo(alien === 0 ? 'Un signal venu des étoiles' : ALIEN_PHASES[alien]), 300);
+      if (alien > this.lastAlien) this.whenFree(() => this.fx.ufo(alien === 0 ? 'Un signal venu des étoiles' : ALIEN_PHASES[alien]), 300);
       this.lastAlien = alien;
       if (milestones.length > this.lastMilestones && status !== 'mort') {
         const m = milestones.at(-1)!;
-        setTimeout(() => {
+        this.whenFree(() => {
           if (m.kind !== 'carriere') this.chapter.set(m);
           if (m.kind === 'victoire') { this.fx.stamp('Nouveau chapitre', 'good', m.title); this.burstAround(); }
           else if (m.kind === 'revers') { this.fx.stamp('Revers', 'bad', m.title); this.fx.shake(); this.fx.rain(); }
@@ -404,7 +407,7 @@ export class DashboardComponent {
       }
       this.lastMilestones = milestones.length;
       if (rank !== this.lastRank && RANKS[rank].order > RANKS[this.lastRank].order) {
-        setTimeout(() => {
+        this.whenFree(() => {
           this.fx.spotlight('Promotion !', RANKS[rank].label);
           this.burstAround();
         }, 400);
@@ -415,6 +418,19 @@ export class DashboardComponent {
       this.lastRank = rank;
       this.lastStatus = status;
     });
+  });
+
+  /** Animations mises en attente tant qu'un mini-jeu, une scène ou un vote occupe l'écran */
+  private queued: [() => void, number][] = [];
+  private whenFree(fn: () => void, delay: number): void {
+    if (!blockingOverlay(this.game.s())) { setTimeout(fn, delay); return; }
+    this.queued.push([fn, delay]);
+  }
+  private readonly flushQueued = effect(() => {
+    if (this.blocking() || !this.queued.length) return;
+    const q = this.queued;
+    this.queued = [];
+    untracked(() => q.forEach(([fn], i) => setTimeout(fn, 1400 + i * 900)));
   });
 
   private burstAround(): void {

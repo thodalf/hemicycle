@@ -2,6 +2,7 @@ import { Component, ElementRef, computed, effect, inject, signal, viewChild } fr
 import { GameStateService } from '../../services/game-state.service';
 import { PhoneService } from '../../services/phone.service';
 import { EXTRA_CALL_ENERGY, PhoneEntry } from '../../engine/phone';
+import { QUICK_SMS, REACTIONS } from '../../engine/phone-extra';
 import { PhoneMessage } from '../../models/game.models';
 
 const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
@@ -27,7 +28,7 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
             <header class="th-head">
               <button type="button" class="back" (click)="phone.thread.set(null); calling.set(false)" aria-label="Retour">‹</button>
               <span class="avatar" aria-hidden="true">{{ t.icon }}</span>
-              <div class="who"><strong>{{ t.name }}</strong><small>{{ t.role }}{{ t.bond !== undefined ? ' · relation ' + (t.bond > 0 ? '+' : '') + t.bond : '' }}</small></div>
+              <div class="who"><strong>{{ t.name }}@if (phone.romance()?.key === t.key) { <span class="heart" title="Une histoire en cours"> 💗</span> }</strong><small>{{ t.role }}{{ t.bond !== undefined ? ' · relation ' + (t.bond > 0 ? '+' : '') + t.bond : '' }}</small></div>
               @if (t.callable) { <button type="button" class="call-btn" (click)="calling.set(!calling())" aria-label="Appeler">📞</button> }
             </header>
             <div class="bubbles" role="log" #log>
@@ -36,6 +37,10 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
                   <p>{{ m.kind === 'appel' && !m.outgoing ? '📞 ' : '' }}{{ m.text }}</p>
                   @if (m.summary?.length) { <div class="chips">@for (x of m.summary; track $index) { <span>{{ x }}</span> }</div> }
                   <small class="mono">{{ game.month(m.week) }}{{ m.answered && !m.outgoing ? ' · ' + (m.answered === 'Sans réponse' ? 'sans réponse' : 'répondu') : '' }}</small>
+                  @if (m.reaction) { <span class="react-on" aria-label="Votre réaction">{{ m.reaction }}</span> }
+                  @else if (!m.outgoing && m.id === lastIncoming()) {
+                    <span class="react-bar" role="group" aria-label="Réagir">@for (r of reactions; track r) { <button type="button" (click)="phone.react(m.id, r)">{{ r }}</button> }</span>
+                  }
                 </div>
               } @empty { <p class="empty">Aucun message. Un coup de fil ?</p> }
             </div>
@@ -43,6 +48,13 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
               <div class="replies">
                 @for (r of m.replies; track r.id) { <button type="button" class="reply" (click)="phone.reply(m.id, r.id)">{{ r.label }}</button> }
               </div>
+            }
+            @if (!pending() && !calling() && t.callable) {
+              @if (phone.canSms(t.key)) {
+                <div class="quick" role="group" aria-label="SMS rapides">
+                  @for (q of quick; track q.id) { <button type="button" (click)="phone.sms(t.key, q.id)">{{ q.label }}</button> }
+                </div>
+              } @else { <p class="sent muted">SMS envoyé ce mois-ci. Pour plus, appelez.</p> }
             }
             @if (calling() && t.callable) {
               <div class="call-sheet">
@@ -58,10 +70,40 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
             <nav class="tabs" role="tablist">
               <button type="button" role="tab" [class.on]="phone.tab() === 'messages'" (click)="phone.tab.set('messages')">Messages @if (phone.unread()) { <b class="badge">{{ phone.unread() }}</b> }</button>
               <button type="button" role="tab" [class.on]="phone.tab() === 'repertoire'" (click)="phone.tab.set('repertoire')">Répertoire</button>
+              <button type="button" role="tab" [class.on]="phone.tab() === 'reseaux'" (click)="phone.tab.set('reseaux')">Réseaux</button>
               <button type="button" class="x" (click)="phone.close()" aria-label="Fermer le téléphone">✕</button>
             </nav>
             <p class="calls mono">{{ callInfo() }}</p>
-            @if (phone.tab() === 'messages') {
+            @if (phone.tab() === 'reseaux') {
+              <div class="feed">
+                <div class="compose">
+                  <span class="muted">Publier ({{ phone.socialLeft() }} / 3 ce mois)</span>
+                  <div class="quick">
+                    <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="post('terrain')">📸 Photo de terrain</button>
+                    <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="post('coulisses')">🏛️ Coulisses</button>
+                    <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="post('vie')">☕ Un peu de vie perso</button>
+                  </div>
+                  @if (said().length) { <div class="chips">@for (x of said(); track $index) { <span>{{ x }}</span> }</div> }
+                </div>
+                @for (po of phone.feed(); track po.id) {
+                  <article class="post" [class.neg]="po.tone === 'negative'">
+                    <header><strong>{{ po.author }}</strong> <small class="muted">{{ po.handle }} · {{ game.month(po.week) }}</small></header>
+                    <p>{{ po.text }}</p>
+                    <footer>
+                      <small class="muted">♥ {{ po.likes.toLocaleString('fr-FR') }}</small>
+                      @if (phone.reacted().includes(po.id)) { <small class="done">Vous avez réagi</small> }
+                      @else {
+                        <span class="acts">
+                          <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="comment(po.id, 'soutien')">👍 Soutenir</button>
+                          <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="comment(po.id, 'pique')">🌶️ Piquer</button>
+                          <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="comment(po.id, 'humour')">😂 Humour</button>
+                        </span>
+                      }
+                    </footer>
+                  </article>
+                } @empty { <p class="empty">Rien de neuf sur les réseaux ce mois-ci.</p> }
+              </div>
+            } @else if (phone.tab() === 'messages') {
               <ul class="threads">
                 @for (th of threads(); track th.who) {
                   <li><button type="button" (click)="phone.openThread(th.who)">
@@ -131,6 +173,20 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
     .replies { display: grid; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--line); }
     .reply { border: 1px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: 18px; padding: 8px 12px; font: 600 13px var(--font-body); cursor: pointer; text-align: left; }
     .reply:hover { background: var(--accent-soft); }
+    .heart { font-size: 13px; }
+    .react-bar { display: inline-flex; gap: 2px; margin-top: 4px; button { border: 0; background: var(--surface); border-radius: 12px; padding: 1px 5px; cursor: pointer; font-size: 13px; } button:hover { transform: scale(1.15); } }
+    .react-on { display: inline-block; margin-top: 3px; font-size: 14px; }
+    .quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--line);
+      button { border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 6px 10px; font: 12.5px var(--font-body); color: var(--ink); cursor: pointer; }
+      button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); } button:disabled { opacity: .45; cursor: default; } }
+    .sent { margin: 0; padding: 8px 14px; font-size: 11.5px; border-top: 1px solid var(--line); }
+    .feed { flex: 1; overflow-y: auto; display: grid; align-content: start; gap: 8px; padding: 8px 10px; }
+    .compose { display: grid; gap: 4px; font-size: 12px; .quick { border: 0; padding: 4px 0; } }
+    .post { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; display: grid; gap: 4px; font-size: 13px;
+      header { font-size: 12.5px; } p { margin: 0; line-height: 1.35; } footer { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .acts { display: flex; gap: 4px; button { border: 0; background: var(--surface-2); border-radius: 12px; padding: 3px 8px; font: 11.5px var(--font-body); cursor: pointer; color: var(--ink); } button:disabled { opacity: .4; } }
+      .done { color: var(--good); font-size: 11px; } }
+    .post.neg { border-left: 3px solid var(--bad); }
     .call-sheet { display: grid; gap: 6px; padding: 10px 12px 12px; border-top: 1px solid var(--line); background: var(--surface-2); animation: rise .2s ease;
       .cs-head { display: grid; small { font-size: 11px; } } }
     .opt { display: grid; gap: 2px; text-align: left; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; color: var(--ink); font: inherit;
@@ -187,6 +243,14 @@ export class PhoneComponent {
   protected readonly options = computed(() => { this.game.s(); const k = this.phone.thread(); return k ? this.phone.options(k) : []; });
 
   protected readonly groups = computed(() => GROUPS.map(g => ({ label: g.label, entries: this.phone.directory().filter(e => e.kind === g.kind) })).filter(g => g.entries.length));
+
+  protected readonly quick = QUICK_SMS;
+  protected readonly reactions = REACTIONS;
+  protected readonly said = signal<string[]>([]);
+  /** Le dernier message reçu de la conversation : on peut y réagir */
+  protected readonly lastIncoming = computed(() => this.messages().find(m => !m.outgoing)?.id ?? null);
+  protected post(kind: 'terrain' | 'coulisses' | 'vie'): void { this.said.set(this.phone.publish(kind)); }
+  protected comment(id: string, tone: 'soutien' | 'pique' | 'humour'): void { this.said.set(this.phone.comment(id, tone)); }
 
   protected callInfo(): string {
     const c = this.phone.calls();

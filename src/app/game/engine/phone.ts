@@ -3,6 +3,7 @@ import { STAFF_BY_ROLE, STAFF_ICONS } from '../data/staff';
 import { RANKS } from '../data/ranks';
 import { DOMAINS } from '../models/game.models';
 import { MINISTRIES } from './government';
+import { dateCall, romanceOptions } from './phone-extra';
 import { applyEffects, campaignOpen, partySupport } from './effects';
 import { voteRole } from './assembly';
 import { Rng, clamp, nextId } from './rng';
@@ -33,7 +34,7 @@ export interface PhoneEntry {
 }
 
 export interface CallOption {
-  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage';
+  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage' | 'seduire' | 'rompre';
   label: string;
   hint: string;
   ok: boolean;
@@ -168,7 +169,9 @@ export function directory(d: GameState): PhoneEntry[] {
     out.push({ key: `perso:${n.id}`, kind: 'personnalite', name: n.name, role: `${RANKS[n.rankId]?.label ?? 'Élu·e'} · ${party?.name ?? 'sans parti'}`, icon: n.isRival ? '⚔️' : '⭐', bond: Math.round(n.relationToPlayer) });
   }
   for (const c of d.contacts) out.push({ key: `contact:${c.id}`, kind: 'contact', name: c.name, role: CONTACT_LABEL[c.type], icon: CONTACT_ICON[c.type], bond: Math.round(c.trust) });
-  out.push({ key: 'proche', kind: 'proche', name: 'Maman', role: 'Famille', icon: '❤️' });
+  const partner = d.family?.partner;
+  if (partner) out.push({ key: 'conjoint', kind: 'proche', name: partner.name, role: partner.married ? 'Votre conjoint·e' : 'Votre moitié', icon: '💞' });
+  if (d.family?.parents.find(x => x.name === 'Maman')?.alive !== false) out.push({ key: 'proche', kind: 'proche', name: 'Maman', role: 'Famille', icon: '❤️' });
   return out;
 }
 
@@ -264,6 +267,11 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       break;
     }
     case 'proche': {
+      if (key === 'conjoint') {
+        opts.push({ id: 'nouvelles', label: 'Lui dire que vous l’aimez', hint: 'Deux minutes qui comptent.', ok: !block, reason: block });
+        opts.push({ id: 'conseil', label: 'Lui demander conseil', hint: 'La personne qui vous connaît le mieux.', ok: !block, reason: block });
+        break;
+      }
       const lastMoney = Number(d.player.flags['phoneMoneyFamily'] ?? -99);
       opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Une demi-heure loin de la politique.', ok: !block, reason: block });
       opts.push({ id: 'conseil', label: 'Demander conseil', hint: 'Un regard extérieur, sans arrière-pensée.', ok: !block, reason: block });
@@ -271,10 +279,12 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       break;
     }
   }
+  const love = entryOf(d, key);
+  if (love) opts.push(...romanceOptions(d, love, block));
   return opts;
 }
 
-function addMessage(d: GameState, m: Omit<PhoneMessage, 'id' | 'week'>): PhoneMessage {
+export function addMessage(d: GameState, m: Omit<PhoneMessage, 'id' | 'week'>): PhoneMessage {
   const ph = phone(d);
   const msg: PhoneMessage = { id: nextId(d, 'tel'), week: d.week, ...m };
   ph.messages.unshift(msg);
@@ -311,12 +321,22 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     remercier: 'Je voulais te remercier pour ton travail.', mission: 'J’ai besoin de toi tout de suite, c’est urgent.',
     rumeur: 'Tu as entendu ce qu’on raconte sur…', fuite: 'J’ai quelque chose pour vous. Mais ça ne vient pas de moi.',
     pacte: 'Et si on arrêtait de se taper dessus, toi et moi ?', tuyau: 'Alors, quoi de neuf dans ton camp ?', conseil: 'J’ai besoin de ton avis.',
-    appui: 'Votre parole compte beaucoup pour vos fidèles…', arbitrage: 'J’aurais besoin d’un coup de pouce…',
+    appui: 'Votre parole compte beaucoup pour vos fidèles…', seduire: 'Tu serais libre un soir de la semaine ?', rompre: 'Il faut qu’on parle.', arbitrage: 'J’aurais besoin d’un coup de pouce…',
   };
   const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : ASK[optionId] ?? 'Je prenais des nouvelles.';
   addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: `📞 ${ask}`, outgoing: true, read: true });
 
-  if (e.kind === 'equipe') {
+  if (optionId === 'seduire' || optionId === 'rompre') {
+    const res = dateCall(d, e, optionId, rng);
+    answer = res.answer;
+    effects.push(...res.effects);
+    note = res.note;
+  } else if (key === 'conjoint') {
+    answer = optionId === 'conseil'
+      ? rng.pick(['Écoute ton instinct. Il t’a rarement trompé·e.', 'Dors d’abord. On en reparle demain, à tête reposée.', 'Fais ce qui te permettra de te regarder dans la glace.'])
+      : rng.pick(['Moi aussi. Rentre tôt ce soir.', 'Tu me manques. Le dîner est au chaud.', 'Je sais. Fais attention à toi.']);
+    effects.push({ kind: 'stat', stat: 'stress', delta: -5 }, ...(optionId === 'conseil' ? [{ kind: 'stat', stat: 'credibility', delta: 1 } as Effect] : [{ kind: 'stat', stat: 'energy', delta: 3 } as Effect]));
+  } else if (e.kind === 'equipe') {
     const r = p.team.find(x => `equipe:${x.id}` === key)!;
     const tip = TEAM_TIPS[r.role] ?? TEAM_TIPS.conseiller!;
     if (optionId === 'remercier') {

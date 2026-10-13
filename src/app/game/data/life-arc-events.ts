@@ -1,4 +1,5 @@
-import { Effect, GameState } from '../models/game.models';
+import { CrisisArcId, Effect, GameState } from '../models/game.models';
+import { monthIndex } from '../engine/calendar';
 import type { EvChoice, RandomEvent } from './random-events';
 import { childAge } from '../engine/family';
 import { worstEnemyName } from '../engine/war';
@@ -14,7 +15,7 @@ const s = (stat: 'popularity' | 'influence' | 'credibility' | 'politicalCapital'
 const c = (id: string, label: string, effects: Effect[], outcome: string, extra: Partial<EvChoice> = {}): EvChoice =>
   ({ id, label, effects, outcome, ...extra });
 const fam = (x: Omit<Extract<Effect, { kind: 'family' }>, 'kind'>): Effect => ({ kind: 'family', ...x });
-const cr = (arc: 'cyber' | 'proces' | 'jo' | 'dissolution', gauge = 0, risk = 0, start = false, meta?: string): Effect =>
+const cr = (arc: CrisisArcId, gauge = 0, risk = 0, start = false, meta?: string): Effect =>
   ({ kind: 'crisis', arc, ...(start ? { start: true } : {}), ...(gauge ? { gauge } : {}), ...(risk ? { risk } : {}), ...(meta ? { meta } : {}) });
 
 // ── Famille ─────────────────────────────────────────────────
@@ -161,6 +162,50 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'krach_gate', weight: 1, minRank: 'depute', eligible: d => !d.crises?.krach && d.week > 36 && !d.player.flags['krachDone'],
+    build: () => ({
+      title: 'Lundi noir à la Bourse',
+      context: 'Le CAC 40 dévisse de 12 % à l’ouverture. Une grande banque européenne suspend ses retraits, les files d’attente se forment devant les agences. Les caméras vous cherchent.',
+      choices: [
+        c('rassurer', 'Monter au créneau pour rassurer', [cr('krach', 6, 0, true), { kind: 'flag', key: 'krachDone', value: true }, s('stress', 6), s('credibility', 2)], '« Les dépôts des Français sont garantis. » Votre voix ne tremble pas.'),
+        c('critiquer', 'Accuser la finance folle', [cr('krach', 0, 6, true), { kind: 'flag', key: 'krachDone', value: true }, s('popularity', 3)], 'La salle applaudit. Les marchés, eux, plongent encore.'),
+      ],
+    }),
+  },
+  {
+    tag: 'megafeux_gate', weight: 1, minRank: 'conseiller_municipal', eligible: d => !d.crises?.megafeux && !d.player.flags['megafeuxDone'] && d.week > 12 && [5, 6, 7].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'Le Sud s’embrase',
+      context: 'Quarante-deux degrés, des rafales à 80 km/h : trois départs de feu simultanés deviennent un brasier de dix mille hectares. Les préfets appellent à l’aide.',
+      choices: [
+        c('terrain', 'Partir sur le terrain auprès des pompiers', [cr('megafeux', 6, 0, true), { kind: 'flag', key: 'megafeuxDone', value: true }, s('energy', -8), s('popularity', 2)], 'Odeur de fumée, visages noircis, une nuit au PC de crise.'),
+        c('paris', 'Coordonner depuis Paris', [cr('megafeux', 2, 4, true), { kind: 'flag', key: 'megafeuxDone', value: true }], 'Visioconférences et cartes satellites. Loin, trop loin ?'),
+      ],
+    }),
+  },
+  {
+    tag: 'agri_gate', weight: 1, minRank: 'conseiller_municipal', eligible: d => !d.crises?.agriculteurs && !d.player.flags['agriculteursDone'] && d.week > 18,
+    build: () => ({
+      title: 'Les tracteurs montent sur Paris',
+      context: 'Normes, prix d’achat, accords de libre-échange : la colère paysanne déborde. Des convois bloquent l’A7 et l’A1, du lisier est déversé devant votre permanence.',
+      choices: [
+        c('ecouter', 'Aller à leur rencontre sur le barrage', [cr('agriculteurs', 8, 0, true), { kind: 'flag', key: 'agriculteursDone', value: true }, s('energy', -6)], 'Une nuit autour d’un brasero. Ils vous parlent de leurs dettes, de leurs enfants.'),
+        c('ordre', 'Exiger la levée des blocages', [cr('agriculteurs', 0, 8, true), { kind: 'flag', key: 'agriculteursDone', value: true }, s('credibility', 1)], 'Les tracteurs ne bougent pas. Ils se multiplient.'),
+      ],
+    }),
+  },
+  {
+    tag: 'taupe_gate', weight: 0.8, minRank: 'depute', eligible: d => !d.crises?.taupe && !d.player.flags['taupeDone'] && d.week > 30,
+    build: d => ({
+      title: 'Une note secrète à l’étranger',
+      context: `Un service allié vous prévient discrètement : une note classifiée sur la défense française a été retrouvée entre les mains de ${worstEnemyName(d)}. Quelqu’un, dans les cercles du pouvoir, trahit.`,
+      choices: [
+        c('enquete', 'Saisir la DGSI en toute discrétion', [cr('taupe', 8, 0, true, worstEnemyName(d)), { kind: 'flag', key: 'taupeDone', value: true }, s('stress', 5)], 'Une enquête ultra-confidentielle commence. Vous ne faites plus confiance à personne.'),
+        c('public', 'Alerter publiquement', [cr('taupe', 0, 8, true, worstEnemyName(d)), { kind: 'flag', key: 'taupeDone', value: true }, s('popularity', 2)], 'Le scandale éclate. La taupe, prévenue, se fait plus prudente.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -241,6 +286,97 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('local', 'Jouer la carte de l’enfant du pays', [cr('dissolution', 8), { kind: 'localProject', attachment: 3 }], '« Lui, il ne sait même pas où est la mairie. »'),
         c('debat', 'Le défier en débat public', [{ kind: 'debate', stakes: 'face_a_face' }, cr('dissolution', 4)], 'Rendez-vous dans la salle des fêtes, jeudi soir.'),
+      ],
+    }),
+  },
+  {
+    tag: 'kr_banque', weight: 1, eligible: d => !!d.crises?.krach,
+    build: () => ({
+      title: 'Une banque au bord de la faillite',
+      context: 'Le PDG d’une grande banque vous appelle à minuit : sans l’État, elle ne rouvre pas lundi. Trois millions de clients.',
+      choices: [
+        c('sauver', 'La sauver avec de l’argent public', [cr('krach', 12, -2), s('popularity', -3)], 'La banque rouvre. « On sauve les banquiers, pas les ménages », grince la rue.'),
+        c('conditions', 'La sauver sous conditions strictes', [cr('krach', 8, 0), s('credibility', 3), s('politicalCapital', -4)], 'Bonus gelés, dividendes suspendus. La négociation dure toute la nuit.'),
+        c('lacher', 'La laisser tomber', [cr('krach', -10, 10), s('popularity', 1)], 'La panique gagne les autres banques.'),
+      ],
+    }),
+  },
+  {
+    tag: 'kr_usine', weight: 0.8, eligible: d => !!d.crises?.krach,
+    build: () => ({
+      title: 'Une usine ferme près de chez vous',
+      context: 'Huit cents salariés apprennent la fermeture par mail. Ils bloquent le site et vous attendent.',
+      choices: [
+        c('repreneur', 'Chercher un repreneur', [cr('krach', 3, -6), s('energy', -6), { kind: 'localProject', attachment: 2 }], 'Trois semaines de coups de fil. Un industriel italien s’intéresse au site.'),
+        c('promesse', 'Promettre que l’usine ne fermera pas', [s('popularity', 3)], 'Les applaudissements sont nourris.',
+          { risk: { baseChance: 0.5, onFailure: [cr('krach', 0, 6), s('credibility', -4)], failureNews: 'L’usine ferme quand même. On vous ressort votre promesse.' } }),
+      ],
+    }),
+  },
+  {
+    tag: 'mf_village', weight: 1, eligible: d => !!d.crises?.megafeux,
+    build: () => ({
+      title: 'Un village encerclé par les flammes',
+      context: 'Deux cents habitants refusent de partir. Les pompiers demandent l’ordre d’évacuation forcée.',
+      choices: [
+        c('evacuer', 'Ordonner l’évacuation', [cr('megafeux', 6, -8), s('popularity', -1)], 'Des larmes, des cris, mais personne ne meurt.'),
+        c('defendre', 'Concentrer les moyens pour défendre le village', [cr('megafeux', 10, 4)], 'Les Canadair tournent toute la journée.',
+          { risk: { baseChance: 0.3, onFailure: [cr('megafeux', -6, 12), s('popularity', -4), s('stress', 8)], failureNews: 'Le vent tourne. Le village brûle en partie.' } }),
+      ],
+    }),
+  },
+  {
+    tag: 'mf_pyromane', weight: 0.7, eligible: d => !!d.crises?.megafeux,
+    build: () => ({
+      title: 'Un pyromane interpellé',
+      context: 'Un homme a été arrêté pour plusieurs départs de feu. Les réseaux sociaux s’enflamment à leur tour.',
+      choices: [
+        c('sobre', 'Rester sobre : « laissons la justice travailler »', [s('credibility', 3), cr('megafeux', 2)], 'Une parole calme au milieu du vacarme.'),
+        c('climat', 'Rappeler que le vrai coupable est le climat', [s('credibility', 1), s('popularity', -1), cr('megafeux', 0, -3)], 'Le débat sur la prévention est relancé.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ag_prefecture', weight: 1, eligible: d => !!d.crises?.agriculteurs,
+    build: () => ({
+      title: 'Une préfecture murée',
+      context: 'Des agriculteurs ont muré l’entrée d’une préfecture avec des parpaings. Le préfet demande des CRS.',
+      choices: [
+        c('dialogue', 'Proposer une table ronde le soir même', [cr('agriculteurs', 10, -4), s('energy', -5)], 'On démure à la main, à minuit, en se serrant la main.'),
+        c('crs', 'Soutenir l’intervention des forces de l’ordre', [cr('agriculteurs', -6, 10), s('credibility', 2)], 'Images de gaz lacrymogène sur des tracteurs. Le mouvement se durcit.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ag_salon', weight: 0.8, eligible: d => !!d.crises?.agriculteurs,
+    build: () => ({
+      title: 'Le Salon de l’agriculture sous tension',
+      context: 'Votre visite au Salon est attendue de pied ferme. Sifflets garantis, ou poignées de main ?',
+      choices: [
+        c('y_aller', 'Y aller quand même, sans service d’ordre', [{ kind: 'minigame', gameId: 'eloquence', title: 'Convaincre les éleveurs au Salon', reward: [cr('agriculteurs', 12, -6), s('popularity', 4)], penalty: [cr('agriculteurs', -4, 6), s('popularity', -3)] }], 'Une allée bondée, des éleveurs remontés. À vous de parler.'),
+        c('annuler', 'Annuler la visite', [cr('agriculteurs', 0, 4), s('stress', -2)], 'Votre absence est remarquée.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tp_suspect', weight: 1, eligible: d => !!d.crises?.taupe,
+    build: () => ({
+      title: 'Un suspect dans votre entourage ?',
+      context: 'La DGSI vous signale qu’un collaborateur proche a eu des contacts répétés avec un diplomate étranger.',
+      choices: [
+        c('surveiller', 'Le laisser en place, sous surveillance', [cr('taupe', 10, 3), s('stress', 5)], 'Vous faites comme si de rien n’était. C’est épuisant.'),
+        c('ecarter', 'L’écarter immédiatement', [cr('taupe', 3, -6)], 'Les fuites ralentissent. Mais était-ce vraiment lui ?'),
+      ],
+    }),
+  },
+  {
+    tag: 'tp_presse', weight: 0.8, eligible: d => !!d.crises?.taupe,
+    build: () => ({
+      title: 'La presse flaire l’affaire',
+      context: 'Un journaliste d’investigation vous demande de confirmer l’existence d’une enquête pour espionnage.',
+      choices: [
+        c('demenir', 'Ne rien confirmer', [cr('taupe', 4), s('credibility', 1)], 'Le secret tient encore quelques semaines.'),
+        c('off', 'Lui donner des éléments en off', [s('influence', 2), cr('taupe', -4, 4), { kind: 'exposure', delta: 4 }], 'Un article bien informé paraît. La taupe aussi le lit.'),
       ],
     }),
   },
