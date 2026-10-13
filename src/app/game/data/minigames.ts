@@ -4,7 +4,7 @@
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee';
 
 export interface TriItem {
   text: string;
@@ -141,10 +141,6 @@ export const MINIGAMES: MinigameDef[] = [
     rule: 'Des députés hésitent : cliquez sur eux avant qu’ils ne se décident ailleurs.', good: '🟡', bad: '🔴',
   },
   {
-    id: 'parrainages', kind: 'pointage', icon: '☎️', title: 'La chasse aux parrainages',
-    rule: 'Des maires rappellent : décrochez avant qu’ils ne raccrochent.', good: '☎️', bad: '📵',
-  },
-  {
     id: 'fete_village', kind: 'poignees', icon: '🎪', title: 'La fête du village',
     rule: 'Trinquez avec un maximum d’habitants, chassez les guêpes de la buvette.', good: '🥂', bad: '🐝',
   },
@@ -173,6 +169,72 @@ export const MINIGAMES: MinigameDef[] = [
       { text: '« Votre conjoint·e vous soutient-il·elle vraiment ? »', side: 'gauche' },
       { text: 'Quel bilan pour la réforme de l’école ?', side: 'droite' },
       { text: '« Oui ou non, en une seconde : êtes-vous ambitieux·se ? »', side: 'gauche' },
+    ],
+  },
+  {
+    id: 'tournee_maires', kind: 'tournee', icon: '🚗', title: 'La tournée des mairies',
+    rule: 'Tracez votre route : chaque village promet des signatures, chaque kilomètre use votre réservoir. Récoltez-en le plus possible avant la panne sèche.',
+  },
+  {
+    id: 'tournee_campagne', kind: 'tournee', icon: '🚌', title: 'La tournée de campagne',
+    rule: 'Choisissez vos étapes : chaque ville rapporte des soutiens, chaque trajet coûte du temps. Optimisez l’itinéraire.',
+  },
+  {
+    id: 'glyphes', kind: 'memoire', icon: '👽', title: 'Décoder les glyphes',
+    rule: 'Associez les glyphes identiques du message venu des étoiles avant la fin du créneau d’antenne.',
+    pairs: ['◬', '⟡', '⌘', '⍟', '✶', '⧫', '⬡', '⌖'],
+  },
+  {
+    id: 'message_etoiles', kind: 'tri', icon: '📡', title: 'Que dire aux étoiles ?',
+    rule: 'Composez la réponse de l’humanité : envoyez ce qui nous honore, écartez ce qui pourrait effrayer.', left: 'Écarter', right: 'Envoyer',
+    items: [
+      { text: 'Les nombres premiers jusqu’à 101', side: 'droite' },
+      { text: 'Les plans de nos missiles balistiques', side: 'gauche' },
+      { text: 'La structure de la molécule d’ADN', side: 'droite' },
+      { text: 'Un extrait de film de guerre', side: 'gauche' },
+      { text: 'Le Boléro de Ravel', side: 'droite' },
+      { text: 'Une publicité pour une lessive', side: 'gauche' },
+      { text: 'Le rire d’un bébé', side: 'droite' },
+      { text: 'Les débats de l’Assemblée en séance de nuit', side: 'gauche' },
+      { text: 'Une carte du Système solaire', side: 'droite' },
+      { text: 'Un discours belliqueux d’un dictateur', side: 'gauche' },
+      { text: 'La Déclaration des droits de l’homme', side: 'droite' },
+      { text: 'Des photos de nos centrales nucléaires', side: 'gauche' },
+      { text: 'Le bruit des vagues sur une plage bretonne', side: 'droite' },
+      { text: 'Un tutoriel pour fabriquer une arme', side: 'gauche' },
+    ],
+  },
+  {
+    id: 'discours_etoiles', kind: 'applaudimetre', icon: '🌌', title: 'Rassurer la Nation',
+    rule: 'Chaque phrase doit tomber juste : la France vous écoute, et le monde aussi.',
+    lines: ['« Mes chers compatriotes, nous ne sommes pas seuls. »', '« Rien, à cette heure, n’indique une menace. »', '« La science est à l’œuvre, jour et nuit. »', '« La France tendra la main, sans baisser la garde. »', '« Restons unis : l’Histoire nous regarde. »'],
+  },
+  {
+    id: 'traite_velari', kind: 'marchandage', icon: '🛸', title: 'Le traité de coexistence',
+    rule: 'Combien de kilomètres carrés de désert accorder à la base des Vélari ? Trop peu, ils refusent ; trop, l’opinion s’insurge.',
+    who: 'Les émissaires vélari', unit: 'km²', min: 0, max: 500,
+  },
+  {
+    id: 'festival', kind: 'applaudimetre', icon: '🎸', title: 'Sur la scène du festival',
+    rule: 'Le groupe vous tend le micro : chaque réplique au bon moment, sinon les huées.',
+    lines: ['« Bonsoir le festival ! »', '« Vous êtes magnifiques ! »', '« La culture, c’est ce qui nous rassemble ! »', '« Je laisse la place aux artistes… »', '« Merci et bon concert ! »'],
+  },
+  {
+    id: 'consultation', kind: 'tri', icon: '🗳️', title: 'Consultation citoyenne',
+    rule: 'Retenez les propositions sérieuses, écartez les farfelues, sous l’œil des participants.', left: 'Écarter', right: 'Retenir',
+    items: [
+      { text: 'Une navette gratuite le samedi vers le marché', side: 'droite' },
+      { text: 'Remplacer le maire par un tirage au sort quotidien', side: 'gauche' },
+      { text: 'Des composteurs collectifs dans chaque quartier', side: 'droite' },
+      { text: 'Interdire la pluie le week-end', side: 'gauche' },
+      { text: 'Rouvrir la piscine municipale l’été', side: 'droite' },
+      { text: 'Un téléphérique vers la boulangerie', side: 'gauche' },
+      { text: 'Un budget participatif pour les écoles', side: 'droite' },
+      { text: 'Rebaptiser la commune du nom d’un influenceur', side: 'gauche' },
+      { text: 'Des bancs et de l’ombre sur la place', side: 'droite' },
+      { text: 'Une statue géante de votre chat', side: 'gauche' },
+      { text: 'Éclairer le chemin de la gare', side: 'droite' },
+      { text: 'Supprimer les lundis', side: 'gauche' },
     ],
   },
 ];

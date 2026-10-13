@@ -21,6 +21,7 @@ import { lawyerFactor } from './staff-perks';
 import { adjustWar } from './war';
 import { ownOrigin, scheduleVote } from './assembly';
 import { queueMinigame } from './minigame';
+import { adjustAlien } from './alien';
 
 /* ============================================================
  *  Moteur d'effets — fonctions pures appliquées sur un brouillon
@@ -253,6 +254,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       }
       case 'war':
         summary.push(...adjustWar(d, e, ctx.targetId, rng));
+        break;
+      case 'alien':
+        summary.push(...adjustAlien(d, e));
         break;
       case 'minigame':
         summary.push(...queueMinigame(d, e.gameId, e.title ?? 'événement', e.reward, ctx, e.penalty, e.title));

@@ -129,10 +129,10 @@ export const EXTRA_EVENTS: RandomEvent[] = [
     tag: 'maires_rappellent', weight: 1.2,
     eligible: d => d.presidential.declared && d.presidential.parrainages < PARRAINAGES_REQUIRED && d.week < d.presidential.nextWeek - 5,
     build: () => ({
-      title: 'Les maires rappellent',
-      context: 'Votre équipe a laissé des messages à deux cents mairies. Les rappels arrivent tous en même temps.',
+      title: 'Les maires vous attendent',
+      context: 'Une trentaine de maires ruraux hésitent encore à vous parrainer. Ils veulent vous voir en personne, chez eux.',
       choices: [
-        c('decrocher', 'Prendre les appels vous-même', [play('parrainages', 'Le standard des parrainages', [{ kind: 'parrainages', delta: 70 }, s('energy', -8)])], 'Vous prenez le casque.'),
+        c('route', 'Prendre la route vous-même', [play('tournee_maires', 'La tournée des mairies', [{ kind: 'parrainages', delta: 70 }, s('energy', -8)])], 'Plein d’essence, carte routière, thermos de café.'),
         c('equipe', 'Laisser l’équipe s’en charger', [{ kind: 'parrainages', delta: 25 }], 'Une vingtaine de promesses.'),
       ],
     }),
@@ -250,6 +250,148 @@ export const EXTRA_EVENTS: RandomEvent[] = [
       choices: [
         c('assumer', 'Assumer : « Moi aussi j’ai hâte »', [s('popularity', 3)], 'Les marques de fromage vous écrivent.'),
         c('supprimer', 'Supprimer et s’excuser', [s('credibility', 1), s('popularity', -1)], 'Les captures d’écran, elles, restent.'),
+      ],
+    }),
+  },
+  // ── Nouveaux imprévus ───────────────────────────────────
+  {
+    tag: 'festival_ete', weight: 0.8,
+    eligible: d => [5, 6, 7].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'On vous tend le micro au festival',
+      context: 'Le festival de l’été bat son plein. Entre deux groupes, l’organisateur vous invite sur scène : « Deux minutes, pas plus ! »',
+      choices: [
+        c('scene', 'Monter sur scène', [play('festival', 'Deux minutes sur la grande scène', [s('popularity', 4), { kind: 'dossier', domain: 'education', delta: 2 }], [s('popularity', -2)])], 'Dix mille personnes, et pas de prompteur.'),
+        c('coulisses', 'Saluer les bénévoles en coulisses', [s('popularity', 1), s('energy', -3)], 'Moins de lumière, plus de mains serrées.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tempete_neige', weight: 0.9,
+    eligible: d => [11, 0, 1].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'Tempête de neige',
+      context: 'Quarante centimètres en une nuit. Routes coupées, villages isolés, personnes âgées sans chauffage.',
+      choices: [
+        c('terrain', 'Partir sur le terrain avec les secours', [s('popularity', 4), { kind: 'contact', contactId: 'ct-maires', trust: 3 }, s('energy', -8)], 'Bottes, pelle et photos dans la presse locale.'),
+        c('cellule', 'Coordonner depuis la cellule de crise', [s('credibility', 3), s('stress', 3)], 'Rien de spectaculaire, tout fonctionne.'),
+        c('tweet', 'Un message de soutien sur les réseaux', [s('popularity', -2)], '« Au chaud derrière son écran », répondent les maires.'),
+      ],
+    }),
+  },
+  {
+    tag: 'telethon', weight: 1.2,
+    eligible: d => monthIndex(d.week) === 11,
+    build: () => ({
+      title: 'Le Téléthon',
+      context: 'Les associations de la circonscription organisent une nuit de défis. On compte sur vous pour relever le sien.',
+      choices: [
+        c('defi', 'Relever un défi en public', [play('bain_de_foule', 'La nuit du Téléthon', [s('popularity', 3), { kind: 'dossier', domain: 'sante', delta: 3 }])], 'Vous enfilez le t-shirt jaune.'),
+        c('don', 'Faire un don personnel', [{ kind: 'funds', account: 'personal', delta: -500 }, s('popularity', 1), s('credibility', 1)], 'Discrètement, sans caméra.', { needMoney: 500 }),
+        c('rien', 'Pas le temps cette année', [s('popularity', -1)], 'Les associations le notent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'panne_metro', weight: 0.7, minRank: 'depute',
+    build: () => ({
+      title: 'Coincé·e dans le métro',
+      context: 'Panne géante sur la ligne 13 : vous voilà bloqué·e quarante minutes dans une rame bondée. Des voyageurs vous ont reconnu·e.',
+      choices: [
+        c('ecouter', 'Écouter leurs galères', [s('popularity', 3), { kind: 'dossier', domain: 'territoires', delta: 2 }, s('stress', 2)], 'Une vidéo de vous, accroupi·e, carnet en main, circule le soir même.'),
+        c('telephone', 'Rester sur son téléphone', [s('popularity', -1)], 'On vous filme quand même, l’air ennuyé.'),
+      ],
+    }),
+  },
+  {
+    tag: 'militant_viral', weight: 0.7,
+    build: () => ({
+      title: 'Un jeune militant devient viral',
+      context: 'Un militant de 19 ans de votre équipe a répondu à un ministre en vidéo. Deux millions de vues. Il veut vous rencontrer.',
+      choices: [
+        c('promouvoir', 'Le mettre en avant', [s('popularity', 3), { kind: 'momentum', delta: 3 }, s('influence', -1)], 'Il passe sur les plateaux. Il vous cite à chaque fois, pour l’instant.'),
+        c('encadrer', 'L’encadrer discrètement', [s('credibility', 2), { kind: 'cohesion', delta: 2 }], 'Un mentor plutôt qu’un projecteur.'),
+        c('freiner', 'Le prier de se faire oublier', [{ kind: 'cohesion', delta: -3 }, s('popularity', -1)], 'Il le prend mal, et le dit en vidéo.'),
+      ],
+    }),
+  },
+  {
+    tag: 'mariage_adversaire', weight: 0.5, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Invitation au mariage d’un adversaire',
+      context: 'Votre principal adversaire local se marie et vous a invité·e. Toute la ville sera là, la presse locale aussi.',
+      choices: [
+        c('aller', 'Y aller, avec un beau cadeau', [s('popularity', 2), s('credibility', 2), { kind: 'funds', account: 'personal', delta: -250 }], 'Vous dansez même un rock. La photo fait la une.', { needMoney: 250 }),
+        c('mot', 'Décliner avec un mot chaleureux', [s('credibility', 1)], 'Élégant, sans plus.'),
+        c('ignorer', 'Ne pas répondre', [s('popularity', -1), { kind: 'cohesion', delta: 1 }], 'Vos militants apprécient. La ville, moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'plume_fantome', weight: 0.5, minRank: 'depute',
+    build: () => ({
+      title: 'Une plume fantôme vous propose un livre',
+      context: 'Un éditeur parisien veut votre livre pour la rentrée. Un nègre littéraire l’écrira en trois mois, d’après vos entretiens.',
+      choices: [
+        c('signer', 'Signer', [{ kind: 'funds', account: 'personal', delta: 6000 }, s('influence', 2), s('credibility', -1)], 'Le livre sort. Les critiques reconnaissent mal votre style.'),
+        c('ecrire', 'L’écrire vous-même, le soir', [s('credibility', 3), s('influence', 2), s('energy', -10), s('stress', 4)], 'Six mois de nuits courtes. Un vrai livre.'),
+        c('refuser', 'Refuser', [], 'Une autre fois, peut-être.'),
+      ],
+    }),
+  },
+  {
+    tag: 'chien_adopte', weight: 0.5,
+    build: () => ({
+      title: 'Un chien à la permanence',
+      context: 'Un chien errant s’est installé devant votre permanence. Les passants le nourrissent. Il vous suit jusqu’à la voiture.',
+      choices: [
+        c('adopter', 'L’adopter', [s('popularity', 3), s('stress', -4), { kind: 'flagAdd', key: 'chien', delta: 1 }], 'Il s’appelle désormais Préfet. Il a son compte Instagram.'),
+        c('refuge', 'L’emmener au refuge', [s('popularity', 1)], 'Il est adopté en deux jours.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sondage_coquille', weight: 0.5, minRank: 'depute',
+    build: () => ({
+      title: 'Le sondage coquille',
+      context: 'Un institut vous crédite par erreur de 31 % d’intentions de vote au lieu de 13 %. Le chiffre fait le tour des chaînes info avant le démenti.',
+      choices: [
+        c('humour', 'En rire publiquement', [s('popularity', 3), s('credibility', 1)], '« Je prends les 31 %, je rends les 13. » La formule tourne.'),
+        c('profiter', 'Laisser courir la confusion', [{ kind: 'momentum', delta: 4 }, s('credibility', -3)], 'Deux jours d’euphorie, puis les moqueries.'),
+      ],
+    }),
+  },
+  {
+    tag: 'diner_famille', weight: 0.6,
+    build: () => ({
+      title: 'Dîner de famille houleux',
+      context: 'Repas dominical : votre beau-frère attaque votre bilan dès l’entrée. Votre mère vous fait les gros yeux.',
+      choices: [
+        c('debattre', 'Débattre jusqu’au dessert', [s('stress', 5), s('credibility', 1)], 'Vous gagnez le débat, pas la soirée.'),
+        c('apaiser', 'Changer de sujet', [s('stress', -3)], 'On parle du chien du voisin. Tout le monde est soulagé.'),
+        c('partir', 'Prétexter une urgence', [s('stress', 2), s('energy', 2)], 'Votre mère ne décroche plus pendant une semaine.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cambriolage_permanence', weight: 0.4, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Votre permanence cambriolée',
+      context: 'Vitre brisée, ordinateurs volés, fichiers des militants dans la nature. La police est sur place.',
+      choices: [
+        c('transparence', 'Prévenir les militants et porter plainte', [s('credibility', 3), { kind: 'funds', account: 'campaign', delta: -1500 }, s('stress', 3)], 'Les militants apprécient la franchise.'),
+        c('discret', 'Rester discret', [{ kind: 'funds', account: 'campaign', delta: -1500 }, { kind: 'exposure', delta: 4 }], 'Les fichiers ressortent un mois plus tard sur un forum.'),
+      ],
+    }),
+  },
+  {
+    tag: 'consultation_locale', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Le cahier de doléances déborde',
+      context: 'Votre consultation en ligne a reçu quatre mille contributions. Il faut en tirer des propositions avant la réunion publique.',
+      choices: [
+        c('trier', 'Trier soi-même les contributions', [play('consultation', 'Quatre mille contributions', [s('credibility', 3), s('popularity', 2), { kind: 'dossier', domain: 'social', delta: 2 }])], 'Café, surligneur, et c’est parti.'),
+        c('cabinet', 'Confier ça à un cabinet', [{ kind: 'funds', account: 'campaign', delta: -2000 }, s('credibility', 1)], 'Un rapport impeccable, que personne ne lit.', { needMoney: 2000 }),
       ],
     }),
   },

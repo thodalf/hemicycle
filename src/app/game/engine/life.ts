@@ -294,6 +294,11 @@ function demote(d: GameState, to: RankId = 'militant'): void {
 function aftermath(d: GameState, title: string): void {
   const p = d.player;
   const s = p.stats;
+  // Premier contact manqué : le dossier vous est retiré
+  if (['La grande peur', 'Le silence des étoiles', 'Le contact confisqué'].includes(title)) {
+    d.alien = null;
+    p.flags['hautCommissaire'] = false;
+  }
   switch (title) {
     case 'Banqueroute':
       p.finances.personal = 0;

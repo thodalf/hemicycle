@@ -16,7 +16,7 @@ export interface FxParticle { dx: number; dy: number; rot: number; color: string
 export interface FxItem {
   id: number;
   kind: 'float' | 'burst' | 'fly' | 'stamp' | 'week' | 'month' | 'ticker' | 'coin' | 'note' | 'banner' | 'flash' | 'front' | 'rocket'
-    | 'tomato' | 'paper' | 'plane' | 'heart' | 'spot' | 'ballot' | 'mic' | 'rain';
+    | 'tomato' | 'paper' | 'plane' | 'heart' | 'spot' | 'ballot' | 'mic' | 'rain' | 'ufo';
   /** Mois précédent (page de calendrier) */
   old?: string;
   icon?: string;
@@ -171,6 +171,12 @@ export class FxService {
   plane(text = ''): void {
     if (typeof window === 'undefined') return;
     this.add({ kind: 'plane', text, x: -80, y: window.innerHeight * (0.18 + Math.random() * 0.12), dx: window.innerWidth + 160 }, 2400);
+  }
+
+  /** Une soucoupe traverse l'écran, s'arrête et balaie la page de son rayon (premier contact) */
+  ufo(text = ''): void {
+    if (typeof window === 'undefined') return;
+    this.add({ kind: 'ufo', text, x: -90, y: window.innerHeight * 0.22, dx: window.innerWidth + 180 }, 3400);
   }
 
   /** Battement de cœur (alerte de santé) */

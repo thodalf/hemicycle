@@ -68,8 +68,8 @@ export class WeekPlannerComponent {
     const withProjects = (list: [ActionCategory | 'projets', string][]) => [...list.slice(0, 1), ['projets', 'Projets'] as [ActionCategory | 'projets', string], ...list.slice(1)];
     if (this.game.s().war && all[0]?.[0] === 'guerre') return withProjects(all);
     if (this.game.s().presidency) return withProjects([...all.filter(([c]) => c === 'elysee'), ...all.filter(([c]) => c !== 'elysee')]);
-    if (present.has('fonction') && !['royaute', 'franc_macon', 'editorialiste', 'infiltre'].includes(scenario)) return withProjects([...all.filter(([c]) => c === 'fonction'), ...all.filter(([c]) => c !== 'fonction')]);
-    const first = scenario === 'royaute' ? 'couronne' : scenario === 'franc_macon' ? 'loge' : scenario === 'editorialiste' ? 'redaction' : scenario === 'infiltre' ? 'infiltration' : null;
+    if (present.has('fonction') && !['royaute', 'franc_macon', 'editorialiste', 'infiltre', 'contact'].includes(scenario)) return withProjects([...all.filter(([c]) => c === 'fonction'), ...all.filter(([c]) => c !== 'fonction')]);
+    const first = scenario === 'royaute' ? 'couronne' : scenario === 'franc_macon' ? 'loge' : scenario === 'editorialiste' ? 'redaction' : scenario === 'infiltre' ? 'infiltration' : scenario === 'contact' ? 'contact' : null;
     return withProjects(first ? [...all.filter(([c]) => c === first), ...all.filter(([c]) => c !== first)] : all);
   });
   protected readonly category = signal<ActionCategory | 'projets'>(this.categories()[0]?.[0] ?? 'terrain');

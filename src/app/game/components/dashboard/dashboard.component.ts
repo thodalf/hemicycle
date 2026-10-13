@@ -33,6 +33,8 @@ import { GovernmentPanelComponent } from '../government-panel/government-panel.c
 import { WorldPanelComponent } from '../world-panel/world-panel.component';
 import { PresidencyPanelComponent } from '../presidency-panel/presidency-panel.component';
 import { WarPanelComponent } from '../war-panel/war-panel.component';
+import { ALIEN_PHASES } from '../../engine/alien';
+import { ContactPanelComponent } from '../contact-panel/contact-panel.component';
 import { AssemblyVoteComponent } from '../assembly-vote/assembly-vote.component';
 import { BankComponent } from '../bank/bank.component';
 import { MinigameComponent } from '../minigame/minigame.component';
@@ -48,7 +50,7 @@ import { Milestone } from '../../models/game.models';
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
-    WarPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
+    WarPanelComponent, ContactPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
   template: `
     <header class="topbar">
@@ -105,6 +107,7 @@ import { Milestone } from '../../models/game.models';
         <app-team-panel />
       </div>
       <main class="col-main">
+        <app-contact-panel />
         <app-war-panel />
         <app-presidency-panel />
         <app-government-panel />
@@ -340,6 +343,7 @@ export class DashboardComponent {
   private lastRank = this.game.player().rankId;
   private lastStatus = this.game.s().status;
   private lastMilestones = this.game.s().milestones.length;
+  private lastAlien = this.game.s().alien?.phase ?? -1;
   /** Dernier chapitre ouvert, affiché en grand */
   protected readonly chapter = signal<Milestone | null>(null);
   protected readonly summary = () => lifeSummary(this.game.s());
@@ -350,7 +354,10 @@ export class DashboardComponent {
     const rank = this.game.player().rankId;
     const status = this.game.s().status;
     const milestones = this.game.s().milestones;
+    const alien = this.game.s().alien?.phase ?? -1;
     untracked(() => {
+      if (alien > this.lastAlien) setTimeout(() => this.fx.ufo(alien === 0 ? 'Un signal venu des étoiles' : ALIEN_PHASES[alien]), 300);
+      this.lastAlien = alien;
       if (milestones.length > this.lastMilestones && status !== 'mort') {
         const m = milestones.at(-1)!;
         setTimeout(() => {

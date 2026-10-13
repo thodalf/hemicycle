@@ -10,6 +10,18 @@ type Phase = 'intro' | 'play' | 'over';
 interface Cell { kind: 'good' | 'bad'; until: number; id: number }
 interface Card { face: string; open: boolean; found: boolean; id: number }
 interface Seat { x: number; y: number; state: 'idle' | 'hot' | 'trap' | 'won' | 'lost'; until: number }
+interface Village { name: string; x: number; y: number; gain: number; visited: boolean }
+
+/** Contour simplifié de l'Hexagone (repère 0-100) */
+export const FRANCE = '48,4 60,9 74,12 90,22 88,36 84,48 90,60 88,76 76,86 62,90 50,94 40,90 28,92 14,86 16,72 8,58 4,42 14,34 22,22 36,14';
+const SPOTS: [number, number][] = [
+  [24, 30], [36, 22], [62, 18], [76, 24], [82, 38], [70, 34], [58, 32], [42, 36], [28, 44], [14, 48], [22, 60],
+  [36, 54], [50, 48], [64, 50], [78, 56], [80, 70], [66, 66], [52, 62], [40, 70], [28, 78], [46, 82], [60, 80], [72, 78],
+];
+const VILLAGES = ['Saint-Aubin', 'Vauclair', 'Montrevel', 'Les Granges', 'Beauvallon', 'Fontenoy', 'Rochebrune', 'Mirabel', 'Valcourt',
+  'Sainte-Colombe', 'Plouguern', 'Castelvieil', 'Lanvaux', 'Bellegarde', 'Puymorin', 'Les Aulnes', 'Coulanges', 'Brémontier'];
+const PARIS = { x: 50, y: 27 };
+const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 
 const DURATION = 15000;
 
@@ -81,6 +93,7 @@ export class MinigameComponent {
       case 'tri': this.startTri(def); break;
       case 'marchandage': this.startDeal(def); break;
       case 'pointage': this.startPointage(); break;
+      case 'tournee': this.startTournee(); break;
     }
   }
 
@@ -404,6 +417,73 @@ export class MinigameComponent {
     if (s.state === 'hot') { this.won++; this.seats.update(l => l.map((x, k) => (k === i ? { ...x, state: 'won' as const } : x))); }
     else if (s.state === 'trap') { this.lost++; this.bump(); this.seats.update(l => l.map((x, k) => (k === i ? { ...x, state: 'idle' as const } : x))); }
     this.liveScore.set(Math.max(0, this.pointageScore()));
+  }
+
+  // ── Tournée ─────────────────────────────────────────────
+  protected readonly villages = signal<Village[]>([]);
+  protected readonly car = signal(PARIS);
+  protected readonly trail = signal<string>(`${PARIS.x},${PARIS.y}`);
+  protected readonly fuel = signal(1);
+  protected readonly collected = signal(0);
+  protected readonly france = FRANCE;
+  protected readonly paris = PARIS;
+  private fuelLeft = 0;
+  private fuelMax = 0;
+  private best = 1;
+
+  private startTournee(): void {
+    const spots = [...SPOTS].sort(() => Math.random() - 0.5).slice(0, 11);
+    const names = [...VILLAGES].sort(() => Math.random() - 0.5);
+    const list = spots.map(([x, y], i) => ({ name: names[i], x, y, gain: Math.random() < 0.2 ? 3 : Math.random() < 0.5 ? 2 : 1, visited: false }));
+    this.villages.set(list);
+    this.car.set(PARIS);
+    this.trail.set(`${PARIS.x},${PARIS.y}`);
+    this.collected.set(0);
+    this.fuelMax = this.fuelLeft = 165 / this.diff();
+    this.fuel.set(1);
+    this.timeLeft.set(1);
+    // Meilleur de trois stratégies gloutonnes : la référence à battre
+    const greedy = (pick: (from: { x: number; y: number }, c: Village[], fuel: number) => Village | undefined) => {
+      let fuel = this.fuelMax, at: { x: number; y: number } = PARIS, total = 0;
+      const left = list.map(v => ({ ...v }));
+      for (;;) {
+        const ok = left.filter(v => !v.visited && dist(at, v) <= fuel);
+        const v = pick(at, ok, fuel);
+        if (!v) break;
+        fuel -= dist(at, v); total += v.gain; v.visited = true; at = v;
+      }
+      return total;
+    };
+    this.best = Math.max(1,
+      greedy((at, c) => c.sort((p, q) => q.gain / Math.max(1, dist(at, q)) - p.gain / Math.max(1, dist(at, p)))[0]),
+      greedy((at, c) => c.sort((p, q) => dist(at, p) - dist(at, q))[0]),
+      greedy((at, c) => c.sort((p, q) => q.gain - p.gain || dist(at, p) - dist(at, q))[0]));
+    this.stop();
+  }
+
+  protected reachable(v: Village): boolean {
+    return !v.visited && dist(this.car(), v) <= this.fuelLeft;
+  }
+
+  protected goTo(i: number): void {
+    const v = this.villages()[i];
+    if (this.phase() !== 'play' || !v || !this.reachable(v)) return;
+    this.fuelLeft -= dist(this.car(), v);
+    this.fuel.set(this.fuelLeft / this.fuelMax);
+    this.timeLeft.set(this.fuel());
+    this.collected.update(c => c + v.gain);
+    this.villages.update(list => list.map((x, k) => (k === i ? { ...x, visited: true } : x)));
+    this.car.set({ x: v.x, y: v.y });
+    this.trail.update(t => `${t} ${v.x},${v.y}`);
+    this.liveScore.set(Math.min(1, this.collected() / this.best));
+    if (!this.villages().some(x => this.reachable(x))) {
+      this.message.set('Panne sèche : la tournée s’arrête là.');
+      setTimeout(() => this.end(this.collected() / this.best), 900);
+    }
+  }
+
+  protected homeward(): void {
+    if (this.phase() === 'play') this.end(this.collected() / this.best);
   }
 
   // ── Clavier ─────────────────────────────────────────────

@@ -1,11 +1,12 @@
 import { Component, computed, input } from '@angular/core';
 import { Decision } from '../../models/game.models';
 
-export type EmblemKind = 'espion' | 'tv' | 'journal' | 'sirene' | 'parti' | 'epees' | 'poignee' | 'trophee' | 'eclair' | 'pieces' | 'cloche';
+export type EmblemKind = 'ovni' | 'espion' | 'tv' | 'journal' | 'sirene' | 'parti' | 'epees' | 'poignee' | 'trophee' | 'eclair' | 'pieces' | 'cloche';
 
 /** Choisit l'illustration animée d'une décision selon sa nature */
 export function emblemFor(d: Decision): EmblemKind {
   const t = d.tag;
+  if (t.startsWith('ev_al_') || t === 'ev_signal_etoiles') return 'ovni';
   if (t.startsWith('ev_mole') || t === 'soupcons' || t === 'officier') return 'espion';
   if (t === 'banqueroute' || t === 'faillite_parti' || t.includes('krach') || t === 'ev_caisse_vide') return 'pieces';
   if (t === 'crise' || t.includes('tempete') || t.includes('accident') || t.includes('canicule')) return 'sirene';
@@ -28,6 +29,15 @@ export function emblemFor(d: Decision): EmblemKind {
   template: `
     <svg viewBox="0 0 48 48" [attr.class]="'em ' + kind()" aria-hidden="true">
       @switch (kind()) {
+        @case ('ovni') {
+          <g class="stars"><circle cx="6" cy="8" r=".8" /><circle cx="40" cy="6" r=".8" /><circle cx="44" cy="20" r=".6" /><circle cx="4" cy="22" r=".6" /></g>
+          <path class="tractor" d="M18 24 L12 44 L36 44 L30 24 Z" />
+          <g class="saucer">
+            <path class="dome" d="M17 19 a7 6 0 0 1 14 0 z" />
+            <ellipse class="disc" cx="24" cy="21" rx="16" ry="5" />
+            <circle class="light l1" cx="14" cy="22" r="1.3" /><circle class="light l2" cx="24" cy="23.5" r="1.3" /><circle class="light l3" cx="34" cy="22" r="1.3" />
+          </g>
+        }
         @case ('espion') {
           <g class="loupe"><circle cx="20" cy="20" r="11" /><line x1="28" y1="28" x2="40" y2="40" class="manche" /></g>
           <circle class="oeil" cx="20" cy="20" r="3.5" />
@@ -131,6 +141,15 @@ export function emblemFor(d: Decision): EmblemKind {
     .pieces .coin { fill: var(--warn); stroke: #8a6a1f; stroke-width: 1.5; }
     .pieces .c3 { animation: fall 1.4s ease-in infinite; }
     .pieces .c4 { animation: fall 1.4s .5s ease-in infinite; }
+    /* Soucoupe qui plane, rayon tracteur */
+    .ovni .disc { fill: #9fb3c8; stroke: #44566b; }
+    .ovni .dome { fill: #bfe6d8; stroke: #44566b; }
+    .ovni .saucer { animation: hover-ufo 2.2s ease-in-out infinite; }
+    .ovni .light { fill: #f4d27a; stroke: none; animation: blink 1s steps(2) infinite; }
+    .ovni .l2 { animation-delay: .33s; } .ovni .l3 { animation-delay: .66s; }
+    .ovni .tractor { fill: rgba(140, 220, 190, .35); stroke: none; animation: flicker 1.4s ease-in-out infinite; }
+    .ovni .stars circle { fill: var(--ink-3); stroke: none; animation: blink 2s steps(2) infinite; }
+    @keyframes hover-ufo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
     /* Cloche */
     .cloche .bell { transform-origin: 24px 10px; animation: ring 1.6s ease-in-out infinite; }
 

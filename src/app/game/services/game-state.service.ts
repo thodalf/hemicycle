@@ -123,6 +123,7 @@ export function migrate(s: GameState): GameState {
   s.vote ??= null;
   s.voteHistory ??= [];
   s.minigames ??= [];
+  s.alien ??= null;
   migrateLoans(s);
   if (!s.presidential) {
     s.presidential = initPresidential(s);
@@ -215,6 +216,12 @@ export class GameStateService {
         id: 'news-0', week: 1, kind: 'actu', tone: 'neutral',
         title: `${state.player.name} fait ses débuts à ${state.press.outlet}`,
         body: 'Pigiste pour commencer. Objectif : diriger la rédaction et faire l’opinion (audience 65, influence 60).',
+      }
+      : opts.scenario === 'contact'
+      ? {
+        id: 'news-0', week: 1, kind: 'actu', tone: 'neutral',
+        title: 'Un signal venu des étoiles',
+        body: 'Nançay capte un message régulier venu de Proxima du Centaure. Matignon vous confie la cellule du Premier contact : comprendre, se faire comprendre, rassurer le pays et garder la main face aux grandes puissances.',
       }
       : state.party.founder
       ? {

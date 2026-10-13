@@ -877,13 +877,13 @@ const RAW_ACTIONS: ActionDefinition[] = [
 
   // ── Course à l'Élysée ───────────────────────────────────
   {
-    id: 'chercher_parrainages', minigame: 'parrainages', label: 'Chercher des parrainages', category: 'parti', minRank: 'militant', requires: { declared: true },
+    id: 'chercher_parrainages', minigame: 'tournee_maires', label: 'Chercher des parrainages', category: 'parti', minRank: 'militant', requires: { declared: true },
     description: 'Appeler un à un les maires et conseillers. Il en faut cinq cents.',
     cost: { ap: 1, energy: 10 },
     effects: [{ kind: 'parrainages', delta: 45 }, { kind: 'stat', stat: 'stress', delta: 3 }],
   },
   {
-    id: 'tournee_maires', minigame: 'parrainages', label: 'Tournée des maires ruraux', category: 'terrain', minRank: 'militant', requires: { declared: true },
+    id: 'tournee_maires', minigame: 'tournee_maires', label: 'Tournée des maires ruraux', category: 'terrain', minRank: 'militant', requires: { declared: true },
     description: 'Trois départements, quarante mairies, une centaine de signatures.',
     cost: { ap: 2, energy: 18, money: 1500 }, maxPerMonth: 1,
     effects: [{ kind: 'parrainages', delta: 95 }, { kind: 'contact', contactId: 'ct-maires', trust: 4 }, { kind: 'stat', stat: 'stress', delta: 5 }],
@@ -1212,6 +1212,160 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
   },
 
+  // ── Premier contact ─────────────────────────────────────
+  {
+    id: 'al_glyphes', minigame: 'glyphes', label: 'Décoder les glyphes du message', category: 'contact', minRank: 'militant',
+    description: 'Une nuit avec les cryptologues de la DGSE et les linguistes du CNRS, devant des écrans couverts de symboles.',
+    cost: { ap: 2, energy: 12 }, maxPerMonth: 1,
+    effects: [{ kind: 'alien', comprehension: 8 }, { kind: 'stat', stat: 'stress', delta: 2 }],
+  },
+  {
+    id: 'al_nancay', label: 'Une nuit au radiotélescope de Nançay', category: 'contact', minRank: 'militant',
+    description: 'Les antennes géantes de Sologne tournées vers Proxima. On écoute, on enregistre, on compare.',
+    cost: { ap: 1, energy: 10 }, cooldown: 2,
+    effects: [{ kind: 'alien', comprehension: 4 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'dossier', domain: 'numerique', delta: 2 }],
+  },
+  {
+    id: 'al_linguistes', label: 'Réunir linguistes et mathématiciens', category: 'contact', minRank: 'militant',
+    description: 'Un séminaire fermé à Saclay : grammaire, nombres, musique. Les meilleurs esprits du pays, payés sur vos crédits.',
+    cost: { ap: 2, energy: 8, money: 3000 }, cooldown: 2,
+    effects: [{ kind: 'alien', comprehension: 7 }, { kind: 'dossier', domain: 'education', delta: 2 }],
+  },
+  {
+    id: 'al_repondre', minigame: 'message_etoiles', label: 'Composer la réponse de l’humanité', category: 'contact', minRank: 'militant', requires: { alienPhase: 0 },
+    description: 'Que dire à une civilisation inconnue ? Chaque mot sera disséqué, sur Terre comme là-haut.',
+    cost: { ap: 2, energy: 10, politicalCapital: 5 }, cooldown: 2,
+    effects: [{ kind: 'alien', confiance: 8, comprehension: 1 }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  {
+    id: 'al_cellule', label: 'Réunir la cellule de crise', category: 'contact', minRank: 'militant',
+    description: 'Intérieur, Armées, Santé, Affaires étrangères autour d’une même table, sous le sceau du secret.',
+    cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
+    effects: [{ kind: 'alien', panique: -5, rivalite: -2 }, { kind: 'stat', stat: 'stress', delta: 3 }],
+  },
+  {
+    id: 'al_allocution', minigame: 'discours_etoiles', label: 'Rassurer la Nation', category: 'contact', minRank: 'militant', requires: { alienPhase: 1 },
+    description: 'Une allocution à 20 heures pour dire ce qu’on sait, ce qu’on ignore, et pourquoi il ne faut pas avoir peur.',
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
+    effects: [{ kind: 'alien', panique: -10 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+  {
+    id: 'al_onu', label: 'Plaider à l’ONU pour un contact partagé', category: 'contact', minRank: 'militant', requires: { alienPhase: 1 },
+    description: 'New York, l’Assemblée générale : proposer que le premier contact appartienne à toute l’humanité — sous coordination française.',
+    cost: { ap: 2, energy: 14, politicalCapital: 10 }, cooldown: 3,
+    effects: [{ kind: 'alien', rivalite: -12, confiance: 2 }, { kind: 'intl', prestige: 4 }, { kind: 'stat', stat: 'influence', delta: 2 }],
+    risk: { baseChance: 0.3, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'alien', rivalite: 6 }, { kind: 'intl', prestige: -3 }], failureNews: 'Veto au Conseil de sécurité : chacun veut son propre canal.' },
+  },
+  {
+    id: 'al_secret', label: 'Classer une découverte secret-défense', category: 'contact', minRank: 'militant',
+    description: 'Garder pour soi ce qui pourrait affoler le pays. Tant que ça ne fuite pas.',
+    cost: { ap: 1, energy: 4 }, cooldown: 2,
+    effects: [{ kind: 'alien', panique: -6 }, { kind: 'exposure', delta: 3 }],
+    risk: { baseChance: 0.3, onFailure: [{ kind: 'alien', panique: 14, confiance: -2 }, { kind: 'stat', stat: 'credibility', delta: -5 }], failureNews: 'Fuite dans la presse : « Ce que le gouvernement vous cache sur Proxima ».' },
+  },
+  {
+    id: 'al_cadeau', label: 'Envoyer un présent culturel', category: 'contact', minRank: 'militant', requires: { alienPhase: 1 },
+    description: 'Debussy, Rimbaud, la recette du pain, les fresques de Lascaux : ce que la France a de plus beau, codé en binaire.',
+    cost: { ap: 1, energy: 6 }, cooldown: 3,
+    effects: [{ kind: 'alien', confiance: 6 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+  },
+  {
+    id: 'al_alerte', label: 'Placer les armées en alerte', category: 'contact', minRank: 'militant', requires: { alienPhase: 1 },
+    description: 'Rafale en patrouille, batteries antiaériennes, sous-marins en plongée. Rassurant pour certains, inquiétant pour d’autres.',
+    cost: { ap: 1, energy: 6, politicalCapital: 5 }, cooldown: 3,
+    effects: [{ kind: 'alien', rivalite: -4, confiance: -7, panique: 4 }, { kind: 'stat', stat: 'influence', delta: 2 }],
+  },
+  {
+    id: 'al_echange', label: 'Échange scientifique avec le vaisseau', category: 'contact', minRank: 'militant', requires: { alienPhase: 2 },
+    description: 'Mathématiques, chimie, astronomie : on se montre ce qu’on sait, par écrans interposés.',
+    cost: { ap: 2, energy: 12 }, cooldown: 2,
+    effects: [{ kind: 'alien', comprehension: 6, confiance: 4 }, { kind: 'dossier', domain: 'numerique', delta: 3 }],
+    risk: { baseChance: 0.2, onFailure: [{ kind: 'alien', confiance: -6, panique: 4 }], failureNews: 'Un malentendu : les Vélari coupent la liaison pendant trois jours.' },
+  },
+  {
+    id: 'al_bord', label: 'Monter à bord du vaisseau', category: 'contact', minRank: 'militant', requires: { alienPhase: 3 },
+    description: 'Une navette, un scaphandre, des caméras du monde entier. Vous serez le premier être humain à franchir le seuil.',
+    cost: { ap: 3, energy: 20 }, cooldown: 4,
+    effects: [{ kind: 'alien', comprehension: 10, confiance: 10, panique: -4 }, { kind: 'stat', stat: 'popularity', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 5 }],
+    risk: { baseChance: 0.18, onFailure: [{ kind: 'health', delta: -12 }, { kind: 'alien', panique: 10 }, { kind: 'stat', stat: 'stress', delta: 15 }], failureNews: 'Malaise à bord : l’air vélari ne vous réussit pas. Rapatriement d’urgence.' },
+  },
+  {
+    id: 'al_traite', minigame: 'traite_velari', label: 'Négocier le traité de coexistence', category: 'contact', minRank: 'militant', requires: { alienPhase: 3 },
+    description: 'Une base, des règles, des garanties : le premier traité entre deux espèces. Chaque kilomètre carré compte.',
+    cost: { ap: 2, energy: 15, politicalCapital: 15 }, cooldown: 3,
+    effects: [{ kind: 'alien', confiance: 9, rivalite: -5 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
+  },
+  {
+    id: 'al_ambassade', label: 'Recevoir l’ambassadeur vélari', category: 'contact', minRank: 'militant', requires: { alienPhase: 4 },
+    description: 'Un dîner d’État pas comme les autres. Les Vélari ne mangent pas, mais adorent le protocole.',
+    cost: { ap: 2, energy: 10 }, cooldown: 3,
+    effects: [{ kind: 'alien', confiance: 4, gift: true, rivalite: -3 }, { kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'intl', prestige: 3 }],
+  },
+
+  // ── Encore d'autres actions ─────────────────────────────
+  {
+    id: 'cafe_politique', label: 'Animer un café politique', category: 'terrain', minRank: 'militant',
+    description: 'Un bistrot, un sujet, des habitués qui ont des choses à dire. Vous écoutez plus que vous ne parlez.',
+    cost: { ap: 1, energy: 6, money: 100 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'dossier', domain: '$domain', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+    target: 'domain',
+  },
+  {
+    id: 'consultation_citoyenne', minigame: 'consultation', label: 'Organiser une consultation citoyenne', category: 'fonction', minRank: 'conseiller_municipal',
+    description: 'Un samedi entier avec des habitants tirés au sort. Il faudra trier les idées, sous leurs yeux.',
+    cost: { ap: 2, energy: 12 }, cooldown: 3,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
+  },
+  {
+    id: 'festival_ete', minigame: 'festival', label: 'Monter sur la scène d’un festival', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Le groupe vous invite à dire un mot entre deux morceaux. Quinze mille personnes, un risque de huées.',
+    cost: { ap: 1, energy: 10 }, cooldown: 4,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'momentum', delta: 3 }],
+  },
+  {
+    id: 'jumelage', label: 'Organiser un jumelage', category: 'fonction', minRank: 'conseiller_municipal',
+    description: 'Une ville allemande, polonaise ou sénégalaise ; des écoliers, une fanfare, un panneau à l’entrée de la commune.',
+    cost: { ap: 1, energy: 8, money: 1500 }, cooldown: 6,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'intl', allRelations: 1 }, { kind: 'dossier', domain: 'diplomatie', delta: 3 }],
+  },
+  {
+    id: 'visite_prison', label: 'Visiter une prison sans prévenir', category: 'dossiers', minRank: 'depute',
+    description: 'Le droit de visite des parlementaires : surpopulation, matelas au sol, surveillants épuisés.',
+    cost: { ap: 1, energy: 12 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'justice', delta: 7 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'stat', stat: 'stress', delta: 3 }],
+  },
+  {
+    id: 'tour_campagne_bus', minigame: 'tournee_campagne', label: 'Planifier une tournée de campagne', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Une carte, un bus, des villes à choisir : chaque étape compte, chaque détour coûte.',
+    cost: { ap: 2, energy: 14, money: 2000 }, cooldown: 3,
+    effects: [{ kind: 'momentum', delta: 8 }, { kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'contact', contactId: 'ct-maires', trust: 3 }],
+  },
+  {
+    id: 'pique_nique', label: 'Pique-nique des militants', category: 'parti', minRank: 'militant',
+    description: 'Nappes à carreaux, merguez, tournoi de pétanque : la section se ressoude au soleil.',
+    cost: { ap: 1, energy: 6, money: 300 }, cooldown: 3,
+    effects: [{ kind: 'cohesion', delta: 3 }, { kind: 'faction', factionId: '*', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -3 }],
+  },
+  {
+    id: 'audit_parti', label: 'Faire auditer les comptes du parti', category: 'fonction', minRank: 'chef_parti', onlyRanks: ['chef_parti'],
+    description: 'Un cabinet indépendant épluche les comptes. Ce qui en sortira rassurera… ou fera du bruit.',
+    cost: { ap: 1, energy: 6, politicalCapital: 10 }, cooldown: 12,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 4 }, { kind: 'partyTreasury', delta: 20 }, { kind: 'cohesion', delta: -2 }],
+    risk: { baseChance: 0.25, onFailure: [{ kind: 'exposure', delta: 8 }, { kind: 'cohesion', delta: -6 }], failureNews: 'L’audit révèle des factures douteuses de l’ancienne direction.' },
+  },
+  {
+    id: 'cuisine_tele', label: 'Passer dans une émission culinaire', category: 'medias', minRank: 'depute',
+    description: 'Tablier, blanquette, confidences sur votre enfance : la politique par l’estomac.',
+    cost: { ap: 1, energy: 6 }, cooldown: 4,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'stat', stat: 'credibility', delta: -1 }],
+  },
+  {
+    id: 'velo_circo', label: 'Faire le tour de la circonscription à vélo', category: 'sante', minRank: 'conseiller_municipal',
+    description: 'Cent kilomètres en trois jours, de mairie en mairie, sans voiture officielle.',
+    cost: { ap: 1, energy: 16 }, cooldown: 4,
+    effects: [{ kind: 'health', delta: 2 }, { kind: 'flagAdd', key: 'hygiene', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
+  },
+
   // ── Assemblée : textes sur l'actualité ─────────────────
   {
     id: 'deposer_ppl', label: 'Déposer une proposition de loi sur l’actualité', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
@@ -1463,6 +1617,7 @@ export function effectValue(e: Effect): number {
     case 'crown': return 0.5 * ((e.soutien ?? 0) + (e.legitimite ?? 0) + (e.armee ?? 0));
     case 'lodge': return 0.3 * ((e.fraternite ?? 0) + (e.discretion ?? 0) + (e.planches ?? 0) * 5);
     case 'mole': return 0.4 * ((e.intel ?? 0) + (e.cover ?? 0) + (e.sabotage ?? 0));
+    case 'alien': return 0.5 * ((e.comprehension ?? 0) + (e.confiance ?? 0)) - 0.4 * ((e.panique ?? 0) + (e.rivalite ?? 0));
     case 'war': return 0.5 * (e.front ?? 0) + 0.3 * (e.support ?? 0) - 0.01 * (e.losses ?? 0);
     default: return 0;
   }

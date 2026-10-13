@@ -26,6 +26,7 @@ export const MINISTRIES: Record<Domain, string> = {
 /** Intitulé complet de la fonction : « Ministre de la Santé », « Premier·e ministre »… */
 export function roleLabel(d: GameState): string {
   if (d.player.rankId === 'ministre' && d.portfolio) return `Ministre ${MINISTRIES[d.portfolio]}`;
+  if (d.alien && d.player.flags['hautCommissaire'] && ['depute', 'conseiller_municipal', 'militant'].includes(d.player.rankId)) return 'Haut-commissaire au Premier contact';
   return RANKS[d.player.rankId].label;
 }
 

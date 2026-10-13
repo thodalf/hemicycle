@@ -204,6 +204,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
     vote: null,
     voteHistory: [],
     minigames: [],
+    alien: null,
     presidential: null as unknown as GameState['presidential'],
     player: {
       name: opts.name.trim() || 'Camille Martin',
@@ -243,6 +244,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
   if (opts.scenario === 'royaute') startRoyalty(state);
   if (opts.scenario === 'franc_macon') startLodge(state);
   if (opts.scenario === 'editorialiste') startPress(state, opts.outlet ?? 'radio');
+  if (opts.scenario === 'contact') startContact(state);
   if (infiltre) startMole(state, home);
   if (custom && opts.customParty) setupFoundedPartyAtStart(state, opts.customParty);
   state.player.age = startAge(state.scenario);
@@ -262,6 +264,20 @@ function startRoyalty(s: GameState): void {
   s.party.leaderNpcId = 'player';
   s.party.factions.forEach(f => (f.supportForPlayer = 55));
   s.crown = { pretendant: 'le prince Louis-Amaury de Valmont', soutien: 12, legitimite: 30, armee: 12 };
+}
+
+/** Scénario « Premier contact » : député·e nommé·e à la tête de la cellule du Premier contact */
+function startContact(s: GameState): void {
+  const p = s.player;
+  p.rankId = 'depute';
+  p.actionPoints = { max: 7, current: 7 };
+  p.stats = { popularity: 34, influence: 40, politicalCapital: 35, credibility: 48, stress: 25, energy: 90 };
+  for (const domain of DOMAINS) p.dossiers[domain].mastery = 25;
+  p.dossiers.numerique.mastery = 45;
+  p.dossiers.diplomatie.mastery = 40;
+  p.finances.personal = 12_000;
+  p.flags['hautCommissaire'] = true;
+  s.alien = { species: 'les Vélari', phase: 0, comprehension: 8, confiance: 30, panique: 18, rivalite: 15, gifts: 0, since: 1 };
 }
 
 /** Scénario « Infiltré·e » : militant·e de votre camp, encarté·e chez l'adversaire */

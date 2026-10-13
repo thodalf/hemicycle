@@ -5,6 +5,7 @@ import { applyEffects, pushNews } from './effects';
 import { Rng, clamp } from './rng';
 import { weeklyPress } from './press';
 import { weeklyMole } from './mole';
+import { monthlyAlien } from './alien';
 
 /* ============================================================
  *  Mécaniques propres aux scénarios « Retour à la royauté »
@@ -41,6 +42,7 @@ export function weeklyScenario(d: GameState, rng: Rng): void {
   if (d.lodge) weeklyLodge(d, rng);
   if (d.press) weeklyPress(d, rng);
   if (d.mole) weeklyMole(d, rng);
+  if (d.alien) monthlyAlien(d, rng);
 }
 
 function weeklyCrown(d: GameState, rng: Rng): void {

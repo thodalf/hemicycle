@@ -47,7 +47,7 @@
           </div>
         } @else {
           <div class="play">
-            <div class="live mono">Score {{ liveScore() * 100 | number: '1.0-0' }}</div>
+            @if (def.kind !== 'tournee') { <div class="live mono">Score {{ liveScore() * 100 | number: '1.0-0' }}</div> }
             @switch (def.kind) {
               @case ('poignees') {
                 <div class="grid9">
@@ -112,6 +112,30 @@
                         <span class="thermo"><i [style.width.%]="t.warm * 100" [style.background]="t.warm > 0.8 ? '#c0392b' : t.warm > 0.5 ? '#e6922c' : '#4a7fc1'"></i></span></li>
                     }
                   </ol>
+                </div>
+              }
+              @case ('tournee') {
+                <div class="tour">
+                  <div class="tour-head">
+                    <span>✍️ <strong class="mono">{{ collected() }}</strong> signature(s) promise(s)</span>
+                    <span class="fuel" [class.low]="fuel() < 0.25">⛽ <i><b [style.width.%]="fuel() * 100"></b></i></span>
+                  </div>
+                  <svg class="map" viewBox="0 0 100 100" role="img" aria-label="Carte de la tournée">
+                    <polygon [attr.points]="france" class="land" />
+                    <polyline [attr.points]="trail()" class="road" />
+                    <circle [attr.cx]="paris.x" [attr.cy]="paris.y" r="1.8" class="paris" />
+                    <text [attr.x]="paris.x - 2.5" [attr.y]="paris.y + 1" text-anchor="end" class="lbl">Paris</text>
+                    @for (v of villages(); track v.name) {
+                      <g class="village" [class.done]="v.visited" [class.far]="!v.visited && !reachable(v)" (click)="goTo($index)">
+                        <circle [attr.cx]="v.x" [attr.cy]="v.y" [attr.r]="2.2 + v.gain * 0.9" />
+                        <text [attr.x]="v.x" [attr.y]="v.y + 1.2" text-anchor="middle" class="gain">{{ v.visited ? '✓' : v.gain }}</text>
+                        <text [attr.x]="v.x" [attr.y]="v.y - 4.2" text-anchor="middle" class="lbl">{{ v.name }}</text>
+                      </g>
+                    }
+                    <text class="car" text-anchor="middle" [style.transform]="'translate(' + car().x + 'px, ' + (car().y + 1.6) + 'px)'">🚗</text>
+                  </svg>
+                  @if (message()) { <p class="said">{{ message() }}</p> }
+                  <button class="btn" (click)="homeward()">Rentrer à Paris (terminer)</button>
                 </div>
               }
               @case ('pointage') {

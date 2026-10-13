@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { inMonth } from '../engine/calendar';
+import { ALIEN_PHASES } from '../engine/alien';
 import { boostMedia } from '../engine/staff-perks';
 import { queueMinigame } from '../engine/minigame';
 import { leadsWar, warPowerBlock } from '../engine/war';
@@ -85,6 +86,7 @@ export class ActionPlannerService {
       if (a.category === 'loge') return !!s.lodge;
       if (a.category === 'redaction') return !!s.press;
       if (a.category === 'infiltration') return !!s.mole;
+      if (a.category === 'contact') return !!s.alien;
       if (a.category === 'elysee') return !!s.presidency;
       if (a.category === 'international' && !intlRelevant(s)) return false;
       if (a.category === 'international' && rankOrder(a.minRank) >= rankOrder('ministre') && rankOrder(s.player.rankId) >= rankOrder('ministre') && !intlPower(s)) return false;
@@ -123,6 +125,7 @@ export class ActionPlannerService {
       if (req.declared && !s.presidential.declared) return { ok: false, reason: 'Déclarez d’abord votre candidature' };
       if (req.maxHealth !== undefined && s.player.health > req.maxHealth) return { ok: false, reason: 'Inutile : votre santé est bonne' };
       if (req.minAge !== undefined && s.player.age < req.minAge) return { ok: false, reason: `À partir de ${req.minAge} ans` };
+      if (req.alienPhase !== undefined && (s.alien?.phase ?? -1) < req.alienPhase) return { ok: false, reason: `À partir de la phase « ${ALIEN_PHASES[req.alienPhase]} »` };
       if (req.war && !s.war) return { ok: false, reason: 'Le pays n’est pas en guerre' };
       if (req.war && !leadsWar(s)) return { ok: false, reason: 'Le président, le Premier ministre et les ministres régaliens conduisent la guerre' };
       if (req.peace && s.war) return { ok: false, reason: 'Le pays est déjà en guerre' };

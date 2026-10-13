@@ -123,6 +123,16 @@ export function describeEffect(e: Effect): EffectChip[] {
       return out;
     }
     case 'vote': return [{ text: 'Scrutin à l’Assemblée', tone: 'neutral' }];
+    case 'alien': {
+      const out: EffectChip[] = [];
+      if (e.join) out.push({ text: 'Dossier du Premier contact', tone: 'neutral' });
+      if (e.comprehension) out.push({ text: `${n(e.comprehension)} compréhension`, tone: tone(e.comprehension) });
+      if (e.confiance) out.push({ text: `${n(e.confiance)} confiance des Vélari`, tone: tone(e.confiance) });
+      if (e.panique) out.push({ text: `${n(e.panique)} panique`, tone: tone(e.panique, true) });
+      if (e.rivalite) out.push({ text: `${n(e.rivalite)} rivalité des puissances`, tone: tone(e.rivalite, true) });
+      if (e.gift) out.push({ text: 'Technologie vélari', tone: 'good' });
+      return out;
+    }
     case 'minigame': return [{ text: 'Mini-jeu', tone: 'neutral' }, ...e.reward.flatMap(describeEffect)];
     case 'loan': return [{ text: `Prêt de ${e.amount.toLocaleString('fr-FR')} €`, tone: 'neutral' }];
     default: return [];

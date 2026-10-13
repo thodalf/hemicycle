@@ -21,6 +21,7 @@
 .k-tri .band { background-color: #3d4a2a; }
 .k-marchandage .band { background-color: #6b5214; }
 .k-pointage .band { background-color: #23305a; }
+.k-tournee .band { background-color: #1f5a46; }
 .band-top { display: flex; justify-content: space-between; gap: 8px; }
 .on-dark { color: rgba(241, 239, 233, .65); }
 .queue { font-size: 11.5px; color: rgba(241, 239, 233, .8); }
@@ -109,6 +110,28 @@
 .seat.lost { fill: #8a8f9a; }
 .seat-ico { font-size: 5px; pointer-events: auto; cursor: pointer; }
 @keyframes blink { to { fill: #e6922c; } }
+
+/* Tournée */
+.tour { display: grid; gap: 8px; width: 100%; justify-items: center; }
+.tour-head { display: flex; justify-content: space-between; gap: 12px; width: 100%; font-size: 13.5px; align-items: center; }
+.fuel { display: inline-flex; align-items: center; gap: 6px;
+  i { display: inline-block; width: 120px; height: 8px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+  b { display: block; height: 100%; background: var(--good); transition: width .5s ease; } }
+.fuel.low b { background: var(--bad); }
+.map { width: min(440px, 100%); height: auto; touch-action: manipulation; }
+.land { fill: color-mix(in srgb, var(--good) 12%, var(--surface)); stroke: var(--ink-3); stroke-width: .5; }
+.road { fill: none; stroke: var(--accent); stroke-width: .9; stroke-dasharray: 2 1.2; stroke-linejoin: round; }
+.paris { fill: var(--ink); }
+.lbl { font-size: 2.6px; fill: var(--ink-2); pointer-events: none; }
+.village { cursor: pointer;
+  circle { fill: #f4d27a; stroke: #a77a1c; stroke-width: .5; transition: fill .2s, transform .2s; transform-box: fill-box; transform-origin: center; }
+  &:hover circle { transform: scale(1.15); }
+  .gain { font: 700 2.8px var(--font-mono); fill: #5a3f05; pointer-events: none; } }
+.village.done circle { fill: var(--good); stroke: var(--good); }
+.village.done .gain { fill: #fff; }
+.village.far { opacity: .35; cursor: not-allowed; }
+.car { font-size: 5px; transition: transform .6s cubic-bezier(.4, 0, .2, 1); pointer-events: none; }
+.said { margin: 0; font-size: 12.5px; padding: 6px 10px; border-radius: 8px; background: var(--warn-soft); }
 
 /* Résultat */
 .result { padding: 22px 20px 24px; display: grid; gap: 8px; justify-items: center; text-align: center;

@@ -8,6 +8,7 @@ import { ofParty } from './world';
 import { effectValue, withCounterweight } from './actions';
 import { LIFE_EVENTS } from './life-events';
 import { EXTRA_EVENTS } from './extra-events';
+import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { RANK_EVENTS } from './rank-events';
 import { INTL_EVENTS } from './intl-events';
 import { intlRelevant } from '../engine/intl';
@@ -1401,6 +1402,12 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     if (crownGates.length && rng.chance(0.04)) ev = pick(crownGates);
     else if (lodgeGates.length && rng.chance(0.04)) ev = pick(lodgeGates);
     else if (pressGates.length && rng.chance(0.045)) ev = pick(pressGates);
+  }
+  // Premier contact : la porte d'entrée (rare), puis les rebondissements du dossier
+  if (!ev && d.week >= 4 && canFire(ALIEN_GATE, 12) && rng.chance(d.scenario === 'carriere' ? 0.012 : 0.006)) ev = ALIEN_GATE;
+  if (!ev && d.alien && rng.chance(0.4)) {
+    const pool = ALIEN_EVENTS.filter(e => canFire(e, 10));
+    if (pool.length) ev = pick(pool);
   }
   // Rendez-vous du calendrier (vœux de janvier, 14 Juillet)
   if (!ev) {

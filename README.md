@@ -42,20 +42,26 @@ Standalone components, zoneless, Signals partout.
   (municipales), 5 (législatives, présidentielle) et 3 mois (primaire) ; présidentielle tous les 60 mois. Les anciennes
   parties hebdomadaires sont converties à l’ouverture (dates, projets, salaires, crédits).
 - **Mini-jeux** (`data/minigames.ts`, `engine/minigame.ts`, `components/minigame`) : une trentaine d’actions et une
-  quinzaine d’événements se jouent. Six mécaniques, déclinées en thèmes : **poignées de main** (bain de foule, tractage,
+  vingtaine d’événements se jouent. Sept mécaniques, déclinées en thèmes : **poignées de main** (bain de foule, tractage,
   selfies, fête du village, dédicace — attraper les bonnes cibles, éviter les tomates), **applaudimètre** (discours,
-  allocution, joute d’éloquence — lancer la phrase quand le curseur est dans la zone), **mémoire** (réviser ses fiches),
-  **tri** (courrier de la permanence, questions au gouvernement, matinale radio, live sur les réseaux), **marchandage**
-  (hausse salariale, mécène, partage des circonscriptions — trouver le seuil caché en cinq offres) et **pointage**
-  (rallier les députés indécis, décrocher les appels des maires). Le score fixe le palier : brillant (gains ×1,5),
+  allocution, joute d’éloquence, festival, discours aux étoiles — lancer la phrase quand le curseur est dans la zone), **mémoire** (réviser ses fiches, décoder des glyphes extraterrestres),
+  **tri** (courrier de la permanence, questions au gouvernement, matinale radio, live sur les réseaux, consultation citoyenne, message à envoyer aux étoiles), **marchandage**
+  (hausse salariale, mécène, partage des circonscriptions, traité avec les Vélari — trouver le seuil caché en cinq offres),
+  **pointage** (rallier les députés indécis) et **tournée** (tournée des mairies, tournée de campagne en bus : tracer sa
+  route sur la carte de France, de village en village, avant la panne sèche, puis rentrer à Paris). Le score fixe le palier : brillant (gains ×1,5),
   réussi, mitigé (moitié), raté (presque rien, et des dégâts). La fatigue et le stress rendent le jeu plus dur. On peut
   laisser faire l’équipe (résultat moyen) ; pendant un projet au long cours, elle s’en charge. Clavier pris en charge.
 - **Nouvelles actions** : fête du village, débat devant des lycéens, nuit blanche sur un dossier, matinale radio,
   dédicace, pointage pour le groupe, négocier la sortie d’une grève, nuit aux urgences, cagnotte en ligne, semi-marathon
   solidaire, vœux à la presse. **Nouveaux événements** : micro coupé, foire du canton, courrier débordant, interview
-  piège, mécène, grève des cantines, vote serré, grand oral, pétanque des anciens, maires qui rappellent, concours
+  piège, mécène, grève des cantines, vote serré, grand oral, pétanque des anciens, maires qui vous attendent, concours
   d’éloquence, challenge viral, chat de la mairie, homonyme, lettre d’enfant, drone, stagiaire sur le compte officiel ;
   et des rendez-vous du calendrier : cérémonie des vœux en janvier, vœux aux Français à l’Élysée, garden-party du 14 Juillet.
+- **Encore des actions** : café politique, consultation citoyenne, festival d’été, jumelage, visite de prison, tournée de
+  campagne en bus, pique-nique républicain, audit du parti (chef·fe de parti), émission de cuisine à la télé, tour de la
+  circonscription à vélo. **Encore des événements** : micro tendu au festival (été), tempête de neige (hiver), Téléthon
+  (décembre), bloqué·e dans le métro, militant devenu viral, mariage d’un adversaire, plume fantôme, chien adopté à la
+  permanence, sondage coquille, dîner de famille houleux, permanence cambriolée, cahier de doléances qui déborde.
 - **Votes à l’Assemblée sur l’actualité** (`engine/assembly.ts`, `data/bills.ts`, `components/assembly-vote`,
   `components/hemicycle`) : chaque mois, un texte lié au **sujet à la une** peut être inscrit à l’ordre du jour (30 textes
   sur les dix domaines, de gauche, de droite ou transpartisans). Projet de loi du gouvernement, proposition de la
@@ -205,6 +211,18 @@ Standalone components, zoneless, Signals partout.
   direct, interview exclusive, interview contradictoire = débat, livre-enquête…) et deux scènes (enquête, direct).
   Grand chapitre : diriger la rédaction avec 65 d’audience et 60 d’influence. Dans une partie normale, la Rédaction s’ouvre
   par un événement (offre de chronique), avec un risque de « double casquette » pour les élus.
+- **Scénario « Premier contact »** (`engine/alien.ts`, `data/alien-events.ts`, `components/contact-panel`) : un signal
+  venu de Proxima du Centaure. Député·e de 41 ans à la tête de la cellule interministérielle du Premier contact face à une
+  civilisation fictive, les Vélari. Cinq phases (le signal, l’approche, en orbite, la rencontre, l’ambassade), quatre
+  jauges : compréhension et confiance des Vélari à faire monter, panique du pays et rivalité des grandes puissances à
+  contenir. Chaque phase dure au moins quatre mois et se mérite de plus en plus. Onglet Premier contact (décoder les
+  glyphes, nuit à Nançay, linguistes, réponse de l’humanité, cellule de crise, allocution, ONU, secret-défense, présent
+  culturel, armées en alerte, échange scientifique, monter à bord, traité de coexistence, ambassade), douze événements
+  (secte, astronome, puissances qui s’impatientent, second message, vaisseau visible à l’œil nu, virus, Hollywood,
+  religions, taupe…) et un panneau animé où la soucoupe grossit et descend vers la Terre. Grand chapitre : « Premier·e
+  ambassadeur·rice de la Terre ». Fins malheureuses : la grande peur (panique à 95), le silence des étoiles (confiance au
+  plus bas une fois le vaisseau en orbite), le contact confisqué (rivalité à 100). Dans une partie normale, le dossier peut
+  s’ouvrir par un événement rare (« Un signal venu des étoiles »), à partir de député·e.
 - **Scénario « Infiltré·e »** (`engine/mole.ts`) : choisissez votre vrai camp et le parti à infiltrer. Vous y prenez
   votre carte sous couverture. Onglet Infiltration (écouter aux portes, fouiller la fédération, copier le fichier des
   adhérents, retourner un cadre, semer la zizanie, organiser des fuites, jouer les agents doubles, faire du zèle,
@@ -243,11 +261,12 @@ Standalone components, zoneless, Signals partout.
   l’agenda, page de calendrier en fin de mois (avec la saison), feux d’artifice et vœux au Nouvel An, hémicycle qui se
   colore siège par siège au dépouillement, éclair et tampon « Mobilisation générale », ligne de front qui avance ou
   recule (chevrons), fumée sur le panneau de guerre, billets qui volent vers vos fonds à l’emprunt, une de journal qui
-  tourne sur elle-même au scandale, avion qui traverse l’écran en voyage, cœur et électrocardiogramme à l’alerte
+  tourne sur elle-même au scandale, avion qui traverse l’écran en voyage, soucoupe volante et rayon tracteur à chaque
+  phase du premier contact, cœur et électrocardiogramme à l’alerte
   médicale, projecteurs à la promotion, bulletin qui glisse dans l’urne, ondes de micro, pluie de tomates (huées,
   mini-jeu raté), pluie sur les revers et neige en décembre, chiffres flottants au-dessus des jauges et des fonds, confettis ou
   éclats et secousse à la résolution des décisions, illustrations animées des décisions (télé, journal, gyrophare,
-  drapeau, épées, poignée de main, trophée, éclair, pièces), tampons « Promotion ! », « Nouveau chapitre », « Revers », « In memoriam ».
+  drapeau, épées, poignée de main, trophée, éclair, pièces, soucoupe volante), tampons « Promotion ! », « Nouveau chapitre », « Revers », « In memoriam ».
   Soirée électorale animée (compte à rebours de 20 h, barres qui montent, second tour, verdict avec confettis ou
   pluie), bandeau « Flash info » sur les coups durs, pièces qui volent vers vos fonds ou s’en échappent, gerbes sur
   les objectifs atteints, tampon « Transmis — Top secret », radar de la mission d’infiltration, jauges qui rebondissent.
@@ -296,6 +315,7 @@ src/app/game/
 │   ├── scenes-actions.ts      Scénarios d’actions : porte-à-porte, live, conférence de presse, usine, QAG, livre
 │   ├── assets.ts              Biens achetables (patrimoine)
 │   ├── press.ts               Médias, grades et salaires du scénario Éditorialiste
+│   ├── alien-events.ts        Événements du Premier contact (et le signal en partie normale)
 │   ├── staff.ts               Membres d’équipe recrutables
 │   └── world.ts               Partis, PNJ, contacts, état initial
 ├── engine/                    Fonctions pures, testables sans Angular
@@ -318,6 +338,7 @@ src/app/game/
 │   ├── minigame.ts            Mini-jeux : file, paliers, résolution
 │   ├── describe.ts            Effets en langage clair (gains / pertes)
 │   ├── mole.ts                Scénario Infiltré·e : couverture, rapports, soupçons
+│   ├── alien.ts               Scénario Premier contact : phases, jauges, fins
 │   ├── life.ts                Âge, santé, mort, chapitres de vie, retraite, nécrologie
 │   ├── presidency.ts          Calendrier présidentiel, candidature, parrainages, présidence, crises
 │   ├── government.ts          Portefeuilles, Matignon, censure, Salon de l’agriculture
@@ -364,7 +385,8 @@ src/app/game/
     ├── assembly-vote/    Scrutin public : texte, pointage, interventions, vote, résultat
     ├── hemicycle/        Hémicycle SVG de 577 sièges, dépouillement animé
     ├── bank/             Banque & emprunts
-    ├── minigame/         Les six mini-jeux
+    ├── minigame/         Les sept mini-jeux
+    ├── contact-panel/    Panneau du Premier contact (ciel, vaisseau, jauges)
     ├── fx-layer/         Calque d’animations 2D
     ├── emblem/           Illustrations animées des décisions
     ├── election-night/   Soirée électorale animée

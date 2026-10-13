@@ -46,10 +46,11 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'guerre' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'guerre' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
+  contact: 'Premier contact',
   guerre: 'Guerre',
   international: 'International',
   terrain: 'Terrain',
@@ -66,7 +67,7 @@ export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   repos: 'Repos',
 };
 
-export type ScenarioId = 'carriere' | 'presidentielle' | 'bercy' | 'royaute' | 'franc_macon' | 'editorialiste' | 'infiltre';
+export type ScenarioId = 'carriere' | 'presidentielle' | 'bercy' | 'royaute' | 'franc_macon' | 'editorialiste' | 'infiltre' | 'contact';
 
 export type ContactType = 'lobby' | 'industriel' | 'syndicat' | 'journaliste' | 'association';
 export type FactionId = 'ligne_dure' | 'moderes' | 'reformistes';
@@ -202,6 +203,7 @@ export type Effect =
   | { kind: 'agenda'; domain: DomainRef; weeks: number }
   | { kind: 'war'; front?: number; support?: number; losses?: number; ally?: string; peace?: boolean; declare?: string }
   | { kind: 'vote'; billId?: string; own?: boolean }
+  | { kind: 'alien'; comprehension?: number; confiance?: number; panique?: number; rivalite?: number; join?: boolean; gift?: boolean }
   | { kind: 'minigame'; gameId: string; reward: Effect[]; penalty?: Effect[]; title?: string }
   | { kind: 'stance'; delta: number }
   | { kind: 'protest' }
@@ -273,7 +275,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -936,6 +938,8 @@ export interface GameState {
   voteHistory: VoteRecord[];
   /** Mini-jeux à jouer (file d'attente) */
   minigames: MinigameState[];
+  /** Premier contact avec une civilisation extraterrestre */
+  alien: AlienState | null;
   player: Player;
   party: Party;
   otherParties: PartyInfo[];
@@ -1092,4 +1096,24 @@ export interface MinigameState {
   score?: number;
   tier?: MinigameTier;
   summary?: string[];
+}
+
+// ── Premier contact ─────────────────────────────────────────
+
+export interface AlienState {
+  /** Nom de la civilisation (fictive) */
+  species: string;
+  /** 0 signal · 1 approche · 2 en orbite · 3 rencontre · 4 ambassade */
+  phase: number;
+  /** Compréhension de leur langue et de leurs intentions (0-100) */
+  comprehension: number;
+  /** Leur confiance envers l'humanité (0-100) */
+  confiance: number;
+  /** Peur dans l'opinion (0-100) : à 95, émeutes */
+  panique: number;
+  /** Appétit des grandes puissances pour confisquer le contact (0-100) */
+  rivalite: number;
+  /** Technologies offertes */
+  gifts: number;
+  since: number;
 }

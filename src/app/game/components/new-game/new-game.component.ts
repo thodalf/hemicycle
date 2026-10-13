@@ -52,6 +52,9 @@ import { PartyFormComponent } from '../party-form/party-form.component';
             <button type="button" class="scenario" [class.on]="scenario() === 'editorialiste'" (click)="scenario.set('editorialiste')">
               <strong>Éditorialiste</strong><small>Journaliste politique : de pigiste à directeur·rice de la rédaction. Faire et défaire les carrières. 31 ans.</small>
             </button>
+            <button type="button" class="scenario" [class.on]="scenario() === 'contact'" (click)="scenario.set('contact')">
+              <strong>Premier contact</strong><small>Un signal venu de Proxima : à la tête de la cellule du Premier contact, comprendre les Vélari, tenir le pays et devenir la voix de la Terre. 41 ans.</small>
+            </button>
             <button type="button" class="scenario" [class.on]="scenario() === 'infiltre'" (click)="scenario.set('infiltre')">
               <strong>Infiltré·e</strong><small>Encarté·e chez l’adversaire sous une fausse identité : espionner, saboter, transmettre… et ne jamais se faire prendre. 27 ans.</small>
             </button>

@@ -61,5 +61,5 @@ export const PARRAINAGES_REQUIRED = 500;
 export const DECLARE_WINDOW = 18;
 /** Âge de départ selon le scénario */
 export const START_AGE: Record<string, number> = {
-  carriere: 26, presidentielle: 52, bercy: 47, royaute: 45, franc_macon: 38, editorialiste: 31, infiltre: 27,
+  carriere: 26, presidentielle: 52, bercy: 47, royaute: 45, franc_macon: 38, editorialiste: 31, infiltre: 27, contact: 41,
 };

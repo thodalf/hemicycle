@@ -53,6 +53,13 @@ import { FxService } from '../../services/fx.service';
             <span class="trail"></span><span class="jet">✈️</span>@if (i.text) { <small>{{ i.text }}</small> }
           </span>
         }
+        @case ('ufo') {
+          <span class="ufo" [style.left.px]="i.x" [style.top.px]="i.y" [style.--dx.px]="i.dx">
+            <span class="saucer"><span class="dome"></span><span class="disc"></span><span class="lt"><b></b><b></b><b></b><b></b></span></span>
+            <span class="ray"></span>
+            @if (i.text) { <small>{{ i.text }}</small> }
+          </span>
+        }
         @case ('heart') {
           <span class="heart" [style.left.px]="i.x" [style.top.px]="i.y">
             <b>❤</b>
@@ -227,6 +234,20 @@ import { FxService } from '../../services/fx.service';
       .trail { width: 140px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.95)); box-shadow: 0 0 6px rgba(80,90,110,.3); }
       small { font: 600 12px var(--font-body); padding: 2px 8px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); } }
     @keyframes plane { from { transform: translate(0, 30px); } to { transform: translate(var(--dx), -30px); } }
+    .ufo { position: absolute; display: grid; justify-items: center; animation: ufo 3.3s cubic-bezier(.45,0,.55,1) forwards;
+      .saucer { position: relative; width: 96px; height: 44px; animation: wob .7s ease-in-out infinite; }
+      .dome { position: absolute; left: 30px; width: 36px; top: 0; height: 24px; border-radius: 18px 18px 6px 6px; background: linear-gradient(#e2fff3, #6cc4a8); }
+      .disc { position: absolute; left: 0; right: 0; top: 16px; height: 22px; border-radius: 50%; background: linear-gradient(#d4e0ec, #5f758c); box-shadow: 0 0 22px rgba(140,240,200,.8); }
+      .lt { position: absolute; left: 10px; right: 10px; top: 24px; display: flex; justify-content: space-between;
+        b { width: 7px; height: 7px; border-radius: 50%; background: #ffd36b; box-shadow: 0 0 6px #ffd36b; animation: lb .5s steps(2) infinite; }
+        b:nth-child(even) { animation-delay: .25s; } }
+      .ray { width: 120px; height: 0; margin-top: -4px; background: linear-gradient(rgba(150,255,210,.75), rgba(150,255,210,0));
+        clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%); animation: ray 3.3s ease forwards; }
+      small { margin-top: 6px; font: 600 12px var(--font-body); padding: 2px 10px; border-radius: 999px; background: #0b1022; color: #d9fff1; box-shadow: var(--shadow); } }
+    @keyframes ufo { 0% { transform: translate(0, -40px); } 38%, 70% { transform: translate(calc(var(--dx) / 2), 0); } 100% { transform: translate(var(--dx), -90px); } }
+    @keyframes wob { 50% { transform: translateY(-4px) rotate(-3deg); } }
+    @keyframes lb { 50% { opacity: .2; } }
+    @keyframes ray { 0%, 36% { height: 0; } 46%, 66% { height: 220px; } 76%, 100% { height: 0; } }
     .heart { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 4px; animation: heart-life 1.9s ease forwards;
       b { font-size: 64px; color: #c0392b; line-height: 1; animation: beat .6s ease-in-out 3; }
       .ecg { width: 200px; height: 40px; polyline { fill: none; stroke: #c0392b; stroke-width: 3; stroke-dasharray: 320; stroke-dashoffset: 320; animation: ecg 1.2s linear forwards; } } }
