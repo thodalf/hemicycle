@@ -26,6 +26,11 @@ interface TargetOption {
   label: string;
 }
 
+/** Actions de déplacement (un avion traverse l'écran) */
+const TRIPS = new Set(['voyage_etat', 'sommet_bilateral', 'conferences_inter', 'tournee_mondiale']);
+const SCANDAL_TAGS = /scandale|revelation|enquete|diffamation|paparazzi|fuite|hatvp|train_de_vie/;
+const report0 = (r: { deltas: { key: string; delta: number }[] } | null) => r?.deltas;
+
 /** Saisons du calendrier (bandeau de l'agenda) */
 const SEASONS = ['❄️', '❄️', '🌱', '🌷', '🌸', '☀️', '☀️', '🏖️', '🍂', '🍂', '🍁', '🎄'];
 
@@ -194,7 +199,10 @@ export class WeekPlannerComponent {
       ? { domain: target as Domain }
       : action.target ? { targetId: target } : undefined, this.payer(action));
     // Un jeton « −n PA » s'envole de la carte vers l'agenda du mois
-    if (ok && event) this.anim.fly(event.currentTarget as Element, document.querySelector('app-week-planner .plan-list'), `${action.cost.ap} PA`);
+    if (ok && event) {
+      this.anim.fly(event.currentTarget as Element, document.querySelector('app-week-planner .plan-list'), `${action.cost.ap} PA`);
+      if (action.category === 'medias') this.anim.mic(event.currentTarget as Element);
+    }
   }
 
   protected describe(p: PlannedAction): { label: string; target?: string; ap: number; party: boolean } {
@@ -254,6 +262,7 @@ export class WeekPlannerComponent {
     const before = this.game.s();
     const from = before.week;
     const known = new Set(before.pendingDecisions.map(d => d.id));
+    const planned = this.planner.plan().map(p => ACTIONS_BY_ID.get(p.actionId)!).filter(Boolean);
     const funds = before.player.finances.personal;
     this.turn.endWeek();
     this.reportOpen.set(true);
@@ -264,6 +273,18 @@ export class WeekPlannerComponent {
     const overlay = !!(after.scene || after.debate || after.protest || after.vote);
     if (!overlay) this.anim.monthTurn(from, after.week);
     if (yearOf(after.week) !== yearOf(from)) setTimeout(() => this.anim.newYear(yearOf(after.week)), overlay ? 300 : 1500);
+    else if (monthIndex(after.week) === 11 && !overlay) setTimeout(() => this.anim.rain(true), 600);
+    // Voyages : un avion traverse l'écran
+    const trip = planned.find(a => a.category === 'international' || TRIPS.has(a.id));
+    if (trip && !overlay) setTimeout(() => this.anim.plane(trip.label), 500);
+    // Nouvelles décisions marquantes : une de journal, battement de cœur
+    const fresh = after.pendingDecisions.filter(d => !known.has(d.id));
+    const scoop = fresh.find(d => SCANDAL_TAGS.test(d.tag));
+    if (scoop) setTimeout(() => this.anim.newspaper(scoop.title), 1300);
+    if (fresh.some(d => d.tag === 'alerte_sante')) setTimeout(() => this.anim.heartbeat(), 900);
+    // Popularité en chute libre : les tomates volent
+    const dropPop = (report0(this.turn.lastReport())?.find(x => x.key === 'popularity')?.delta ?? 0);
+    if (dropPop <= -5 && !overlay) setTimeout(() => this.anim.tomatoes(7), 1100);
     const report = this.turn.lastReport();
     report?.deltas.forEach((x, i) => {
       const el = document.querySelector(`app-profile-panel [data-stat="${x.key}"]`);
@@ -281,12 +302,12 @@ export class WeekPlannerComponent {
     if (Math.abs(df) >= 100 && !overlay) this.anim.coins(document.querySelector('app-vitals .money'), df > 0, Math.min(10, 3 + Math.round(Math.abs(df) / 1500)));
 
     // Flash info sur les coups durs du mois
-    const fresh = after.news.filter(n => n.week === after.week);
-    const flash = fresh.find(n => n.kind === 'scandale' || (n.kind === 'actu' && n.tone === 'negative'));
+    const freshNews = after.news.filter(n => n.week === after.week);
+    const flash = freshNews.find(n => n.kind === 'scandale' || (n.kind === 'actu' && n.tone === 'negative'));
     if (flash) setTimeout(() => this.anim.ticker(`${flash.title}${flash.body ? ' — ' + flash.body : ''}`), 900);
 
     // Objectifs atteints : gerbe de confettis sur le panneau
-    const done = fresh.filter(n => n.title.startsWith('Objectif atteint'));
+    const done = freshNews.filter(n => n.title.startsWith('Objectif atteint'));
     done.forEach((n, i) => setTimeout(() => {
       const panel = document.querySelector('app-objectives-panel');
       this.anim.burstAt(panel, 'good');
@@ -302,6 +323,8 @@ export class WeekPlannerComponent {
     const justResolved = after.elections.filter(e => e.resolved && e.result && before.elections.some(b => b.id === e.id && !b.resolved));
     const e = justResolved[0];
     if (e?.result) {
+      this.anim.ballot();
+      if (e.result.winnerId !== 'player') setTimeout(() => this.anim.rain(), 4200);
       const name = (id: string) => id === 'player' ? after.player.name : after.npcs.find(n => n.id === id)?.name ?? id;
       const color = (id: string) => {
         if (id === 'player') return after.party.color;

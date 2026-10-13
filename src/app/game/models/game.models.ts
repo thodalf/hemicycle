@@ -202,6 +202,7 @@ export type Effect =
   | { kind: 'agenda'; domain: DomainRef; weeks: number }
   | { kind: 'war'; front?: number; support?: number; losses?: number; ally?: string; peace?: boolean; declare?: string }
   | { kind: 'vote'; billId?: string; own?: boolean }
+  | { kind: 'minigame'; gameId: string; reward: Effect[]; penalty?: Effect[]; title?: string }
   | { kind: 'stance'; delta: number }
   | { kind: 'protest' }
   | { kind: 'scene'; sceneId: string }
@@ -283,6 +284,8 @@ export interface ActionDefinition {
   effects: Effect[];
   risk?: RiskProfile;
   maxPerMonth?: number;
+  /** Mini-jeu qui décide de l'ampleur des gains */
+  minigame?: string;
   /** Mois avant de pouvoir refaire l'action */
   cooldown?: number;
   successNews?: string;
@@ -931,6 +934,8 @@ export interface GameState {
   vote: AssemblyVote | null;
   /** Derniers votes du joueur à l'Assemblée */
   voteHistory: VoteRecord[];
+  /** Mini-jeux à jouer (file d'attente) */
+  minigames: MinigameState[];
   player: Player;
   party: Party;
   otherParties: PartyInfo[];
@@ -1063,4 +1068,28 @@ export interface VoteRecord {
   ballot: Ballot | '49.3';
   adopted: boolean;
   rebel: boolean;
+}
+
+// ── Mini-jeux ───────────────────────────────────────────────
+
+export type MinigameTier = 'brillant' | 'reussi' | 'mitige' | 'rate';
+
+export interface MinigameState {
+  id: string;
+  gameId: string;
+  title: string;
+  /** Action ou événement d'origine */
+  origin: string;
+  /** Effets pleins (réussite) ; pondérés selon le score */
+  reward: Effect[];
+  /** Effets en cas d'échec */
+  penalty: Effect[];
+  domain?: Domain;
+  targetId?: string;
+  /** 0,7 (facile) … 1,4 (difficile) : dépend de la fatigue et du stress */
+  difficulty: number;
+  status: 'pret' | 'fini';
+  score?: number;
+  tier?: MinigameTier;
+  summary?: string[];
 }

@@ -15,7 +15,8 @@ export interface FxParticle { dx: number; dy: number; rot: number; color: string
 
 export interface FxItem {
   id: number;
-  kind: 'float' | 'burst' | 'fly' | 'stamp' | 'week' | 'month' | 'ticker' | 'coin' | 'note' | 'banner' | 'flash' | 'front' | 'rocket';
+  kind: 'float' | 'burst' | 'fly' | 'stamp' | 'week' | 'month' | 'ticker' | 'coin' | 'note' | 'banner' | 'flash' | 'front' | 'rocket'
+    | 'tomato' | 'paper' | 'plane' | 'heart' | 'spot' | 'ballot' | 'mic' | 'rain';
   /** Mois précédent (page de calendrier) */
   old?: string;
   icon?: string;
@@ -56,6 +57,11 @@ export class FxService {
   readonly election = signal<ElectionNight | null>(null);
   private seq = 0;
   private readonly reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  constructor() {
+    // Pour tester les animations à la main : ?fxdebug dans l'adresse
+    if (typeof location !== 'undefined' && location.search.includes('fxdebug')) (window as unknown as { fx: FxService }).fx = this;
+  }
 
   private add(item: Omit<FxItem, 'id'>, ttl: number): void {
     if (this.reduced || typeof window === 'undefined') return;
@@ -141,6 +147,60 @@ export class FxService {
   frontline(advance: boolean): void {
     if (typeof window === 'undefined') return;
     this.add({ kind: 'front', tone: advance ? 'good' : 'bad', text: advance ? 'Le front avance' : 'Le front recule', x: 0, y: window.innerHeight * 0.42 }, 1800);
+  }
+
+  /** Pluie de tomates (huées, mini-jeu raté) */
+  tomatoes(count = 9): void {
+    if (typeof window === 'undefined') return;
+    const w = window.innerWidth, h = window.innerHeight;
+    for (let i = 0; i < count; i++) {
+      const fromLeft = i % 2 === 0;
+      const x = fromLeft ? -30 : w + 30, y = h * (0.55 + Math.random() * 0.4);
+      const tx = w * (0.3 + Math.random() * 0.4), ty = h * (0.25 + Math.random() * 0.3);
+      this.add({ kind: 'tomato', x, y, dx: tx - x, dy: ty - y, delay: i * 90 }, 1300);
+    }
+  }
+
+  /** La une d'un journal qui tourne sur elle-même (scandale, révélation) */
+  newspaper(headline: string, sub = 'ÉDITION SPÉCIALE'): void {
+    if (typeof window === 'undefined') return;
+    this.add({ kind: 'paper', text: headline, sub, x: window.innerWidth / 2, y: window.innerHeight * 0.42 }, 2600);
+  }
+
+  /** Un avion traverse l'écran (déplacement à l'étranger, sommet) */
+  plane(text = ''): void {
+    if (typeof window === 'undefined') return;
+    this.add({ kind: 'plane', text, x: -80, y: window.innerHeight * (0.18 + Math.random() * 0.12), dx: window.innerWidth + 160 }, 2400);
+  }
+
+  /** Battement de cœur (alerte de santé) */
+  heartbeat(): void {
+    if (typeof window === 'undefined') return;
+    this.add({ kind: 'heart', x: window.innerWidth / 2, y: window.innerHeight * 0.4 }, 1900);
+  }
+
+  /** Projecteurs qui balaient la scène (promotion, grand discours) */
+  spotlight(text: string, sub = ''): void {
+    if (typeof window === 'undefined') return;
+    this.add({ kind: 'spot', text, sub, x: window.innerWidth / 2, y: window.innerHeight * 0.36 }, 2300);
+  }
+
+  /** Un bulletin glisse dans l'urne (scrutin) */
+  ballot(text = 'A voté !'): void {
+    if (typeof window === 'undefined') return;
+    this.add({ kind: 'ballot', text, x: window.innerWidth / 2, y: window.innerHeight * 0.42 }, 1900);
+  }
+
+  /** Micro et ondes (prise de parole, débat, interview) */
+  mic(el: Element | null): void {
+    const c = this.center(el);
+    if (c) this.add({ kind: 'mic', x: c.x, y: c.y }, 1300);
+  }
+
+  /** Pluie ou neige sur l'écran (catastrophe, deuil, défaite) */
+  rain(snow = false): void {
+    if (typeof window === 'undefined') return;
+    this.add({ kind: 'rain', tone: snow ? 'neutral' : 'bad', x: 0, y: 0 }, 2600);
   }
 
   /** Billets qui volent vers le badge des fonds (emprunt) */

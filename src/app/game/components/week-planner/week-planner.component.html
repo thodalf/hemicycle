@@ -102,6 +102,7 @@
               <div class="action-title">
                 <strong>{{ a.label }}</strong>
                 @if (a.risk) { <span class="chip warn" [title]="failText(a)">risque</span> }
+                @if (a.minigame) { <span class="chip accent game-chip" title="Les gains dépendent de votre score au mini-jeu (joué en début de mois prochain). Vous pouvez aussi laisser faire l’équipe.">🎮 mini-jeu</span> }
               </div>
               <p class="muted">{{ a.description }}</p>
               <div class="costs mono">

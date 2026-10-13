@@ -38,6 +38,44 @@ import { FxService } from '../../services/fx.service';
             <span class="page new"><span class="ico">{{ i.icon }}</span><b>{{ i.text }}</b><em>{{ i.sub }}</em></span>
           </span>
         }
+        @case ('tomato') {
+          <span class="tomato" [style.left.px]="i.x" [style.top.px]="i.y" [style.--dx.px]="i.dx" [style.--dy.px]="i.dy" [style.animation-delay.ms]="i.delay">🍅</span>
+        }
+        @case ('paper') {
+          <span class="paper" [style.left.px]="i.x" [style.top.px]="i.y">
+            <small class="mast">LE COURRIER NATIONAL · {{ i.sub }}</small>
+            <strong>{{ i.text }}</strong>
+            <span class="cols"><i></i><i></i><i></i></span>
+          </span>
+        }
+        @case ('plane') {
+          <span class="plane" [style.left.px]="i.x" [style.top.px]="i.y" [style.--dx.px]="i.dx">
+            <span class="trail"></span><span class="jet">✈️</span>@if (i.text) { <small>{{ i.text }}</small> }
+          </span>
+        }
+        @case ('heart') {
+          <span class="heart" [style.left.px]="i.x" [style.top.px]="i.y">
+            <b>❤</b>
+            <svg viewBox="0 0 200 40" class="ecg"><polyline points="0,20 50,20 60,8 70,32 80,4 90,36 100,20 200,20" /></svg>
+          </span>
+        }
+        @case ('spot') {
+          <span class="spot">
+            <i class="beam l"></i><i class="beam r"></i>
+            <span class="spot-text" [style.left.px]="i.x" [style.top.px]="i.y"><strong>{{ i.text }}</strong>@if (i.sub) { <small>{{ i.sub }}</small> }</span>
+          </span>
+        }
+        @case ('ballot') {
+          <span class="ballot" [style.left.px]="i.x" [style.top.px]="i.y">
+            <span class="sheet-b">✓</span><span class="urn"><i></i></span><small>{{ i.text }}</small>
+          </span>
+        }
+        @case ('mic') {
+          <span class="mic" [style.left.px]="i.x" [style.top.px]="i.y"><b>🎙️</b><i></i><i></i><i></i></span>
+        }
+        @case ('rain') {
+          <span class="rain" [class.snow]="i.tone === 'neutral'">@for (d of drops; track $index) { <i [style.left.%]="d.x" [style.animation-delay.ms]="d.delay" [style.animation-duration.ms]="d.dur"></i> }</span>
+        }
         @case ('note') {
           <span class="note" [style.left.px]="i.x" [style.top.px]="i.y" [style.--dx.px]="i.dx" [style.--dy.px]="i.dy" [style.animation-delay.ms]="i.delay">€</span>
         }
@@ -166,6 +204,63 @@ import { FxService } from '../../services/fx.service';
     @keyframes march-right { from { transform: translateX(-30%); } to { transform: translateX(10%); } }
     @keyframes march-left { from { transform: translateX(10%); } to { transform: translateX(-30%); } }
     @keyframes front-life { 0% { opacity: 0; transform: scaleY(.2); } 12%, 82% { opacity: 1; transform: scaleY(1); } 100% { opacity: 0; } }
+    .tomato { position: absolute; font-size: 30px; margin: -15px 0 0 -15px; opacity: 0; animation: tomato 1.2s cubic-bezier(.3,.1,.5,1) forwards; }
+    @keyframes tomato {
+      0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+      70% { opacity: 1; transform: translate(var(--dx), var(--dy)) rotate(540deg) scale(1); }
+      78% { transform: translate(var(--dx), var(--dy)) scale(1.8, .5); }
+      100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 30px)) scale(1.8, .4); }
+    }
+    .paper { position: absolute; width: 320px; max-width: 86vw; padding: 14px 16px 16px; background: #f7f3e8; color: #1d1d1d; border: 1px solid #c9c1ad;
+      box-shadow: 0 20px 50px -18px rgba(0,0,0,.6); display: grid; gap: 8px; animation: paper-spin 2.5s cubic-bezier(.2,.8,.3,1) forwards;
+      .mast { font: 700 10px var(--font-body); letter-spacing: .12em; border-bottom: 2px solid #1d1d1d; padding-bottom: 4px; }
+      strong { font: 800 24px/1.1 var(--font-display); text-transform: uppercase; }
+      .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; i { height: 34px; background: repeating-linear-gradient(#bdb6a3 0 2px, transparent 2px 6px); } } }
+    @keyframes paper-spin {
+      0% { opacity: 0; transform: translate(-50%, -50%) rotate(-720deg) scale(.05); }
+      40% { opacity: 1; transform: translate(-50%, -50%) rotate(-6deg) scale(1.05); }
+      48%, 85% { transform: translate(-50%, -50%) rotate(-4deg) scale(1); opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -40%) rotate(-4deg) scale(.96); }
+    }
+    .plane { position: absolute; display: flex; align-items: center; gap: 6px; animation: plane 2.3s cubic-bezier(.4,0,.6,1) forwards;
+      .jet { font-size: 34px; display: inline-block; transform: rotate(45deg); }
+      .trail { width: 140px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.95)); box-shadow: 0 0 6px rgba(80,90,110,.3); }
+      small { font: 600 12px var(--font-body); padding: 2px 8px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); } }
+    @keyframes plane { from { transform: translate(0, 30px); } to { transform: translate(var(--dx), -30px); } }
+    .heart { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 4px; animation: heart-life 1.9s ease forwards;
+      b { font-size: 64px; color: #c0392b; line-height: 1; animation: beat .6s ease-in-out 3; }
+      .ecg { width: 200px; height: 40px; polyline { fill: none; stroke: #c0392b; stroke-width: 3; stroke-dasharray: 320; stroke-dashoffset: 320; animation: ecg 1.2s linear forwards; } } }
+    @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.25); } 30% { transform: scale(.95); } 45% { transform: scale(1.15); } }
+    @keyframes ecg { to { stroke-dashoffset: 0; } }
+    @keyframes heart-life { 0% { opacity: 0; } 10%, 80% { opacity: 1; } 100% { opacity: 0; } }
+    .spot { position: absolute; inset: 0; background: rgba(10,10,20,.35); animation: spot-life 2.3s ease forwards; }
+    .beam { position: absolute; top: -10%; width: 34vw; height: 120%; background: linear-gradient(rgba(255,240,200,.55), rgba(255,240,200,0) 80%);
+      clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%); mix-blend-mode: screen; }
+    .beam.l { left: 5%; transform-origin: 50% 0; animation: sweep-l 2.2s ease-in-out forwards; }
+    .beam.r { right: 5%; transform-origin: 50% 0; animation: sweep-r 2.2s ease-in-out forwards; }
+    @keyframes sweep-l { from { transform: rotate(-35deg); } to { transform: rotate(18deg); } }
+    @keyframes sweep-r { from { transform: rotate(35deg); } to { transform: rotate(-18deg); } }
+    .spot-text { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 4px; color: #fff8e1;
+      text-shadow: 0 2px 18px rgba(255,210,120,.9); strong { font: 800 36px var(--font-display); } small { font: 500 14px var(--font-body); }
+      animation: spot-text 2.2s ease forwards; }
+    @keyframes spot-text { 0% { opacity: 0; transform: translate(-50%, -40%) scale(.9); } 25%, 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; } }
+    @keyframes spot-life { 0% { opacity: 0; } 12%, 85% { opacity: 1; } 100% { opacity: 0; } }
+    .ballot { position: absolute; transform: translate(-50%, -50%); width: 150px; height: 170px; padding: 10px; border-radius: 16px; background: var(--surface); box-shadow: 0 14px 40px -12px rgba(0,0,0,.45); animation: heart-life 1.9s ease forwards;
+      .sheet-b { position: absolute; left: 50px; top: 12px; width: 50px; height: 34px; background: #fff; border: 1px solid #bbb; display: grid; place-items: center;
+        color: var(--good); font-weight: 800; animation: drop 1s .2s cubic-bezier(.5,0,.7,1) forwards; z-index: 0; }
+      .urn { position: absolute; left: 25px; bottom: 34px; width: 100px; height: 80px; border-radius: 6px; background: linear-gradient(135deg, rgba(220,230,245,.7), rgba(170,185,210,.55));
+        border: 2px solid #8a9ab5; z-index: 1; i { position: absolute; left: 25px; top: -2px; width: 50px; height: 5px; background: #4a5263; border-radius: 3px; } }
+      small { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font: 700 15px var(--font-display); color: var(--ink); } }
+    @keyframes drop { 0% { transform: translateY(0) rotate(-8deg); } 70% { transform: translateY(64px) rotate(0); } 100% { transform: translateY(64px); opacity: 0; } }
+    .mic { position: absolute; transform: translate(-50%, -50%); b { font-size: 26px; position: relative; z-index: 1; }
+      i { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; border: 2px solid var(--accent);
+        opacity: 0; animation: wave 1.2s ease-out forwards; }
+      i:nth-of-type(2) { animation-delay: .2s; } i:nth-of-type(3) { animation-delay: .4s; } }
+    @keyframes wave { 0% { opacity: .9; transform: scale(.5); } 100% { opacity: 0; transform: scale(3); } }
+    .rain { position: absolute; inset: 0; animation: heart-life 2.6s ease forwards;
+      i { position: absolute; top: -10%; width: 2px; height: 22px; background: linear-gradient(transparent, rgba(110,140,190,.75)); animation: fall linear infinite; } }
+    .rain.snow i { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 2px 1px rgba(70,95,140,.55); }
+    @keyframes fall { to { transform: translateY(115vh); } }
     .week { position: absolute; transform: translateX(-50%); width: 110px; height: 104px; perspective: 500px; animation: week-life 1.7s ease forwards; }
     .page { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 0; border-radius: 10px; background: var(--surface);
       border: 1px solid var(--line); box-shadow: 0 10px 30px -10px rgba(0,0,0,.4); border-top: 14px solid var(--bad); backface-visibility: hidden;
@@ -183,4 +278,6 @@ import { FxService } from '../../services/fx.service';
 export class FxLayerComponent {
   protected readonly fx = inject(FxService);
   protected readonly chevrons = Array.from({ length: 40 });
+  /** Gouttes de pluie (ou flocons) : positions fixes, durées variées */
+  protected readonly drops = Array.from({ length: 70 }, (_, i) => ({ x: (i * 37) % 100, delay: (i * 53) % 900, dur: 700 + ((i * 97) % 600) }));
 }

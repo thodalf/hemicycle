@@ -56,7 +56,9 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
               <span class="choice-label">{{ c.label }}</span>
               @if (c.hint) { <span class="choice-hint">{{ c.hint }}</span> }
               <span class="choice-meta">
-                @if (chance !== null) {
+                @if (isGame(c)) {
+                  <span class="chip accent">🎮 À vous de jouer</span>
+                } @else if (chance !== null) {
                   <span class="chip" [class.good]="chance >= 65" [class.warn]="chance >= 35 && chance < 65"
                         [class.bad]="chance < 35">Succès {{ chance }} %</span>
                 } @else {
@@ -117,6 +119,9 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
   `,
 })
 export class DecisionPanelComponent {
+  /** Choix qui se joue en mini-jeu */
+  protected isGame(c: { effects: { kind: string }[] }): boolean { return c.effects.some(e => e.kind === 'minigame'); }
+
   protected readonly game = inject(GameStateService);
   protected readonly turn = inject(TurnService);
   private readonly fx = inject(FxService);

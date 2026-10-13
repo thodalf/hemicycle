@@ -41,6 +41,21 @@ Standalone components, zoneless, Signals partout.
   mensualités sont mensuels, la loi de finances est annuelle et le parti clôt ses comptes chaque mois. Campagnes de 4
   (municipales), 5 (législatives, présidentielle) et 3 mois (primaire) ; présidentielle tous les 60 mois. Les anciennes
   parties hebdomadaires sont converties à l’ouverture (dates, projets, salaires, crédits).
+- **Mini-jeux** (`data/minigames.ts`, `engine/minigame.ts`, `components/minigame`) : une trentaine d’actions et une
+  quinzaine d’événements se jouent. Six mécaniques, déclinées en thèmes : **poignées de main** (bain de foule, tractage,
+  selfies, fête du village, dédicace — attraper les bonnes cibles, éviter les tomates), **applaudimètre** (discours,
+  allocution, joute d’éloquence — lancer la phrase quand le curseur est dans la zone), **mémoire** (réviser ses fiches),
+  **tri** (courrier de la permanence, questions au gouvernement, matinale radio, live sur les réseaux), **marchandage**
+  (hausse salariale, mécène, partage des circonscriptions — trouver le seuil caché en cinq offres) et **pointage**
+  (rallier les députés indécis, décrocher les appels des maires). Le score fixe le palier : brillant (gains ×1,5),
+  réussi, mitigé (moitié), raté (presque rien, et des dégâts). La fatigue et le stress rendent le jeu plus dur. On peut
+  laisser faire l’équipe (résultat moyen) ; pendant un projet au long cours, elle s’en charge. Clavier pris en charge.
+- **Nouvelles actions** : fête du village, débat devant des lycéens, nuit blanche sur un dossier, matinale radio,
+  dédicace, pointage pour le groupe, négocier la sortie d’une grève, nuit aux urgences, cagnotte en ligne, semi-marathon
+  solidaire, vœux à la presse. **Nouveaux événements** : micro coupé, foire du canton, courrier débordant, interview
+  piège, mécène, grève des cantines, vote serré, grand oral, pétanque des anciens, maires qui rappellent, concours
+  d’éloquence, challenge viral, chat de la mairie, homonyme, lettre d’enfant, drone, stagiaire sur le compte officiel ;
+  et des rendez-vous du calendrier : cérémonie des vœux en janvier, vœux aux Français à l’Élysée, garden-party du 14 Juillet.
 - **Votes à l’Assemblée sur l’actualité** (`engine/assembly.ts`, `data/bills.ts`, `components/assembly-vote`,
   `components/hemicycle`) : chaque mois, un texte lié au **sujet à la une** peut être inscrit à l’ordre du jour (30 textes
   sur les dix domaines, de gauche, de droite ou transpartisans). Projet de loi du gouvernement, proposition de la
@@ -227,7 +242,10 @@ Standalone components, zoneless, Signals partout.
 - **Animations 2D** (`services/fx.service.ts`, `components/fx-layer`, `components/emblem`) : jeton qui vole vers
   l’agenda, page de calendrier en fin de mois (avec la saison), feux d’artifice et vœux au Nouvel An, hémicycle qui se
   colore siège par siège au dépouillement, éclair et tampon « Mobilisation générale », ligne de front qui avance ou
-  recule (chevrons), fumée sur le panneau de guerre, billets qui volent vers vos fonds à l’emprunt, chiffres flottants au-dessus des jauges et des fonds, confettis ou
+  recule (chevrons), fumée sur le panneau de guerre, billets qui volent vers vos fonds à l’emprunt, une de journal qui
+  tourne sur elle-même au scandale, avion qui traverse l’écran en voyage, cœur et électrocardiogramme à l’alerte
+  médicale, projecteurs à la promotion, bulletin qui glisse dans l’urne, ondes de micro, pluie de tomates (huées,
+  mini-jeu raté), pluie sur les revers et neige en décembre, chiffres flottants au-dessus des jauges et des fonds, confettis ou
   éclats et secousse à la résolution des décisions, illustrations animées des décisions (télé, journal, gyrophare,
   drapeau, épées, poignée de main, trophée, éclair, pièces), tampons « Promotion ! », « Nouveau chapitre », « Revers », « In memoriam ».
   Soirée électorale animée (compte à rebours de 20 h, barres qui montent, second tour, verdict avec confettis ou
@@ -297,6 +315,7 @@ src/app/game/
 │   ├── assembly.ts            Votes à l’Assemblée : groupes, pointage, interventions, dépouillement
 │   ├── war.ts                 Guerre : déclaration, front, alliés, paix
 │   ├── staff-perks.ts         Effets mensuels des postes de l’équipe
+│   ├── minigame.ts            Mini-jeux : file, paliers, résolution
 │   ├── describe.ts            Effets en langage clair (gains / pertes)
 │   ├── mole.ts                Scénario Infiltré·e : couverture, rapports, soupçons
 │   ├── life.ts                Âge, santé, mort, chapitres de vie, retraite, nécrologie
@@ -345,6 +364,7 @@ src/app/game/
     ├── assembly-vote/    Scrutin public : texte, pointage, interventions, vote, résultat
     ├── hemicycle/        Hémicycle SVG de 577 sièges, dépouillement animé
     ├── bank/             Banque & emprunts
+    ├── minigame/         Les six mini-jeux
     ├── fx-layer/         Calque d’animations 2D
     ├── emblem/           Illustrations animées des décisions
     ├── election-night/   Soirée électorale animée

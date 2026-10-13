@@ -1,0 +1,133 @@
+@if (g(); as g) {
+  @if (def(); as def) {
+    <div class="overlay" role="dialog" aria-modal="true" [attr.aria-label]="'Mini-jeu : ' + g.title">
+      <section class="sheet" [class]="'sheet k-' + def.kind" [class.shake]="shake()">
+        <header class="band">
+          <div class="band-top">
+            <span class="eyebrow on-dark">Mini-jeu · {{ g.origin }}</span>
+            @if (svc.queued() > 1) { <span class="queue">{{ svc.queued() }} en attente</span> }
+          </div>
+          <h2><span class="ico" aria-hidden="true">{{ def.icon }}</span> {{ g.title }}</h2>
+          <p class="rule">{{ def.rule }}</p>
+          @if (phase() === 'play') {
+            <div class="timer" aria-hidden="true"><span [style.width.%]="timeLeft() * 100"></span></div>
+          }
+        </header>
+
+        @if (g.status === 'fini') {
+          <div class="result" [class]="'result t-' + g.tier">
+            <div class="medal" aria-hidden="true">{{ g.tier === 'brillant' ? '🏆' : g.tier === 'reussi' ? '👏' : g.tier === 'mitige' ? '😐' : '🍅' }}</div>
+            <strong class="tier">{{ tierLabels[g.tier!] }}</strong>
+            <span class="mono score">Score {{ (g.score ?? 0) * 100 | number: '1.0-0' }} / 100</span>
+            <p class="muted">{{ g.tier === 'brillant' ? 'Gains multipliés par 1,5.' : g.tier === 'reussi' ? 'Gains pleins.' : g.tier === 'mitige' ? 'La moitié des gains.' : 'Presque rien, et quelques dégâts.' }}</p>
+            <div class="chips">
+              @for (x of g.summary ?? []; track $index) { <span class="chip">{{ x }}</span> }
+            </div>
+            <button class="btn primary" (click)="close()">Continuer</button>
+          </div>
+        } @else if (phase() === 'intro') {
+          <div class="intro">
+            <div class="paliers">
+              <span><b>Brillant</b> (80+) gains ×1,5</span>
+              <span><b>Réussi</b> (50+) gains pleins</span>
+              <span><b>Mitigé</b> (25+) moitié</span>
+              <span><b>Raté</b> presque rien, et des dégâts</span>
+            </div>
+            <p class="muted small">{{ diffLabel() }}.
+              @switch (def.kind) {
+                @case ('applaudimetre') { Touche Espace ou Entrée pour lancer la phrase. }
+                @case ('tri') { Flèches gauche et droite au clavier. }
+                @case ('poignees') { Touches 1 à 9 au clavier, ou au doigt. }
+              }
+            </p>
+            <div class="go">
+              <button class="btn primary big" (click)="start()">Jouer</button>
+              <button class="btn" (click)="delegate()">Laisser faire l’équipe (résultat moyen)</button>
+            </div>
+          </div>
+        } @else {
+          <div class="play">
+            <div class="live mono">Score {{ liveScore() * 100 | number: '1.0-0' }}</div>
+            @switch (def.kind) {
+              @case ('poignees') {
+                <div class="grid9">
+                  @for (c of cells(); track $index) {
+                    <button type="button" class="hole" (pointerdown)="hitCell($index)" [attr.aria-label]="c ? (c.kind === 'good' ? 'Main tendue' : 'Piège') : 'Vide'">
+                      @if (c) { <span class="pop-in" [class.bad]="c.kind === 'bad'">{{ c.kind === 'good' ? def.good : def.bad }}</span> }
+                      @for (p of pops(); track p.id) { @if (p.i === $index) { <span class="burst-txt" [class.bad]="!p.good">{{ p.good ? '+1' : '−1' }}</span> } }
+                      <i class="key">{{ $index + 1 }}</i>
+                    </button>
+                  }
+                </div>
+              }
+              @case ('applaudimetre') {
+                <div class="speech">
+                  <p class="line">{{ def.lines?.[round()] ?? '…' }}</p>
+                  <div class="meter">
+                    <span class="zone" [style.left.%]="(zone().center - zone().width) * 100" [style.width.%]="zone().width * 200"></span>
+                    <span class="sweet" [style.left.%]="zone().center * 100"></span>
+                    <span class="cursor" [style.left.%]="cursor() * 100"></span>
+                  </div>
+                  <div class="applause" aria-hidden="true">
+                    @for (i of [0,1,2,3,4,5,6,7,8,9]; track i) { <i [class.on]="applause() * 10 > i"></i> }
+                  </div>
+                  <button class="btn primary big" (click)="launch()">Lancer la phrase !</button>
+                  <ol class="reactions">@for (r of reactions(); track $index) { <li>{{ r }}</li> }</ol>
+                </div>
+              }
+              @case ('memoire') {
+                <div class="cards">
+                  @for (c of cards(); track c.id) {
+                    <button type="button" class="card3d" [class.open]="c.open || c.found" [class.found]="c.found" (click)="flip($index)" [attr.aria-label]="c.open || c.found ? c.face : 'Carte retournée'">
+                      <span class="back">🏛️</span><span class="front">{{ c.face }}</span>
+                    </button>
+                  }
+                </div>
+              }
+              @case ('tri') {
+                <div class="tri" [class]="'tri f-' + flash()">
+                  <span class="count mono">{{ triCount() }} / {{ triTotal }}</span>
+                  <div class="letter">
+                    @if (item(); as it) { <p class="slide-in">{{ it.text }}</p> } @else { <p class="muted">…</p> }
+                    <div class="fuse"><span [style.width.%]="itemLeft() * 100"></span></div>
+                  </div>
+                  <div class="sides">
+                    <button class="btn side l" (click)="answer('gauche')">← {{ def.left }}</button>
+                    <button class="btn side r" (click)="answer('droite')">{{ def.right }} →</button>
+                  </div>
+                </div>
+              }
+              @case ('marchandage') {
+                <div class="deal">
+                  <div class="face" aria-hidden="true">{{ mood() }}</div>
+                  <p class="who">{{ def.who }} attendent votre {{ def.mode === 'demander' ? 'demande' : 'offre' }} · {{ tries().length }} / {{ maxTries }}</p>
+                  <label class="slider">
+                    <input type="range" [min]="def.min ?? 0" [max]="def.max ?? 100" [step]="step(def)" [value]="offer()" (input)="setOffer($any($event.target).valueAsNumber)" [attr.aria-label]="'Montant proposé'" />
+                    <strong class="mono">{{ offer() | number: '1.0-1' }} {{ def.unit }}</strong>
+                  </label>
+                  <button class="btn primary big" (click)="propose()">{{ def.mode === 'demander' ? 'Demander' : 'Proposer' }}</button>
+                  <ol class="tries">
+                    @for (t of tries(); track $index) {
+                      <li><span class="mono">{{ t.value | number: '1.0-1' }} {{ def.unit }}</span> <span>{{ t.verdict }}</span>
+                        <span class="thermo"><i [style.width.%]="t.warm * 100" [style.background]="t.warm > 0.8 ? '#c0392b' : t.warm > 0.5 ? '#e6922c' : '#4a7fc1'"></i></span></li>
+                    }
+                  </ol>
+                </div>
+              }
+              @case ('pointage') {
+                <svg class="mini-hemi" viewBox="0 0 100 58">
+                  @for (s of seats(); track $index) {
+                    <circle [attr.cx]="s.x" [attr.cy]="s.y" r="4.4" [attr.class]="'seat ' + s.state" (pointerdown)="hitSeat($index)" />
+                    @if (s.state === 'hot' || s.state === 'trap') {
+                      <text [attr.x]="s.x" [attr.y]="s.y + 1.8" text-anchor="middle" class="seat-ico" (pointerdown)="hitSeat($index)">{{ s.state === 'hot' ? def.good : def.bad }}</text>
+                    }
+                  }
+                </svg>
+              }
+            }
+          </div>
+        }
+      </section>
+    </div>
+  }
+}

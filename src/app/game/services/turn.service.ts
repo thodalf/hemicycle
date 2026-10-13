@@ -6,6 +6,7 @@ import { weeklyGovernment } from '../engine/government';
 import { weeklyIntl } from '../engine/intl';
 import { monthlyWar } from '../engine/war';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
+import { autoMinigames } from '../engine/minigame';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
 import { PROJECTS_BY_ID } from '../data/projects';
 import { canDeclare, declareCandidacy, endPresidency, weeklyPresidency, weeklyPresidential } from '../engine/presidency';
@@ -42,7 +43,7 @@ export interface SkipReport {
 /** Décisions qui interrompent un projet auquel on se consacre : le joueur doit les trancher lui-même */
 const STOP_TAGS = new Set(['guerre_bilan', 'former_gouvernement', 'pm_censure', 'ev_matignon', 'alerte_sante', 'pres_censure', 'pres_destitution', 'pres_tentative', 'banqueroute', 'remaniement', 'congres', 'faillite_parti']);
 /** Quand on se consacre à un projet, on ne s’engage dans rien d’autre : pas de scène, pas d’adhésion, pas d’achat */
-const ACTIVE_KINDS = new Set<Effect['kind']>(['scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'die', 'declare', 'resign', 'bankrupt', 'loan', 'end']);
+const ACTIVE_KINDS = new Set<Effect['kind']>(['scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'die', 'declare', 'resign', 'bankrupt', 'loan', 'end', 'minigame', 'war', 'vote']);
 
 export interface DecisionOutcome {
   title: string;
@@ -80,7 +81,7 @@ export class TurnService {
   });
   readonly canEndWeek = computed(() =>
     this.game.s().status === 'en_cours' && this.blocking().length === 0 && !this.game.s().debate && !this.game.s().protest && !this.game.s().scene
-    && !this.game.s().vote
+    && !this.game.s().vote && !(this.game.s().minigames ?? []).length
     && !programPending(this.game.s()) && !nationalBudgetBlocking(this.game.s()));
 
   endWeek(): void {
@@ -171,7 +172,7 @@ export class TurnService {
         this.advance(d, rng);
         report.months += 1;
         // Un projet qui aboutit peut ouvrir une scène (promotion du livre…) : on la laisse au joueur
-        if (d.project) { d.debate = null; d.protest = null; d.scene = null; }
+        if (d.project) { d.debate = null; d.protest = null; d.scene = null; autoMinigames(d, rng); }
         // Les scrutins ordinaires : vous suivez la consigne du groupe ; les autres vous rappellent
         if (d.vote && !autoVote(d, rng)) { report.reason = `Scrutin à l’Assemblée : ${d.vote.title}`; break; }
         if (d.status === 'mort') { report.reason = 'Décès'; break; }

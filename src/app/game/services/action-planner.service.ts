@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { inMonth } from '../engine/calendar';
 import { boostMedia } from '../engine/staff-perks';
+import { queueMinigame } from '../engine/minigame';
 import { leadsWar, warPowerBlock } from '../engine/war';
 import { STAFF_BY_ROLE } from '../data/staff';
 import {
@@ -203,6 +204,12 @@ export class ActionPlannerService {
         // Lassitude : les gains s'émoussent si l'on répète la même action
         const wear = wearFactor(d, action.id);
         const effects = action.category === 'medias' ? boostMedia(d, action.effects) : action.effects;
+        // Mini-jeu : les gains attendent le résultat (joué avant la fin du mois suivant)
+        if (action.minigame && queueMinigame(d, action.minigame, action.label, scaleGains(effects, wear), ctx).length) {
+          pushNews(d, 'action', 'neutral', action.label, 'À vous de jouer : mini-jeu en attente.');
+          record();
+          continue;
+        }
         const summary = applyEffects(d, scaleGains(effects, wear), ctx, rng);
         if (wear < 1) summary.push(`lassitude −${Math.round((1 - wear) * 100)} %`);
         if (summary.length) pushNews(d, 'action', 'positive', action.label, summary.join(' · '));

@@ -22,7 +22,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     ],
   },
   {
-    id: 'meeting', label: 'Organiser un meeting', category: 'terrain', minRank: 'conseiller_municipal',
+    id: 'meeting', minigame: 'discours', label: 'Organiser un meeting', category: 'terrain', minRank: 'conseiller_municipal',
     description: 'Salle, sono, militants en renfort. Un bon meeting fait les gros titres locaux.',
     cost: { ap: 2, energy: 15, money: 3000 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'momentum', delta: 9 }, { kind: 'stat', stat: 'stress', delta: 4 }],
@@ -51,7 +51,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'scene', sceneId: 'meeting' }],
   },
   {
-    id: 'inauguration', label: 'Inaugurations & commémorations', category: 'terrain', minRank: 'conseiller_municipal',
+    id: 'inauguration', minigame: 'selfies', label: 'Inaugurations & commémorations', category: 'terrain', minRank: 'conseiller_municipal',
     description: 'Couper des rubans, serrer des mains, être sur la photo.',
     cost: { ap: 1, energy: 5 },
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'stat', stat: 'credibility', delta: -1 }],
@@ -84,7 +84,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     },
   },
   {
-    id: 'plateau_tv', label: 'Accepter un plateau TV', category: 'medias', minRank: 'conseiller_municipal',
+    id: 'plateau_tv', minigame: 'matinale', label: 'Accepter un plateau TV', category: 'medias', minRank: 'conseiller_municipal',
     description: 'Une interview en direct sur le sujet du moment. Préparez vos éléments de langage.',
     cost: { ap: 2, energy: 12 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'decision', templateId: 'interview' }],
@@ -116,7 +116,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
 
   // ── Dossiers ─────────────────────────────────────────────
   {
-    id: 'etudier', label: 'Étudier un dossier', category: 'dossiers', minRank: 'militant', target: 'domain',
+    id: 'etudier', minigame: 'fiches', label: 'Étudier un dossier', category: 'dossiers', minRank: 'militant', target: 'domain',
     description: 'Notes, rapports, chiffres clés. Indispensable avant de débattre.',
     cost: { ap: 1, energy: 5 },
     effects: [{ kind: 'dossier', domain: '$domain', delta: 12 }],
@@ -128,7 +128,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'dossier', domain: '$domain', delta: 20 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'stat', stat: 'stress', delta: 4 }],
   },
   {
-    id: 'formation', label: 'Formation intensive', category: 'dossiers', minRank: 'militant',
+    id: 'formation', minigame: 'fiches', label: 'Formation intensive', category: 'dossiers', minRank: 'militant',
     description: 'Un séminaire de deux jours. Gagne un point de compétence.',
     cost: { ap: 2, energy: 10 }, cooldown: 4,
     effects: [{ kind: 'skillPoints', delta: 1 }],
@@ -214,7 +214,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'scene', sceneId: 'mediation' }],
   },
   {
-    id: 'donateurs', label: 'Dîner de donateurs', category: 'reseau', minRank: 'militant',
+    id: 'donateurs', minigame: 'negociation_donateur', label: 'Dîner de donateurs', category: 'reseau', minRank: 'militant',
     description: 'Lever des fonds pour la campagne. Gare aux mélanges des genres.',
     cost: { ap: 1, energy: 7 }, maxPerMonth: 1,
     effects: [{ kind: 'funds', account: 'campaign', delta: 5000 }, { kind: 'exposure', delta: 3 }, { kind: 'stat', stat: 'stress', delta: 2 }],
@@ -394,7 +394,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'momentum', delta: 4 }, { kind: 'funds', account: 'campaign', delta: 3000 }, { kind: 'stat', stat: 'stress', delta: 3 }, { kind: 'exposure', delta: 2 }],
   },
   {
-    id: 'presse_regionale', label: 'Interview à la presse régionale', category: 'medias', minRank: 'militant',
+    id: 'presse_regionale', minigame: 'matinale', label: 'Interview à la presse régionale', category: 'medias', minRank: 'militant',
     description: 'Moins prestigieux qu’un JT, mais lu par tous vos électeurs.',
     cost: { ap: 1, energy: 3 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 1 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
@@ -642,13 +642,13 @@ const RAW_ACTIONS: ActionDefinition[] = [
 
   // ── Nouvelles actions : terrain, médias, dossiers ────────
   {
-    id: 'tractage', label: 'Distribuer des tracts', category: 'terrain', minRank: 'militant',
+    id: 'tractage', minigame: 'tractage', label: 'Distribuer des tracts', category: 'terrain', minRank: 'militant',
     description: 'Imprimer et distribuer 5 000 tracts à la sortie du métro. Le parti peut payer l’impression.',
     cost: { ap: 1, energy: 5, money: 600 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'momentum', delta: 3 }],
   },
   {
-    id: 'permanence_citoyenne', label: 'Tenir une permanence citoyenne', category: 'terrain', minRank: 'militant',
+    id: 'permanence_citoyenne', minigame: 'courrier', label: 'Tenir une permanence citoyenne', category: 'terrain', minRank: 'militant',
     description: 'Trois heures à écouter les doléances : logement, voisinage, impôts. Épuisant, mais apprécié.',
     cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 1 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'stat', stat: 'stress', delta: 2 }],
@@ -660,7 +660,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'stat', stat: 'popularity', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'momentum', delta: 10 }, { kind: 'stat', stat: 'stress', delta: 8 }, { kind: 'faction', factionId: 'ligne_dure', delta: -2 }],
   },
   {
-    id: 'live', label: 'Répondre en direct sur les réseaux', category: 'medias', minRank: 'militant',
+    id: 'live', minigame: 'moderation', label: 'Répondre en direct sur les réseaux', category: 'medias', minRank: 'militant',
     description: 'Une heure de questions-réponses en direct. Spontané… donc risqué.',
     cost: { ap: 1, energy: 4 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 1 }],
@@ -741,7 +741,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'faction', factionId: '*', delta: 8 }, { kind: 'cohesion', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'momentum', delta: 5 }, { kind: 'stat', stat: 'stress', delta: 6 }],
   },
   {
-    id: 'gala', label: 'Gala de levée de fonds', category: 'reseau', minRank: 'depute',
+    id: 'gala', minigame: 'negociation_donateur', label: 'Gala de levée de fonds', category: 'reseau', minRank: 'depute',
     description: 'Une salle prestigieuse, des donateurs fortunés. L’investissement rapporte au compte de campagne.',
     cost: { ap: 2, energy: 10, money: 5000 }, cooldown: 4,
     effects: [{ kind: 'funds', account: 'campaign', delta: 15000 }, { kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'exposure', delta: 5 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
@@ -788,7 +788,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
 
   // ── Élysée (présidence de la République) ─────────────────
   {
-    id: 'allocution', label: 'Allocution télévisée', category: 'elysee', minRank: 'president',
+    id: 'allocution', minigame: 'allocution', label: 'Allocution télévisée', category: 'elysee', minRank: 'president',
     description: 'Vingt heures, toutes les chaînes. Le pays vous écoute… ou zappe.',
     cost: { ap: 1, energy: 8 }, cooldown: 2,
     effects: [{ kind: 'presidency', approval: 4 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
@@ -843,7 +843,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'presidency', security: 18, approval: -1 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
   },
   {
-    id: 'bain_foule', label: 'Bain de foule', category: 'elysee', minRank: 'president',
+    id: 'bain_foule', minigame: 'bain_de_foule', label: 'Bain de foule', category: 'elysee', minRank: 'president',
     description: 'Serrer des mains, embrasser des enfants. Votre sécurité déteste ça.',
     cost: { ap: 1, energy: 10 }, maxPerMonth: 1,
     effects: [{ kind: 'presidency', approval: 5, threat: 4 }, { kind: 'stat', stat: 'popularity', delta: 3 }],
@@ -863,7 +863,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'presidency', pm: true, majority: 6, approval: 3 }],
   },
   {
-    id: 'congres_versailles', label: 'Discours devant le Congrès à Versailles', category: 'elysee', minRank: 'president',
+    id: 'congres_versailles', minigame: 'discours', label: 'Discours devant le Congrès à Versailles', category: 'elysee', minRank: 'president',
     description: 'Députés et sénateurs réunis. Une adresse solennelle à la Nation.',
     cost: { ap: 2, energy: 10, politicalCapital: 15 }, cooldown: 12,
     effects: [{ kind: 'presidency', approval: 6, majority: 5 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
@@ -877,13 +877,13 @@ const RAW_ACTIONS: ActionDefinition[] = [
 
   // ── Course à l'Élysée ───────────────────────────────────
   {
-    id: 'chercher_parrainages', label: 'Chercher des parrainages', category: 'parti', minRank: 'militant', requires: { declared: true },
+    id: 'chercher_parrainages', minigame: 'parrainages', label: 'Chercher des parrainages', category: 'parti', minRank: 'militant', requires: { declared: true },
     description: 'Appeler un à un les maires et conseillers. Il en faut cinq cents.',
     cost: { ap: 1, energy: 10 },
     effects: [{ kind: 'parrainages', delta: 45 }, { kind: 'stat', stat: 'stress', delta: 3 }],
   },
   {
-    id: 'tournee_maires', label: 'Tournée des maires ruraux', category: 'terrain', minRank: 'militant', requires: { declared: true },
+    id: 'tournee_maires', minigame: 'parrainages', label: 'Tournée des maires ruraux', category: 'terrain', minRank: 'militant', requires: { declared: true },
     description: 'Trois départements, quarante mairies, une centaine de signatures.',
     cost: { ap: 2, energy: 18, money: 1500 }, maxPerMonth: 1,
     effects: [{ kind: 'parrainages', delta: 95 }, { kind: 'contact', contactId: 'ct-maires', trust: 4 }, { kind: 'stat', stat: 'stress', delta: 5 }],
@@ -957,7 +957,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   // ── Fonction : les tâches propres à chaque rang ─────────
   // Militant·e
   {
-    id: 'stand_section', label: 'Tenir le stand de la section', category: 'fonction', minRank: 'militant', onlyRanks: ['militant'],
+    id: 'stand_section', minigame: 'bain_de_foule', label: 'Tenir le stand de la section', category: 'fonction', minRank: 'militant', onlyRanks: ['militant'],
     description: 'Café tiède, tracts, et les habitués du samedi matin.',
     cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'faction', factionId: 'moderes', delta: 2 }, { kind: 'cohesion', delta: 1 }],
@@ -983,7 +983,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'dossier', domain: '$domain', delta: 4 }, { kind: 'dossier', domain: 'territoires', delta: 2 }],
   },
   {
-    id: 'permanence_mairie', label: 'Tenir une permanence en mairie', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'],
+    id: 'permanence_mairie', minigame: 'courrier', label: 'Tenir une permanence en mairie', category: 'fonction', minRank: 'conseiller_municipal', onlyRanks: ['conseiller_municipal'],
     description: 'Logement, voirie, voisins bruyants : le quotidien des habitants.',
     cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }],
@@ -1009,14 +1009,14 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'dossier', domain: '$domain', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
   },
   {
-    id: 'amendement', label: 'Défendre un amendement en séance', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'], target: 'domain',
+    id: 'amendement', minigame: 'pointage', label: 'Défendre un amendement en séance', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'], target: 'domain',
     description: 'Deux minutes de temps de parole pour arracher un vote.',
     cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 3 }],
     risk: { baseChance: 0.55, scaleWith: 'dossier', scaleWeight: 0.8, onFailure: [{ kind: 'stat', stat: 'credibility', delta: -1 }, { kind: 'stat', stat: 'stress', delta: 4 }], failureNews: 'Amendement rejeté, rapporteur ironique.' },
   },
   {
-    id: 'permanence_circo', label: 'Permanence en circonscription', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
+    id: 'permanence_circo', minigame: 'courrier', label: 'Permanence en circonscription', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
     description: 'Le vendredi, retour au pays : rendez-vous, marchés, fêtes de village.',
     cost: { ap: 1, energy: 8 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
@@ -1035,7 +1035,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'debate', stakes: 'hemicycle' }, { kind: 'dossier', domain: '$domain', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
   },
   {
-    id: 'qag', label: 'Répondre aux questions au gouvernement', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'], target: 'domain',
+    id: 'qag', minigame: 'qag', label: 'Répondre aux questions au gouvernement', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'], target: 'domain',
     description: 'Mardi, 15 heures. Un député de l’opposition vous attend au tournant.',
     cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
@@ -1055,7 +1055,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     risk: { baseChance: 0.45, scaleWith: 'influence', scaleWeight: 0.6, onFailure: [{ kind: 'stat', stat: 'influence', delta: -3 }], failureNews: 'Matignon donne raison à Bercy.' },
   },
   {
-    id: 'syndicats_secteur', label: 'Recevoir les syndicats de votre secteur', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'],
+    id: 'syndicats_secteur', minigame: 'negociation_syndicale', label: 'Recevoir les syndicats de votre secteur', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'],
     description: 'Trois heures de réunion, un relevé de conclusions.',
     cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
     effects: [{ kind: 'contact', contactId: 'ct-ust', trust: 5 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
@@ -1086,7 +1086,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'dossier', domain: '$domain', delta: 8 }, { kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'government', majority: -8, cohesion: 3 }, { kind: 'stat', stat: 'popularity', delta: -3 }],
   },
   {
-    id: 'partenaires_sociaux', label: 'Grande conférence sociale', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
+    id: 'partenaires_sociaux', minigame: 'negociation_syndicale', label: 'Grande conférence sociale', category: 'fonction', minRank: 'ministre', onlyRanks: ['premier_ministre'],
     description: 'Syndicats et patronat autour de la table de Matignon.',
     cost: { ap: 2, energy: 12 }, cooldown: 4,
     effects: [{ kind: 'contact', contactId: 'ct-ust', trust: 6 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'government', majority: 3 }],
@@ -1099,7 +1099,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   },
   // Chef·fe de parti
   {
-    id: 'investitures', label: 'Arbitrer les investitures', category: 'fonction', minRank: 'chef_parti', onlyRanks: ['chef_parti'],
+    id: 'investitures', minigame: 'negociation_alliance', label: 'Arbitrer les investitures', category: 'fonction', minRank: 'chef_parti', onlyRanks: ['chef_parti'],
     description: 'Qui sera candidat où ? Chaque choix fait un heureux et dix rancuniers.',
     cost: { ap: 2, energy: 10 }, cooldown: 4,
     effects: [{ kind: 'cohesion', delta: 5 }, { kind: 'faction', factionId: '*', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 3 }],
@@ -1119,7 +1119,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   },
   // Candidat·e à la présidence
   {
-    id: 'zenith', label: 'Grand meeting au Zénith', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
+    id: 'zenith', minigame: 'discours', label: 'Grand meeting au Zénith', category: 'fonction', minRank: 'candidat_presidence', onlyRanks: ['candidat_presidence'],
     description: 'Huit mille personnes, des drapeaux, la musique de campagne.',
     cost: { ap: 3, energy: 25, money: 20000 }, cooldown: 3,
     effects: [{ kind: 'momentum', delta: 15 }, { kind: 'stat', stat: 'popularity', delta: 5 }],
@@ -1142,6 +1142,74 @@ const RAW_ACTIONS: ActionDefinition[] = [
     description: 'Usine le matin, marché à midi, réunion publique le soir.',
     cost: { ap: 2, energy: 15, money: 3000 }, maxPerMonth: 1,
     effects: [{ kind: 'momentum', delta: 7 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }],
+  },
+
+  // ── Nouvelles actions (plusieurs se jouent en mini-jeu) ─
+  {
+    id: 'fete_village', minigame: 'fete_village', label: 'Faire la fête du village', category: 'terrain', minRank: 'militant',
+    description: 'Buvette, lâcher de ballons, concours de belote : on vous voit, on trinque, on se souvient de vous.',
+    cost: { ap: 1, energy: 10 }, maxPerMonth: 1,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }, { kind: 'stat', stat: 'stress', delta: -2 }],
+  },
+  {
+    id: 'debat_lycee', minigame: 'eloquence', label: 'Débattre devant des lycéens', category: 'terrain', minRank: 'militant',
+    description: 'Trois cents élèves, un professeur d’histoire-géo et des questions sans filtre.',
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'dossier', domain: 'education', delta: 3 }],
+  },
+  {
+    id: 'nuit_blanche', minigame: 'fiches', label: 'Nuit blanche sur un dossier', category: 'dossiers', minRank: 'militant', target: 'domain',
+    description: 'Café, fiches bristol et rapports de la Cour des comptes jusqu’à l’aube.',
+    cost: { ap: 1, energy: 18 }, cooldown: 2,
+    effects: [{ kind: 'dossier', domain: '$domain', delta: 9 }, { kind: 'stat', stat: 'stress', delta: 4 }],
+  },
+  {
+    id: 'matinale_radio', minigame: 'matinale', label: 'Invité·e de la matinale', category: 'medias', minRank: 'conseiller_municipal',
+    description: '7 h 50, studio 104 : huit minutes face à l’intervieweur le plus redouté de France.',
+    cost: { ap: 1, energy: 10 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+  {
+    id: 'dedicace', minigame: 'dedicace', label: 'Séance de dédicace en librairie', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Une file d’attente, un stylo, des mots gentils… et un paparazzi en embuscade.',
+    cost: { ap: 1, energy: 8 }, cooldown: 3,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'income', base: 800 }],
+  },
+  {
+    id: 'pointage_groupe', minigame: 'pointage', label: 'Faire le pointage pour le groupe', category: 'fonction', minRank: 'depute', onlyRanks: ['depute'],
+    description: 'Couloirs, buvette, salle des Quatre-Colonnes : vous comptez les voix une à une pour le président de groupe.',
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
+    effects: [{ kind: 'faction', factionId: '*', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'stat', stat: 'politicalCapital', delta: 5 }],
+  },
+  {
+    id: 'sortie_greve', minigame: 'negociation_syndicale', label: 'Négocier la sortie d’une grève', category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre', 'premier_ministre'],
+    description: 'Une nuit au ministère avec les syndicats : trouver le chiffre qui met fin au conflit sans ruiner le budget.',
+    cost: { ap: 2, energy: 15, politicalCapital: 10 }, cooldown: 3,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 4 }, { kind: 'contact', contactId: 'ct-ust', trust: 6 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  },
+  {
+    id: 'visite_hopital', label: 'Passer une nuit aux urgences', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'En blouse, sans caméras : aides-soignants, brancards dans les couloirs, et ce qu’on ne dit pas dans les rapports.',
+    cost: { ap: 1, energy: 14 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'sante', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'stat', stat: 'stress', delta: 3 }],
+  },
+  {
+    id: 'collecte_en_ligne', label: 'Lancer une cagnotte en ligne', category: 'argent', minRank: 'militant',
+    description: 'Une vidéo, un lien, des petits dons : 5 €, 10 €, parfois 100 €.',
+    cost: { ap: 1, energy: 4 }, cooldown: 2,
+    effects: [{ kind: 'funds', account: 'campaign', delta: 3000 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+  },
+  {
+    id: 'semi_marathon', label: 'Courir un semi-marathon solidaire', category: 'sante', minRank: 'militant', requires: { maxHealth: 92 },
+    description: 'Vingt et un kilomètres pour une association, un dossard, et des photos en sueur.',
+    cost: { ap: 1, energy: 20 }, cooldown: 4,
+    effects: [{ kind: 'health', delta: 3 }, { kind: 'flagAdd', key: 'hygiene', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -4 }],
+  },
+  {
+    id: 'voeux_presse', minigame: 'allocution', label: 'Présenter ses vœux à la presse', category: 'medias', minRank: 'depute',
+    description: 'Galette, petits fours et un discours qui doit donner le ton de l’année.',
+    cost: { ap: 1, energy: 6 }, cooldown: 12,
+    effects: [{ kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
   },
 
   // ── Assemblée : textes sur l'actualité ─────────────────
@@ -1193,7 +1261,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'war', ally: '$target' }, { kind: 'dossier', domain: 'diplomatie', delta: 3 }],
   },
   {
-    id: 'guerre_nation', label: 'S’adresser à la Nation', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    id: 'guerre_nation', minigame: 'allocution', label: 'S’adresser à la Nation', category: 'guerre', minRank: 'ministre', requires: { war: true },
     description: 'Une allocution solennelle à 20 heures : expliquer, rassurer, mobiliser.',
     cost: { ap: 1, energy: 6 }, cooldown: 2,
     effects: [{ kind: 'war', support: 8 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }],

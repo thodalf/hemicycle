@@ -122,6 +122,7 @@ export function migrate(s: GameState): GameState {
   s.war ??= null;
   s.vote ??= null;
   s.voteHistory ??= [];
+  s.minigames ??= [];
   migrateLoans(s);
   if (!s.presidential) {
     s.presidential = initPresidential(s);

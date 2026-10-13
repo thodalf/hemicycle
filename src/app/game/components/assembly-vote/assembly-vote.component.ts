@@ -92,7 +92,7 @@ const DURATION = 2200;
                           @if (!m.ok) { <small class="why">{{ m.reason }}</small> }
                         </div>
                       } @else {
-                        <button class="move" [disabled]="!m.ok" (click)="play(m.id, 1)" [class.danger]="m.id === '493' || m.id === 'retirer'">
+                        <button class="move" [disabled]="!m.ok" (click)="play(m.id, 1, $event)" [class.danger]="m.id === '493' || m.id === 'retirer'">
                           <strong>{{ m.label }}</strong><small class="muted">{{ m.hint }}</small>
                           @if (!m.ok) { <small class="why">{{ m.reason }}</small> }
                         </button>
@@ -268,12 +268,14 @@ export class AssemblyVoteComponent {
 
   protected ballotLabel(b: Ballot) { return BALLOT_LABELS[b]; }
 
-  protected play(id: string, dir: 1 | -1): void {
+  protected play(id: string, dir: 1 | -1, ev?: Event): void {
+    if (ev && ['soutenir', 'attaquer', 'defendre'].includes(id)) this.fx.mic(ev.currentTarget as Element);
     this.lastMove.set(this.svc.play(id, dir));
   }
 
   protected cast(b: Ballot): void {
     this.lastMove.set([]);
+    this.fx.ballot(this.v()?.role === 'gouvernement' ? 'Au vote !' : 'A voté !');
     this.svc.cast(b);
   }
 

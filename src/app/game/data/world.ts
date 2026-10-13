@@ -203,6 +203,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
     war: null,
     vote: null,
     voteHistory: [],
+    minigames: [],
     presidential: null as unknown as GameState['presidential'],
     player: {
       name: opts.name.trim() || 'Camille Martin',

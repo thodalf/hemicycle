@@ -7,6 +7,7 @@ import { OUTLETS } from './press';
 import { ofParty } from './world';
 import { effectValue, withCounterweight } from './actions';
 import { LIFE_EVENTS } from './life-events';
+import { EXTRA_EVENTS } from './extra-events';
 import { RANK_EVENTS } from './rank-events';
 import { INTL_EVENTS } from './intl-events';
 import { intlRelevant } from '../engine/intl';
@@ -1358,7 +1359,7 @@ const NEWS_EVENTS: { title: string; body: string; effects: Effect[]; tone: 'posi
 
 /* Tout a un prix : un choix d'événement très avantageux et sans risque reçoit une
  * contrepartie (exposition s'il rapporte de l'argent, stress sinon). */
-const SPECIAL = new Set(['rank', 'intl', 'government', 'declare', 'die', 'resign', 'scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'flag']);
+const SPECIAL = new Set(['rank', 'intl', 'government', 'declare', 'die', 'resign', 'scene', 'debate', 'protest', 'joinCrown', 'joinLodge', 'joinPress', 'leaveCrown', 'leaveLodge', 'leavePress', 'gainAsset', 'sellAsset', 'flag', 'minigame', 'war', 'vote']);
 function balanceChoice(c: DecisionChoice): DecisionChoice {
   if (c.risk || c.effects.some(e => SPECIAL.has(e.kind))) return c;
   const money = c.effects.some(e => (e.kind === 'funds' && e.delta > 0) || e.kind === 'income');
@@ -1372,6 +1373,7 @@ function balanceChoice(c: DecisionChoice): DecisionChoice {
 const PRESS_TAGS = new Set(['diffamation', 'rachat_media', 'source_menacee', 'audience_record', 'clash_direct', 'fausse_info', 'prix_journalisme', 'mercato']);
 
 let seq = 0;
+const CALENDAR_TAGS = new Set(['voeux_janvier', 'voeux_elysee', 'garden_party']);
 
 /** Tire éventuellement un événement aléatoire pour le mois */
 export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision; news?: typeof NEWS_EVENTS[number] } {
@@ -1400,6 +1402,11 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     else if (lodgeGates.length && rng.chance(0.04)) ev = pick(lodgeGates);
     else if (pressGates.length && rng.chance(0.045)) ev = pick(pressGates);
   }
+  // Rendez-vous du calendrier (vœux de janvier, 14 Juillet)
+  if (!ev) {
+    const dated = EXTRA_EVENTS.filter(e => CALENDAR_TAGS.has(e.tag) && canFire(e, 10));
+    if (dated.length && rng.chance(0.85)) ev = pick(dated);
+  }
   // Les affaires de la fonction occupée, puis celles du monde
   if (!ev && d.week > 2 && rng.chance(0.2)) {
     const pool = RANK_EVENTS.filter(e => canFire(e, 10));
@@ -1409,7 +1416,7 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const pool = INTL_EVENTS.filter(e => canFire(e, 12));
     if (pool.length) ev = pick(pool);
   }
-  if (!ev && d.week > 2 && rng.chance(0.32)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS].filter(e => canFire(e, 14)));
+  if (!ev && d.week > 2 && rng.chance(0.34)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS, ...EXTRA_EVENTS.filter(e => !CALENDAR_TAGS.has(e.tag))].filter(e => canFire(e, 14)));
   if (ev) {
     const { choices, ...built } = ev.build(d, rng);
     const usable = choices

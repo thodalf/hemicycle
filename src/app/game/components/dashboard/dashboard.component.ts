@@ -35,6 +35,7 @@ import { PresidencyPanelComponent } from '../presidency-panel/presidency-panel.c
 import { WarPanelComponent } from '../war-panel/war-panel.component';
 import { AssemblyVoteComponent } from '../assembly-vote/assembly-vote.component';
 import { BankComponent } from '../bank/bank.component';
+import { MinigameComponent } from '../minigame/minigame.component';
 import { BankService } from '../../services/bank.service';
 import { DEATH_LABELS, lifeSummary } from '../../engine/life';
 import { Milestone } from '../../models/game.models';
@@ -47,7 +48,7 @@ import { Milestone } from '../../models/game.models';
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
-    WarPanelComponent, AssemblyVoteComponent, BankComponent,
+    WarPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
   template: `
     <header class="topbar">
@@ -150,6 +151,8 @@ import { Milestone } from '../../models/game.models';
       <app-scene />
     } @else if (game.s().vote) {
       <app-assembly-vote />
+    } @else if (game.s().minigames.length) {
+      <app-minigame />
     } @else if (program.pending() && !builderHidden()) {
       <app-program-builder (closed)="builderHidden.set(true)" />
     } @else if (budgetOpen()) {
@@ -166,7 +169,7 @@ import { Milestone } from '../../models/game.models';
         <button type="button" [class.on]="tab() === t.id" [attr.aria-current]="tab() === t.id ? 'page' : null" (click)="setTab(t.id)">
           <span class="ico" aria-hidden="true">{{ t.icon }}</span>
           <span>{{ t.label }}</span>
-          @if (t.id === 'agenda' && game.s().pendingDecisions.length + (game.s().vote ? 1 : 0)) { <b class="badge">{{ game.s().pendingDecisions.length + (game.s().vote ? 1 : 0) }}</b> }
+          @if (t.id === 'agenda' && game.s().pendingDecisions.length + (game.s().vote ? 1 : 0) + (game.s().minigames.length)) { <b class="badge">{{ game.s().pendingDecisions.length + (game.s().vote ? 1 : 0) + (game.s().minigames.length) }}</b> }
           @if (t.id === 'actu' && unread()) { <b class="badge dot-badge" aria-label="Nouvelles"></b> }
         </button>
       }
@@ -353,19 +356,19 @@ export class DashboardComponent {
         setTimeout(() => {
           if (m.kind !== 'carriere') this.chapter.set(m);
           if (m.kind === 'victoire') { this.fx.stamp('Nouveau chapitre', 'good', m.title); this.burstAround(); }
-          else if (m.kind === 'revers') { this.fx.stamp('Revers', 'bad', m.title); this.fx.shake(); }
+          else if (m.kind === 'revers') { this.fx.stamp('Revers', 'bad', m.title); this.fx.shake(); this.fx.rain(); }
           else this.fx.stamp('Chapitre', 'neutral', m.title);
         }, 700);
       }
       this.lastMilestones = milestones.length;
       if (rank !== this.lastRank && RANKS[rank].order > RANKS[this.lastRank].order) {
         setTimeout(() => {
-          this.fx.stamp('Promotion !', 'good', RANKS[rank].label);
+          this.fx.spotlight('Promotion !', RANKS[rank].label);
           this.burstAround();
         }, 400);
       }
       if (status !== this.lastStatus && status === 'mort') {
-        setTimeout(() => { this.fx.stamp('In memoriam', 'bad', this.game.s().endTitle ?? ''); this.fx.shake(); }, 300);
+        setTimeout(() => { this.fx.stamp('In memoriam', 'bad', this.game.s().endTitle ?? ''); this.fx.rain(); }, 300);
       }
       this.lastRank = rank;
       this.lastStatus = status;

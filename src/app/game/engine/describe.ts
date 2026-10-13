@@ -123,6 +123,7 @@ export function describeEffect(e: Effect): EffectChip[] {
       return out;
     }
     case 'vote': return [{ text: 'Scrutin à l’Assemblée', tone: 'neutral' }];
+    case 'minigame': return [{ text: 'Mini-jeu', tone: 'neutral' }, ...e.reward.flatMap(describeEffect)];
     case 'loan': return [{ text: `Prêt de ${e.amount.toLocaleString('fr-FR')} €`, tone: 'neutral' }];
     default: return [];
   }
