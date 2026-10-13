@@ -1,9 +1,10 @@
+import { CONVERSIONS, TALENTS_BY_ID, TalentId, talent } from '../data/talents';
 import { Injectable, computed, inject } from '@angular/core';
-import { DOMAINS, DOMAIN_LABELS, Domain, GameState, StatKey } from '../models/game.models';
+import { DOMAINS, DOMAIN_LABELS, Domain, Effect, GameState, StatKey } from '../models/game.models';
 import { RANKS } from '../data/ranks';
 import { createDecision } from '../data/decisions';
 import { countTrait, fireRecruit, payroll, weeklyTraits } from '../engine/recruits';
-import { availableFunds, spend, partySupport, pushNews } from '../engine/effects';
+import { applyEffects, availableFunds, spend, partySupport, pushNews } from '../engine/effects';
 import { Rng, clamp } from '../engine/rng';
 import { weeklyNationalBudget } from '../engine/budget';
 import { weeklyBankruptcy } from '../engine/bankruptcy';
@@ -49,6 +50,29 @@ export class ProgressionService {
       ready: reqs.every(r => r.met),
     };
   });
+
+  /** Acheter un niveau de talent */
+  upgradeTalent(id: TalentId): void {
+    this.game.mutate(d => {
+      const def = TALENTS_BY_ID.get(id);
+      if (!def) return;
+      const lvl = talent(d, id);
+      if (lvl >= def.max || d.player.skillPoints < def.cost) return;
+      d.player.skillPoints -= def.cost;
+      d.player.talents = { ...(d.player.talents ?? {}), [id]: lvl + 1 };
+      pushNews(d, 'systeme', 'positive', `Talent : ${def.label} niveau ${lvl + 1}`, def.effect);
+    });
+  }
+
+  /** Convertir un point de compétence quand tout est au maximum */
+  convertPoint(id: string): void {
+    this.game.mutate((d, rng) => {
+      const c = CONVERSIONS.find(x => x.id === id);
+      if (!c || d.player.skillPoints < 1) return;
+      d.player.skillPoints -= 1;
+      applyEffects(d, c.effects as unknown as Effect[], {}, rng);
+    });
+  }
 
   upgradeSkill(domain: Domain): void {
     this.game.mutate(d => {
@@ -101,13 +125,19 @@ export class ProgressionService {
       pushNews(d, 'systeme', 'negative', 'Burn-out', 'Vous annulez tous vos rendez-vous. Ce mois-ci, vos points d’action sont divisés par deux.');
     }
     const bonus = Number(p.flags['bonusAp'] ?? 0) + (p.staff.includes('directeur_campagne') && p.finances.legalCeiling !== null ? 1 : 0)
-      + countTrait(d, 'bourreau') + assetAp(d) + staffAp(d) - (civilActive(d) ? 1 : 0);
+      + countTrait(d, 'bourreau') + assetAp(d) + staffAp(d) - (civilActive(d) ? 1 : 0) + talent(d, 'stratege');
     p.flags['bonusAp'] = 0;
     p.actionPoints.max = rank.monthlyActionPoints + bonus;
     p.actionPoints.current = burnout ? Math.ceil(p.actionPoints.max / 2) : p.actionPoints.max;
 
     // Usure : la notoriété s'érode si on ne l'entretient pas
-    s.popularity = clamp(s.popularity - Math.max(0, (s.popularity - 25) * 0.04));
+    s.popularity = clamp(s.popularity - Math.max(0, (s.popularity - 25) * 0.04) * (1 - 0.25 * talent(d, 'charisme')));
+    // Talents : endurance, incorruptible, résilience, mobilisateur
+    const tEnd = talent(d, 'endurance');
+    if (tEnd) { s.energy = clamp(s.energy + 3 * tEnd); s.stress = clamp(s.stress - tEnd); }
+    if (talent(d, 'incorruptible')) p.scandalExposure = clamp(p.scandalExposure - talent(d, 'incorruptible'));
+    if (talent(d, 'resilience')) p.health = clamp(p.health + 0.5 * talent(d, 'resilience'));
+    if (talent(d, 'mobilisateur')) p.momentum = clamp(p.momentum + talent(d, 'mobilisateur'));
     s.influence = clamp(s.influence - Math.max(0, (s.influence - 25) * 0.03));
     s.credibility = clamp(s.credibility - Math.max(0, (s.credibility - 40) * 0.02));
 

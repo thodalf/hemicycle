@@ -253,7 +253,7 @@ export function playMove(d: GameState, moveId: string, rng: Rng, direction: 1 | 
   if (moveId === 'defendre' || moveId === 'soutenir' || moveId === 'attaquer') {
     v.moves.push('parole');
     const dir = moveId === 'attaquer' ? -1 : 1;
-    const quality = clamp(mastery / 100 + p.stats.credibility / 250 + talent + rng.range(-0.2, 0.2), 0, 1.3);
+    const quality = clamp(mastery / 100 + p.stats.credibility / 250 + talent + 0.08 * (p.talents?.['orateur'] ?? 0) + rng.range(-0.2, 0.2), 0, 1.4);
     const swing = Math.round((2 + quality * 8)) * dir;
     v.swing += swing;
     out.push(...applyEffects(d, [{ kind: 'stat', stat: 'energy', delta: -10 }, { kind: 'dossier', domain: v.domain, delta: 2 },

@@ -33,6 +33,11 @@ export function trackMinisterialExit(d: GameState): void {
 /** Part de la rémunération épargnée chaque mois */
 export const SAVING_RATE = 0.35;
 
+/** Part épargnée, talent « Bon gestionnaire » compris */
+export function savingRate(d: GameState): number {
+  return SAVING_RATE + 0.05 * (d.player.talents?.['gestionnaire'] ?? 0);
+}
+
 /** Part « métier » des revenus d'un·e militant·e ou d'un·e conseiller·e : remplacée par le traitement de fonctionnaire */
 const JOB_PART: Partial<Record<RankId, number>> = { militant: 2400, conseiller_municipal: 2400 };
 
@@ -176,7 +181,7 @@ export function remuneration(d: GameState): Remuneration {
   const total = lines.reduce((t, l) => t + l.amount, 0);
   const savable = lines.filter(l => !l.direct).reduce((t, l) => t + l.amount, 0);
   const direct = total - savable;
-  const saved = Math.round(savable * SAVING_RATE) + direct;
+  const saved = Math.round(savable * savingRate(d)) + direct;
 
   const charges: PayLine[] = [];
   const team = payroll(d);
@@ -192,5 +197,5 @@ export function remuneration(d: GameState): Remuneration {
 /** Ce que la rémunération verse sur les fonds chaque mois (hors presse et loyers, versés à part) */
 export function monthlySavings(d: GameState): number {
   const r = remuneration(d);
-  return Math.round(r.lines.filter(l => !l.direct).reduce((t, l) => t + l.amount, 0) * SAVING_RATE);
+  return Math.round(r.lines.filter(l => !l.direct).reduce((t, l) => t + l.amount, 0) * savingRate(d));
 }

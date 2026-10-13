@@ -1,7 +1,7 @@
 import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { PhoneService } from '../../services/phone.service';
-import { CALLS_PER_MONTH, EXTRA_CALL_ENERGY, PhoneEntry } from '../../engine/phone';
+import { EXTRA_CALL_ENERGY, PhoneEntry } from '../../engine/phone';
 import { PhoneMessage } from '../../models/game.models';
 
 const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
@@ -188,6 +188,6 @@ export class PhoneComponent {
 
   protected callInfo(): string {
     const c = this.phone.calls();
-    return c.free ? `Appels ce mois : ${c.used} / ${CALLS_PER_MONTH} · encore ${c.free} sans fatigue` : `Forfait épuisé : chaque appel coûte ${EXTRA_CALL_ENERGY} d’énergie`;
+    return c.free ? `Appels ce mois : ${c.used} / ${c.max} · encore ${c.free} sans fatigue` : `Forfait épuisé : chaque appel coûte ${EXTRA_CALL_ENERGY} d’énergie`;
   }
 }

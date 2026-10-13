@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { ProgressionService } from '../../services/progression.service';
+import { CONVERSIONS, TALENTS } from '../../data/talents';
 import { LEADER_PAY_LIMITS, leaderPayCheck, leaderPayPreview, remuneration, setLeaderPay } from '../../engine/remuneration';
 import { CORPS_BY_ID, civilActive, civilTitle, promoThreshold } from '../../engine/civil';
 
@@ -121,6 +122,45 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
       </ul>
       <p class="legend muted">Carrés : niveau de compétence (accélère l’étude, ralentit l’oubli). <span class="hot-key">●</span> à la une.</p>
     </section>
+
+    <section class="card talents" aria-label="Talents">
+      <div class="card-title">
+        <span>Talents</span>
+        <span class="chip" [class.accent]="game.player().skillPoints > 0">{{ game.player().skillPoints }} pt à dépenser</span>
+      </div>
+      <p class="small-note muted">
+        @if (allMax()) { Vos dossiers sont au maximum : investissez vos points dans des atouts permanents. }
+        @else { Atouts permanents, achetés avec les points de compétence. }
+      </p>
+      <ul class="talent-list">
+        @for (t of talents(); track t.def.id) {
+          <li [class.maxed]="t.level >= t.def.max">
+            <span class="t-ico" aria-hidden="true">{{ t.def.icon }}</span>
+            <div class="t-main">
+              <strong>{{ t.def.label }}</strong>
+              <small class="muted">{{ t.def.effect }}</small>
+            </div>
+            <span class="t-lvl" [attr.aria-label]="'Niveau ' + t.level + ' sur ' + t.def.max">
+              @for (i of range(t.def.max); track i) { <span [class.on]="i < t.level"></span> }
+            </span>
+            <button class="btn small" [disabled]="t.level >= t.def.max || game.player().skillPoints < t.def.cost"
+                    (click)="progression.upgradeTalent(t.def.id)" [attr.aria-label]="'Améliorer le talent ' + t.def.label">
+              {{ t.level >= t.def.max ? 'Max' : '+ ' + t.def.cost + ' pt' }}
+            </button>
+          </li>
+        }
+      </ul>
+      @if (allMax() && game.player().skillPoints > 0) {
+        <div class="convert">
+          <span class="muted">Ou convertir 1 point :</span>
+          <div class="c-btns">
+            @for (c of conversions; track c.id) {
+              <button class="btn small" (click)="progression.convertPoint(c.id)">{{ c.label }}</button>
+            }
+          </div>
+        </div>
+      }
+    </section>
   `,
   styles: `
     :host { display: grid; gap: 12px; align-content: start; }
@@ -154,6 +194,19 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
       &:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); } &:disabled { opacity: .35; cursor: not-allowed; } }
     .legend { margin: 10px 0 0; font-size: 11.5px; line-height: 1.4; }
     .hot-key { color: var(--warn); }
+    .talents { display: grid; gap: 8px; .card-title { margin-bottom: 0; } }
+    .small-note { margin: 0; font-size: 11.5px; line-height: 1.4; }
+    .talent-list { gap: 6px; }
+    .talent-list li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; font-size: 13px;
+      padding: 6px 0; border-top: 1px solid var(--line); }
+    .talent-list li:first-child { border-top: 0; }
+    .talent-list li.maxed strong { color: var(--accent); }
+    .t-ico { font-size: 18px; text-align: center; }
+    .t-main { display: grid; gap: 1px; small { font-size: 11px; line-height: 1.35; } }
+    .t-lvl { display: flex; gap: 2px; span { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--ink-3); } span.on { background: var(--accent); border-color: var(--accent); } }
+    .talent-list .btn { white-space: nowrap; min-width: 58px; }
+    .convert { display: grid; gap: 6px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 12.5px;
+      .c-btns { display: flex; flex-wrap: wrap; gap: 6px; } }
     .stars { display: flex; gap: 2px; span { width: 8px; height: 8px; border-radius: 2px; border: 1px solid var(--ink-3); } span.on { background: var(--accent); border-color: var(--accent); } }
   `,
 })
@@ -163,6 +216,10 @@ export class ProfilePanelComponent {
   protected readonly gauges = GAUGES;
   protected readonly domains = DOMAINS;
   protected readonly levels = [0, 1, 2, 3, 4];
+  protected readonly conversions = CONVERSIONS;
+  protected readonly talents = computed(() => TALENTS.map(def => ({ def, level: this.game.player().talents?.[def.id] ?? 0 })));
+  protected readonly allMax = computed(() => DOMAINS.every(d => this.game.player().skills[d] >= 5));
+  protected range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
 
   private readonly skillPoints = computed(() => this.game.player().skillPoints);
   protected readonly pay = computed(() => remuneration(this.game.s()));

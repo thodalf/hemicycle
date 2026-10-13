@@ -128,6 +128,8 @@ export interface Player {
   /** Arbre de compétences : niveau 0‑5 par domaine */
   skills: Record<Domain, number>;
   skillPoints: number;
+  /** Talents achetés avec les points de compétence (niveau par talent) */
+  talents?: Record<string, number>;
   finances: Finances;
   actionPoints: { max: number; current: number };
   /** Risque latent de fuite / scandale (0‑100) */

@@ -412,6 +412,7 @@ Standalone components, zoneless, Signals partout.
 - **Équipe** : six recrues (conseillère technique, coach média, plume, trésorier, directrice de campagne, spin doctor),
   chacune avec un avantage et un salaire hebdomadaire.
 - **Objectifs** : trois défis actifs avec échéance et récompense (point de compétence, PA bonus, capital…) ; plus d’objectifs « rallier un courant ».
+- **Talents** : un point de compétence tombe chaque mois. Une fois les dossiers au niveau 5, il s’investit dans dix talents permanents (Profil → Talents) : Orateur·rice (votes en séance), Endurance (énergie/stress), Carnet d’adresses (+1 appel gratuit), Stratège (+1 PA/mois, 3 pt le niveau), Charisme (érosion de popularité −25 %), Incorruptible (exposition), Résilience (santé), Sang-froid (mini-jeux plus faciles), Mobilisateur·rice (dynamique de campagne), Bon gestionnaire (+5 points d’épargne). Quand les dossiers sont au maximum, un point peut aussi se convertir : +10 capital, +3 crédibilité, +3 influence ou +3 popularité (`data/talents.ts`).
 - **Crises nationales** : inondations, grève, krach, sommet européen, violences urbaines ; verrouillent l’actualité deux mois.
 
 ## Arborescence
@@ -534,7 +535,7 @@ src/app/game/
     ├── team-panel/       Équipe
     ├── week-planner/     ★ Gestion du mois
     ├── decision-panel/   ★ Prototype : prise de décision
-    ├── profile-panel/    Jauges, finances, prochain palier, dossiers & compétences
+    ├── profile-panel/    Jauges, finances, prochain palier, dossiers & compétences, talents
     ├── party-panel/      Courants, rivaux, réseau
     ├── election-panel/   Sondages, tendance, plafond de dépenses
     ├── news-feed/        Fil d'actualité

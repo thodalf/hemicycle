@@ -25,7 +25,8 @@ export function tierOf(score: number): MinigameTier {
 /** Fatigue et stress rendent l'exercice plus difficile */
 export function difficultyOf(d: GameState): number {
   const s = d.player.stats;
-  return Math.round(clamp((1 + (s.stress - 40) / 150 - (s.energy - 50) / 250) * 100, 70, 140)) / 100;
+  const calm = 1 - 0.07 * (d.player.talents?.['sang_froid'] ?? 0);
+  return Math.round(clamp((1 + (s.stress - 40) / 150 - (s.energy - 50) / 250) * calm * 100, 55, 140)) / 100;
 }
 
 /** Amplifie la part « gain » d'une liste d'effets (palier brillant) */

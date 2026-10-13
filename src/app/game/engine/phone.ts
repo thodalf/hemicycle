@@ -91,10 +91,16 @@ function supportTarget(d: GameState): 'vote' | 'promesse' | null {
   return voteRole(d) ? 'promesse' : null;
 }
 
-export function callStatus(d: GameState): { used: number; free: number; extraCost: number } {
+/** Appels sans fatigue par mois (talent « Carnet d’adresses » compris) */
+export function callsPerMonth(d: GameState): number {
+  return CALLS_PER_MONTH + (d.player.talents?.['reseau'] ?? 0);
+}
+
+export function callStatus(d: GameState): { used: number; free: number; extraCost: number; max: number } {
   const ph = d.phone;
   const used = ph && ph.callsWeek === d.week ? ph.callsUsed : 0;
-  return { used, free: Math.max(0, CALLS_PER_MONTH - used), extraCost: used >= CALLS_PER_MONTH ? EXTRA_CALL_ENERGY : 0 };
+  const max = callsPerMonth(d);
+  return { used, free: Math.max(0, max - used), extraCost: used >= max ? EXTRA_CALL_ENERGY : 0, max };
 }
 
 export function callOptions(d: GameState, key: string): CallOption[] {
