@@ -1,7 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, output, signal } from '@angular/core';
 import { LoanKind } from '../../models/game.models';
-import { LoanOffer, loanCost, monthlyPayment } from '../../engine/loans';
+import { LoanOffer, loanCost, monthlyPayment, offerKey } from '../../engine/loans';
 import { durationLabel } from '../../engine/calendar';
 import { BankService } from '../../services/bank.service';
 import { GameStateService } from '../../services/game-state.service';
@@ -38,7 +38,7 @@ import { FxService } from '../../services/fx.service';
           <div class="col">
             <h3>Offres</h3>
             <ul class="offers">
-              @for (o of bank.offers(); track o.kind) {
+              @for (o of bank.offers(); track key(o)) {
                 @let a = amountOf(o);
                 @let m = monthsOf(o);
                 <li [class.disabled]="!o.ok" [class.campaign]="o.account === 'campaign'">
@@ -50,12 +50,12 @@ import { FxService } from '../../services/fx.service';
                   @if (o.ok) {
                     <label class="amount">
                       <span>Montant</span>
-                      <input type="range" [min]="o.min" [max]="o.max" [step]="step(o)" [value]="a" (input)="setAmount(o.kind, $any($event.target).valueAsNumber)" [attr.aria-label]="'Montant : ' + o.title" />
+                      <input type="range" [min]="o.min" [max]="o.max" [step]="step(o)" [value]="a" (input)="setAmount(key(o), $any($event.target).valueAsNumber)" [attr.aria-label]="'Montant : ' + o.title" />
                       <strong class="mono">{{ a | number: '1.0-0' }} €</strong>
                     </label>
                     <div class="durations" role="group" [attr.aria-label]="'Durée : ' + o.title">
                       @for (d of o.durations; track d) {
-                        <button type="button" [class.on]="d === m" (click)="setMonths(o.kind, d)">{{ label(d) }}</button>
+                        <button type="button" [class.on]="d === m" (click)="setMonths(key(o), d)">{{ label(d) }}</button>
                       }
                     </div>
                     <div class="terms mono">
@@ -142,29 +142,30 @@ export class BankComponent {
   private readonly fx = inject(FxService);
   readonly closed = output<void>();
   protected readonly Math = Math;
-  private readonly amounts = signal<Partial<Record<LoanKind, number>>>({});
-  private readonly months = signal<Partial<Record<LoanKind, number>>>({});
+  private readonly amounts = signal<Record<string, number>>({});
+  private readonly months = signal<Record<string, number>>({});
   protected readonly said = signal<string[]>([]);
 
   protected step(o: LoanOffer): number {
     return o.max - o.min > 20000 ? 1000 : o.max - o.min > 4000 ? 500 : 100;
   }
   protected amountOf(o: LoanOffer): number {
-    const v = this.amounts()[o.kind] ?? Math.round(((o.min + o.max) / 2) / this.step(o)) * this.step(o);
+    const v = this.amounts()[this.key(o)] ?? Math.round(((o.min + o.max) / 2) / this.step(o)) * this.step(o);
     return Math.min(o.max, Math.max(o.min, v));
   }
   protected monthsOf(o: LoanOffer): number {
-    const m = this.months()[o.kind];
+    const m = this.months()[this.key(o)];
     return m && o.durations.includes(m) ? m : o.durations[Math.min(1, o.durations.length - 1)];
   }
-  protected setAmount(kind: LoanKind, v: number): void { this.amounts.update(a => ({ ...a, [kind]: v })); }
-  protected setMonths(kind: LoanKind, v: number): void { this.months.update(a => ({ ...a, [kind]: v })); }
+  protected key(o: LoanOffer): string { return offerKey(o); }
+  protected setAmount(kind: string, v: number): void { this.amounts.update(a => ({ ...a, [kind]: v })); }
+  protected setMonths(kind: string, v: number): void { this.months.update(a => ({ ...a, [kind]: v })); }
   protected label(m: number): string { return durationLabel(m); }
   protected pay(o: LoanOffer): number { return monthlyPayment(this.amountOf(o), o.rate, this.monthsOf(o)); }
   protected cost(o: LoanOffer): number { return loanCost(this.amountOf(o), o.rate, this.monthsOf(o)); }
 
   protected take(o: LoanOffer, ev: Event): void {
-    const out = this.bank.borrow(o.kind, this.amountOf(o), this.monthsOf(o));
+    const out = this.bank.borrow(o.kind, this.amountOf(o), this.monthsOf(o), o.lenderId);
     this.said.set(out);
     if (out.length) {
       this.fx.banknotes(document.querySelector('app-vitals .money'), 7);

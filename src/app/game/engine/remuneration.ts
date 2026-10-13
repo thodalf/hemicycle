@@ -1,8 +1,7 @@
 import { GameState, RankId } from '../models/game.models';
 import { RANKS } from '../data/ranks';
-import { partySupport, pushNews } from './effects';
+import { partySupport, pushNews, teamFunding } from './effects';
 import { CORPS_BY_ID, civilActive, civilPay, civilTitle } from './civil';
-import { payroll } from './recruits';
 import { loanPayments } from './loans';
 import { weeklyCharges } from './patrimoine';
 import { placementEstimate, sideNote, sidePayable } from './side-income';
@@ -184,8 +183,8 @@ export function remuneration(d: GameState): Remuneration {
   const saved = Math.round(savable * savingRate(d)) + direct;
 
   const charges: PayLine[] = [];
-  const team = payroll(d);
-  if (team) charges.push({ label: 'Salaires de l’équipe', amount: team });
+  const tf = teamFunding(d);
+  if (tf.personal) charges.push({ label: 'Salaires de l’équipe (votre part)', amount: tf.personal, note: tf.party ? `Le parti paie ${tf.party.toLocaleString('fr-FR')} € de plus` : undefined });
   const loans = loanPayments(d, 'personal');
   if (loans) charges.push({ label: 'Mensualités des prêts', amount: loans });
   if (ch.loans) charges.push({ label: 'Crédits immobiliers', amount: ch.loans });

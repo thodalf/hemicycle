@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Recruit, StaffRole } from '../models/game.models';
 import { dismissCandidate, fireRecruit, headhunt, headhuntCheck, headhuntFee, hireCheck, hireRecruit, openBooster, payroll } from '../engine/recruits';
 import { STAFF } from '../data/staff';
+import { PERSONAL_STAFF, teamFunding } from '../engine/effects';
 import { hireWithOffer, setSalary } from '../engine/team-pay';
 import { rankOrder } from '../data/ranks';
 import { GameStateService } from './game-state.service';
@@ -15,6 +16,8 @@ export class TeamService {
   readonly pool = computed(() => this.game.player().pool);
   readonly boosters = computed(() => this.game.player().boosters);
   readonly payroll = computed(() => payroll(this.game.s()));
+  readonly funding = computed(() => teamFunding(this.game.s()));
+  readonly personalRoles = PERSONAL_STAFF;
   /** Cartes du dernier booster ouvert (affichées dans l'écran d'ouverture) */
   readonly revealed = signal<Recruit[] | null>(null);
 

@@ -9,7 +9,7 @@ import { StanceAxisComponent, StanceMarker } from '../stance-axis/stance-axis.co
 import { GameStateService } from '../../services/game-state.service';
 
 const CONTACT_LABELS: Record<ContactType, string> = {
-  lobby: 'Lobby', industriel: 'Industriel', syndicat: 'Syndicat', journaliste: 'Journaliste', association: 'Association',
+  lobby: 'Lobby', industriel: 'Industriel', syndicat: 'Syndicat', journaliste: 'Journaliste', association: 'Association', culte: 'Culte',
 };
 
 /** Courants internes, rivaux et carnet d'adresses */

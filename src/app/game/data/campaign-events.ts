@@ -221,4 +221,27 @@ export const MORE_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'cocktail_carnet', weight: 0.7, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Le cocktail de l’ambassade',
+      context: 'Petits fours, diplomates, et une bonne moitié du personnel politique qui compte. Les cartes de visite circulent.',
+      choices: [
+        c('tournee', 'Faire le tour de la salle', [{ kind: 'phoneBook', npcId: '$any' }, { kind: 'phoneBook', npcId: '$any' }, s('influence', 2), s('energy', -6)], 'Vous repartez avec des numéros griffonnés sur des serviettes.'),
+        c('coin', 'Rester avec vos proches', [s('stress', -2)], 'Une soirée agréable, sans plus.'),
+      ],
+    }),
+  },
+  {
+    tag: 'dialogue_cultes', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Une rencontre entre les cultes',
+      context: 'Les représentants des communautés religieuses et le Cercle humaniste organisent une soirée de dialogue. On vous invite à prendre la parole.',
+      choices: [
+        c('parler', 'Parler de laïcité et de concorde', [s('credibility', 3), { kind: 'contact', contactId: 'ct-humanistes', trust: 3 }, { kind: 'contact', contactId: 'ct-concorde', trust: 2 }, { kind: 'contact', contactId: 'ct-aube', trust: 2 }], 'Un discours salué par toutes les communautés présentes.'),
+        c('ecouter', 'Écouter, sans prendre parti', [{ kind: 'contact', contactId: 'ct-veilleurs', trust: 2 }, { kind: 'contact', contactId: 'ct-sources', trust: 2 }, s('stress', -1)], 'Vous prenez des notes. On vous trouve à l’écoute.'),
+        c('decliner', 'Décliner : la politique doit rester à distance', [{ kind: 'contact', contactId: 'ct-humanistes', trust: 3 }, { kind: 'contact', contactId: 'ct-concorde', trust: -2 }], 'Une position nette, diversement appréciée.'),
+      ],
+    }),
+  },
 ];

@@ -17,6 +17,13 @@ import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
         <span>Équipe</span>
         <span class="chip mono">{{ team.payroll().toLocaleString('fr-FR') }} €/mois</span>
       </div>
+      @if (team.team().length) {
+        <p class="funding small">
+          <span>Parti : <strong class="mono">{{ team.funding().party.toLocaleString('fr-FR') }} €</strong></span>
+          <span>Votre poche : <strong class="mono">{{ team.funding().personal.toLocaleString('fr-FR') }} €</strong></span>
+          <small class="muted">Le parti paie les postes politiques dans la limite de son budget. Chauffeur, plume et spin doctor restent à vos frais.</small>
+        </p>
+      }
 
       @if (team.boosters() > 0) {
         <button class="booster-btn" (click)="team.open()">
@@ -39,6 +46,7 @@ import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
                 <button type="button" class="st" (click)="change(r, 1)" aria-label="Augmenter le salaire">+</button>
               </div>
               <small class="muted ask">Prétentions {{ ask(r).toLocaleString('fr-FR') }} €</small>
+              <small class="payer" [class.party]="team.funding().partyIds.includes(r.id)">{{ team.funding().partyIds.includes(r.id) ? 'Payé par le parti' : team.personalRoles.includes(r.role) ? 'À vos frais (poste personnel)' : 'À vos frais (budget du parti épuisé)' }}</small>
             </div>
             <button class="btn small" (click)="team.fire(r.id)">Renvoyer</button>
           </app-recruit-card>
@@ -100,6 +108,8 @@ import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
     </section>
   `,
   styles: `
+    .funding { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; margin: 0 0 10px; font-size: 12.5px; small { grid-column: 1 / -1; font-size: 11px; } }
+    .payer { font-size: 11px; color: var(--ink-3); } .payer.party { color: var(--good); }
     .list { display: grid; gap: 8px; margin-top: 8px; }
     .small { font-size: 12.5px; margin: 0; }
     .booster-btn {

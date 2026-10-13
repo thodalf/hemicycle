@@ -34,6 +34,9 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'npcStat': return [{ text: `${n(e.delta)} ${e.stat === 'popularity' ? 'popularité' : 'influence'} de la cible`, tone: tone(e.delta, true) }];
     case 'contact': return e.trust ? [{ text: `${n(e.trust)} confiance${e.contactId === '$target' ? ' du contact' : ''}`, tone: tone(e.trust) }] : [];
     case 'stance': return [{ text: `Ligne ${e.delta > 0 ? 'vers la droite' : 'vers la gauche'} (${Math.abs(e.delta)})`, tone: 'neutral' }];
+    case 'phoneBook': return [{ text: e.npcId === '$any' ? 'Un numéro de personnalité' : 'Son numéro de portable', tone: 'good' }];
+    case 'scheme': return e.type ? [{ text: 'Lance un complot (risque d’être découvert)', tone: 'neutral' }]
+      : [...(e.progress ? [{ text: `Complots : progression +${e.progress}`, tone: 'good' as const }] : []), ...(e.secrecy ? [{ text: `Complots : discrétion ${e.secrecy > 0 ? '+' : ''}${e.secrecy}`, tone: e.secrecy > 0 ? 'good' as const : 'bad' as const }] : [])];
     case 'flagAdd': return e.key === 'illegal' ? [{ text: 'Illégal : risque d’enquête', tone: 'bad' }]
       : e.key === 'hygiene' ? [{ text: `${n(e.delta)} hygiène de vie`, tone: tone(e.delta) }]
       : e.key === 'protection' ? [{ text: `${n(e.delta)} protection`, tone: tone(e.delta) }]

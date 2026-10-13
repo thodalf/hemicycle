@@ -19,7 +19,7 @@ import { ENEMIES, ENEMIES_BY_ID } from '../../engine/war';
 import { durationLabel, monthIndex, yearOf } from '../../engine/calendar';
 
 /** Actions qui peuvent viser n'importe quelle personnalité, pas seulement votre parti */
-const ANY_NPC = ['dejeuner', 'diner_maison', 'off', 'grand_oral', 'clash_reseaux', 'demonter'];
+const ANY_NPC = ['dejeuner', 'diner_maison', 'off', 'grand_oral', 'clash_reseaux', 'demonter', 'numero_personnalite'];
 
 interface TargetOption {
   id: string;
@@ -129,9 +129,14 @@ export class WeekPlannerComponent {
           id: d, label: `${DOMAIN_LABELS[d]} · ${Math.round(s.player.dossiers[d].mastery)}${d === s.agendaDomain ? ' · à la une' : ''}`,
         }));
       case 'npc':
+      {
+        const wide = ANY_NPC.includes(action.id) || action.category === 'intrigue';
+        const parties = [s.party, ...s.otherParties];
         return s.npcs
-          .filter(n => n.partyId === s.party.id || ANY_NPC.includes(action.id))
-          .map(n => ({ id: n.id, label: `${n.name} (${n.relationToPlayer > 0 ? '+' : ''}${Math.round(n.relationToPlayer)})` }));
+          .filter(n => n.partyId === s.party.id || wide)
+          .filter(n => action.id !== 'numero_personnalite' || !(s.player.phoneBook ?? []).includes(n.id))
+          .map(n => ({ id: n.id, label: `${n.name}${wide ? ' · ' + (parties.find(x => x.id === n.partyId)?.name ?? '') : ''} (${n.relationToPlayer > 0 ? '+' : ''}${Math.round(n.relationToPlayer)})${Number(s.player.flags['kompromat_' + n.id] ?? 0) > 0 ? ' · 📁 dossier' : ''}` }));
+      }
       case 'contact':
         return s.contacts.map(c => ({ id: c.id, label: `${c.name} · conf. ${Math.round(c.trust)} · crédit ${c.balance}` }));
       case 'faction':

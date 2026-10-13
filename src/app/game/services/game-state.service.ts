@@ -9,7 +9,7 @@ import { RANKS } from '../data/ranks';
 import { PROJECTS_BY_ID } from '../data/projects';
 import { WEEKS_PER_MONTH, inMonth, monthLabel, weekToTurn } from '../engine/calendar';
 import { migrateLoans } from '../engine/loans';
-import { NEW_CONTACTS, NewGameOptions, PARTIES, createInitialState, factionPositions, ofParty, toParty } from '../data/world';
+import { CULTES, NEW_CONTACTS, NewGameOptions, PARTIES, createInitialState, factionPositions, ofParty, toParty } from '../data/world';
 import { availableFunds, partySupport } from '../engine/effects';
 import { Rng } from '../engine/rng';
 import { weeklyObjectives } from '../engine/objectives';
@@ -161,7 +161,8 @@ export function migrate(s: GameState): GameState {
     s.player.dossiers[domain] ??= { mastery: 10, lastStudiedWeek: null };
     s.player.skills[domain] ??= 0;
   }
-  for (const c of NEW_CONTACTS) if (!s.contacts.some(x => x.id === c.id)) s.contacts.push({ ...c });
+  for (const c of [...NEW_CONTACTS, ...CULTES]) if (!s.contacts.some(x => x.id === c.id)) s.contacts.push({ ...c });
+  s.schemes ??= [];
   if (s.debate && s.debate.audienceLean === undefined) s.debate = null;
   return s;
 }

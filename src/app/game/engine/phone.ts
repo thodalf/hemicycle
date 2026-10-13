@@ -1,5 +1,6 @@
 import { ContactType, Effect, GameState, PhoneMessage, PhoneReply, PhoneState, StaffRole } from '../models/game.models';
 import { STAFF_BY_ROLE, STAFF_ICONS } from '../data/staff';
+import { RANKS } from '../data/ranks';
 import { applyEffects, campaignOpen, partySupport } from './effects';
 import { voteRole } from './assembly';
 import { Rng, clamp, nextId } from './rng';
@@ -17,7 +18,7 @@ export const CALLS_PER_MONTH = 4;
 export const EXTRA_CALL_ENERGY = 4;
 const MAX_MESSAGES = 60;
 
-export type CallerKind = 'equipe' | 'chef' | 'collegue' | 'contact' | 'proche';
+export type CallerKind = 'equipe' | 'chef' | 'collegue' | 'personnalite' | 'contact' | 'proche';
 
 export interface PhoneEntry {
   key: string;
@@ -30,7 +31,7 @@ export interface PhoneEntry {
 }
 
 export interface CallOption {
-  id: 'soutien' | 'argent' | 'nouvelles' | 'point';
+  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui';
   label: string;
   hint: string;
   ok: boolean;
@@ -38,11 +39,55 @@ export interface CallOption {
 }
 
 const CONTACT_LABEL: Record<ContactType, string> = {
-  lobby: 'Lobby', industriel: 'Industriel', syndicat: 'Syndicat', journaliste: 'Journaliste', association: 'Association',
+  lobby: 'Lobby', industriel: 'Industriel', syndicat: 'Syndicat', journaliste: 'Journaliste', association: 'Association', culte: 'Culte',
 };
 const CONTACT_ICON: Record<ContactType, string> = {
-  lobby: '💼', industriel: '🏭', syndicat: '✊', journaliste: '📰', association: '🤝',
+  lobby: '💼', industriel: '🏭', syndicat: '✊', journaliste: '📰', association: '🤝', culte: '🕊️',
 };
+
+/* ── Carnet d'adresses des personnalités politiques ────────── */
+
+/** Un faux numéro, stable pour chaque personnalité */
+export function fakeNumber(id: string): string {
+  let h = 7;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 100000000;
+  const digits = String(h).padStart(8, '0');
+  return `06 ${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(4, 6)} ${digits.slice(6, 8)}`;
+}
+
+export function hasNumber(d: GameState, npcId: string): boolean {
+  return (d.player.phoneBook ?? []).includes(npcId);
+}
+
+/** Les personnalités dont vous n'avez pas encore le numéro (les plus en vue d'abord) */
+export function unknownPersonalities(d: GameState) {
+  const leaderId = d.party.leaderNpcId;
+  return d.npcs.filter(n => !hasNumber(d, n.id) && n.id !== leaderId && !(n.partyId === d.party.id && n.relationToPlayer >= 0))
+    .sort((a, b) => b.influence + b.popularity - (a.influence + a.popularity));
+}
+
+/** Ajoute un numéro au carnet ; renvoie la ligne de résumé */
+export function addNumber(d: GameState, npcId: string): string | null {
+  const n = d.npcs.find(x => x.id === npcId);
+  if (!n || hasNumber(d, npcId)) return null;
+  (d.player.phoneBook ??= []).push(npcId);
+  return `Numéro de ${n.name} (${fakeNumber(n.id)})`;
+}
+
+/** Un numéro au hasard parmi les plus en vue */
+export function grantNumber(d: GameState, rng: Rng): string | null {
+  const pool = unknownPersonalities(d).slice(0, 8);
+  return pool.length ? addNumber(d, rng.pick(pool).id) : null;
+}
+
+/** Une information compromettante sur une personnalité (confidences, complots) */
+export function kompromatTargets(d: GameState) {
+  return d.npcs.filter(n => Number(d.player.flags[`kompromat_${n.id}`] ?? 0) > 0);
+}
+function rivalOf(d: GameState) {
+  const others = d.npcs.filter(n => n.partyId !== d.party.id);
+  return [...(others.length ? others : d.npcs)].sort((a, b) => a.relationToPlayer - b.relationToPlayer || b.influence - a.influence)[0];
+}
 
 export function initPhone(d: GameState): PhoneState {
   return { messages: [], callsUsed: 0, callsWeek: d.week, called: {} };
@@ -76,6 +121,14 @@ export function directory(d: GameState): PhoneEntry[] {
     .sort((a, b) => b.relationToPlayer - a.relationToPlayer)
     .slice(0, 4);
   for (const n of colleagues) out.push({ key: `collegue:${n.id}`, kind: 'collegue', name: n.name, role: 'Collègue du parti', icon: '🧑‍💼', bond: Math.round(n.relationToPlayer) });
+  const shown = new Set([d.party.leaderNpcId, ...colleagues.map(n => n.id)]);
+  const parties = [d.party, ...d.otherParties];
+  for (const id of d.player.phoneBook ?? []) {
+    const n = d.npcs.find(x => x.id === id);
+    if (!n || shown.has(n.id)) continue;
+    const party = parties.find(x => x.id === n.partyId);
+    out.push({ key: `perso:${n.id}`, kind: 'personnalite', name: n.name, role: `${RANKS[n.rankId]?.label ?? 'Élu·e'} · ${party?.name ?? 'sans parti'}`, icon: n.isRival ? '⚔️' : '⭐', bond: Math.round(n.relationToPlayer) });
+  }
   for (const c of d.contacts) out.push({ key: `contact:${c.id}`, kind: 'contact', name: c.name, role: CONTACT_LABEL[c.type], icon: CONTACT_ICON[c.type], bond: Math.round(c.trust) });
   out.push({ key: 'proche', kind: 'proche', name: 'Maman', role: 'Famille', icon: '❤️' });
   return out;
@@ -118,6 +171,8 @@ export function callOptions(d: GameState, key: string): CallOption[] {
   switch (e.kind) {
     case 'equipe':
       opts.push({ id: 'point', label: 'Faire le point', hint: 'Un conseil, un coup de main, des nouvelles du terrain.', ok: !block, reason: block });
+      opts.push({ id: 'remercier', label: 'Remercier pour le travail accompli', hint: 'Le moral remonte, ça ne coûte rien.', ok: !block, reason: block });
+      opts.push({ id: 'mission', label: 'Confier une mission urgente', hint: 'Double effet tout de suite, mais le moral baisse.', ok: !block, reason: block });
       break;
     case 'chef': {
       const camp = campaignOpen(d);
@@ -125,17 +180,39 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       opts.push({ id: 'soutien', label: supportLabel, hint: 'Une consigne de vote du parti : des dizaines de voix si la relation est bonne.', ok: !block && !!target, reason: block ?? supportReason });
       opts.push({ id: 'argent', label: 'Demander une aide financière du parti', hint: 'Une avance sur le compte de campagne, selon votre soutien interne.',
         ok: !block && camp && d.week - lastMoney >= 6, reason: block ?? (!camp ? 'Seulement pendant une campagne' : d.week - lastMoney < 6 ? 'Le trésorier vous a déjà dépanné·e récemment' : undefined) });
+      opts.push({ id: 'numero', label: 'Demander le numéro d’une personnalité', hint: 'Le chef a le carnet d’adresses le plus épais du parti.', ok: !block && unknownPersonalities(d).length > 0, reason: block ?? (unknownPersonalities(d).length ? undefined : 'Vous avez déjà tous les numéros') });
       opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Entretenir la relation.', ok: !block, reason: block });
+      break;
+    }
+    case 'personnalite': {
+      const n = d.npcs.find(x => `perso:${x.id}` === key)!;
+      const pactDone = Number(d.player.flags[`pacte_${n.id}`] ?? -99);
+      opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Entretenir le contact, même avec un adversaire.', ok: !block, reason: block });
+      opts.push({ id: 'soutien', label: supportLabel, hint: n.partyId === d.party.id ? 'Sa voix et celles de ses proches.' : 'Une voix de l’autre camp : rare, et précieuse.', ok: !block && !!target, reason: block ?? supportReason });
+      opts.push({ id: 'pacte', label: 'Proposer un pacte de non-agression', hint: 'Il ou elle cesse de vous attaquer. Une fois par an.', ok: !block && n.relationToPlayer >= -10 && d.week - pactDone >= 12,
+        reason: block ?? (n.relationToPlayer < -10 ? 'Relation trop mauvaise (−10 au moins)' : d.week - pactDone < 12 ? 'Pacte déjà conclu cette année' : undefined) });
+      opts.push({ id: 'tuyau', label: 'Glaner des confidences', hint: 'Un ragot sur un tiers… qui peut devenir une arme.', ok: !block, reason: block });
       break;
     }
     case 'collegue':
       opts.push({ id: 'soutien', label: supportLabel, hint: 'Sa voix, et celles de quelques proches.', ok: !block && !!target, reason: block ?? supportReason });
+      opts.push({ id: 'numero', label: 'Demander le numéro d’une personnalité', hint: 'Un ou une collègue bien introduit·e.', ok: !block && unknownPersonalities(d).length > 0, reason: block ?? (unknownPersonalities(d).length ? undefined : 'Vous avez déjà tous les numéros') });
+      opts.push({ id: 'rumeur', label: 'Faire courir une rumeur sur un adversaire', hint: 'Sa popularité baisse… si personne ne remonte jusqu’à vous.', ok: !block, reason: block });
       opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Un café, des confidences.', ok: !block, reason: block });
       break;
     case 'contact': {
       const c = d.contacts.find(x => `contact:${x.id}` === key)!;
       const money = c.type === 'lobby' || c.type === 'industriel';
-      opts.push({ id: 'soutien', label: supportLabel, hint: c.type === 'journaliste' ? 'Un papier favorable : l’opinion pèse sur les députés.' : money ? 'Ils ont l’oreille de nombreux députés… et des attentes.' : 'Une mobilisation qui fait pression sur les élus.', ok: !block && !!target, reason: block ?? supportReason });
+      opts.push({ id: 'soutien', label: supportLabel, hint: c.type === 'journaliste' ? 'Un papier favorable : l’opinion pèse sur les députés.' : money ? 'Ils ont l’oreille de nombreux députés… et des attentes.' : c.type === 'culte' ? 'Les fidèles écrivent à leurs députés.' : 'Une mobilisation qui fait pression sur les élus.', ok: !block && !!target, reason: block ?? supportReason });
+      if (c.type === 'journaliste') {
+        const komp = kompromatTargets(d);
+        opts.push({ id: 'numero', label: 'Demander le numéro d’une personnalité', hint: 'Les journalistes ont tous les portables.', ok: !block && c.trust >= 20 && unknownPersonalities(d).length > 0, reason: block ?? (c.trust < 20 ? 'Confiance 20 au moins' : unknownPersonalities(d).length ? undefined : 'Vous avez déjà tous les numéros') });
+        opts.push({ id: 'fuite', label: komp.length ? `Lui confier un dossier sur ${komp[0].name}` : 'Lui confier un dossier compromettant', hint: 'Un article qui fait mal à un adversaire. Il faudra protéger votre anonymat.', ok: !block && komp.length > 0, reason: block ?? (komp.length ? undefined : 'Il vous faut une information compromettante (confidences, complots)') });
+      }
+      if (c.type === 'culte') {
+        const lastAppui = Number(d.player.flags[`appui_${c.id}`] ?? -99);
+        opts.push({ id: 'appui', label: 'Solliciter un soutien public', hint: 'Une parole bienveillante devant les fidèles. Les défenseurs de la laïcité tiquent.', ok: !block && c.trust >= 25 && d.week - lastAppui >= 6, reason: block ?? (c.trust < 25 ? 'Confiance 25 au moins' : d.week - lastAppui < 6 ? 'Déjà sollicité il y a peu' : undefined) });
+      }
       const lastAsk = Number(d.player.flags[`phoneMoney_${c.id}`] ?? -99);
       const tooSoon = d.week - lastAsk < 6 ? 'Vous les avez déjà sollicités il y a peu' : undefined;
       if (money) opts.push({ id: 'argent', label: 'Demander de l’argent', hint: 'En campagne : un dîner de donateurs. Hors campagne : des « honoraires de conseil »… exposés.', ok: !block && !tooSoon, reason: block ?? tooSoon });
@@ -145,6 +222,7 @@ export function callOptions(d: GameState, key: string): CallOption[] {
     case 'proche': {
       const lastMoney = Number(d.player.flags['phoneMoneyFamily'] ?? -99);
       opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Une demi-heure loin de la politique.', ok: !block, reason: block });
+      opts.push({ id: 'conseil', label: 'Demander conseil', hint: 'Un regard extérieur, sans arrière-pensée.', ok: !block, reason: block });
       opts.push({ id: 'argent', label: 'Demander un coup de main financier', hint: 'Une fois par an, et ça coûte un peu d’amour-propre.', ok: !block && d.week - lastMoney >= 12, reason: block ?? (d.week - lastMoney < 12 ? 'Vous avez déjà demandé cette année' : undefined) });
       break;
     }
@@ -184,14 +262,29 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
   const effects: Effect[] = extra ? [{ kind: 'stat', stat: 'energy', delta: -extra }] : [];
   let answer = '';
   let note: string | undefined;
-  const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : optionId === 'argent' ? 'J’aurais besoin d’un coup de main financier…' : optionId === 'point' ? 'On fait le point ?' : 'Je prenais des nouvelles.';
+  const ASK: Partial<Record<CallOption['id'], string>> = {
+    argent: 'J’aurais besoin d’un coup de main financier…', point: 'On fait le point ?', numero: 'Tu aurais un numéro à me passer ?',
+    remercier: 'Je voulais te remercier pour ton travail.', mission: 'J’ai besoin de toi tout de suite, c’est urgent.',
+    rumeur: 'Tu as entendu ce qu’on raconte sur…', fuite: 'J’ai quelque chose pour vous. Mais ça ne vient pas de moi.',
+    pacte: 'Et si on arrêtait de se taper dessus, toi et moi ?', tuyau: 'Alors, quoi de neuf dans ton camp ?', conseil: 'J’ai besoin de ton avis.',
+    appui: 'Votre parole compte beaucoup pour vos fidèles…',
+  };
+  const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : ASK[optionId] ?? 'Je prenais des nouvelles.';
   addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: `📞 ${ask}`, outgoing: true, read: true });
 
   if (e.kind === 'equipe') {
     const r = p.team.find(x => `equipe:${x.id}` === key)!;
     const tip = TEAM_TIPS[r.role] ?? TEAM_TIPS.conseiller!;
-    answer = tip.text;
-    effects.push(...tip.effects);
+    if (optionId === 'remercier') {
+      answer = rng.pick(['Ça fait plaisir à entendre. Vraiment.', 'Merci ! On forme une sacrée équipe.', 'Je ne m’y attendais pas. Je repars gonflé·e à bloc.']);
+      effects.push({ kind: 'team', recruitId: r.id, morale: 8 });
+    } else if (optionId === 'mission') {
+      answer = `C’est fait. ${tip.text} J’ai passé la nuit dessus, j’espère que ça valait le coup.`;
+      effects.push(...tip.effects, ...tip.effects, { kind: 'team', recruitId: r.id, morale: -7 });
+    } else {
+      answer = tip.text;
+      effects.push(...tip.effects);
+    }
   } else if (e.kind === 'chef') {
     const chief = leader(d)!;
     const rel = chief.relationToPlayer;
@@ -205,6 +298,12 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
         answer = 'Pas cette fois. Le groupe est divisé, je ne vais pas me griller pour toi.';
         effects.push({ kind: 'npcRelation', npcId: chief.id, delta: -1 });
       }
+    } else if (optionId === 'numero') {
+      if (rng.chance(clamp(0.45 + rel / 120, 0.15, 0.95))) {
+        const got = grantNumber(d, rng);
+        if (got) note = got;
+        answer = 'Je te l’envoie par SMS. Et tu ne le tiens pas de moi.';
+      } else answer = 'Mon carnet d’adresses, c’est mon capital. Gagne d’abord tes galons.';
     } else if (optionId === 'argent') {
       p.flags['phoneMoneyChef'] = d.week;
       if (rng.chance(clamp(0.3 + rel / 100 + sup / 200, 0.1, 0.95))) {
@@ -228,9 +327,62 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
         answer = 'Tu as ma voix. Je vais en parler à deux ou trois collègues.';
         effects.push({ kind: 'npcRelation', npcId: n.id, delta: -1 });
       } else answer = 'Désolé, j’ai pris des engagements ailleurs.';
+    } else if (optionId === 'numero') {
+      if (rng.chance(clamp(0.35 + n.relationToPlayer / 100 + n.influence / 300, 0.1, 0.9))) {
+        const got = grantNumber(d, rng);
+        if (got) note = got;
+        answer = 'Tiens, note bien. Il ou elle décroche après 22 h.';
+      } else answer = 'Je n’ai pas ce genre de numéro, désolé.';
+    } else if (optionId === 'rumeur') {
+      const target = rivalOf(d);
+      if (target) {
+        answer = `Sur ${target.name} ? Je vais en glisser deux mots à la buvette…`;
+        effects.push({ kind: 'npcStat', npcId: target.id, stat: 'popularity', delta: -4 }, { kind: 'npcRelation', npcId: n.id, delta: -1 });
+        if (rng.chance(0.3)) {
+          effects.push({ kind: 'exposure', delta: 4 }, { kind: 'npcRelation', npcId: target.id, delta: -12 }, { kind: 'stat', stat: 'credibility', delta: -2 });
+          answer += ' (Deux jours plus tard, la rumeur remonte jusqu’à vous.)';
+        }
+      } else answer = 'Sur qui ? Tout le monde t’aime bien, ici.';
     } else {
       answer = rng.pick(['On se voit à la buvette de l’Assemblée ?', 'Tu as vu le dernier sondage ? Tout le monde en parle.', 'Merci d’appeler, ça fait plaisir.']);
       effects.push({ kind: 'npcRelation', npcId: n.id, delta: 4 });
+    }
+  } else if (e.kind === 'personnalite') {
+    const n = d.npcs.find(x => `perso:${x.id}` === key)!;
+    const rel = n.relationToPlayer;
+    const same = n.partyId === d.party.id;
+    if (optionId === 'soutien') {
+      if (rng.chance(clamp(0.2 + rel / 100 + (same ? 0.2 : 0), 0.05, 0.9))) {
+        note = rally(d, 2 + Math.round(n.influence / 20));
+        answer = same ? 'Tu as ma voix.' : 'Officiellement, je n’ai rien promis. Mais je ne voterai pas contre, et quelques amis non plus.';
+        effects.push({ kind: 'npcRelation', npcId: n.id, delta: -2 }, { kind: 'stat', stat: 'politicalCapital', delta: -3 });
+      } else answer = same ? 'Pas cette fois.' : 'Vous plaisantez ? Mon groupe me tuerait.';
+    } else if (optionId === 'pacte') {
+      p.flags[`pacte_${n.id}`] = d.week;
+      if (rng.chance(clamp(0.4 + rel / 100, 0.1, 0.9))) {
+        n.isRival = false;
+        n.aggressiveness = Math.max(0, n.aggressiveness - 30);
+        answer = 'Marché conclu. Je ne vous attaque plus ; vous non plus. Le premier qui trahit le paiera.';
+        effects.push({ kind: 'npcRelation', npcId: n.id, delta: 12 }, { kind: 'stat', stat: 'politicalCapital', delta: -5 });
+      } else {
+        answer = 'Un pacte ? Avec vous ? Je préfère garder les mains libres.';
+        effects.push({ kind: 'npcRelation', npcId: n.id, delta: -4 });
+      }
+    } else if (optionId === 'tuyau') {
+      if (rng.chance(clamp(0.3 + rel / 120 + n.influence / 400, 0.1, 0.85))) {
+        const victim = rng.pick(d.npcs.filter(x => x.id !== n.id));
+        if (victim && rng.chance(0.5)) {
+          p.flags[`kompromat_${victim.id}`] = Number(p.flags[`kompromat_${victim.id}`] ?? 0) + 1;
+          answer = `Entre nous… ${victim.name} a de drôles de notes de frais. Je ne vous ai rien dit.`;
+          note = `Information compromettante sur ${victim.name}`;
+        } else {
+          answer = 'Le gouvernement prépare un remaniement. Et votre dossier fétiche est sur la table.';
+          effects.push({ kind: 'dossier', domain: d.agendaDomain, delta: 3 }, { kind: 'stat', stat: 'influence', delta: 1 });
+        }
+      } else answer = 'Rien de neuf. Et même s’il y avait du neuf, ce n’est pas à vous que je le dirais.';
+    } else {
+      answer = rel >= 20 ? rng.pick(['Toujours un plaisir. On déjeune ?', 'Merci de penser à moi, en ces temps agités.']) : rel <= -20 ? rng.pick(['Vous avez du culot d’appeler.', 'Faites court, j’ai un plateau télé.']) : rng.pick(['Courtoisie républicaine, je prends.', 'C’est gentil. On se croisera dans les couloirs.']);
+      effects.push({ kind: 'npcRelation', npcId: n.id, delta: rel <= -20 ? 2 : 4 });
     }
   } else if (e.kind === 'contact') {
     const c = d.contacts.find(x => `contact:${x.id}` === key)!;
@@ -246,6 +398,30 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
       } else {
         answer = 'Pas sur ce texte-là. Nous avons nos propres priorités.';
       }
+    } else if (optionId === 'numero') {
+      if (rng.chance(clamp(0.35 + c.trust / 100, 0.1, 0.9))) {
+        const got = grantNumber(d, rng);
+        if (got) note = got;
+        answer = 'Je vous l’envoie. En échange, vous me réservez votre prochaine exclusivité.';
+        effects.push({ kind: 'contact', contactId: c.id, balance: -1 });
+      } else answer = 'Mes sources, c’est sacré. Même leurs numéros.';
+    } else if (optionId === 'fuite') {
+      const victim = kompromatTargets(d)[0];
+      if (victim) {
+        p.flags[`kompromat_${victim.id}`] = Math.max(0, Number(p.flags[`kompromat_${victim.id}`] ?? 0) - 1);
+        answer = `Je vérifie, je recoupe, et ça sort jeudi. ${victim.name} va passer un mauvais week-end.`;
+        effects.push({ kind: 'npcStat', npcId: victim.id, stat: 'popularity', delta: -8 }, { kind: 'npcStat', npcId: victim.id, stat: 'influence', delta: -4 }, { kind: 'contact', contactId: c.id, trust: 3 });
+        if (rng.chance(0.25)) {
+          effects.push({ kind: 'exposure', delta: 6 }, { kind: 'npcRelation', npcId: victim.id, delta: -25 }, { kind: 'stat', stat: 'credibility', delta: -3 });
+          answer += ' (Le Canard révèle d’où vient la fuite…)';
+        }
+      }
+    } else if (optionId === 'appui') {
+      p.flags[`appui_${c.id}`] = d.week;
+      if (rng.chance(clamp(0.35 + c.trust / 100, 0.1, 0.9))) {
+        answer = 'Nous ne donnons pas de consigne de vote. Mais nous dirons tout le bien que nous pensons de votre action.';
+        effects.push({ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'momentum', delta: 4 }, { kind: 'stat', stat: 'credibility', delta: -1 }, { kind: 'contact', contactId: c.id, balance: -1 });
+      } else answer = 'Notre communauté ne fait pas de politique. Vous le savez bien.';
     } else if (optionId === 'argent') {
       p.flags[`phoneMoney_${c.id}`] = d.week;
       if (campaignOpen(d)) {
@@ -271,6 +447,9 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
       const amount = 1500 + Math.round(rng.range(0, 3)) * 500;
       effects.push({ kind: 'funds', account: 'personal', delta: amount }, { kind: 'stat', stat: 'stress', delta: 2 });
       answer = `Bien sûr, mon grand… Je te fais un virement de ${amount.toLocaleString('fr-FR')} €. Tu manges bien, au moins ?`;
+    } else if (optionId === 'conseil') {
+      answer = rng.pick(['Sois toi-même. Les gens sentent quand on joue un rôle.', 'Dors, d’abord. On ne décide rien de bon à trois heures du matin.', 'Ton grand-père disait : « Ne promets que ce que tu peux tenir. »']);
+      effects.push({ kind: 'stat', stat: 'stress', delta: -3 }, { kind: 'stat', stat: 'credibility', delta: 1 });
     } else {
       answer = rng.pick(['Tu as l’air fatigué·e. Tu passes dimanche ? Il y aura un gigot.', 'Ta tante t’a vu·e à la télé. Elle trouve que tu as maigri.', 'On est fiers de toi, tu sais. Même ton père, à sa façon.']);
       effects.push({ kind: 'stat', stat: 'stress', delta: -5 }, { kind: 'stat', stat: 'energy', delta: 3 });
@@ -387,6 +566,23 @@ function chiefSms(d: GameState, rng: Rng): Incoming {
   ]);
 }
 
+function personalitySms(d: GameState, id: string, rel: number, rng: Rng): Incoming {
+  if (rel <= -25) return rng.pick<Incoming>([
+    { text: 'J’ai vu votre sortie d’hier. Vous me le paierez.', replies: [
+      rep('calmer', 'Rien de personnel', [{ kind: 'npcRelation', npcId: id, delta: 4 }], 'On verra.'),
+      rep('defier', 'J’attends de voir', [st('influence', 1), { kind: 'npcRelation', npcId: id, delta: -5 }])] },
+  ]);
+  return rng.pick<Incoming>([
+    { text: 'Un café discret, loin des caméras ? J’ai une idée qui pourrait nous servir tous les deux.', replies: [
+      rep('oui', 'Avec plaisir', [{ kind: 'npcRelation', npcId: id, delta: 5 }, st('influence', 1), st('energy', -2)], 'Mardi, 8 h, au bistrot derrière l’Assemblée.'),
+      rep('non', 'Pas maintenant', [{ kind: 'npcRelation', npcId: id, delta: -1 }])] },
+    { text: 'Entre nous : votre amendement est bon. Je ne le dirai pas en séance, mais je ne voterai pas contre.', replies: [
+      rep('merci', 'Merci, je m’en souviendrai', [{ kind: 'npcRelation', npcId: id, delta: 3 }, { kind: 'flagAdd', key: 'billSupport', delta: 2 }])] },
+    { text: 'On dit que vous visez plus haut. Prudence : certains vous attendent au tournant.', replies: [
+      rep('merci', 'Merci du conseil', [{ kind: 'npcRelation', npcId: id, delta: 2 }, st('stress', 1)])] },
+  ]);
+}
+
 function contactSms(d: GameState, rng: Rng): { who: string; from: string; role: string; msg: Incoming } | null {
   if (!d.contacts.length) return null;
   const c = rng.pick(d.contacts);
@@ -403,6 +599,11 @@ function contactSms(d: GameState, rng: Rng): { who: string; from: string; role: 
     case 'association': return { ...base, msg: { text: 'Notre gala annuel a lieu le 12. Vous nous feriez l’honneur ?', replies: [
       rep('oui', 'Avec plaisir', [{ kind: 'contact', contactId: c.id, trust: 4 }, st('popularity', 1), st('energy', -3)], 'Formidable, nous vous gardons une place.'),
       rep('non', 'Je suis pris·e ce soir-là', [{ kind: 'contact', contactId: c.id, trust: -1 }])] } };
+    case 'culte': return { ...base, msg: { text: c.balance < 0 ? 'Nous avons été heureux de vous aider. Notre communauté aimerait être entendue sur le projet de loi en cours.' : 'Notre grande fête annuelle a lieu le mois prochain. Votre présence serait un beau signe d’écoute.', replies: c.balance < 0 ? [
+      rep('ecouter', 'Je recevrai vos représentants', [{ kind: 'contact', contactId: c.id, trust: 3, balance: 1 }, st('credibility', -1)], 'Merci. Nous savons que nous pouvons compter sur vous.'),
+      rep('laicite', 'La loi est la même pour tous', [st('credibility', 2), { kind: 'contact', contactId: c.id, trust: -5 }], 'Nous en prenons acte.')] : [
+      rep('oui', 'J’y serai', [{ kind: 'contact', contactId: c.id, trust: 4 }, st('popularity', 1), st('energy', -3)], 'Nous vous réserverons un accueil chaleureux.'),
+      rep('non', 'Je vous enverrai un message', [{ kind: 'contact', contactId: c.id, trust: -1 }])] } };
     default: return { ...base, msg: { text: 'Un déjeuner la semaine prochaine ? Nous avons un projet qui pourrait vous intéresser.', replies: [
       rep('oui', 'Volontiers', [{ kind: 'contact', contactId: c.id, trust: 4 }, st('influence', 1), { kind: 'exposure', delta: 1 }], 'Parfait, chez Drouant, 13 h.'),
       rep('prudence', 'Envoyez-moi plutôt une note', [st('credibility', 1)], 'Bien sûr, vous l’aurez demain.'),
@@ -435,6 +636,9 @@ export function monthlyPhone(d: GameState, rng: Rng): void {
     } else if (roll < 0.6 && leader(d)) {
       const chief = leader(d)!;
       addMessage(d, { kind: 'sms', who: 'chef', from: chief.name, role: 'Chef·fe du parti', ...chiefSms(d, rng) });
+    } else if (roll < 0.7 && (d.player.phoneBook ?? []).length) {
+      const n = d.npcs.find(x => x.id === rng.pick(d.player.phoneBook!));
+      if (n) addMessage(d, { kind: 'sms', who: `perso:${n.id}`, from: n.name, role: 'Personnalité', ...personalitySms(d, n.id, n.relationToPlayer, rng) });
     } else if (roll < 0.88) {
       const c = contactSms(d, rng);
       if (c) addMessage(d, { kind: rng.chance(0.25) ? 'appel' : 'sms', who: c.who, from: c.from, role: c.role, ...c.msg, text: c.msg.text });

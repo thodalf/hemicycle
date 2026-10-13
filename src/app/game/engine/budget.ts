@@ -8,6 +8,7 @@ import {
 import { SEGMENTS } from '../data/programme';
 import { createDecision } from '../data/decisions';
 import { applyEffects, partySupport, pushNews } from './effects';
+import { MINISTRIES } from './government';
 import { Rng, clamp } from './rng';
 
 /* ============================================================
@@ -143,6 +144,18 @@ export function canHandleNationalBudget(d: GameState): boolean {
   return d.player.rankId === 'ministre' || d.player.rankId === 'premier_ministre' || d.player.rankId === 'president';
 }
 
+/** Pourquoi c'est vous qui faites le budget : la cohérence du rôle */
+export function budgetRoleNote(d: GameState): string | null {
+  const p = d.player;
+  if (p.rankId === 'ministre') {
+    if (d.portfolio === 'economie') return 'Ministre de l’Économie et des Finances : le projet de loi de finances, c’est votre maison.';
+    return `Le Premier ministre ne boucle pas le budget seul : il vous a demandé de l’aider à arbitrer l’ensemble des missions, bien au-delà de votre ministère (${d.portfolio ? MINISTRIES[d.portfolio] : 'votre portefeuille'}). Bercy tient la plume, vous tenez les arbitrages.`;
+  }
+  if (p.rankId === 'premier_ministre') return 'À Matignon, vous arbitrez le budget entre les ministres avant de le présenter à l’Assemblée.';
+  if (p.rankId === 'president') return 'L’Élysée fixe les grands équilibres ; Matignon et Bercy défendent le texte au Parlement.';
+  return null;
+}
+
 export function nationalBudgetBlocking(d: GameState): boolean {
   const nb = d.nationalBudget;
   return !!nb && nb.pending && canHandleNationalBudget(d) && d.week >= nb.deadlineWeek;
@@ -161,8 +174,11 @@ export function openBudgetCycle(d: GameState, deadlineIn = 2): void {
     history: previous?.history ?? [],
   };
   d.nationalBudget = nb;
+  const why = d.player.rankId === 'ministre' && d.portfolio !== 'economie'
+    ? 'Le Premier ministre cherche de l’aide pour boucler le budget : il vous confie les arbitrages. '
+    : '';
   pushNews(d, 'actu', 'neutral', `Projet de loi de finances ${nb.year}`,
-    `À arbitrer et soumettre à l’Assemblée avant ${monthLabel(nb.deadlineWeek)}.`);
+    `${why}À arbitrer et soumettre à l’Assemblée avant ${monthLabel(nb.deadlineWeek)}.`);
 }
 
 export function weeklyNationalBudget(d: GameState): void {

@@ -79,6 +79,7 @@
           <div>
             <span class="eyebrow">Projet de loi de finances</span>
             <h3 class="plf-title">Budget {{ nb.year }}</h3>
+            @if (svc.roleNote(); as note) { <p class="role-note muted">{{ note }}</p> }
           </div>
           @if (nb.pending) {
             <span class="chip" [class.bad]="game.week() >= nb.deadlineWeek" [class.warn]="game.week() < nb.deadlineWeek">

@@ -96,6 +96,8 @@ export class ActionPlannerService {
       if (a.category === 'international' && !intlRelevant(s)) return false;
       if (a.category === 'international' && rankOrder(a.minRank) >= rankOrder('ministre') && rankOrder(s.player.rankId) >= rankOrder('ministre') && !intlPower(s)) return false;
       if (a.onlyRanks && !a.onlyRanks.includes(s.player.rankId)) return false;
+      // Actions propres à un ministère : seulement pour le ou la titulaire du portefeuille
+      if (a.requires?.portfolio && (s.player.rankId !== 'ministre' || s.portfolio !== a.requires.portfolio)) return false;
       return true;
     });
   });
@@ -138,6 +140,7 @@ export class ActionPlannerService {
       if (req.noGovernment && ['ministre', 'premier_ministre', 'president'].includes(s.player.rankId)) return { ok: false, reason: 'Incompatible avec une fonction gouvernementale' };
       if (req.minFunds && s.player.finances.personal < req.minFunds) return { ok: false, reason: `Il faut au moins ${req.minFunds.toLocaleString('fr-FR')} € d’épargne` };
       if (req.placement !== undefined && Number(s.player.flags['placement'] ?? 0) === req.placement) return { ok: false, reason: req.placement === 0 ? 'Rien n’est placé' : 'Déjà fait' };
+      if (req.schemes && !(s.schemes ?? []).length) return { ok: false, reason: 'Aucun complot en cours' };
       if (req.secondRound && !inSecondRound(s)) return { ok: false, reason: 'Seulement entre les deux tours de la présidentielle' };
       if (req.team && !s.player.team.length) return { ok: false, reason: 'Il faut une équipe' };
       if (req.totalWar && !s.war?.total) return { ok: false, reason: 'Seulement en guerre totale' };

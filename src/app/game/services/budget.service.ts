@@ -4,7 +4,7 @@ import { PARTY_LINES } from '../data/budget';
 import {
   partyScale,
   canHandleNationalBudget, force493, nationalReport, partyReport, playerLeadsParty, resetDraft, reviseBudget,
-  setMission, setTax, submitBudget,
+  setMission, setTax, submitBudget, budgetRoleNote,
 } from '../engine/budget';
 import { partySupport } from '../engine/effects';
 import { GameStateService } from './game-state.service';
@@ -23,6 +23,7 @@ export class BudgetService {
     return !!s && (canHandleNationalBudget(s) || !!s.nationalBudget);
   });
   readonly anyAccess = computed(() => this.partyAccess() || this.stateAccess());
+  readonly roleNote = computed(() => { const s = this.game.state(); return s ? budgetRoleNote(s) : null; });
 
   readonly party = computed(() => this.game.state()?.partyFinance ?? null);
   readonly partyReport = computed(() => {

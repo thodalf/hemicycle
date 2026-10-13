@@ -8,6 +8,7 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
   { kind: 'equipe', label: 'Équipe' },
   { kind: 'chef', label: 'Parti' },
   { kind: 'collegue', label: 'Collègues' },
+  { kind: 'personnalite', label: 'Personnalités' },
   { kind: 'contact', label: 'Réseau' },
   { kind: 'proche', label: 'Proches' },
 ];

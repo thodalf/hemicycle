@@ -7,6 +7,7 @@ import { weeklyIntl } from '../engine/intl';
 import { monthlyHostile, monthlyWar } from '../engine/war';
 import { monthlyPhone } from '../engine/phone';
 import { monthlyPlot } from '../engine/plot';
+import { monthlySchemes } from '../engine/schemes';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { autoMinigames } from '../engine/minigame';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
@@ -117,6 +118,7 @@ export class TurnService {
     monthlyHostile(d, rng);
     monthlyPhone(d, rng);
     monthlyPlot(d, rng);
+    monthlySchemes(d, rng);
     monthlyWar(d, rng);
     monthlyAssembly(d, rng);
     weeklyObjectives(d, rng);

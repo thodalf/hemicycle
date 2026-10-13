@@ -16,6 +16,7 @@ import { VitalsComponent } from '../vitals/vitals.component';
 import { FxLayerComponent } from '../fx-layer/fx-layer.component';
 import { ElectionNightComponent } from '../election-night/election-night.component';
 import { PresidentialPollsComponent } from '../presidential-polls/presidential-polls.component';
+import { SchemesPanelComponent } from '../schemes-panel/schemes-panel.component';
 import { FxService } from '../../services/fx.service';
 import { AuthService } from '../../services/auth.service';
 import { RANKS } from '../../data/ranks';
@@ -52,7 +53,7 @@ import { Milestone } from '../../models/game.models';
     DecimalPipe,
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
-    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent,
+    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
     WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
@@ -120,6 +121,7 @@ import { Milestone } from '../../models/game.models';
       </div>
       <main class="col-main">
         <app-plot-panel />
+        <app-schemes-panel />
         <app-war-panel />
         @if (!game.s().presidency) { <app-presidency-panel /> }
         <app-presidential-polls />
@@ -139,6 +141,7 @@ import { Milestone } from '../../models/game.models';
               <span class="eyebrow">Bercy</span>
               <strong>Loi de finances {{ budget.national()!.year }} à soumettre</strong>
               <span class="muted">Avant {{ game.month(budget.national()!.deadlineWeek) }}{{ budget.national()!.rejected ? ' · rejetée par l’Assemblée' : '' }}.</span>
+              @if (budget.roleNote(); as note) { <small class="muted">{{ note }}</small> }
             </div>
             <button class="btn primary" (click)="budgetOpen.set(true)">Préparer le budget</button>
           </section>

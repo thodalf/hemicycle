@@ -126,8 +126,21 @@ function makeContacts(): NetworkContact[] {
     { id: 'ct-police', name: 'Syndicat des Gardiens de la Paix', type: 'syndicat', domain: 'securite', trust: 10, balance: 0, power: 55 },
     { id: 'ct-europe', name: 'Cercle Europe & Monde', type: 'lobby', domain: 'diplomatie', trust: 10, balance: 0, power: 45 },
     ...NEW_CONTACTS.map(c => ({ ...c })),
+    ...CULTES.map(c => ({ ...c })),
   ];
 }
+
+/**
+ * Les cultes, lobbies comme les autres : ils mobilisent leurs fidèles, défendent leurs causes
+ * et peuvent prêter de l'argent à qui a leur confiance. Communautés fictives, comme les partis.
+ */
+export const CULTES: NetworkContact[] = [
+  { id: 'ct-concorde', name: 'Église de la Concorde', type: 'culte', domain: 'social', trust: 10, balance: 0, power: 70 },
+  { id: 'ct-aube', name: 'Fraternité de l’Aube', type: 'culte', domain: 'education', trust: 10, balance: 0, power: 45 },
+  { id: 'ct-veilleurs', name: 'Ordre des Veilleurs', type: 'culte', domain: 'territoires', trust: 5, balance: 0, power: 60 },
+  { id: 'ct-sources', name: 'Communauté des Sources', type: 'culte', domain: 'ecologie', trust: 10, balance: 0, power: 35 },
+  { id: 'ct-humanistes', name: 'Cercle humaniste et laïque', type: 'association', domain: 'justice', trust: 10, balance: 0, power: 40 },
+];
 
 /** Contacts liés aux dossiers ajoutés (éducation, santé, numérique, territoires, justice) */
 export const NEW_CONTACTS: NetworkContact[] = [

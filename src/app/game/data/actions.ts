@@ -4,6 +4,8 @@ import { ActionCategory, ActionDefinition, Effect } from '../models/game.models'
  * Catalogue des actions mensuelles.
  * risk.baseChance = probabilité d'échec avant modulation par la stat (ou la maîtrise du dossier).
  */
+import { EXTRA_ACTIONS } from './actions-extra';
+
 const RAW_ACTIONS: ActionDefinition[] = [
   // ── Terrain ───────────────────────────────────────────────
   {
@@ -2129,6 +2131,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'dossier', domain: '$domain', delta: 4 }],
     target: 'domain',
   },
+  ...EXTRA_ACTIONS,
 ];
 
 /* ── Contrepoids automatiques ────────────────────────────────

@@ -3,8 +3,8 @@ import { Injectable, computed, inject } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, Effect, GameState, StatKey } from '../models/game.models';
 import { RANKS } from '../data/ranks';
 import { createDecision } from '../data/decisions';
-import { countTrait, fireRecruit, payroll, weeklyTraits } from '../engine/recruits';
-import { applyEffects, availableFunds, spend, partySupport, pushNews } from '../engine/effects';
+import { countTrait, fireRecruit, weeklyTraits } from '../engine/recruits';
+import { applyEffects, availableFunds, spend, partySupport, pushNews, teamFunding } from '../engine/effects';
 import { Rng, clamp } from '../engine/rng';
 import { weeklyNationalBudget } from '../engine/budget';
 import { weeklyBankruptcy } from '../engine/bankruptcy';
@@ -98,7 +98,10 @@ export class ProgressionService {
     monthlySide(d, rng);
     monthlyTeam(d, rng);
     monthlyLeaderPay(d);
-    const salaries = payroll(d);
+    // Salaires : le parti prend en charge les postes politiques, le reste est pour vous
+    const funding = teamFunding(d);
+    if (funding.party && d.partyFinance && d.party.leaderNpcId === 'player') d.partyFinance.treasury -= funding.party / 1000;
+    const salaries = funding.personal;
     if (salaries) {
       spend(d, salaries);
       if (availableFunds(d) < 0 && p.team.length) {

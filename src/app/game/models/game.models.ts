@@ -46,12 +46,13 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'securite' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
   contact: 'Premier contact',
   securite: 'Sécurité',
+  intrigue: 'Intrigues',
   guerre: 'Guerre',
   arriere: 'Effort de guerre',
   administration: 'Administration',
@@ -72,7 +73,7 @@ export const CATEGORY_LABELS: Record<ActionCategory, string> = {
 
 export type ScenarioId = 'carriere' | 'presidentielle' | 'bercy' | 'royaute' | 'franc_macon' | 'editorialiste' | 'infiltre' | 'contact' | 'invasion' | 'guerre_totale' | 'complot';
 
-export type ContactType = 'lobby' | 'industriel' | 'syndicat' | 'journaliste' | 'association';
+export type ContactType = 'lobby' | 'industriel' | 'syndicat' | 'journaliste' | 'association' | 'culte';
 export type FactionId = 'ligne_dure' | 'moderes' | 'reformistes';
 export type ElectionType = 'municipales' | 'legislatives' | 'primaire' | 'presidentielle';
 export type NewsKind =
@@ -130,6 +131,8 @@ export interface Player {
   skillPoints: number;
   /** Talents achetés avec les points de compétence (niveau par talent) */
   talents?: Record<string, number>;
+  /** Numéros de personnalités politiques obtenus (ids de PNJ) */
+  phoneBook?: string[];
   finances: Finances;
   actionPoints: { max: number; current: number };
   /** Risque latent de fuite / scandale (0‑100) */
@@ -280,7 +283,9 @@ export type Effect =
   | { kind: 'die'; cause: DeathCause; text: string }
   | { kind: 'intl'; partner?: string; relation?: number; prestige?: number; tension?: number; crisis?: number; startCrisis?: string; allRelations?: number }
   | { kind: 'government'; majority?: number; cohesion?: number; form?: string; fall?: boolean }
-  | { kind: 'flag'; key: string; value: boolean | number };
+  | { kind: 'flag'; key: string; value: boolean | number }
+  | { kind: 'phoneBook'; npcId: TargetRef }
+  | { kind: 'scheme'; type?: string; targetId?: TargetRef; progress?: number; secrecy?: number; abandon?: boolean };
 
 export interface EffectContext {
   domain?: Domain;
@@ -314,7 +319,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -1011,6 +1016,8 @@ export interface GameState {
   /** Premier contact avec une civilisation extraterrestre */
   alien: AlienState | null;
   phone?: PhoneState;
+  /** Vos complots en cours */
+  schemes?: Scheme[];
   plot?: PlotState | null;
   player: Player;
   party: Party;
@@ -1028,7 +1035,7 @@ export interface GameState {
 // ── Emprunts ────────────────────────────────────────────────
 
 export type LoanAccount = 'personal' | 'campaign';
-export type LoanKind = 'banque' | 'revolving' | 'proche' | 'campagne' | 'parti' | 'ancien';
+export type LoanKind = 'banque' | 'revolving' | 'proche' | 'campagne' | 'parti' | 'ancien' | 'culte';
 
 export interface Loan {
   id: string;
@@ -1075,6 +1082,21 @@ export interface PhoneMessage {
   read?: boolean;
   /** Résumé des effets, affiché sous la bulle */
   summary?: string[];
+}
+
+export type SchemeType = 'espionnage' | 'calomnie' | 'sabotage' | 'debauchage' | 'chantage';
+
+/** Un complot du joueur contre un PNJ */
+export interface Scheme {
+  id: string;
+  type: SchemeType;
+  targetId: string;
+  targetName: string;
+  since: number;
+  /** 0-100 : à 100, le complot aboutit */
+  progress: number;
+  /** 0-100 : plus elle baisse, plus le risque d'être découvert grandit */
+  secrecy: number;
 }
 
 export interface PhoneState {

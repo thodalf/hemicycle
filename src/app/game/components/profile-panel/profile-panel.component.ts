@@ -4,6 +4,7 @@ import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../mode
 import { GameStateService } from '../../services/game-state.service';
 import { ProgressionService } from '../../services/progression.service';
 import { CONVERSIONS, CONVERSION_COST, TALENTS } from '../../data/talents';
+import { ResignOption, resign, resignOptions } from '../../engine/resign';
 import { LEADER_PAY_LIMITS, leaderPayCheck, leaderPayPreview, remuneration, setLeaderPay } from '../../engine/remuneration';
 import { CORPS_BY_ID, civilActive, civilTitle, promoThreshold } from '../../engine/civil';
 
@@ -75,7 +76,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
         </ul>
         <ul class="pay-lines small">
           <li><span class="lbl">Mis de côté chaque mois<small class="muted">un tiers environ, le reste fait vivre le foyer</small></span><span class="mono pos">+{{ r.saved | number: '1.0-0' }} €</span></li>
-          @for (c of r.charges; track c.label) { <li><span class="lbl">{{ c.label }}</span><span class="mono neg">−{{ c.amount | number: '1.0-0' }} €</span></li> }
+          @for (c of r.charges; track c.label) { <li><span class="lbl">{{ c.label }}@if (c.note) { <small class="muted">{{ c.note }}</small> }</span><span class="mono neg">−{{ c.amount | number: '1.0-0' }} €</span></li> }
           <li class="sum"><span class="lbl">Solde du mois</span><span class="mono" [class.neg]="r.net < 0" [class.pos]="r.net > 0">{{ r.net > 0 ? '+' : '' }}{{ r.net | number: '1.0-0' }} €</span></li>
         </ul>
         @if (civil(); as c) {
@@ -122,6 +123,27 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
       </ul>
       <p class="legend muted">Carrés : niveau de compétence (accélère l’étude, ralentit l’oubli). <span class="hot-key">●</span> à la une.</p>
     </section>
+
+    @if (resignOpts().length) {
+      <section class="card resign" aria-label="Quitter un poste">
+        <div class="card-title"><span>Quitter un poste</span></div>
+        <ul class="resign-list">
+          @for (o of resignOpts(); track o.id) {
+            <li>
+              <span class="r-main"><strong>{{ o.label }}</strong><small class="muted">{{ o.ok ? o.consequence : o.reason }}</small></span>
+              @if (confirmResign() === o.id) {
+                <span class="r-btns">
+                  <button class="btn small danger" (click)="doResign(o.id)">Confirmer</button>
+                  <button class="btn small" (click)="confirmResign.set(null)">Annuler</button>
+                </span>
+              } @else {
+                <button class="btn small" [disabled]="!o.ok" (click)="confirmResign.set(o.id)">Démissionner</button>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
 
     <section class="card talents" aria-label="Talents">
       <div class="card-title">
@@ -194,6 +216,10 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
       &:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); } &:disabled { opacity: .35; cursor: not-allowed; } }
     .legend { margin: 10px 0 0; font-size: 11.5px; line-height: 1.4; }
     .hot-key { color: var(--warn); }
+    .resign { display: grid; gap: 8px; .card-title { margin-bottom: 0; } }
+    .resign-list { gap: 8px; li { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
+      .r-main { display: grid; gap: 2px; small { font-size: 11.5px; line-height: 1.35; } } .r-btns { display: flex; gap: 6px; } }
+    .danger { background: var(--bad); color: var(--surface); border-color: var(--bad); }
     .talents { display: grid; gap: 8px; .card-title { margin-bottom: 0; } }
     .small-note { margin: 0; font-size: 11.5px; line-height: 1.4; }
     .talent-list { gap: 6px; }
@@ -217,6 +243,12 @@ export class ProfilePanelComponent {
   protected readonly domains = DOMAINS;
   protected readonly levels = [0, 1, 2, 3, 4];
   protected readonly conversions = CONVERSIONS;
+  protected readonly resignOpts = computed(() => resignOptions(this.game.s()));
+  protected readonly confirmResign = signal<string | null>(null);
+  protected doResign(id: ResignOption['id']): void {
+    this.confirmResign.set(null);
+    this.game.mutate((d, rng) => { resign(d, id, rng); });
+  }
   protected readonly conversionCost = CONVERSION_COST;
   protected readonly talents = computed(() => TALENTS.map(def => ({ def, level: this.game.player().talents?.[def.id] ?? 0 })));
   protected readonly allMax = computed(() => DOMAINS.every(d => this.game.player().skills[d] >= 5));

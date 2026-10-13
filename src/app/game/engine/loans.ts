@@ -26,7 +26,12 @@ export interface LoanOffer {
   reason?: string;
   /** Contrepartie hors argent (capital politique, stress…) */
   strings?: string;
+  /** Prêteur précis quand plusieurs offres partagent un type (cultes) */
+  lenderId?: string;
 }
+
+/** Clé unique d'une offre */
+export const offerKey = (o: { kind: LoanKind; lenderId?: string }) => o.lenderId ? `${o.kind}:${o.lenderId}` : o.kind;
 
 /** Taux d'endettement maximal accepté par les banques */
 export const MAX_DEBT_RATIO = 0.35;
@@ -121,6 +126,20 @@ export function loanOffers(d: GameState): LoanOffer[] {
     strings: 'Stress +4',
   });
 
+  // Les cultes prêtent à qui a leur confiance : peu d'intérêts, beaucoup d'attentes
+  for (const c of d.contacts.filter(x => x.type === 'culte')) {
+    const open = p.loans.some(l => l.kind === 'culte' && l.lender === c.name);
+    const max = Math.round((3000 + c.power * 150) / 500) * 500;
+    offers.push({
+      kind: 'culte', lenderId: c.id, lender: c.name, title: `Prêt : ${c.name}`, account: 'personal',
+      description: 'Un prêt quasi gratuit, accordé par une communauté qui vous fait confiance. Elle s’en souviendra.',
+      min: 2000, max, rate: 0.01, durations: [24, 48],
+      ok: c.trust >= 30 && !open && !blocked,
+      reason: open ? 'Un prêt est déjà en cours avec elle' : blocked ? 'Fiché·e : même eux hésitent' : `Confiance ${Math.round(c.trust)}/30 : il faut d’abord gagner sa confiance`,
+      strings: 'Vous lui devrez des faveurs · exposition +3',
+    });
+  }
+
   // Campagne : prêt bancaire au compte de campagne, avance du parti
   const ceiling = p.finances.legalCeiling;
   if (ceiling !== null) {
@@ -158,8 +177,8 @@ function addLoan(d: GameState, kind: LoanKind, lender: string, account: LoanAcco
 }
 
 /** Souscrire un prêt proposé */
-export function borrow(d: GameState, kind: LoanKind, amount: number, months: number): string[] {
-  const offer = loanOffers(d).find(o => o.kind === kind);
+export function borrow(d: GameState, kind: LoanKind, amount: number, months: number, lenderId?: string): string[] {
+  const offer = loanOffers(d).find(o => o.kind === kind && (!lenderId || o.lenderId === lenderId));
   if (!offer || !offer.ok || !offer.durations.includes(months)) return [];
   const value = Math.round(Math.min(offer.max, Math.max(offer.min, amount)) / 100) * 100;
   if (value < offer.min || value > offer.max) return [];
@@ -169,6 +188,12 @@ export function borrow(d: GameState, kind: LoanKind, amount: number, months: num
   const out = [`${offer.account === 'campaign' ? 'Compte de campagne' : 'Fonds perso'} +${value.toLocaleString('fr-FR')} €`];
   if (kind === 'proche') { p.flags['familyLoan'] = d.week; p.stats.stress = clamp(p.stats.stress + 4); out.push('Stress +4'); }
   if (kind === 'revolving') p.flags['revolvingUsed'] = Number(p.flags['revolvingUsed'] ?? 0) + 1;
+  if (kind === 'culte') {
+    const c = d.contacts.find(x => x.id === offer.lenderId);
+    if (c) c.balance -= 2;
+    p.scandalExposure = clamp(p.scandalExposure + 3);
+    out.push('Vous lui devez des faveurs', 'Exposition +3');
+  }
   if (kind === 'parti') {
     if (d.party.leaderNpcId === 'player' && d.partyFinance) d.partyFinance.treasury -= value / 1000;
     else {

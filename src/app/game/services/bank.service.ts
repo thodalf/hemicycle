@@ -18,9 +18,9 @@ export class BankService {
   readonly ratio = computed(() => this.monthly() / RANKS[this.game.s().player.rankId].monthlyIncome);
   readonly maxRatio = MAX_DEBT_RATIO;
 
-  borrow(kind: LoanKind, amount: number, months: number): string[] {
+  borrow(kind: LoanKind, amount: number, months: number, lenderId?: string): string[] {
     let out: string[] = [];
-    this.game.mutate(d => { out = borrow(d, kind, amount, months); });
+    this.game.mutate(d => { out = borrow(d, kind, amount, months, lenderId); });
     return out;
   }
 

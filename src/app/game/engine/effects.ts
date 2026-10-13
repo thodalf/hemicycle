@@ -27,6 +27,8 @@ import { setLeaderPay } from './remuneration';
 import { ownOrigin, scheduleVote } from './assembly';
 import { queueMinigame } from './minigame';
 import { adjustAlien } from './alien';
+import { addNumber, grantNumber } from './phone';
+import { adjustScheme } from './schemes';
 
 /* ============================================================
  *  Moteur d'effets — fonctions pures appliquées sur un brouillon
@@ -83,10 +85,40 @@ export function spend(d: GameState, amount: number): void {
 const ENVELOPE_BY_RANK = [800, 2500, 6000, 9000, 12000, 15000, 20000];
 
 export function partyEnvelope(d: GameState): number {
-  if (d.partyFinance && playerLeadsPartyLike(d)) return Math.max(0, Math.round(d.partyFinance.treasury * 1000));
+  if (d.partyFinance && playerLeadsPartyLike(d)) return Math.max(0, Math.round(d.partyFinance.treasury * 1000 - teamFunding(d).party));
+  // Les salaires de vos collaborateurs pris en charge par la fédération sortent de la même enveloppe
+  return Math.max(0, rawEnvelope(d) - teamFunding(d).party);
+}
+
+function rawEnvelope(d: GameState): number {
   const base = ENVELOPE_BY_RANK[RANKS[d.player.rankId].order] ?? 6000;
   const support = clamp(partySupport(d) / 50, 0.3, 1.5);
   return Math.round(base * support / 100) * 100;
+}
+
+/** Postes toujours payés de votre poche : le parti ne finance pas votre confort ni votre image */
+export const PERSONAL_STAFF: readonly string[] = ['chauffeur', 'plume', 'spin_doctor'];
+
+/**
+ * Qui paie l'équipe ? Les postes politiques (conseiller, attaché·e de presse, trésorier…) sont pris
+ * en charge par le parti, dans la limite de ce qu'il peut : la trésorerie si vous le dirigez, sinon
+ * jusqu'à 60 % de l'enveloppe que la fédération vous accorde. Le reste, et le chauffeur, la plume,
+ * le spin doctor, sortent de vos fonds personnels.
+ */
+export function teamFunding(d: GameState): { party: number; personal: number; partyIds: string[] } {
+  const team = d.player.team;
+  const leads = !!d.partyFinance && playerLeadsPartyLike(d);
+  let cap = leads ? Math.max(0, Math.round(d.partyFinance!.treasury * 1000)) : Math.round(rawEnvelope(d) * 0.6);
+  const partyIds: string[] = [];
+  let party = 0;
+  for (const r of [...team].filter(x => !PERSONAL_STAFF.includes(x.role)).sort((a, b) => a.salary - b.salary)) {
+    if (r.salary > cap) continue;
+    cap -= r.salary;
+    party += r.salary;
+    partyIds.push(r.id);
+  }
+  const total = team.reduce((t, r) => t + r.salary, 0);
+  return { party, personal: total - party, partyIds };
 }
 
 /** Capital politique demandé pour une prise en charge par le parti */
@@ -134,6 +166,7 @@ const FAVOR_TABLE: Record<ContactType, Effect[]> = {
   industriel: [{ kind: 'funds', account: 'campaign', delta: 15000 }, { kind: 'exposure', delta: 8 }],
   syndicat: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'faction', factionId: 'ligne_dure', delta: 5 }],
   association: [{ kind: 'stat', stat: 'credibility', delta: 4 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  culte: [{ kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'momentum', delta: 4 }, { kind: 'stat', stat: 'credibility', delta: -1 }],
 };
 
 /** Réduit la part « gain » d'une liste d'effets (lassitude), sans toucher aux malus */
@@ -370,6 +403,15 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       }
       case 'flag':
         d.player.flags[e.key] = e.value;
+        break;
+      case 'phoneBook': {
+        const id = e.npcId === '$target' ? ctx.targetId : e.npcId;
+        const got = id === '$any' ? grantNumber(d, rng) : id ? addNumber(d, id) : null;
+        if (got) summary.push(got);
+        break;
+      }
+      case 'scheme':
+        summary.push(...adjustScheme(d, e, ctx, rng));
         break;
       case 'income': {
         const amount = Math.round((e.base + (e.scale ? d.player.stats[e.scale] * (e.mult ?? 0) : 0)) / 50) * 50;
