@@ -295,7 +295,7 @@ export type Effect =
   | { kind: 'rivalPlot'; counter?: boolean; start?: TargetRef }
   | { kind: 'crisis'; arc: CrisisArcId; start?: boolean; gauge?: number; risk?: number; meta?: string }
   | { kind: 'zombie'; start?: 'alerte' | 'minimiser' | 'confiner'; infection?: number; containment?: number; panic?: number; cure?: number; shelter?: boolean }
-  | { kind: 'scheme'; type?: string; targetId?: TargetRef; progress?: number; secrecy?: number; abandon?: boolean };
+  | { kind: 'scheme'; type?: string; targetId?: TargetRef; progress?: number; secrecy?: number; abandon?: boolean; ally?: TargetRef };
 
 export interface EffectContext {
   domain?: Domain;
@@ -1129,6 +1129,17 @@ export interface Scheme {
   progress: number;
   /** 0-100 : plus elle baisse, plus le risque d'être découvert grandit */
   secrecy: number;
+  /** Complices ralliés (au téléphone ou en coulisses) : le complot avance plus vite, mais chaque bouche de plus peut parler */
+  allies?: SchemeAlly[];
+}
+
+export interface SchemeAlly {
+  /** Clé du répertoire (« collegue:… », « perso:… », « contact:… ») */
+  key: string;
+  name: string;
+  npcId?: string;
+  contactId?: string;
+  since: number;
 }
 
 export interface PhoneState {

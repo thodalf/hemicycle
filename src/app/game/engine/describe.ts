@@ -58,7 +58,7 @@ export function describeEffect(e: Effect): EffectChip[] {
       return out;
     }
     case 'phoneBook': return [{ text: e.npcId === '$any' ? 'Un numéro de personnalité' : 'Son numéro de portable', tone: 'good' }];
-    case 'scheme': return e.type ? [{ text: 'Lance un complot (risque d’être découvert)', tone: 'neutral' }]
+    case 'scheme': return e.ally ? [{ text: 'Recrute un complice (s’il accepte)', tone: 'neutral' }] : e.type ? [{ text: 'Lance un complot (risque d’être découvert)', tone: 'neutral' }]
       : [...(e.progress ? [{ text: `Complots : progression +${e.progress}`, tone: 'good' as const }] : []), ...(e.secrecy ? [{ text: `Complots : discrétion ${e.secrecy > 0 ? '+' : ''}${e.secrecy}`, tone: e.secrecy > 0 ? 'good' as const : 'bad' as const }] : [])];
     case 'flagAdd': return e.key === 'illegal' ? [{ text: 'Illégal : risque d’enquête', tone: 'bad' }]
       : e.key === 'hygiene' ? [{ text: `${n(e.delta)} hygiène de vie`, tone: tone(e.delta) }]

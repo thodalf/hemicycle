@@ -28,6 +28,11 @@ import { SCHEMES, abandonScheme, discoveryRisk } from '../../engine/schemes';
               </div>
               <div class="g"><span>Progression</span><span class="bar"><i class="p" [style.width.%]="r.s.progress"></i></span><span class="mono">{{ r.s.progress | number: '1.0-0' }}</span></div>
               <div class="g"><span>Discrétion</span><span class="bar"><i class="d" [class.low]="r.s.secrecy < 35" [style.width.%]="r.s.secrecy"></i></span><span class="mono">{{ r.s.secrecy | number: '1.0-0' }}</span></div>
+              @if (r.s.allies?.length) {
+                <small class="allies">🕯️ Complices : {{ allyNames(r.s) }} <span class="muted">(+5 de progression par mois chacun)</span></small>
+              } @else {
+                <small class="allies muted">Aucun complice : ralliez-en au téléphone 📱</small>
+              }
               <small class="risk" [class.hot]="r.risk >= 0.12">Risque d’être découvert ce mois-ci : {{ r.risk * 100 | number: '1.0-0' }} %</small>
             </li>
           }
@@ -51,6 +56,7 @@ import { SCHEMES, abandonScheme, discoveryRisk } from '../../engine/schemes';
     li:first-child { border-top: 0; padding-top: 0; }
     .head { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; }
     .ico { font-size: 18px; } .t { display: grid; font-size: 13px; small { font-size: 11.5px; } }
+    .allies { display: block; font-size: 12px; margin-top: 4px; }
     .g { display: grid; grid-template-columns: 86px 1fr 28px; gap: 8px; align-items: center; font-size: 12px; }
     .bar { height: 7px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden;
       i { display: block; height: 100%; transition: width .4s; } .p { background: #6b4fa0; } .d { background: var(--good); } .d.low { background: var(--bad); } }
@@ -76,5 +82,8 @@ export class SchemesPanelComponent {
   protected abandon(id: string): void {
     this.confirm.set(null);
     this.game.mutate(d => abandonScheme(d, id));
+  }
+  protected allyNames(s: { allies?: { name: string }[] }): string {
+    return (s.allies ?? []).map(a => a.name).join(', ');
   }
 }

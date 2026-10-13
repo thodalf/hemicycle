@@ -4,6 +4,7 @@ import { RANKS } from '../data/ranks';
 import { DOMAINS } from '../models/game.models';
 import { MINISTRIES } from './government';
 import { dateCall, romanceOptions } from './phone-extra';
+import { askCall, askOptions, isAsk, monthlyDebts } from './phone-asks';
 import { applyEffects, campaignOpen, partySupport } from './effects';
 import { voteRole } from './assembly';
 import { Rng, clamp, nextId } from './rng';
@@ -34,7 +35,7 @@ export interface PhoneEntry {
 }
 
 export interface CallOption {
-  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage' | 'seduire' | 'rompre';
+  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage' | 'seduire' | 'rompre' | 'complot' | 'apparition';
   label: string;
   hint: string;
   ok: boolean;
@@ -219,8 +220,8 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       const camp = campaignOpen(d);
       const lastMoney = Number(d.player.flags['phoneMoneyChef'] ?? -99);
       opts.push({ id: 'soutien', label: supportLabel, hint: 'Une consigne de vote du parti : des dizaines de voix si la relation est bonne.', ok: !block && !!target, reason: block ?? supportReason });
-      opts.push({ id: 'argent', label: 'Demander une aide financière du parti', hint: 'Une avance sur le compte de campagne, selon votre soutien interne.',
-        ok: !block && camp && d.week - lastMoney >= 6, reason: block ?? (!camp ? 'Seulement pendant une campagne' : d.week - lastMoney < 6 ? 'Le trésorier vous a déjà dépanné·e récemment' : undefined) });
+      opts.push({ id: 'argent', label: 'Demander une aide financière du parti', hint: camp ? 'Une avance sur le compte de campagne, selon votre soutien interne.' : 'Hors campagne : le parti prend en charge vos frais de déplacement et de permanence.',
+        ok: !block && d.week - lastMoney >= 6, reason: block ?? (d.week - lastMoney < 6 ? 'Le trésorier vous a déjà dépanné·e récemment' : undefined) });
       opts.push({ id: 'numero', label: 'Demander le numéro d’une personnalité', hint: 'Le chef a le carnet d’adresses le plus épais du parti.', ok: !block && unknownPersonalities(d).length > 0, reason: block ?? (unknownPersonalities(d).length ? undefined : 'Vous avez déjà tous les numéros') });
       opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Entretenir la relation.', ok: !block, reason: block });
       break;
@@ -279,8 +280,8 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       break;
     }
   }
-  const love = entryOf(d, key);
-  if (love) opts.push(...romanceOptions(d, love, block));
+  opts.push(...askOptions(d, e, block));
+  opts.push(...romanceOptions(d, e, block));
   return opts;
 }
 
@@ -322,15 +323,22 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     rumeur: 'Tu as entendu ce qu’on raconte sur…', fuite: 'J’ai quelque chose pour vous. Mais ça ne vient pas de moi.',
     pacte: 'Et si on arrêtait de se taper dessus, toi et moi ?', tuyau: 'Alors, quoi de neuf dans ton camp ?', conseil: 'J’ai besoin de ton avis.',
     appui: 'Votre parole compte beaucoup pour vos fidèles…', seduire: 'Tu serais libre un soir de la semaine ?', rompre: 'Il faut qu’on parle.', arbitrage: 'J’aurais besoin d’un coup de pouce…',
+    complot: 'J’ai un projet… discret. J’aurais besoin de toi.', apparition: 'Tu accepterais de t’afficher à mes côtés ?',
   };
   const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : ASK[optionId] ?? 'Je prenais des nouvelles.';
   addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: `📞 ${ask}`, outgoing: true, read: true });
 
+  let notes: string[] = [];
   if (optionId === 'seduire' || optionId === 'rompre') {
     const res = dateCall(d, e, optionId, rng);
     answer = res.answer;
     effects.push(...res.effects);
     note = res.note;
+  } else if (isAsk(d, e, optionId)) {
+    const res = askCall(d, e, optionId, rng);
+    answer = res.answer;
+    effects.push(...res.effects);
+    notes = res.notes;
   } else if (key === 'conjoint') {
     answer = optionId === 'conseil'
       ? rng.pick(['Écoute ton instinct. Il t’a rarement trompé·e.', 'Dors d’abord. On en reparle demain, à tête reposée.', 'Fais ce qui te permettra de te regarder dans la glace.'])
@@ -368,6 +376,17 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
         if (got) note = got;
         answer = 'Je te l’envoie par SMS. Et tu ne le tiens pas de moi.';
       } else answer = 'Mon carnet d’adresses, c’est mon capital. Gagne d’abord tes galons.';
+    } else if (optionId === 'argent' && !campaignOpen(d)) {
+      p.flags['phoneMoneyChef'] = d.week;
+      if (rng.chance(clamp(0.35 + rel / 100 + sup / 200, 0.1, 0.95))) {
+        const amount = Math.round((800 + sup * 30) / 100) * 100;
+        effects.push({ kind: 'funds', account: 'personal', delta: amount }, { kind: 'stat', stat: 'politicalCapital', delta: -4 });
+        if (d.partyFinance) d.partyFinance.treasury -= amount / 1000;
+        answer = `Envoie tes notes de frais au trésorier : on te rembourse ${amount.toLocaleString('fr-FR')} €. Justificatifs à l’appui, hein.`;
+      } else {
+        answer = 'Le parti n’est pas une banque. Débrouille-toi avec ton indemnité.';
+        effects.push({ kind: 'npcRelation', npcId: chief.id, delta: -1 });
+      }
     } else if (optionId === 'argent') {
       p.flags['phoneMoneyChef'] = d.week;
       if (rng.chance(clamp(0.3 + rel / 100 + sup / 200, 0.1, 0.95))) {
@@ -544,6 +563,7 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     }
   }
   const summary = applyEffects(d, effects, {}, rng);
+  summary.unshift(...notes);
   if (note) summary.unshift(note);
   addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: answer, read: true, summary });
   return summary;
@@ -712,27 +732,38 @@ const FAMILY: Incoming[] = [
 /** Chaque mois : quelques SMS et appels manqués */
 export function monthlyPhone(d: GameState, rng: Rng): void {
   phone(d);
+  // Une même personne n'écrit qu'une fois par mois
+  const sent = new Set(d.phone!.messages.filter(m => m.week === d.week && !m.outgoing && m.replies?.length).map(m => m.who));
+  const send = (m: Omit<PhoneMessage, 'id' | 'week'>): boolean => {
+    if (sent.has(m.who)) return false;
+    sent.add(m.who);
+    addMessage(d, m);
+    return true;
+  };
+  monthlyDebts(d, sent, rng);
   const n = 1 + (rng.chance(0.6) ? 1 : 0) + (rng.chance(0.3) ? 1 : 0);
-  for (let i = 0; i < n; i++) {
+  let delivered = 0;
+  for (let tries = 0; tries < n * 3 && delivered < n; tries++) {
     const roll = rng.next();
     const team = d.player.team;
+    let ok = false;
     if (roll < 0.35 && team.length) {
       const r = rng.pick(team);
       const pool = [...(TEAM_SMS[r.role] ?? []), ...GENERIC_TEAM];
-      const msg = rng.pick(pool);
-      addMessage(d, { kind: 'sms', who: `equipe:${r.id}`, from: r.name, role: STAFF_BY_ROLE.get(r.role)?.title ?? r.role, ...msg });
+      if (!sent.has(`equipe:${r.id}`)) ok = send({ kind: 'sms', who: `equipe:${r.id}`, from: r.name, role: STAFF_BY_ROLE.get(r.role)?.title ?? r.role, ...rng.pick(pool) });
     } else if (roll < 0.6 && leader(d)) {
       const chief = leader(d)!;
-      addMessage(d, { kind: 'sms', who: 'chef', from: chief.name, role: 'Chef·fe du parti', ...chiefSms(d, rng) });
+      if (!sent.has('chef')) ok = send({ kind: 'sms', who: 'chef', from: chief.name, role: 'Chef·fe du parti', ...chiefSms(d, rng) });
     } else if (roll < 0.7 && (d.player.phoneBook ?? []).length) {
-      const n = d.npcs.find(x => x.id === rng.pick(d.player.phoneBook!));
-      if (n) addMessage(d, { kind: 'sms', who: `perso:${n.id}`, from: n.name, role: 'Personnalité', ...personalitySms(d, n.id, n.relationToPlayer, rng) });
+      const p = d.npcs.find(x => x.id === rng.pick(d.player.phoneBook!));
+      if (p && !sent.has(`perso:${p.id}`)) ok = send({ kind: 'sms', who: `perso:${p.id}`, from: p.name, role: 'Personnalité', ...personalitySms(d, p.id, p.relationToPlayer, rng) });
     } else if (roll < 0.88) {
       const c = contactSms(d, rng);
-      if (c) addMessage(d, { kind: rng.chance(0.25) ? 'appel' : 'sms', who: c.who, from: c.from, role: c.role, ...c.msg, text: c.msg.text });
-    } else {
-      addMessage(d, { kind: 'sms', who: 'proche', from: 'Maman', role: 'Famille', ...rng.pick(FAMILY) });
+      if (c && !sent.has(c.who)) ok = send({ kind: rng.chance(0.25) ? 'appel' : 'sms', who: c.who, from: c.from, role: c.role, ...c.msg, text: c.msg.text });
+    } else if (!sent.has('proche')) {
+      ok = send({ kind: 'sms', who: 'proche', from: 'Maman', role: 'Famille', ...rng.pick(FAMILY) });
     }
+    if (ok) delivered++;
   }
   // Les SMS laissés sans réponse trop longtemps refroidissent les relations
   for (const m of d.phone!.messages) {
