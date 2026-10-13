@@ -1,3 +1,4 @@
+import { civilActive, civilTitle } from './civil';
 import { DOMAINS, Decision, DecisionChoice, Domain, Effect, GameState } from '../models/game.models';
 import { RANKS } from '../data/ranks';
 import { pushNews } from './effects';
@@ -27,6 +28,7 @@ export const MINISTRIES: Record<Domain, string> = {
 export function roleLabel(d: GameState): string {
   if (d.player.rankId === 'ministre' && d.portfolio) return `Ministre ${MINISTRIES[d.portfolio]}`;
   if (d.alien && d.player.flags['hautCommissaire'] && ['depute', 'conseiller_municipal', 'militant'].includes(d.player.rankId)) return 'Haut-commissaire au Premier contact';
+  if (d.player.rankId === 'militant' && civilActive(d) && d.player.civil) return civilTitle(d.player.civil);
   return RANKS[d.player.rankId].label;
 }
 

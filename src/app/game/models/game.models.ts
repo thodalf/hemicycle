@@ -46,12 +46,14 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'guerre' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
   contact: 'Premier contact',
   guerre: 'Guerre',
+  arriere: 'Effort de guerre',
+  administration: 'Administration',
   international: 'International',
   terrain: 'Terrain',
   medias: 'Médias',
@@ -67,7 +69,7 @@ export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   repos: 'Repos',
 };
 
-export type ScenarioId = 'carriere' | 'presidentielle' | 'bercy' | 'royaute' | 'franc_macon' | 'editorialiste' | 'infiltre' | 'contact';
+export type ScenarioId = 'carriere' | 'presidentielle' | 'bercy' | 'royaute' | 'franc_macon' | 'editorialiste' | 'infiltre' | 'contact' | 'invasion' | 'guerre_totale';
 
 export type ContactType = 'lobby' | 'industriel' | 'syndicat' | 'journaliste' | 'association';
 export type FactionId = 'ligne_dure' | 'moderes' | 'reformistes';
@@ -149,7 +151,19 @@ export interface Player {
   loans: Loan[];
   /** Santé 0-100 : sous 35, les alertes médicales et le risque de mort grimpent */
   health: number;
+  /** Haute fonction publique : corps, grade (en disponibilité pendant un mandat national) */
+  civil?: CivilState | null;
   flags: Record<string, boolean | number>;
+}
+
+export type CorpsId = 'prefet' | 'conseil_etat' | 'finances' | 'diplomatie' | 'comptes';
+
+export interface CivilState {
+  corps: CorpsId;
+  /** 0 … 3 */
+  grade: number;
+  since: number;
+  lastPromo: number;
 }
 
 // ── Progression ─────────────────────────────────────────────
@@ -201,7 +215,9 @@ export type Effect =
   | { kind: 'decision'; templateId: string }
   | { kind: 'debate'; stakes: DebateStakes; opponentId?: TargetRef }
   | { kind: 'agenda'; domain: DomainRef; weeks: number }
-  | { kind: 'war'; front?: number; support?: number; losses?: number; ally?: string; peace?: boolean; declare?: string }
+  | { kind: 'war'; front?: number; support?: number; losses?: number; ally?: string; peace?: boolean; declare?: string; invade?: string; total?: boolean; effort?: number; morale?: number }
+  | { kind: 'hostile'; enemy: string; delta: number }
+  | { kind: 'civil'; join?: CorpsId | 'classement' | 'sortie' | 'tour'; grade?: number; leave?: boolean; study?: number }
   | { kind: 'vote'; billId?: string; own?: boolean }
   | { kind: 'alien'; comprehension?: number; confiance?: number; panique?: number; rivalite?: number; join?: boolean; gift?: boolean }
   | { kind: 'minigame'; gameId: string; reward: Effect[]; penalty?: Effect[]; title?: string }
@@ -275,7 +291,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -600,6 +616,8 @@ export interface IntlState {
   relations: Record<string, number>;
   crisis: IntlCrisis | null;
   treaties: number;
+  /** Relations avec les États fictifs hostiles (-100 … +100) : trop bas, ils attaquent */
+  hostile?: Record<string, number>;
 }
 
 // ── Équipe & objectifs ──────────────────────────────────────
@@ -1004,6 +1022,14 @@ export interface WarState {
   /** Autorisée par le Parlement (art. 35) */
   authorized: boolean;
   log: WarLogEntry[];
+  /** La France est attaquée : guerre de défense, sur notre sol si le front recule */
+  defensive?: boolean;
+  /** Guerre totale : toute la Nation mobilisée */
+  total?: boolean;
+  /** Effort de guerre : production d'armement, réquisitions (0-100) */
+  effort?: number;
+  /** Moral de l'arrière (0-100) : à zéro, le pays s'effondre */
+  morale?: number;
 }
 
 // ── Votes à l'Assemblée ─────────────────────────────────────

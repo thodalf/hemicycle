@@ -4,7 +4,7 @@ import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } fro
 import { retire, settleEndings, weeklyLife } from '../engine/life';
 import { weeklyGovernment } from '../engine/government';
 import { weeklyIntl } from '../engine/intl';
-import { monthlyWar } from '../engine/war';
+import { monthlyHostile, monthlyWar } from '../engine/war';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { autoMinigames } from '../engine/minigame';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
@@ -112,6 +112,7 @@ export class TurnService {
     weeklyPresidency(d, rng);
     weeklyGovernment(d, rng);
     weeklyIntl(d, rng);
+    monthlyHostile(d, rng);
     monthlyWar(d, rng);
     monthlyAssembly(d, rng);
     weeklyObjectives(d, rng);

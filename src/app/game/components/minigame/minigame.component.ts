@@ -7,6 +7,10 @@ import { FxService } from '../../services/fx.service';
 import { MotGameComponent } from './games/mot-game.component';
 import { GrilleGameComponent } from './games/grille-game.component';
 import { QuizGameComponent } from './games/quiz-game.component';
+import { ProtocoleGameComponent } from './games/protocole-game.component';
+import { TableGameComponent } from './games/table-game.component';
+import { InterceptionGameComponent } from './games/interception-game.component';
+import { DeminageGameComponent } from './games/deminage-game.component';
 
 type Phase = 'intro' | 'play' | 'over';
 
@@ -29,13 +33,14 @@ const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.
 const DURATION = 15000;
 
 /**
- * Les dix mini-jeux : poignées de main, applaudimètre, mémoire, tri,
- * marchandage, pointage, tournée, mot du jour, grille, quiz.
+ * Les quatorze mini-jeux : poignées de main, applaudimètre, mémoire, tri,
+ * marchandage, pointage, tournée, mot du jour, grille, quiz,
+ * protocole, plan de table, interception, déminage.
  * Chacun produit un score de 0 à 1.
  */
 @Component({
   selector: 'app-minigame',
-  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent],
+  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent, ProtocoleGameComponent, TableGameComponent, InterceptionGameComponent, DeminageGameComponent],
   templateUrl: './minigame.component.html',
   styleUrl: './minigame.component.scss',
 })
@@ -50,6 +55,8 @@ export class MinigameComponent {
   protected readonly message = signal('');
   protected readonly shake = signal(false);
   protected readonly tierLabels = TIER_LABELS;
+  /** Jeux qui affichent eux-mêmes leur progression */
+  protected readonly selfScored = new Set(['tournee', 'mot', 'quiz', 'grille', 'protocole', 'table', 'interception', 'deminage']);
   private timer: ReturnType<typeof setInterval> | null = null;
   private started = 0;
   private seq = 0;

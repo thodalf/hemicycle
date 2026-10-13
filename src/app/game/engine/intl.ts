@@ -40,6 +40,7 @@ export function initIntl(): IntlState {
   return {
     prestige: 40, tension: 30, crisis: null, treaties: 0,
     relations: Object.fromEntries(PARTNERS.map(p => [p.id, p.start])),
+    hostile: { karstanie: -35, meridia: -20, kantor: -40, zamerie: -30, valdovie: -10 },
   };
 }
 

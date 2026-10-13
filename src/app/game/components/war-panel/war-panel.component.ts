@@ -2,7 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { PARTNERS_BY_ID } from '../../engine/intl';
-import { leadsWar, warBalance } from '../../engine/war';
+import { leadsWar, theEnemy, warBalance } from '../../engine/war';
 import { durationLabel } from '../../engine/calendar';
 
 /** Le pays en guerre : ligne de front, opinion, pertes, alliés, journal des opérations */
@@ -13,8 +13,8 @@ import { durationLabel } from '../../engine/calendar';
     @if (game.s().war; as w) {
       <section class="card war">
         <div class="card-title">
-          <span class="title"><span class="smoke" aria-hidden="true"><i></i><i></i><i></i></span>En guerre {{ w.against }}</span>
-          <span class="chip bad">{{ months() }}</span>
+          <span class="title"><span class="smoke" aria-hidden="true"><i></i><i></i><i></i></span>{{ w.defensive ? 'La France attaquée par ' + enemyThe() : 'En guerre ' + w.against }}</span>
+          <span class="chips">@if (w.total) { <span class="chip total">Guerre totale</span> }<span class="chip bad">{{ months() }}</span></span>
         </div>
         <p class="casus muted">{{ w.casus }}</p>
 
@@ -25,7 +25,8 @@ import { durationLabel } from '../../engine/calendar';
             <span class="ours" [style.width.%]="w.front"></span>
             <span class="line" [style.left.%]="w.front"><i></i></span>
           </div>
-          <div class="ticks"><span>Défaite</span><span>Statu quo</span><span>Victoire</span></div>
+          <div class="ticks">@if (w.defensive) { <span>Capitulation</span><span>Frontière</span><span>Libération</span> } @else { <span>Défaite</span><span>Statu quo</span><span>Victoire</span> }</div>
+          @if (w.defensive && w.front < 50) { <p class="occupied">Territoire occupé : {{ (50 - w.front) * 2 | number: '1.0-0' }} % de la zone de combat</p> }
         </div>
 
         <div class="stats">
@@ -34,7 +35,14 @@ import { durationLabel } from '../../engine/calendar';
           <div><span class="eyebrow">Soldats tombés</span><strong class="mono">{{ w.losses | number: '1.0-0' }}</strong></div>
           <div><span class="eyebrow">Coût</span><strong class="mono">{{ w.cost | number: '1.1-1' }} Md€</strong></div>
           <div><span class="eyebrow">Rapport de force</span><strong [class.neg]="balance() < 0" [class.pos]="balance() > 0">{{ balanceLabel() }}</strong></div>
+          @if (w.morale !== undefined) {
+            <div><span class="eyebrow">Moral de l’arrière</span><strong class="mono" [class.neg]="w.morale < 30">{{ w.morale | number: '1.0-0' }}</strong>
+              <div class="track"><span [class.low]="w.morale < 30" [style.width.%]="w.morale"></span></div></div>
+            <div><span class="eyebrow">Effort de guerre</span><strong class="mono">{{ w.effort ?? 0 | number: '1.0-0' }}</strong>
+              <div class="track"><span class="eff" [style.width.%]="w.effort ?? 0"></span></div></div>
+          }
         </div>
+        @if (w.total) { <p class="muted small warn-total">Guerre totale : pertes et coûts décuplés, l’arrière s’use vite. Moral à zéro : effondrement du pays.</p> }
 
         @if (w.allies.length) {
           <div class="allies">@for (a of allies(); track a) { <span class="chip good">{{ a }}</span> }</div>
@@ -44,7 +52,7 @@ import { durationLabel } from '../../engine/calendar';
             <li [class]="'t-' + l.tone"><span class="mono">{{ game.month(l.week) }}</span> {{ l.text }}</li>
           }
         </ol>
-        <p class="muted small">{{ leads() ? 'Onglet Guerre : offensives, alliés, discours à la Nation, cessez-le-feu.' : 'La conduite de la guerre revient au président et au gouvernement.' }}</p>
+        <p class="muted small">{{ leads() ? 'Onglets Guerre et Effort de guerre : offensives, alliés, discours à la Nation, cessez-le-feu.' : 'La conduite de la guerre revient au président et au gouvernement. Onglet Effort de guerre : réserve, accueil des déplacés, défense civile.' }}</p>
       </section>
     }
   `,
@@ -71,6 +79,11 @@ import { durationLabel } from '../../engine/calendar';
       li { padding-left: 8px; border-left: 3px solid var(--line); } .mono { color: var(--ink-3); font-size: 11px; margin-right: 4px; }
       .t-positive { border-left-color: var(--good); } .t-negative { border-left-color: var(--bad); } }
     .small { font-size: 11.5px; margin: 0; }
+    .chips { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .chip.total { background: #3a1010; color: #ffd9cf; }
+    .occupied { margin: 2px 0 0; font-size: 12px; font-weight: 600; color: var(--bad); }
+    .eff { background: var(--warn) !important; }
+    .warn-total { color: var(--bad); }
     @media (prefers-reduced-motion: reduce) { .smoke i, .line i { animation: none; } }
   `,
 })
@@ -87,5 +100,6 @@ export class WarPanelComponent {
     const m = this.game.s().week - w.since;
     return m < 1 ? 'Depuis ce mois-ci' : `Depuis ${durationLabel(m)}`;
   });
+  protected readonly enemyThe = computed(() => theEnemy(this.game.s().war?.enemyId ?? ''));
   protected readonly allies = computed(() => (this.game.s().war?.allies ?? []).map(a => PARTNERS_BY_ID.get(a)?.name ?? a));
 }

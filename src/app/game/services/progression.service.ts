@@ -9,6 +9,8 @@ import { weeklyNationalBudget } from '../engine/budget';
 import { weeklyBankruptcy } from '../engine/bankruptcy';
 import { assetAp, dossierDecayFactor, weeklyAssets } from '../engine/patrimoine';
 import { monthlyLoans } from '../engine/loans';
+import { monthlySavings, partyLeaderPay } from '../engine/remuneration';
+import { civilActive, monthlyCivil } from '../engine/civil';
 import { staffMonthly, staffAp } from '../engine/staff-perks';
 import { GameStateService } from './game-state.service';
 
@@ -61,7 +63,11 @@ export class ProgressionService {
     const rank = RANKS[p.rankId];
 
     // Revenus du mois (part épargnée), salaires de l'équipe, mensualités des prêts
-    p.finances.personal += Math.round(rank.monthlyIncome * 0.35);
+    p.finances.personal += monthlySavings(d);
+    // Le parti paie son chef ou sa cheffe
+    const leadPay = partyLeaderPay(d);
+    if (leadPay && d.partyFinance) d.partyFinance.treasury -= leadPay / 1000;
+    monthlyCivil(d);
     const salaries = payroll(d);
     if (salaries) {
       spend(d, salaries);
@@ -89,7 +95,7 @@ export class ProgressionService {
       pushNews(d, 'systeme', 'negative', 'Burn-out', 'Vous annulez tous vos rendez-vous. Ce mois-ci, vos points d’action sont divisés par deux.');
     }
     const bonus = Number(p.flags['bonusAp'] ?? 0) + (p.staff.includes('directeur_campagne') && p.finances.legalCeiling !== null ? 1 : 0)
-      + countTrait(d, 'bourreau') + assetAp(d) + staffAp(d);
+      + countTrait(d, 'bourreau') + assetAp(d) + staffAp(d) - (civilActive(d) ? 1 : 0);
     p.flags['bonusAp'] = 0;
     p.actionPoints.max = rank.monthlyActionPoints + bonus;
     p.actionPoints.current = burnout ? Math.ceil(p.actionPoints.max / 2) : p.actionPoints.max;

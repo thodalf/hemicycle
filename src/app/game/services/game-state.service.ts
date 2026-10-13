@@ -1,3 +1,4 @@
+import { initHostile, startInvasion, startWar } from '../engine/war';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { DOMAINS, GameState, StatKey } from '../models/game.models';
@@ -124,6 +125,8 @@ export function migrate(s: GameState): GameState {
   s.voteHistory ??= [];
   s.minigames ??= [];
   s.alien ??= null;
+  s.player.civil ??= null;
+  s.intl.hostile ??= initHostile();
   migrateLoans(s);
   if (!s.presidential) {
     s.presidential = initPresidential(s);
@@ -193,6 +196,8 @@ export class GameStateService {
     const state = createInitialState(opts);
     weeklyObjectives(state, new Rng(state));
     ensurePartyFinance(state);
+    if (opts.scenario === 'invasion') startInvasion(state, 'karstanie');
+    if (opts.scenario === 'guerre_totale') { startWar(state, 'meridia', true, { total: true }); if (state.war) { state.war.front = 47; state.war.morale = 58; } }
     state.news.push(opts.scenario === 'bercy'
       ? {
         id: 'news-0', week: 1, kind: 'actu', tone: 'neutral',
@@ -216,6 +221,18 @@ export class GameStateService {
         id: 'news-0', week: 1, kind: 'actu', tone: 'neutral',
         title: `${state.player.name} fait ses débuts à ${state.press.outlet}`,
         body: 'Pigiste pour commencer. Objectif : diriger la rédaction et faire l’opinion (audience 65, influence 60).',
+      }
+      : opts.scenario === 'invasion'
+      ? {
+        id: 'news-0', week: 1, kind: 'actu', tone: 'negative',
+        title: `${state.player.name}, ministre de l’Intérieur d’un pays attaqué`,
+        body: 'La Karstanie a frappé à l’aube. Défendre le territoire, tenir l’arrière, rallier les alliés : objectif, la libération.',
+      }
+      : opts.scenario === 'guerre_totale'
+      ? {
+        id: 'news-0', week: 1, kind: 'actu', tone: 'negative',
+        title: `${state.player.name}, président·e d’une France en guerre totale`,
+        body: 'La Méridia a choisi l’escalade : mobilisation générale, économie de guerre, moral de l’arrière à tenir. Objectif : la victoire, sans que le pays s’effondre.',
       }
       : opts.scenario === 'contact'
       ? {

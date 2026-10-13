@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { PARTNERS, intlPower, intlRelevant, relationLabel } from '../../engine/intl';
+import { ENEMIES, hostileLabel } from '../../engine/war';
 
 /** Politique internationale : prestige, tensions, relations, crise en cours */
 @Component({
@@ -41,6 +42,17 @@ import { PARTNERS, intlPower, intlRelevant, relationLabel } from '../../engine/i
             </li>
           }
         </ul>
+        <div class="hostile-head"><span class="eyebrow">États hostiles</span><span class="muted tiny">sous −80 : risque d’attaque</span></div>
+        <ul class="partners hostile">
+          @for (h of hostile(); track h.id) {
+            <li [title]="h.label" [class.danger]="h.value <= -65">
+              <span class="name">{{ h.name }}</span>
+              <span class="bar"><span class="mid"></span><span class="limit" aria-hidden="true"></span>
+                <span class="val" [class.neg]="h.value < 0" [style.left.%]="h.value < 0 ? 50 + h.value / 2 : 50" [style.width.%]="Math.abs(h.value) / 2"></span></span>
+              <span class="mono">{{ h.value > 0 ? '+' : '' }}{{ h.value | number: '1.0-0' }}</span>
+            </li>
+          }
+        </ul>
         <p class="muted small">{{ w().treaties }} accord(s) de paix signé(s). Le prestige nourrit votre influence{{ isPresident() ? ' et votre cote' : '' }} ; les tensions, la menace d’attentat.</p>
       </section>
     }
@@ -68,6 +80,10 @@ import { PARTNERS, intlPower, intlRelevant, relationLabel } from '../../engine/i
     .val { position: absolute; top: 0; bottom: 0; background: var(--good); border-radius: 3px; transition: all .4s; }
     .val.neg { background: var(--bad); }
     .small { font-size: 11.5px; margin: 0; }
+    .hostile-head { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px; }
+    .tiny { font-size: 11px; }
+    .limit { position: absolute; left: 10%; top: -3px; bottom: -3px; width: 2px; background: var(--bad); opacity: .6; }
+    .hostile li.danger .name { color: var(--bad); font-weight: 600; }
   `,
 })
 export class WorldPanelComponent {
@@ -77,6 +93,10 @@ export class WorldPanelComponent {
   protected readonly relevant = computed(() => intlRelevant(this.game.s()));
   protected readonly power = computed(() => intlPower(this.game.s()));
   protected readonly isPresident = computed(() => !!this.game.s().presidency);
+  protected readonly hostile = computed(() => ENEMIES.map(e => {
+    const value = Math.round(this.w().hostile?.[e.id] ?? 0);
+    return { id: e.id, name: e.name, value, label: hostileLabel(value) };
+  }));
   protected readonly partners = computed(() => PARTNERS.map(p => {
     const value = Math.round(this.w().relations[p.id] ?? 0);
     return { id: p.id, name: p.name, value, label: relationLabel(value) };

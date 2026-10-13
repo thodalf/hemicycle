@@ -4,6 +4,7 @@ import { ALIEN_PHASES } from '../engine/alien';
 import { boostMedia } from '../engine/staff-perks';
 import { queueMinigame } from '../engine/minigame';
 import { leadsWar, warPowerBlock } from '../engine/war';
+import { civilActive } from '../engine/civil';
 import { STAFF_BY_ROLE } from '../data/staff';
 import {
   ActionCategory, ActionDefinition, Domain, GameState, Payer, PlannedAction,
@@ -88,6 +89,8 @@ export class ActionPlannerService {
       if (a.category === 'infiltration') return !!s.mole;
       if (a.category === 'contact') return !!s.alien;
       if (a.category === 'elysee') return !!s.presidency;
+      if (a.category === 'arriere') return !!s.war;
+      if (a.category === 'administration') return civilActive(s);
       if (a.category === 'international' && !intlRelevant(s)) return false;
       if (a.category === 'international' && rankOrder(a.minRank) >= rankOrder('ministre') && rankOrder(s.player.rankId) >= rankOrder('ministre') && !intlPower(s)) return false;
       if (a.onlyRanks && !a.onlyRanks.includes(s.player.rankId)) return false;
@@ -129,6 +132,10 @@ export class ActionPlannerService {
       if (req.war && !s.war) return { ok: false, reason: 'Le pays n’est pas en guerre' };
       if (req.war && !leadsWar(s)) return { ok: false, reason: 'Le président, le Premier ministre et les ministres régaliens conduisent la guerre' };
       if (req.peace && s.war) return { ok: false, reason: 'Le pays est déjà en guerre' };
+      if (req.homeFront && !s.war) return { ok: false, reason: 'Le pays n’est pas en guerre' };
+      if (req.totalWar && !s.war?.total) return { ok: false, reason: 'Seulement en guerre totale' };
+      if (req.civil === true && !civilActive(s)) return { ok: false, reason: 'Réservé aux hauts fonctionnaires en poste' };
+      if (req.civil === false && s.player.civil) return { ok: false, reason: 'Vous êtes déjà haut fonctionnaire' };
       if (req.warPower) { const why = warPowerBlock(s); if (why) return { ok: false, reason: why }; }
       if (req.staff && !s.player.staff.includes(req.staff)) return { ok: false, reason: `Il faut un·e ${STAFF_BY_ROLE.get(req.staff)?.title.toLowerCase()} dans l’équipe` };
       if (req.asset && !owns(s, req.asset)) {

@@ -1489,6 +1489,197 @@ const RAW_ACTIONS: ActionDefinition[] = [
     effects: [{ kind: 'vote', own: true }, { kind: 'stat', stat: 'credibility', delta: 1 }],
   },
 
+  // ── Cérémonies et tables ───────────────────────────────
+  {
+    id: 'banquet_maires', minigame: 'banquet_maires', label: 'Réunir les maires autour d’un banquet', category: 'reseau', minRank: 'conseiller_municipal',
+    description: 'Une salle des fêtes, une blanquette, et trente maires qui ne s’adressent plus la parole depuis la dernière intercommunalité.',
+    cost: { ap: 1, energy: 10, money: 400 }, cooldown: 4,
+    effects: [{ kind: 'contact', contactId: 'ct-maires', trust: 6 }, { kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+  },
+  {
+    id: 'commemoration', minigame: 'protocole', label: 'Présider une commémoration', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Monument aux morts, porte-drapeaux, enfants des écoles : chaque geste compte, et les anciens combattants ne pardonnent pas les faux pas.',
+    cost: { ap: 1, energy: 6 }, cooldown: 3,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  },
+  {
+    id: 'accueil_chef_etat', minigame: 'visite_etat', label: 'Accueillir un chef d’État étranger', category: 'international', minRank: 'ministre', target: 'partner',
+    description: 'Tapis rouge, garde républicaine, hymnes : le protocole d’une visite d’État ne tolère aucune improvisation.',
+    cost: { ap: 2, energy: 10 }, cooldown: 4,
+    effects: [{ kind: 'intl', partner: '$target', relation: 8, prestige: 2 }, { kind: 'stat', stat: 'influence', delta: 2 }],
+  },
+  {
+    id: 'diner_etat', minigame: 'plan_table', label: 'Donner un dîner d’État', category: 'elysee', minRank: 'president', target: 'partner',
+    description: 'Salle des fêtes de l’Élysée, deux cents couverts, et un plan de table qui peut sceller une alliance… ou déclencher un incident.',
+    cost: { ap: 2, energy: 10, money: 0 }, cooldown: 4,
+    effects: [{ kind: 'intl', partner: '$target', relation: 10, prestige: 3 }, { kind: 'presidency', approval: 1 }],
+  },
+  {
+    id: 'jdc', label: 'Intervenir à une journée défense et citoyenneté', category: 'terrain', minRank: 'militant',
+    description: 'Deux cents jeunes de dix-sept ans, une caserne, et vingt minutes pour leur parler d’engagement.',
+    cost: { ap: 1, energy: 6 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'securite', delta: 2 }, { kind: 'dossier', domain: 'education', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+  },
+
+  // ── Haute fonction publique ─────────────────────────────
+  {
+    id: 'concours_insp', minigame: 'concours_insp', label: 'Passer le concours de l’INSP', category: 'dossiers', minRank: 'militant', onlyRanks: ['militant', 'conseiller_municipal'],
+    requires: { civil: false },
+    description: 'Un an de préparation, des épreuves de culture générale et de droit public, un grand oral. Le classement de sortie décide du corps : préfectoral, diplomatique, ou les « grands corps ».',
+    cost: { ap: 3, energy: 25, money: 400 }, cooldown: 12,
+    effects: [{ kind: 'civil', join: 'classement' }, { kind: 'stat', stat: 'credibility', delta: 3 }],
+  },
+  {
+    id: 'adm_note', label: 'Rédiger une note au ministre', category: 'administration', minRank: 'militant', requires: { civil: true },
+    description: 'Quatre pages, pas une de plus : le diagnostic, les options, une recommandation. Le cabinet la lira peut-être.',
+    cost: { ap: 1, energy: 8 }, cooldown: 1,
+    effects: [{ kind: 'civil', study: 4 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  {
+    id: 'adm_rapport', minigame: 'fiches', label: 'Rendre un rapport d’inspection', category: 'administration', minRank: 'militant', requires: { civil: true },
+    description: 'Trois mois d’enquête, des dizaines d’auditions, des constats qui fâchent. Le rapport fera date… ou dormira dans un tiroir.',
+    cost: { ap: 2, energy: 14 }, cooldown: 3,
+    effects: [{ kind: 'civil', study: 7 }, { kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 1 }],
+  },
+  {
+    id: 'adm_crise', label: 'Piloter une cellule de crise', category: 'administration', minRank: 'militant', requires: { civil: true },
+    description: 'Inondations, émeute, grève des raffineries : vous coordonnez les services de l’État jusqu’à trois heures du matin.',
+    cost: { ap: 2, energy: 16 }, cooldown: 3,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 4 }, { kind: 'stat', stat: 'popularity', delta: 1 }, { kind: 'civil', study: 3 }, { kind: 'stat', stat: 'stress', delta: 5 }],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [{ kind: 'stat', stat: 'credibility', delta: -5 }, { kind: 'exposure', delta: 2 }], failureNews: 'La crise vous échappe : le ministre vous désavoue en public.' },
+  },
+  {
+    id: 'adm_reseau', label: 'Déjeuner des anciens de la promotion', category: 'administration', minRank: 'militant', requires: { civil: true },
+    description: 'Ils sont directeurs d’administration, banquiers, préfets. On se tutoie depuis l’école ; on se rend service depuis toujours.',
+    cost: { ap: 1, energy: 5, money: 90 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'stat', stat: 'politicalCapital', delta: 3 }],
+  },
+  {
+    id: 'adm_promotion', label: 'Briguer un poste plus élevé', category: 'administration', minRank: 'militant', requires: { civil: true },
+    description: 'Un poste se libère. Il faut l’appui du directeur, du cabinet, et un dossier impeccable.',
+    cost: { ap: 2, energy: 10, politicalCapital: 15 }, cooldown: 6,
+    effects: [{ kind: 'civil', grade: 1 }, { kind: 'stat', stat: 'influence', delta: 2 }],
+    risk: { baseChance: 0.45, scaleWith: 'credibility', scaleWeight: 0.6, onFailure: [{ kind: 'stat', stat: 'stress', delta: 6 }, { kind: 'stat', stat: 'influence', delta: -1 }], failureNews: 'Le poste est attribué à un proche du cabinet. Vous rongez votre frein.' },
+  },
+  {
+    id: 'adm_pantoufle', label: 'Pantoufler dans le privé', category: 'administration', minRank: 'militant', requires: { civil: true },
+    description: 'Une banque d’affaires vous offre trois fois votre traitement. Il faudra démissionner, et la presse parlera de « pantouflage ».',
+    cost: { ap: 2, energy: 6 }, cooldown: 12,
+    effects: [{ kind: 'civil', leave: true }, { kind: 'funds', account: 'personal', delta: 35000 }, { kind: 'stat', stat: 'credibility', delta: -3 }, { kind: 'exposure', delta: 4 }],
+  },
+
+  // ── États hostiles ─────────────────────────────────────
+  {
+    id: 'apaiser_etat', label: 'Apaiser un État hostile', category: 'international', minRank: 'depute', target: 'enemy',
+    description: 'Émissaires discrets, gestes symboliques, une conférence à Genève : faire baisser la fièvre avant qu’il ne soit trop tard.',
+    cost: { ap: 2, energy: 10, politicalCapital: 8 }, cooldown: 3,
+    effects: [{ kind: 'hostile', enemy: '$target', delta: 12 }, { kind: 'intl', tension: -3 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.5, onFailure: [{ kind: 'hostile', enemy: '$target', delta: -5 }], failureNews: 'Le régime publie vos échanges et vous accuse de duplicité.' },
+  },
+  {
+    id: 'sanctionner_etat', label: 'Réclamer des sanctions contre un État hostile', category: 'international', minRank: 'depute', target: 'enemy',
+    description: 'Gel des avoirs, embargo, expulsion de diplomates : l’opinion applaudit, le régime enrage.',
+    cost: { ap: 1, energy: 6 }, cooldown: 3,
+    effects: [{ kind: 'hostile', enemy: '$target', delta: -10 }, { kind: 'intl', prestige: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  },
+
+  // ── Effort de guerre (tout le monde, en temps de guerre) ─
+  {
+    id: 'ar_reserve', label: 'S’engager dans la réserve', category: 'arriere', minRank: 'militant', requires: { homeFront: true },
+    description: 'Uniforme, paquetage, trois semaines de garde sur un site sensible. Vous montrez l’exemple.',
+    cost: { ap: 2, energy: 16 }, cooldown: 4,
+    effects: [{ kind: 'war', front: 1, support: 2, morale: 2 }, { kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
+    risk: { baseChance: 0.1, onFailure: [{ kind: 'health', delta: -10 }, { kind: 'stat', stat: 'stress', delta: 10 }], failureNews: 'Blessé·e lors d’une alerte : rapatriement à l’hôpital militaire.' },
+  },
+  {
+    id: 'ar_accueil', label: 'Organiser l’accueil des déplacés', category: 'arriere', minRank: 'militant', requires: { homeFront: true },
+    description: 'Gymnases, familles d’accueil, cantines solidaires : des milliers de personnes fuient les zones de combat.',
+    cost: { ap: 1, energy: 12, money: 300 }, cooldown: 2,
+    effects: [{ kind: 'war', morale: 3 }, { kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'dossier', domain: 'social', delta: 3 }],
+  },
+  {
+    id: 'ar_collecte', label: 'Collecte pour les familles de soldats', category: 'arriere', minRank: 'militant', requires: { homeFront: true },
+    description: 'Une cagnotte, des concerts, des marchés solidaires : l’arrière soutient le front.',
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
+    effects: [{ kind: 'war', support: 2, morale: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  },
+  {
+    id: 'ar_defense_civile', minigame: 'interception', label: 'Exercice de défense civile', category: 'arriere', minRank: 'conseiller_municipal', requires: { homeFront: true },
+    description: 'Sirènes, abris, détection des drones : préparer la population sans l’affoler.',
+    cost: { ap: 1, energy: 10 }, cooldown: 2,
+    effects: [{ kind: 'war', morale: 4 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'dossier', domain: 'securite', delta: 2 }],
+  },
+  {
+    id: 'ar_deminage', minigame: 'deminage', label: 'Accompagner les démineurs', category: 'arriere', minRank: 'militant', requires: { homeFront: true },
+    description: 'Des munitions non explosées jonchent les zones bombardées. Les démineurs de la Sécurité civile vous emmènent.',
+    cost: { ap: 1, energy: 12 }, cooldown: 3,
+    effects: [{ kind: 'war', morale: 3 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+  {
+    id: 'ar_union', label: 'Appeler à l’union nationale', category: 'arriere', minRank: 'depute', requires: { homeFront: true },
+    description: 'À la tribune, vous suspendez les querelles partisanes le temps de la guerre. Certains dans votre camp grincent des dents.',
+    cost: { ap: 1, energy: 6 }, cooldown: 4,
+    effects: [{ kind: 'war', support: 4, morale: 3 }, { kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'cohesion', delta: -2 }],
+  },
+  {
+    id: 'ar_hopital', label: 'Visiter les blessés à l’hôpital militaire', category: 'arriere', minRank: 'conseiller_municipal', requires: { homeFront: true },
+    description: 'Percy, Bégin, le Val-de-Grâce de campagne : des soldats de vingt ans, des familles en larmes.',
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
+    effects: [{ kind: 'war', support: 2, morale: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'stress', delta: 3 }],
+  },
+  {
+    id: 'ar_usine', label: 'Visiter une usine d’armement', category: 'arriere', minRank: 'depute', requires: { homeFront: true },
+    description: 'Trois-huit, chaînes qui tournent jour et nuit : vous saluez les ouvriers qui fabriquent les obus.',
+    cost: { ap: 1, energy: 8 }, cooldown: 2,
+    effects: [{ kind: 'war', effort: 4 }, { kind: 'dossier', domain: 'economie', delta: 2 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+  },
+
+  // ── Guerre totale (direction de la guerre) ─────────────
+  {
+    id: 'gt_requisitions', label: 'Réquisitionner l’industrie', category: 'guerre', minRank: 'ministre', requires: { war: true, totalWar: true },
+    description: 'Les usines automobiles produisent des blindés, les chimistes des explosifs. Les patrons protestent.',
+    cost: { ap: 2, energy: 10, politicalCapital: 10 }, cooldown: 3,
+    effects: [{ kind: 'war', effort: 12, morale: -3 }, { kind: 'stat', stat: 'popularity', delta: -1 }],
+  },
+  {
+    id: 'gt_rationnement', label: 'Instaurer le rationnement', category: 'guerre', minRank: 'ministre', requires: { war: true, totalWar: true },
+    description: 'Tickets pour l’essence, le sucre et la viande. Le marché noir n’attendra pas.',
+    cost: { ap: 1, energy: 8 }, cooldown: 4,
+    effects: [{ kind: 'war', effort: 6, morale: -4 }, { kind: 'dossier', domain: 'economie', delta: 2 }],
+  },
+  {
+    id: 'gt_conscription', label: 'Rappeler les classes d’âge', category: 'guerre', minRank: 'ministre', requires: { war: true, totalWar: true },
+    description: 'Les jeunes de 18 à 25 ans sont appelés sous les drapeaux. Les familles s’inquiètent.',
+    cost: { ap: 2, energy: 12, politicalCapital: 12 }, cooldown: 4,
+    effects: [{ kind: 'war', front: 5, losses: 200, morale: -5 }, { kind: 'flagAdd', key: 'warBoost', delta: 8 }],
+  },
+  {
+    id: 'gt_union', label: 'Former un gouvernement d’union nationale', category: 'guerre', minRank: 'ministre', requires: { war: true, totalWar: true },
+    description: 'Des ministres de tous les partis autour de la même table : l’arrière se ressoude.',
+    cost: { ap: 2, energy: 10, politicalCapital: 20 }, cooldown: 12,
+    effects: [{ kind: 'war', morale: 10, support: 6 }, { kind: 'cohesion', delta: -5 }, { kind: 'stat', stat: 'influence', delta: 3 }],
+  },
+  {
+    id: 'gt_censure', label: 'Contrôler l’information', category: 'guerre', minRank: 'ministre', requires: { war: true, totalWar: true },
+    description: 'Les communiqués de l’état-major remplacent les reportages. Les pertes ne font plus la une.',
+    cost: { ap: 1, energy: 6 }, cooldown: 3,
+    effects: [{ kind: 'war', morale: 6 }, { kind: 'stat', stat: 'credibility', delta: -3 }],
+    risk: { baseChance: 0.25, onFailure: [{ kind: 'war', morale: -6 }, { kind: 'exposure', delta: 6 }], failureNews: 'Un média étranger publie les vrais chiffres des pertes. Colère dans le pays.' },
+  },
+  {
+    id: 'gt_dissuasion', label: 'Rappeler la doctrine de dissuasion', category: 'guerre', minRank: 'ministre', requires: { war: true, totalWar: true },
+    description: 'Une phrase, à la télévision, sur les « intérêts vitaux » de la Nation. Le monde retient son souffle.',
+    cost: { ap: 1, energy: 8, politicalCapital: 15 }, cooldown: 6,
+    effects: [{ kind: 'war', front: 6 }, { kind: 'hostile', enemy: '$war', delta: 10 }, { kind: 'intl', tension: 10 }],
+    risk: { baseChance: 0.3, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [{ kind: 'intl', tension: 15, prestige: -6 }, { kind: 'war', morale: -5 }], failureNews: 'Vos alliés désavouent publiquement votre déclaration. Panique sur les marchés.' },
+  },
+  {
+    id: 'gt_interception', minigame: 'interception', label: 'Diriger la défense antiaérienne', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    description: 'Une nuit au centre de commandement : missiles et drones arrivent par vagues, chaque interception sauve une ville.',
+    cost: { ap: 1, energy: 12 }, cooldown: 2,
+    effects: [{ kind: 'war', morale: 5, support: 3, front: 1 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+  },
+
   // ── Guerre ──────────────────────────────────────────────
   {
     id: 'declarer_guerre', label: 'Déclarer la guerre', category: 'international', minRank: 'ministre', target: 'enemy',
@@ -1727,7 +1918,9 @@ export function effectValue(e: Effect): number {
     case 'lodge': return 0.3 * ((e.fraternite ?? 0) + (e.discretion ?? 0) + (e.planches ?? 0) * 5);
     case 'mole': return 0.4 * ((e.intel ?? 0) + (e.cover ?? 0) + (e.sabotage ?? 0));
     case 'alien': return 0.5 * ((e.comprehension ?? 0) + (e.confiance ?? 0)) - 0.4 * ((e.panique ?? 0) + (e.rivalite ?? 0));
-    case 'war': return 0.5 * (e.front ?? 0) + 0.3 * (e.support ?? 0) - 0.01 * (e.losses ?? 0);
+    case 'war': return 0.5 * (e.front ?? 0) + 0.3 * (e.support ?? 0) - 0.01 * (e.losses ?? 0) + 0.3 * (e.effort ?? 0) + 0.3 * (e.morale ?? 0);
+    case 'hostile': return 0.2 * e.delta;
+    case 'civil': return (e.join ? 8 : 0) + (e.grade ?? 0) * 6 + (e.study ?? 0) * 0.3;
     default: return 0;
   }
 }

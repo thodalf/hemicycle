@@ -58,6 +58,7 @@ interface Asked { cat: QuizCategory; q: string; options: string[]; answer: strin
     </div>
   `,
   styles: `
+    :host { display: block; width: 100%; }
     .quiz { display: grid; gap: 10px; }
     .top { display: flex; gap: 14px; align-items: center; }
     .pie { width: 96px; height: 96px; flex: none; }

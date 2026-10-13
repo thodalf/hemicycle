@@ -120,9 +120,22 @@ export function describeEffect(e: Effect): EffectChip[] {
       if (e.losses) out.push({ text: `${e.losses.toLocaleString('fr-FR')} soldats tombés`, tone: 'bad' });
       if (e.ally) out.push({ text: 'Tente de rallier un allié', tone: 'neutral' });
       if (e.peace) out.push({ text: 'Fin de la guerre', tone: 'neutral' });
+      if (e.invade) out.push({ text: 'La France est attaquée', tone: 'bad' });
+      if (e.total) out.push({ text: 'Guerre totale', tone: 'bad' });
+      if (e.effort) out.push({ text: `${n(e.effort)} effort de guerre`, tone: tone(e.effort) });
+      if (e.morale) out.push({ text: `${n(e.morale)} moral de l’arrière`, tone: tone(e.morale) });
       return out;
     }
     case 'vote': return [{ text: 'Scrutin à l’Assemblée', tone: 'neutral' }];
+    case 'hostile': return [{ text: `${n(e.delta)} relations ${e.enemy === 'all' ? 'avec les États hostiles' : 'avec l’État visé'}`, tone: tone(e.delta) }];
+    case 'civil': {
+      const out: EffectChip[] = [];
+      if (e.join) out.push({ text: e.join === 'classement' ? 'Concours : le classement décide du corps' : 'Entrée dans la haute fonction publique', tone: 'good' });
+      if (e.grade) out.push({ text: e.grade > 0 ? 'Promotion dans le corps' : 'Rétrogradation', tone: tone(e.grade) });
+      if (e.leave) out.push({ text: 'Quitte la fonction publique', tone: 'neutral' });
+      if (e.study) out.push({ text: `+${e.study} dossier du corps`, tone: 'good' });
+      return out;
+    }
     case 'alien': {
       const out: EffectChip[] = [];
       if (e.join) out.push({ text: 'Dossier du Premier contact', tone: 'neutral' });

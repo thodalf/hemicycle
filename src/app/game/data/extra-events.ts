@@ -571,4 +571,87 @@ export const EXTRA_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'ceremonie_11_novembre', weight: 1.5, minRank: 'conseiller_municipal',
+    eligible: d => monthIndex(d.week) === 10,
+    build: () => ({
+      title: 'La cérémonie du 11 Novembre',
+      context: 'Le maire vous a demandé de présider la cérémonie au monument aux morts. Les anciens combattants observent chaque geste.',
+      choices: [
+        c('presider', 'Présider la cérémonie', [play('protocole', 'Le 11 Novembre', [s('credibility', 3), s('popularity', 2)], [s('credibility', -2), s('stress', 3)])], 'Les porte-drapeaux se mettent en place.'),
+        c('assister', 'Assister au second rang', [s('popularity', 1)], 'Vous chantez la Marseillaise avec les enfants des écoles.'),
+      ],
+    }),
+  },
+  {
+    tag: 'diner_officiel', weight: 0.7, minRank: 'ministre',
+    build: () => ({
+      title: 'Le plan de table du dîner officiel',
+      context: 'Le chef du protocole est malade. Ce soir, deux cents invités, dont des ennemis jurés, et c’est à vous de faire le plan de table.',
+      choices: [
+        c('placer', 'S’en charger personnellement', [play('plan_table', 'Le dîner officiel', [s('influence', 3), { kind: 'intl', prestige: 2 }], [s('influence', -2), { kind: 'intl', prestige: -1 }])], 'Vous dépliez le plan de la salle des fêtes.'),
+        c('deleguer', 'Confier la tâche à votre cabinet', [s('stress', -1)], 'Un ambassadeur se retrouve à côté des cuisines. Il s’en souviendra.'),
+      ],
+    }),
+  },
+  {
+    tag: 'banquet_republicain', weight: 0.6, minRank: 'conseiller_municipal',
+    build: () => ({
+      title: 'Le banquet républicain',
+      context: 'Pour le 14 Juillet, la commune organise un banquet. Les organisateurs vous laissent le plan de table… et les maires brouillés.',
+      choices: [
+        c('placer', 'Faire le plan de table', [play('banquet_maires', 'Le banquet républicain', [{ kind: 'contact', contactId: 'ct-maires', trust: 5 }, s('popularity', 2)])], 'Vous sortez votre stylo et une nappe en papier.'),
+        c('libre', 'Placement libre', [s('popularity', 1), { kind: 'contact', contactId: 'ct-maires', trust: -2 }], 'Deux maires en viennent presque aux mains au dessert.'),
+      ],
+    }),
+  },
+  {
+    tag: 'visite_chef_etat', weight: 0.6, minRank: 'depute',
+    build: () => ({
+      title: 'Une visite d’État dans votre région',
+      context: 'Un président étranger fait étape dans votre ville. Le préfet vous demande de l’accueillir sur le parvis de l’hôtel de ville.',
+      choices: [
+        c('accueillir', 'L’accueillir selon le protocole', [play('visite_etat', 'Les honneurs sur le parvis', [s('influence', 2), s('credibility', 2), { kind: 'intl', prestige: 1 }])], 'La garde se met au garde-à-vous.'),
+        c('decliner', 'Laisser le préfet s’en charger', [], 'Vous suivez la visite à la télévision régionale.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tour_exterieur', weight: 0.7, minRank: 'militant',
+    eligible: d => !d.player.civil && ['militant', 'conseiller_municipal'].includes(d.player.rankId) && d.player.stats.credibility >= 40 && d.player.age >= 30,
+    build: () => ({
+      title: 'Une nomination au tour extérieur',
+      context: 'Le gouvernement cherche des profils venus de la société civile. On vous propose d’entrer dans la haute fonction publique sans passer le concours.',
+      choices: [
+        c('accepter', 'Accepter la nomination', [{ kind: 'civil', join: 'tour' }, s('credibility', 2)], 'Le décret paraît au Journal officiel. Certains crient au « recasage ».'),
+        c('refuser', 'Rester libre', [s('influence', -1)], 'Vous préférez garder votre liberté de parole.'),
+      ],
+    }),
+  },
+  {
+    tag: 'devoir_reserve', weight: 0.8, minRank: 'militant',
+    eligible: d => !!d.player.civil && ['militant', 'conseiller_municipal'].includes(d.player.rankId),
+    build: () => ({
+      title: 'Le devoir de réserve',
+      context: 'Votre directeur vous convoque : vos prises de position publiques « posent problème » à un haut fonctionnaire. Il exige plus de discrétion.',
+      choices: [
+        c('discretion', 'Promettre la discrétion', [s('credibility', 1), s('popularity', -1)], 'Vous lissez vos tweets. Vos militants s’impatientent.'),
+        c('assumer', 'Assumer votre engagement', [s('popularity', 2), { kind: 'civil', grade: -1 }], 'Mutation dans un service moins exposé. Votre parti salue votre courage.', {
+          risk: { baseChance: 0.5, onFailure: [{ kind: 'stat', stat: 'stress', delta: 4 }], failureNews: 'Un avertissement est versé à votre dossier.' },
+        }),
+      ],
+    }),
+  },
+  {
+    tag: 'mutation_outremer', weight: 0.6, minRank: 'militant',
+    eligible: d => !!d.player.civil && ['militant', 'conseiller_municipal'].includes(d.player.rankId) && (d.player.civil?.grade ?? 0) < 3,
+    build: () => ({
+      title: 'Une mutation outre-mer',
+      context: 'On vous propose un poste à responsabilité à La Réunion, avec une promotion à la clé. Il faudra s’éloigner de votre circonscription.',
+      choices: [
+        c('partir', 'Accepter la mutation', [{ kind: 'civil', grade: 1 }, s('influence', -2), s('stress', 3)], 'Deux ans loin de la métropole : votre réseau local s’effrite, votre dossier s’étoffe.'),
+        c('rester', 'Décliner', [s('influence', 1)], 'Votre directeur prend note. Pour l’avancement, il faudra attendre.'),
+      ],
+    }),
+  },
 ];

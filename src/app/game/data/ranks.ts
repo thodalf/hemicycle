@@ -22,7 +22,7 @@ export const RANKS: Record<RankId, RankDefinition> = {
     promotion: { via: 'nomination', occasion: 'Congrès du parti', to: 'chef_parti', requires: { influence: 65 }, minPartySupport: 55 },
   },
   chef_parti: {
-    id: 'chef_parti', label: 'Chef·fe de parti', order: 4, monthlyActionPoints: 8, monthlyIncome: 10600,
+    id: 'chef_parti', label: 'Chef·fe de parti', order: 4, monthlyActionPoints: 8, monthlyIncome: 6200,
     promotion: { via: 'election', election: 'primaire', to: 'candidat_presidence', requires: { popularity: 50, credibility: 50 } },
   },
   candidat_presidence: {
@@ -61,5 +61,5 @@ export const PARRAINAGES_REQUIRED = 500;
 export const DECLARE_WINDOW = 18;
 /** Âge de départ selon le scénario */
 export const START_AGE: Record<string, number> = {
-  carriere: 26, presidentielle: 52, bercy: 47, royaute: 45, franc_macon: 38, editorialiste: 31, infiltre: 27, contact: 41,
+  carriere: 26, presidentielle: 52, bercy: 47, royaute: 45, franc_macon: 38, editorialiste: 31, infiltre: 27, contact: 41, invasion: 49, guerre_totale: 56,
 };

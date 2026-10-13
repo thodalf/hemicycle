@@ -51,6 +51,19 @@ Standalone components, zoneless, Signals partout.
 
 ## Mécaniques
 
+- **Rémunération** (`engine/remuneration.ts`, panneau Profil) : le détail du mois — salaire du métier, indemnité de
+  l’élu·e ou traitement du ministre, **salaire de chef·fe de parti** (versé par le parti, de 2 500 € à 6 500 € selon
+  votre soutien interne, prélevé sur sa trésorerie), **traitement de haut fonctionnaire**, salaire de journaliste,
+  loyers — avec la rémunération totale, la part mise de côté, les charges (équipe, prêts, biens) et le solde du mois.
+- **Haute fonction publique** (`engine/civil.ts`) : cinq corps (préfectoral, Conseil d’État, Inspection des finances,
+  diplomatique, Cour des comptes), quatre grades chacun (de sous-préfet·e à préfet·e de région, de secrétaire des
+  affaires étrangères à ambassadeur·rice…), traitement de 4 200 € à 10 200 €. On y entre par le **concours de l’INSP**
+  (mini-jeu : « Réussi » pour être reçu·e, « Brillant » pour les grands corps) ou au **tour extérieur** (événement).
+  En poste : un point d’action en moins, de la crédibilité et du dossier chaque mois, avancement à l’ancienneté.
+  Pendant un mandat national, **disponibilité** sans traitement. Onglet **Administration** : note au ministre,
+  rapport d’inspection (mini-jeu), cellule de crise, déjeuner de promotion, briguer un poste, pantoufler dans le privé.
+  Événements : devoir de réserve, mutation outre-mer.
+
 - **Un mois par tour** (`engine/calendar.ts`) : le tour 1 est janvier 2027, la date s’affiche en mois (« mars 2029 »),
   bandeau de saison sur l’agenda, page de calendrier qui tourne en fin de mois et feux d’artifice au Nouvel An.
   L’âge avance d’un douzième d’an par tour, les risques de mort sont mensuels, salaires, revenus, loyers, entretiens et
@@ -58,7 +71,7 @@ Standalone components, zoneless, Signals partout.
   (municipales), 5 (législatives, présidentielle) et 3 mois (primaire) ; présidentielle tous les 60 mois. Les anciennes
   parties hebdomadaires sont converties à l’ouverture (dates, projets, salaires, crédits).
 - **Mini-jeux** (`data/minigames.ts`, `engine/minigame.ts`, `components/minigame`) : une trentaine d’actions et une
-  vingtaine d’événements se jouent. Dix mécaniques, déclinées en thèmes : **poignées de main** (bain de foule, tractage,
+  vingtaine d’événements se jouent. Quatorze mécaniques, déclinées en thèmes : **poignées de main** (bain de foule, tractage,
   selfies, fête du village, dédicace — attraper les bonnes cibles, éviter les tomates), **applaudimètre** (discours,
   allocution, joute d’éloquence, festival, discours aux étoiles — lancer la phrase quand le curseur est dans la zone), **mémoire** (réviser ses fiches, décoder des glyphes extraterrestres),
   **tri** (courrier de la permanence, questions au gouvernement, matinale radio, live sur les réseaux, consultation citoyenne, message à envoyer aux étoiles), **marchandage**
@@ -71,7 +84,12 @@ Standalone components, zoneless, Signals partout.
   propriétés — littoral, frontalier, numéro pair, initiale, nom composé, préfecture chef-lieu de région… — à remplir
   avec les 96 départements métropolitains, chacun une seule fois, en douze essais) et **Trivial politique** (façon
   Trivial Pursuit : un dé tire une couleur parmi six catégories — institutions, histoire, géographie, économie, Europe
-  et monde, culture politique —, chaque bonne réponse rapporte un camembert, neuf questions au plus ; 117 questions). Le score fixe le palier : brillant (gains ×1,5),
+  et monde, culture politique —, chaque bonne réponse rapporte un camembert, neuf questions au plus ; 117 questions).
+  Et quatre de plus : **le protocole** (façon Simon : retenir l’ordre des gestes d’une cérémonie ou d’une visite d’État,
+  puis le reproduire, séquences de 3 à 7 gestes), **le plan de table** (dîner d’État, banquet des maires : placer huit
+  convives autour d’une table ronde, affinités côte à côte, inimitiés éloignées), **la défense antiaérienne** (intercepter
+  les missiles avant qu’ils ne touchent les villes, sans abattre les avions civils) et **le déminage** (façon démineur :
+  une grille 6 × 6, des munitions à baliser, ouverture en cascade). Le score fixe le palier : brillant (gains ×1,5),
   réussi, mitigé (moitié), raté (presque rien, et des dégâts). La fatigue et le stress rendent le jeu plus dur. On peut
   laisser faire l’équipe (résultat moyen) ; pendant un projet au long cours, elle s’en charge. Clavier pris en charge.
 - **Nouvelles actions** : fête du village, débat devant des lycéens, nuit blanche sur un dossier, matinale radio,
@@ -93,6 +111,10 @@ Standalone components, zoneless, Signals partout.
   (Trivial), « Cercle de lecture » ; événements crue (hiver), question du collégien, dernière boulangerie, addition salée,
   vélo volé, podcast qui pique (Trivial), lettre anonyme, grêle sur les vignes (printemps-été), fusion de communes,
   ancien camarade lobbyiste, mauvais chiffre en direct, défi du journal local (mot du jour).
+  **Cérémonies et tables** : actions « Réunir les maires autour d’un banquet », « Présider une commémoration »,
+  « Accueillir un chef d’État étranger », « Donner un dîner d’État » (président·e), « Journée défense et citoyenneté » ;
+  événements 11 Novembre (protocole), plan de table du dîner officiel, banquet républicain, visite d’État dans votre
+  région, une bombe de 1944 sous le chantier du tramway (déminage).
   Avec les jeux de réflexion : actions « Mot du jour à la radio », « Soirée quiz au bistrot », « Réviser la carte de
   France », « Jeu télévisé au profit d’une association » ; événements « Invité·e d’un jeu télévisé », « L’interro surprise
   sur la carte de France », « Le grand quiz de la rentrée politique » (septembre).
@@ -116,6 +138,25 @@ Standalone components, zoneless, Signals partout.
   Offensive, frappes aériennes, réservistes, demander l’entrée en guerre d’un allié, s’adresser à la Nation, visiter les
   troupes, hommage national, cessez-le-feu. Fins : victoire, défaite (le gouvernement tombe), paix victorieuse, de
   compromis ou humiliante selon le front.
+- **États hostiles** (panneau « Le monde ») : relations de −100 à +100 avec les cinq États fictifs, qui se dégradent avec
+  les tensions et les incidents diplomatiques. Sous −65, « bruits de bottes » et une décision pour les dirigeants
+  (dialogue, dissuasion, alliés, sanctions) ; sous −80, l’État peut **attaquer la France**. Actions « Apaiser un État
+  hostile » et « Réclamer des sanctions » (dès député·e). Événements : incident en mer, cyberattaque contre nos hôpitaux,
+  réseau d’espions, ultimatum, dissident en exil, proposition de sommet, et l’attaque à l’aube.
+- **Guerre contre la Nation** (guerre défensive) : déclenchée par un État à bout de patience ou par un événement, sans
+  vote préalable. L’ennemi a l’initiative les premiers mois ; sous la ligne de frontière, le territoire est occupé ;
+  l’union sacrée soutient l’opinion, et l’on se bat mieux chez soi. Fins : **« Libérateur·rice de la Nation »** ou
+  **« La capitulation »**. Pour tous les rangs, un onglet **Effort de guerre** : s’engager dans la réserve, accueil des
+  déplacés, collecte pour les familles de soldats, exercice de défense civile (mini-jeu), accompagner les démineurs
+  (mini-jeu), appel à l’union nationale, visite des blessés, usine d’armement.
+- **Guerre totale** : décrétée au bilan semestriel, en réponse à des missiles sur Paris, ou imposée quand l’ennemi décrète
+  la mobilisation générale. Deux nouvelles jauges, **effort de guerre** et **moral de l’arrière** : plus de puissance,
+  mais des pertes et des coûts décuplés ; moral à zéro, **l’effondrement**. Actions : réquisitionner l’industrie,
+  rationnement, rappel des classes d’âge, gouvernement d’union nationale, contrôle de l’information, doctrine de
+  dissuasion, défense antiaérienne (mini-jeu). Événements : alerte aux drones (mini-jeu), files de volontaires, marché
+  noir, marche pour la paix, échange de prisonniers, moral des troupes.
+- **Scénarios « Guerre contre la Nation »** (ministre de l’Intérieur, la Karstanie attaque à l’aube, 49 ans) et
+  **« Guerre totale »** (président·e d’une France en guerre totale contre la Méridia, 56 ans).
 - **Emprunts** (`engine/loans.ts`, écran **Banque & emprunts**) : prêt personnel (taux selon votre solidité financière,
   35 % d’endettement au plus), crédit renouvelable (cher, et la presse finit par le savoir), prêt d’un proche (sans
   intérêts). En campagne : **prêt de campagne** versé sur le compte de campagne et avance du parti ; au-delà de 5 % des
@@ -352,6 +393,7 @@ src/app/game/
 │   ├── alien-events.ts        Événements du Premier contact (et le signal en partie normale)
 │   ├── departements.ts        Les 96 départements et les critères de la grille Départodoku
 │   ├── quiz.ts                Questions du Trivial politique, par catégorie
+│   ├── war-events.ts          États hostiles, attaque contre la France, guerre et guerre totale
 │   ├── staff.ts               Membres d’équipe recrutables
 │   └── world.ts               Partis, PNJ, contacts, état initial
 ├── engine/                    Fonctions pures, testables sans Angular
@@ -375,6 +417,8 @@ src/app/game/
 │   ├── describe.ts            Effets en langage clair (gains / pertes)
 │   ├── mole.ts                Scénario Infiltré·e : couverture, rapports, soupçons
 │   ├── alien.ts               Scénario Premier contact : phases, jauges, fins
+│   ├── civil.ts               Haute fonction publique : corps, grades, concours, disponibilité
+│   ├── remuneration.ts        Rémunération du mois : mandat, parti, fonction publique, charges
 │   ├── life.ts                Âge, santé, mort, chapitres de vie, retraite, nécrologie
 │   ├── presidency.ts          Calendrier présidentiel, candidature, parrainages, présidence, crises
 │   ├── government.ts          Portefeuilles, Matignon, censure, Salon de l’agriculture
@@ -422,7 +466,7 @@ src/app/game/
     ├── assembly-vote/    Scrutin public : texte, pointage, interventions, vote, résultat
     ├── hemicycle/        Hémicycle SVG de 577 sièges, dépouillement animé
     ├── bank/             Banque & emprunts
-    ├── minigame/         Les dix mini-jeux (games/ : mot du jour, Départodoku, Trivial politique)
+    ├── minigame/         Les quatorze mini-jeux (games/ : mot du jour, Départodoku, Trivial, protocole, plan de table, défense antiaérienne, déminage)
     ├── contact-panel/    Panneau du Premier contact (ciel, vaisseau, jauges)
     ├── pwa-banner/       Bandeaux d’installation, de mise à jour et hors ligne
     ├── fx-layer/         Calque d’animations 2D

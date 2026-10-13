@@ -4,7 +4,7 @@
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage';
 
 export interface TriItem {
   text: string;
@@ -39,6 +39,10 @@ export interface MinigameDef {
   words?: string[];
   /** Quiz : catégories retenues (toutes par défaut) */
   cats?: string[];
+  /** Protocole : les gestes à enchaîner */
+  steps?: { icon: string; label: string }[];
+  /** Plan de table : les convives */
+  guests?: { icon: string; name: string }[];
 }
 
 /** Vocabulaire politique pour le « mot du jour » (6 à 10 lettres) */
@@ -260,6 +264,52 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'quiz_tele', kind: 'quiz', icon: '🎬', title: 'Questions pour un·e élu·e',
     rule: 'Le grand quiz de la rentrée politique : une bonne réponse, un camembert. Les candidats adverses guettent vos erreurs.',
+  },
+  {
+    id: 'concours_insp', kind: 'quiz', icon: '🎓', title: 'Le concours de l’INSP',
+    rule: 'Épreuve de culture générale : il faut au moins « Réussi » pour être reçu·e, « Brillant » pour les grands corps.',
+  },
+  {
+    id: 'protocole', kind: 'protocole', icon: '🎖️', title: 'La cérémonie',
+    rule: 'Le chef du protocole vous montre l’ordre des gestes : retenez-le, puis reproduisez-le sans faux pas.',
+    steps: [
+      { icon: '🇫🇷', label: 'Lever des couleurs' }, { icon: '💐', label: 'Dépôt de gerbe' }, { icon: '🎺', label: 'Sonnerie aux morts' },
+      { icon: '🤫', label: 'Minute de silence' }, { icon: '🎖️', label: 'Remise de décoration' }, { icon: '🎵', label: 'La Marseillaise' },
+    ],
+  },
+  {
+    id: 'visite_etat', kind: 'protocole', icon: '🤝', title: 'Visite d’État',
+    rule: 'Un chef d’État étranger arrive : l’ordre des honneurs est sacré. Observez, puis enchaînez.',
+    steps: [
+      { icon: '🚗', label: 'Accueil sur le perron' }, { icon: '🎺', label: 'Hymnes nationaux' }, { icon: '💂', label: 'Revue de la garde' },
+      { icon: '🤝', label: 'Poignée de main' }, { icon: '📸', label: 'Photo officielle' }, { icon: '✍️', label: 'Livre d’or' },
+    ],
+  },
+  {
+    id: 'plan_table', kind: 'table', icon: '🍽️', title: 'Le dîner d’État',
+    rule: 'Placez les huit convives : les affinités côte à côte, les inimitiés loin l’une de l’autre.',
+    guests: [
+      { icon: '🎩', name: 'L’ambassadeur' }, { icon: '👩‍💼', name: 'La ministre' }, { icon: '💼', name: 'Le PDG' }, { icon: '✊', name: 'La syndicaliste' },
+      { icon: '⛪', name: 'L’évêque' }, { icon: '👨‍🍳', name: 'Le chef étoilé' }, { icon: '🎬', name: 'L’actrice' }, { icon: '📰', name: 'La directrice de journal' },
+      { icon: '🎖️', name: 'Le général' }, { icon: '🔬', name: 'La prix Nobel' },
+    ],
+  },
+  {
+    id: 'banquet_maires', kind: 'table', icon: '🥖', title: 'Le banquet des maires',
+    rule: 'Les maires du département à votre table : éloignez les brouillés, rapprochez les alliés.',
+    guests: [
+      { icon: '🌾', name: 'Le maire rural' }, { icon: '🏙️', name: 'La maire de la ville-centre' }, { icon: '🏔️', name: 'Le maire de montagne' },
+      { icon: '🏖️', name: 'La maire du littoral' }, { icon: '🍷', name: 'Le maire vigneron' }, { icon: '🏭', name: 'La maire ouvrière' },
+      { icon: '🚜', name: 'Le syndic agricole' }, { icon: '🎓', name: 'La sénatrice' }, { icon: '📻', name: 'Le correspondant local' },
+    ],
+  },
+  {
+    id: 'interception', kind: 'interception', icon: '📡', title: 'La défense antiaérienne',
+    rule: 'Interceptez les missiles avant qu’ils n’atteignent les villes. Surtout, épargnez les avions civils.', bad: '🚀', good: '✈️',
+  },
+  {
+    id: 'deminage', kind: 'deminage', icon: '💣', title: 'Le déminage',
+    rule: 'Ouvrez toutes les cases sûres : chaque chiffre indique le nombre de munitions autour. Balisez-les, n’y touchez pas.', bad: '💣',
   },
   {
     id: 'consultation', kind: 'tri', icon: '🗳️', title: 'Consultation citoyenne',

@@ -9,6 +9,7 @@ import { effectValue, withCounterweight } from './actions';
 import { LIFE_EVENTS } from './life-events';
 import { EXTRA_EVENTS } from './extra-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
+import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
 import { RANK_EVENTS } from './rank-events';
 import { INTL_EVENTS } from './intl-events';
 import { intlRelevant } from '../engine/intl';
@@ -1409,6 +1410,16 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const pool = ALIEN_EVENTS.filter(e => canFire(e, 10));
     if (pool.length) ev = pick(pool);
   }
+  // La guerre, puis les États hostiles en temps de paix
+  if (!ev && d.war && rng.chance(0.35)) {
+    const pool = WAR_EVENTS.filter(e => canFire(e, 6));
+    if (pool.length) ev = pick(pool);
+  }
+  if (!ev && canFire(INVASION_EVENT, 24) && rng.chance(0.12)) ev = INVASION_EVENT;
+  if (!ev && !d.war && d.week > 3 && rng.chance(0.06)) {
+    const pool = HOSTILE_EVENTS.filter(e => canFire(e, 12));
+    if (pool.length) ev = pick(pool);
+  }
   // Rendez-vous du calendrier (vœux de janvier, 14 Juillet)
   if (!ev) {
     const dated = EXTRA_EVENTS.filter(e => CALENDAR_TAGS.has(e.tag) && canFire(e, 10));
@@ -1423,7 +1434,7 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const pool = INTL_EVENTS.filter(e => canFire(e, 12));
     if (pool.length) ev = pick(pool);
   }
-  if (!ev && d.week > 2 && rng.chance(0.34)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS, ...EXTRA_EVENTS.filter(e => !CALENDAR_TAGS.has(e.tag))].filter(e => canFire(e, 14)));
+  if (!ev && d.week > 2 && rng.chance(0.34)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS, ...PEACE_EVENTS, ...EXTRA_EVENTS.filter(e => !CALENDAR_TAGS.has(e.tag))].filter(e => canFire(e, 14)));
   if (ev) {
     const { choices, ...built } = ev.build(d, rng);
     const usable = choices

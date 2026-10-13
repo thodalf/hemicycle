@@ -48,6 +48,7 @@ export function markGuess(guess: string, word: string): Mark[] {
     </div>
   `,
   styles: `
+    :host { display: block; width: 100%; }
     .mot { display: grid; gap: 10px; justify-items: center; }
     .board { display: grid; gap: 5px; }
     .row { display: grid; grid-template-columns: repeat(var(--n), min(40px, calc((100vw - 60px) / var(--n) - 5px))); gap: 5px; }

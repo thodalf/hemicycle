@@ -2,6 +2,7 @@ import { Effect, EffectContext, GameState, MinigameState, MinigameTier } from '.
 import { MINIGAMES_BY_ID } from '../data/minigames';
 import { applyEffects, pushNews, scaleGains } from './effects';
 import { Rng, clamp, nextId } from './rng';
+import { examOutcome } from './civil';
 
 /* ============================================================
  *  Mini-jeux : une action ou un événement peut en déclencher un.
@@ -74,11 +75,16 @@ export function resolveMinigame(d: GameState, id: string, rawScore: number, rng:
   const tier = tierOf(score);
   const ctx: EffectContext = { domain: g.domain, targetId: g.targetId };
   let effects: Effect[];
+  // Concours : il faut au moins « réussi » pour être reçu·e ; le classement décide du corps
+  const exam = g.reward.some(e => e.kind === 'civil' && e.join);
+  const passed = tier === 'brillant' || tier === 'reussi';
+  const reward = exam ? examOutcome(g.reward, passed, tier === 'brillant') : g.reward;
+  if (exam && !passed) pushNews(d, 'systeme', 'negative', 'Recalé·e au concours', 'Votre nom n’apparaît pas sur la liste des admis. Vous pourrez retenter votre chance l’an prochain.');
   switch (tier) {
-    case 'brillant': effects = [...boostGains(g.reward, 1.5), { kind: 'stat', stat: 'stress', delta: -2 }]; break;
-    case 'reussi': effects = g.reward; break;
-    case 'mitige': effects = scaleGains(g.reward, 0.5); break;
-    default: effects = [...scaleGains(g.reward, 0.15), ...g.penalty];
+    case 'brillant': effects = [...boostGains(reward, 1.5), { kind: 'stat', stat: 'stress', delta: -2 }]; break;
+    case 'reussi': effects = reward; break;
+    case 'mitige': effects = scaleGains(reward, 0.5); break;
+    default: effects = [...scaleGains(reward, 0.15), ...g.penalty];
   }
   const summary = applyEffects(d, effects, ctx, rng);
   g.status = 'fini';

@@ -41,6 +41,8 @@
                 @case ('mot') { Tapez au clavier ou sur le clavier à l’écran, Entrée pour valider. }
                 @case ('quiz') { Touches 1 à 4 au clavier. }
                 @case ('grille') { Tapez un nom ou un numéro de département. }
+                @case ('deminage') { Clic droit ou « mode balise » pour baliser une munition. }
+                @case ('table') { Touchez un convive puis une place ; deux places pour les échanger. }
               }
             </p>
             <div class="go">
@@ -50,7 +52,7 @@
           </div>
         } @else {
           <div class="play">
-            @if (def.kind !== 'tournee' && def.kind !== 'mot' && def.kind !== 'quiz' && def.kind !== 'grille') { <div class="live mono">Score {{ liveScore() * 100 | number: '1.0-0' }}</div> }
+            @if (!selfScored.has(def.kind)) { <div class="live mono">Score {{ liveScore() * 100 | number: '1.0-0' }}</div> }
             @switch (def.kind) {
               @case ('poignees') {
                 <div class="grid9">
@@ -144,6 +146,10 @@
               @case ('mot') { <app-mot-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('grille') { <app-grille-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('quiz') { <app-quiz-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('protocole') { <app-protocole-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('table') { <app-table-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('interception') { <app-interception-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('deminage') { <app-deminage-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('pointage') {
                 <svg class="mini-hemi" viewBox="0 0 100 58">
                   @for (s of seats(); track $index) {

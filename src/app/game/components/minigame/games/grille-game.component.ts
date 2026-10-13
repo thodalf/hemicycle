@@ -44,6 +44,7 @@ import { DEPARTEMENTS, Departement, Grid, makeGrid, normalize } from '../../../d
     </div>
   `,
   styles: `
+    :host { display: block; width: 100%; }
     .doku { display: grid; gap: 10px; }
     .head { display: flex; justify-content: space-between; font-size: 13px; }
     .grid { display: grid; grid-template-columns: minmax(64px, .8fr) repeat(3, 1fr); gap: 5px; }

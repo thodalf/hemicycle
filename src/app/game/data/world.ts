@@ -245,12 +245,50 @@ export function createInitialState(opts: NewGameOptions): GameState {
   if (opts.scenario === 'franc_macon') startLodge(state);
   if (opts.scenario === 'editorialiste') startPress(state, opts.outlet ?? 'radio');
   if (opts.scenario === 'contact') startContact(state);
+  if (opts.scenario === 'invasion') startInvasionScenario(state);
+  if (opts.scenario === 'guerre_totale') startTotalWarScenario(state);
   if (infiltre) startMole(state, home);
   if (custom && opts.customParty) setupFoundedPartyAtStart(state, opts.customParty);
   state.player.age = startAge(state.scenario);
   state.player.health = initialHealth(state.player.age);
   state.presidential = initPresidential(state);
+  if (opts.scenario === 'guerre_totale') {
+    state.presidential = { nextWeek: 46, incumbentId: 'player', incumbentName: state.player.name, incumbentMandates: 1, incumbentPartyId: state.party.id, declared: false, parrainages: 0 };
+  }
   return state;
+}
+
+/** Scénario « Guerre contre la Nation » : ministre de l'Intérieur quand la France est attaquée */
+function startInvasionScenario(s: GameState): void {
+  const p = s.player;
+  p.rankId = 'ministre';
+  p.actionPoints = { max: 8, current: 8 };
+  p.stats = { popularity: 40, influence: 55, politicalCapital: 40, credibility: 50, stress: 30, energy: 90 };
+  for (const domain of DOMAINS) p.dossiers[domain].mastery = 28;
+  p.dossiers.securite.mastery = 55;
+  p.dossiers.diplomatie.mastery = 40;
+  p.skills.securite = 2;
+  s.portfolio = 'securite';
+  p.finances.personal = 15_000;
+  s.party.factions.forEach(f => (f.supportForPlayer = 50));
+  s.intl.tension = 60;
+  s.intl.hostile = { karstanie: -88, meridia: -25, kantor: -40, zamerie: -35, valdovie: -15 };
+}
+
+/** Scénario « Guerre totale » : président·e d'une France déjà en guerre, qui bascule dans la guerre totale */
+function startTotalWarScenario(s: GameState): void {
+  const p = s.player;
+  p.rankId = 'president';
+  p.actionPoints = { max: 9, current: 9 };
+  p.stats = { popularity: 48, influence: 70, politicalCapital: 50, credibility: 55, stress: 35, energy: 90 };
+  for (const domain of DOMAINS) p.dossiers[domain].mastery = 35;
+  p.dossiers.diplomatie.mastery = 55;
+  p.dossiers.securite.mastery = 50;
+  p.finances.personal = 40_000;
+  s.party.factions.forEach(f => (f.supportForPlayer = 55));
+  s.presidency = { since: 1, mandates: 1, approval: 50, majority: 54, security: 55, threat: 40, primeMinister: 'Claire Montel', reforms: 0, cohabitation: false, lastCrisisWeek: 1 };
+  s.intl.tension = 70;
+  s.intl.hostile = { karstanie: -40, meridia: -96, kantor: -40, zamerie: -35, valdovie: -15 };
 }
 
 /** Scénario « Retour à la royauté » : vous dirigez un mouvement royaliste fictif */

@@ -37,7 +37,7 @@ export interface SaveStore {
 
 const SCENARIO_LABELS: Record<string, string> = {
   carriere: 'Carrière', presidentielle: 'Présidentielle', bercy: 'Bercy', royaute: 'Royauté',
-  franc_macon: 'Franc-maçon', editorialiste: 'Éditorialiste', infiltre: 'Infiltré·e', contact: 'Premier contact',
+  franc_macon: 'Franc-maçon', editorialiste: 'Éditorialiste', infiltre: 'Infiltré·e', contact: 'Premier contact', invasion: 'Guerre contre la Nation', guerre_totale: 'Guerre totale',
 };
 
 export function metaOf(slot: number, s: GameState): SlotMeta {

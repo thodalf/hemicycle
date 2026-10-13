@@ -3,6 +3,8 @@ import { Component, computed, inject } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { ProgressionService } from '../../services/progression.service';
+import { remuneration } from '../../engine/remuneration';
+import { CORPS_BY_ID, civilActive, civilTitle, promoThreshold } from '../../engine/civil';
 
 const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
   { key: 'popularity', hint: 'Opinion publique' },
@@ -42,6 +44,29 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
         <div><dt>Compte de campagne</dt><dd>{{ game.player().finances.campaign | number: '1.0-0' }} €</dd></div>
       </dl>
     </section>
+
+    @if (pay(); as r) {
+      <section class="card pay">
+        <div class="card-title"><span>Rémunération</span><span class="chip accent mono">{{ r.total | number: '1.0-0' }} €/mois</span></div>
+        <ul class="pay-lines">
+          @for (l of r.lines; track l.label) {
+            <li [class.off]="!l.amount">
+              <span class="lbl">{{ l.label }}@if (l.note) { <small class="muted">{{ l.note }}</small> }</span>
+              <span class="mono">{{ l.amount ? (l.amount | number: '1.0-0') + ' €' : '—' }}</span>
+            </li>
+          }
+          <li class="sum"><span class="lbl">Rémunération totale</span><span class="mono">{{ r.total | number: '1.0-0' }} €</span></li>
+        </ul>
+        <ul class="pay-lines small">
+          <li><span class="lbl">Mis de côté chaque mois<small class="muted">un tiers environ, le reste fait vivre le foyer</small></span><span class="mono pos">+{{ r.saved | number: '1.0-0' }} €</span></li>
+          @for (c of r.charges; track c.label) { <li><span class="lbl">{{ c.label }}</span><span class="mono neg">−{{ c.amount | number: '1.0-0' }} €</span></li> }
+          <li class="sum"><span class="lbl">Solde du mois</span><span class="mono" [class.neg]="r.net < 0" [class.pos]="r.net > 0">{{ r.net > 0 ? '+' : '' }}{{ r.net | number: '1.0-0' }} €</span></li>
+        </ul>
+        @if (civil(); as c) {
+          <p class="muted civ">{{ c.corps }} · {{ c.title }}{{ c.active ? ' · un point d’action en moins chaque mois' : ' · en disponibilité pendant votre mandat' }}{{ c.next ? ' · avancement à ' + c.next + ' de crédibilité' : '' }}</p>
+        }
+      </section>
+    }
 
     @if (progression.nextStep(); as step) {
       <section class="card">
@@ -92,6 +117,15 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
     .money { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 4px; font-size: 12.5px;
       div { display: flex; justify-content: space-between; } dt { color: var(--ink-3); font-family: var(--font-body); } dd { margin: 0; } }
     .via { font-size: 12.5px; margin-bottom: 10px; }
+    .pay { display: grid; gap: 8px; .card-title { margin-bottom: 0; } }
+    .pay-lines { gap: 5px; font-size: 13px;
+      li { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+      .lbl { display: grid; } small { font-size: 11px; } .mono { white-space: nowrap; }
+      li.off { color: var(--ink-3); }
+      li.sum { border-top: 1px solid var(--line); padding-top: 5px; font-weight: 600; }
+      .pos { color: var(--good); } .neg { color: var(--bad); } }
+    .pay-lines.small { font-size: 12.5px; }
+    .civ { margin: 0; font-size: 11.5px; }
     .dossiers { gap: 7px; }
     .dossiers li { display: grid; grid-template-columns: minmax(0, 1fr) auto 26px 22px; column-gap: 8px; row-gap: 3px; align-items: center; font-size: 13px; }
     .dossiers li.hot .d-name { font-weight: 600; }
@@ -113,6 +147,14 @@ export class ProfilePanelComponent {
   protected readonly levels = [0, 1, 2, 3, 4];
 
   private readonly skillPoints = computed(() => this.game.player().skillPoints);
+  protected readonly pay = computed(() => remuneration(this.game.s()));
+  protected readonly civil = computed(() => {
+    const s = this.game.s();
+    const c = s.player.civil;
+    if (!c) return null;
+    const def = CORPS_BY_ID.get(c.corps)!;
+    return { corps: def.name, title: civilTitle(c), active: civilActive(s), next: c.grade < def.grades.length - 1 ? promoThreshold(c) : 0 };
+  });
 
   protected label(k: StatKey) { return STAT_LABELS[k]; }
   protected domainLabel(d: Domain) { return DOMAIN_LABELS[d]; }

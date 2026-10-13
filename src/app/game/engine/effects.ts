@@ -18,7 +18,8 @@ import { adjustIntl } from './intl';
 import { adjustGovernment, assignPortfolio, enterMatignon } from './government';
 import { addParrainages, adjustPresidency, declareCandidacy, endPresidency } from './presidency';
 import { lawyerFactor } from './staff-perks';
-import { adjustWar } from './war';
+import { adjustHostile, adjustWar } from './war';
+import { adjustCivil } from './civil';
 import { ownOrigin, scheduleVote } from './assembly';
 import { queueMinigame } from './minigame';
 import { adjustAlien } from './alien';
@@ -257,6 +258,12 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       case 'alien':
         summary.push(...adjustAlien(d, e));
+        break;
+      case 'hostile':
+        summary.push(...adjustHostile(d, e, ctx.targetId));
+        break;
+      case 'civil':
+        summary.push(...adjustCivil(d, e, rng));
         break;
       case 'minigame':
         summary.push(...queueMinigame(d, e.gameId, e.title ?? 'événement', e.reward, ctx, e.penalty, e.title));

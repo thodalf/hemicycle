@@ -59,14 +59,14 @@ export class WeekPlannerComponent {
     const scenario = this.game.s().scenario;
     // L'onglet Guerre n'existe qu'en temps de guerre, et passe alors en tête
     if (this.game.s().war) {
-      const war = all.filter(([c]) => c === 'guerre');
-      const rest = all.filter(([c]) => c !== 'guerre');
+      const war = all.filter(([c]) => c === 'guerre' || c === 'arriere');
+      const rest = all.filter(([c]) => c !== 'guerre' && c !== 'arriere');
       all.splice(0, all.length, ...war, ...rest);
     } else {
-      all.splice(0, all.length, ...all.filter(([c]) => c !== 'guerre'));
+      all.splice(0, all.length, ...all.filter(([c]) => c !== 'guerre' && c !== 'arriere'));
     }
     const withProjects = (list: [ActionCategory | 'projets', string][]) => [...list.slice(0, 1), ['projets', 'Projets'] as [ActionCategory | 'projets', string], ...list.slice(1)];
-    if (this.game.s().war && all[0]?.[0] === 'guerre') return withProjects(all);
+    if (this.game.s().war && (all[0]?.[0] === 'guerre' || all[0]?.[0] === 'arriere')) return withProjects(all);
     if (this.game.s().presidency) return withProjects([...all.filter(([c]) => c === 'elysee'), ...all.filter(([c]) => c !== 'elysee')]);
     if (present.has('fonction') && !['royaute', 'franc_macon', 'editorialiste', 'infiltre', 'contact'].includes(scenario)) return withProjects([...all.filter(([c]) => c === 'fonction'), ...all.filter(([c]) => c !== 'fonction')]);
     const first = scenario === 'royaute' ? 'couronne' : scenario === 'franc_macon' ? 'loge' : scenario === 'editorialiste' ? 'redaction' : scenario === 'infiltre' ? 'infiltration' : scenario === 'contact' ? 'contact' : null;
@@ -133,7 +133,7 @@ export class WeekPlannerComponent {
       case 'partner':
         return PARTNERS.filter(p => !s.war?.allies.includes(p.id)).map(p => ({ id: p.id, label: `${p.name} · ${Math.round(s.intl.relations[p.id] ?? 0)}` }));
       case 'enemy':
-        return ENEMIES.map(e => ({ id: e.id, label: `${e.name} · puissance ${Math.round(e.strength * 100)}` }));
+        return ENEMIES.map(e => { const r = Math.round(s.intl.hostile?.[e.id] ?? 0); return { id: e.id, label: `${e.name} · relations ${r > 0 ? '+' : ''}${r} · puissance ${Math.round(e.strength * 100)}` }; });
       default:
         return [];
     }
