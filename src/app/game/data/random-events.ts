@@ -13,6 +13,7 @@ import { ZOMBIE_EVENTS, ZOMBIE_GATE } from './zombie-events';
 import { canStartArc } from '../engine/arcs';
 import { CRISIS_EVENTS, CRISIS_GATES, FAMILY_EVENTS, MISC_ARC_EVENTS } from './life-arc-events';
 import { PHONE_EVENTS } from './phone-events';
+import { CALENDAR_EVENTS, COUNTRY_EVENTS } from './country-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
 import { RANK_EVENTS } from './rank-events';
@@ -1453,6 +1454,9 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
   if (!ev) {
     const dated = EXTRA_EVENTS.filter(e => CALENDAR_TAGS.has(e.tag) && canFire(e, 10));
     if (dated.length && rng.chance(0.85)) ev = pick(dated);
+    // Les rendez-vous de l'année (Euro, Tour de France, rentrée…) : souvent, pas toujours
+    const yearly = CALENDAR_EVENTS.filter(e => canFire(e, 10));
+    if (!ev && yearly.length && rng.chance(yearly.some(e => e.tag === 'foot_resultat') ? 0.95 : 0.55)) ev = pick(yearly);
   }
   // La course à l'Élysée et les campagnes
   if (!ev && (inPresidentialRace(d) || d.player.finances.legalCeiling !== null) && rng.chance(0.3)) {
@@ -1468,7 +1472,7 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const pool = INTL_EVENTS.filter(e => canFire(e, 12));
     if (pool.length) ev = pick(pool);
   }
-  if (!ev && d.week > 2 && rng.chance(0.34)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS, ...PEACE_EVENTS, ...EXTRA_EVENTS.filter(e => !CALENDAR_TAGS.has(e.tag)), ...MORE_EVENTS, ...MISC_ARC_EVENTS, ...PHONE_EVENTS].filter(e => canFire(e, 14)));
+  if (!ev && d.week > 2 && rng.chance(0.34)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS, ...PEACE_EVENTS, ...EXTRA_EVENTS.filter(e => !CALENDAR_TAGS.has(e.tag)), ...MORE_EVENTS, ...MISC_ARC_EVENTS, ...PHONE_EVENTS, ...COUNTRY_EVENTS].filter(e => canFire(e, 14)));
   if (ev) {
     const { choices, ...built } = ev.build(d, rng);
     const usable = choices

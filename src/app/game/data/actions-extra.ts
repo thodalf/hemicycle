@@ -255,6 +255,48 @@ const LIFE: ActionDefinition[] = [
     description: 'Une fausse note, une version différente par suspect : la fuite trahira le traître.', cost: { ap: 1, politicalCapital: 6 }, cooldown: 2, effects: [cr('taupe', 16, 3)] },
   { id: 'tp_allies', label: 'Coopérer avec les services alliés', category: 'crise', minRank: 'militant', requires: { arc: 'taupe' },
     description: 'Échanges d’informations avec les partenaires de confiance.', cost: { ap: 1, energy: 5 }, maxPerMonth: 1, effects: [cr('taupe', 6, -8)] },
+  // Black-out
+  { id: 'bo_reseau', label: 'Mobiliser les techniciens du réseau', category: 'crise', minRank: 'militant', requires: { arc: 'blackout' },
+    description: 'Renforts de toute l’Europe, astreintes, hélicoptères pour les lignes en montagne.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [cr('blackout', 12, -2)] },
+  { id: 'bo_sobriete', label: 'Appeler à la sobriété électrique', category: 'crise', minRank: 'militant', requires: { arc: 'blackout' },
+    description: 'Un degré de moins, les vitrines éteintes, le lave-linge la nuit.', cost: { ap: 1, energy: 5 }, maxPerMonth: 1, effects: [cr('blackout', 4, -8), { kind: 'segment', segment: 'jeunes', delta: 1 }] },
+  { id: 'bo_ordre', label: 'Déployer les forces de l’ordre contre les pillages', category: 'crise', minRank: 'militant', requires: { arc: 'blackout' },
+    description: 'Patrouilles dans les zones commerciales plongées dans le noir.', cost: { ap: 1, energy: 6 }, maxPerMonth: 1, effects: [cr('blackout', 2, -10), { kind: 'segment', segment: 'retraites', delta: 2 }] },
+  // Crue de la Seine
+  { id: 'cr_digues', label: 'Renforcer les digues et les murets', category: 'crise', minRank: 'militant', requires: { arc: 'crue' },
+    description: 'Sacs de sable, batardeaux, génie militaire : chaque centimètre compte.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [cr('crue', 12)] },
+  { id: 'cr_evacuer', label: 'Organiser l’évacuation des quartiers bas', category: 'crise', minRank: 'militant', requires: { arc: 'crue' },
+    description: 'Bus, gymnases, hôtels réquisitionnés.', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('crue', 4, -10), { kind: 'segment', segment: 'retraites', delta: 2 }] },
+  { id: 'cr_lacs', label: 'Faire lâcher les lacs-réservoirs en amont', category: 'crise', minRank: 'militant', requires: { arc: 'crue' },
+    description: 'Un pari d’ingénieurs : retenir l’eau en amont de Paris… au détriment de la Champagne.', cost: { ap: 1 }, cooldown: 2, effects: [cr('crue', 8, -6), { kind: 'segment', segment: 'ruraux', delta: -2 }] },
+  // Guerre de l'eau
+  { id: 'se_conference', label: 'Réunir la conférence du partage de l’eau', category: 'crise', minRank: 'militant', requires: { arc: 'secheresse' },
+    description: 'Préfets, agriculteurs, maires, industriels : qui a droit à quoi ?', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('secheresse', 12)] },
+  { id: 'se_citernes', label: 'Affréter des camions-citernes', category: 'crise', minRank: 'militant', requires: { arc: 'secheresse' },
+    description: 'De l’eau potable pour les villages à sec.', cost: { ap: 1, money: 2000 }, maxPerMonth: 1, effects: [cr('secheresse', 2, -10), { kind: 'segment', segment: 'ruraux', delta: 3 }] },
+  { id: 'se_fuites', label: 'Lancer la chasse aux fuites', category: 'crise', minRank: 'militant', requires: { arc: 'secheresse' },
+    description: 'Un litre sur cinq se perd dans des canalisations vétustes.', cost: { ap: 1, politicalCapital: 6 }, cooldown: 2, effects: [cr('secheresse', 6, -6), st('credibility', 2)] },
+  // Autonomie régionale
+  { id: 'au_negocier', label: 'Négocier avec les élus régionaux', category: 'crise', minRank: 'militant', requires: { arc: 'autonomie' },
+    description: 'Compétences, langue, fiscalité : un texte ligne par ligne.', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('autonomie', 12, -2)] },
+  { id: 'au_visite', label: 'Faire une visite sur place', category: 'crise', minRank: 'militant', requires: { arc: 'autonomie' },
+    description: 'Marchés, mairies, associations culturelles : montrer qu’on écoute.', cost: { ap: 1, energy: 10 }, cooldown: 2, effects: [cr('autonomie', 6, -6), st('popularity', 1)] },
+  { id: 'au_constitution', label: 'Proposer une réforme constitutionnelle', category: 'crise', minRank: 'depute', requires: { arc: 'autonomie' },
+    description: 'Inscrire un statut particulier dans la Constitution : audacieux, et long.', cost: { ap: 2, politicalCapital: 12 }, cooldown: 4, effects: [cr('autonomie', 16, 4), st('influence', 2)] },
+  // IA de l'État
+  { id: 'ia_audit', label: 'Commander un audit indépendant de l’algorithme', category: 'crise', minRank: 'militant', requires: { arc: 'ia' },
+    description: 'Des chercheurs ouvrent la boîte noire.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [cr('ia', 12)] },
+  { id: 'ia_humain', label: 'Rétablir un contrôle humain sur chaque décision', category: 'crise', minRank: 'militant', requires: { arc: 'ia' },
+    description: 'Plus lent, plus cher, mais plus d’erreurs absurdes.', cost: { ap: 1, energy: 6 }, maxPerMonth: 1, effects: [cr('ia', 4, -10), { kind: 'segment', segment: 'retraites', delta: 2 }] },
+  { id: 'ia_hackathon', label: 'Lancer un hackathon citoyen', category: 'crise', minRank: 'militant', requires: { arc: 'ia' },
+    description: 'Deux cents développeurs bénévoles pendant un week-end.', cost: { ap: 1, energy: 8 }, cooldown: 2, effects: [cr('ia', 8, -2), { kind: 'segment', segment: 'jeunes', delta: 3 }] },
+  // Frelons géants
+  { id: 'fr_pieges', label: 'Distribuer des pièges dans les communes', category: 'crise', minRank: 'militant', requires: { arc: 'frelons' },
+    description: 'Bouteilles, bière et sirop : la recette des anciens, à grande échelle.', cost: { ap: 1, money: 800 }, maxPerMonth: 1, effects: [cr('frelons', 10), { kind: 'segment', segment: 'ruraux', delta: 1 }] },
+  { id: 'fr_nids', label: 'Financer la destruction des nids', category: 'crise', minRank: 'militant', requires: { arc: 'frelons' },
+    description: 'Des équipes avec perches et combinaisons, du lever au coucher du soleil.', cost: { ap: 1, politicalCapital: 5 }, maxPerMonth: 1, effects: [cr('frelons', 6, -8)] },
+  { id: 'fr_apiculteurs', label: 'Visiter un rucher sinistré', category: 'crise', minRank: 'militant', requires: { arc: 'frelons' },
+    description: 'Voile sur la tête, enfumoir en main : une photo qui fera le tour des réseaux.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [cr('frelons', 3, -3), st('popularity', 2), { kind: 'segment', segment: 'ruraux', delta: 2 }] },
 ];
 
 /** Deux actions par ministère */
@@ -318,4 +360,62 @@ const MINISTRIES: ActionDefinition[] = [
     { ap: 2, energy: 10, politicalCapital: 10 }, [dos('justice', 5), ct('ct-avocats', 4), st('popularity', 2)], { cooldown: 6 }),
 ];
 
-export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...LIFE, ...MINISTRIES];
+/* ── Le pays : économie, électorats, coalition, circonscription ─ */
+const seg = (segment: 'jeunes' | 'retraites' | 'populaires' | 'cadres' | 'ruraux', delta: number): Effect => ({ kind: 'segment', segment, delta });
+const eco = (x: Omit<Extract<Effect, { kind: 'economy' }>, 'kind'>): Effect => ({ kind: 'economy', ...x });
+
+const COUNTRY: ActionDefinition[] = [
+  // Gouverner l'économie
+  { id: 'gouv_plan_emploi', label: 'Lancer un plan d’urgence pour l’emploi', category: 'fonction', minRank: 'ministre', requires: { governing: true },
+    description: 'Contrats aidés, apprentissage, aides à l’embauche : le chômage recule, le déficit un peu moins.', cost: { ap: 2, politicalCapital: 10 }, cooldown: 6,
+    effects: [eco({ unemployment: -0.3, deficit: 0.2 }), seg('populaires', 3), seg('jeunes', 2)] },
+  { id: 'gouv_bouclier', label: 'Instaurer un bouclier anti-inflation', category: 'fonction', minRank: 'ministre', requires: { governing: true },
+    description: 'Gel des tarifs de l’énergie, chèque alimentaire : les prix se calment, la dette grimpe.', cost: { ap: 1, politicalCapital: 8 }, cooldown: 6,
+    effects: [eco({ inflation: -0.4, deficit: 0.2 }), seg('retraites', 3), seg('populaires', 2)] },
+  { id: 'gouv_investisseurs', label: 'Réunir un sommet des investisseurs étrangers', category: 'fonction', minRank: 'ministre', requires: { governing: true },
+    description: 'Deux cents patrons du monde entier, des annonces d’usines, une photo sur les marches.', cost: { ap: 1, energy: 8 }, cooldown: 6,
+    effects: [eco({ confidence: 6, growth: 0.1 }), seg('cadres', 3), seg('populaires', -1), st('influence', 2)] },
+  { id: 'gouv_economies', label: 'Annoncer un plan d’économies', category: 'fonction', minRank: 'ministre', requires: { governing: true },
+    description: 'Gel des dotations, non-remplacement de fonctionnaires : Bruxelles applaudit, les électeurs moins.', cost: { ap: 1, politicalCapital: 6 }, cooldown: 6,
+    effects: [eco({ deficit: -0.3, confidence: 2, growth: -0.1 }), seg('cadres', 3), seg('populaires', -3), seg('retraites', -2), st('credibility', 2)] },
+  { id: 'gouv_agences', label: 'Recevoir les agences de notation', category: 'fonction', minRank: 'ministre', requires: { governing: true },
+    description: 'Un exposé chiffré, une trajectoire crédible : de quoi éviter une dégradation.', cost: { ap: 1, energy: 4 }, cooldown: 6,
+    effects: [eco({ confidence: 3 }), st('credibility', 1), { kind: 'dossier', domain: 'economie', delta: 2 }] },
+  // Dans l'opposition (ou ailleurs)
+  { id: 'contre_budget', label: 'Publier un contre-budget chiffré', category: 'dossiers', minRank: 'depute',
+    description: 'Recettes, dépenses, trajectoire de la dette : la preuve que vous pourriez gouverner.', cost: { ap: 1, energy: 8 }, cooldown: 6,
+    effects: [st('credibility', 3), seg('cadres', 2), { kind: 'dossier', domain: 'economie', delta: 3 }] },
+  { id: 'alerte_chomage', label: 'Interpeller le gouvernement sur le chômage', category: 'medias', minRank: 'depute',
+    description: 'Une question au gouvernement, des chiffres, un témoignage de chômeur en tribune.', cost: { ap: 1, energy: 4 }, cooldown: 3,
+    effects: [st('popularity', 1), seg('populaires', 3)] },
+  // Conquérir chaque électorat
+  { id: 'seg_campus', label: 'Faire la tournée des campus', category: 'terrain', minRank: 'militant',
+    description: 'Amphis bondés, questions sans filtre, un selfie toutes les dix secondes.', cost: { ap: 1, energy: 8 }, cooldown: 3, effects: [seg('jeunes', 4), st('popularity', 1)] },
+  { id: 'seg_clubs', label: 'Visiter les clubs du troisième âge', category: 'terrain', minRank: 'militant',
+    description: 'Belote, thé dansant, galette : on parle santé, pension et sécurité.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [seg('retraites', 4)] },
+  { id: 'seg_quartiers', label: 'Porte-à-porte dans les quartiers populaires', category: 'terrain', minRank: 'militant',
+    description: 'Halls d’immeubles, marchés, associations de locataires.', cost: { ap: 1, energy: 8 }, cooldown: 3, effects: [seg('populaires', 4), st('popularity', 1)] },
+  { id: 'seg_patronat', label: 'Prononcer un discours devant le patronat', category: 'reseau', minRank: 'conseiller_municipal',
+    description: 'L’université d’été des chefs d’entreprise : compétitivité, impôts, simplification.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [seg('cadres', 4), seg('populaires', -2), st('influence', 1)] },
+  { id: 'seg_comice', label: 'Arpenter le comice agricole', category: 'terrain', minRank: 'militant',
+    description: 'Vaches primées, tracteurs rutilants, verre de cidre : le monde rural vous regarde.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [seg('ruraux', 4)] },
+  // Coalition
+  { id: 'coal_negocier', label: 'Négocier une coalition', category: 'fonction', minRank: 'premier_ministre', onlyRanks: ['premier_ministre', 'president'],
+    description: 'Majorité relative ? Un parti voisin peut vous apporter ses sièges, contre des ministères.', cost: { ap: 1, energy: 6 }, cooldown: 2,
+    effects: [{ kind: 'coalition', open: true }] },
+  { id: 'coal_comite', label: 'Réunir le comité de coalition', category: 'fonction', minRank: 'premier_ministre', requires: { coalition: true },
+    description: 'Les chefs de la majorité autour d’une table : on aplanit les désaccords.', cost: { ap: 1, energy: 6, politicalCapital: 4 }, maxPerMonth: 1,
+    effects: [{ kind: 'coalition', mood: 15 }] },
+  { id: 'coal_concession', label: 'Céder une réforme au partenaire', category: 'fonction', minRank: 'premier_ministre', requires: { coalition: true },
+    description: 'Une mesure phare de vos alliés inscrite à l’agenda. Votre parti grince.', cost: { ap: 1 }, cooldown: 3,
+    effects: [{ kind: 'coalition', mood: 25 }, st('credibility', -2), { kind: 'cohesion', delta: -3 }] },
+  { id: 'coal_rompre', label: 'Rompre la coalition', category: 'fonction', minRank: 'premier_ministre', requires: { coalition: true },
+    description: 'Reprendre votre liberté… et perdre des sièges.', cost: { ap: 1 }, cooldown: 6,
+    effects: [{ kind: 'coalition', leave: true }, { kind: 'cohesion', delta: 5 }] },
+  // Circonscription
+  { id: 'circo_parachutage', label: 'Changer de circonscription', category: 'territoire', minRank: 'conseiller_municipal',
+    description: 'Bastion imperdable, circonscription disputée ou terre de mission : le parti vous propose un parachutage.', cost: { ap: 1, politicalCapital: 8 }, cooldown: 24,
+    effects: [{ kind: 'decision', templateId: 'parachutage' }] },
+];
+
+export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...LIFE, ...MINISTRIES, ...COUNTRY];

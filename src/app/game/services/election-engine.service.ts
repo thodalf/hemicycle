@@ -8,6 +8,8 @@ import { createDebate } from '../engine/debate';
 import { monthlyBarometer, pushBarometer, ranking, takeBarometer, voteShares } from '../engine/electoral';
 import { entreDeuxToursDecision } from '../engine/entre-deux-tours';
 import { applyEffects, pushNews } from '../engine/effects';
+import { circoResult, recordMap } from '../engine/country';
+import { yearOf } from '../engine/calendar';
 import { Rng, clamp, nextId } from '../engine/rng';
 import { GameStateService } from './game-state.service';
 
@@ -216,6 +218,8 @@ export class ElectionEngineService {
     d.player.flags['depassement'] = false;
 
     const score = (secondRound ?? firstRound)['player'] ?? firstRound['player'];
+    if (e.type === 'legislatives' || e.type === 'presidentielle') recordMap(d, `${cfg.label} ${yearOf(d.week)}`, rng);
+    if (e.candidateIds.includes('player')) circoResult(d, e.type, winnerId === 'player');
     if (e.type === 'presidentielle') {
       presidentialResult(d, e, winnerId, score, rng);
       return;

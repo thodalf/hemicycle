@@ -39,6 +39,7 @@ import { WeekPlannerComponent } from '../week-planner/week-planner.component';
 import { LifePanelComponent } from '../life-panel/life-panel.component';
 import { GovernmentPanelComponent } from '../government-panel/government-panel.component';
 import { WorldPanelComponent } from '../world-panel/world-panel.component';
+import { CountryPanelComponent } from '../country-panel/country-panel.component';
 import { PresidencyPanelComponent } from '../presidency-panel/presidency-panel.component';
 import { WarPanelComponent } from '../war-panel/war-panel.component';
 import { ALIEN_PHASES } from '../../engine/alien';
@@ -60,7 +61,7 @@ import { Milestone } from '../../models/game.models';
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
-    LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
+    LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, CountryPanelComponent, WorldPanelComponent,
     WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
   template: `
@@ -163,6 +164,7 @@ import { Milestone } from '../../models/game.models';
       <div class="col-right">
         <app-news-feed />
         <app-world-panel />
+        <app-country-panel />
         <app-election-panel />
         <app-party-panel />
       </div>

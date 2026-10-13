@@ -289,6 +289,9 @@ function adopt(d: GameState, rng: Rng, via: 'vote' | '49.3'): string[] {
     { kind: 'dossier', domain: 'economie', delta: 8 },
   ];
   for (const f of r.factions) if (f.delta) effects.push({ kind: 'faction', factionId: f.id, delta: f.delta });
+  // Chaque électorat juge le budget
+  for (const sg of r.segments) { const v = Math.round(clamp(sg.score, -12, 12) * 0.4); if (v) effects.push({ kind: 'segment', segment: sg.id, delta: v }); }
+  effects.push({ kind: 'economy', confidence: r.deficitPct <= 3 ? 4 : r.deficitPct > 6 ? -5 : 0 });
   if (via === '49.3') {
     effects.push({ kind: 'stat', stat: 'popularity', delta: -4 }, { kind: 'cohesion', delta: -8 }, { kind: 'stat', stat: 'credibility', delta: -2 });
   }

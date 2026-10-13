@@ -1,3 +1,4 @@
+import { economy, electorate } from './country';
 import { CrisisArc, CrisisArcId, Effect, GameState, RankId } from '../models/game.models';
 import { RANKS } from '../data/ranks';
 import { pushNews } from './effects';
@@ -40,6 +41,18 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Des milliers de tracteurs bloquent les autoroutes.', 'Fumier devant les préfectures, ronds-points occupés.', 'Le mouvement hésite entre l’accord et l’escalade.'] },
   taupe: { id: 'taupe', icon: '🕵️', label: 'Une taupe au cœur de l’État', gaugeLabel: 'Contre-espionnage', riskLabel: 'Secrets livrés', months: 6, drift: { gauge: 4, risk: 5 },
     stages: ['Des notes confidentielles finissent chez une puissance étrangère.', 'Le cercle des suspects se resserre. Tout le monde se méfie de tout le monde.', 'La DGSI pense tenir une piste.'] },
+  blackout: { id: 'blackout', icon: '⚡', label: 'Le grand black-out', gaugeLabel: 'Réseau rétabli', riskLabel: 'Pannes et pillages', months: 3, drift: { gauge: 6, risk: 6 },
+    stages: ['Un froid polaire, une panne en cascade : la moitié du pays dans le noir.', 'Délestages tournants, hôpitaux sur groupes électrogènes, commerces pillés.', 'Le réseau se reconstruit poste par poste.'] },
+  crue: { id: 'crue', icon: '🌊', label: 'Paris sous les eaux', gaugeLabel: 'Protection des quartiers', riskLabel: 'Niveau de la Seine', months: 3, drift: { gauge: 5, risk: 7 },
+    stages: ['La Seine monte de vingt centimètres par heure : la crue centennale est là.', 'Métro fermé, caves inondées, le Louvre évacue ses réserves.', 'La décrue se fait attendre. Les sinistrés comptent leurs pertes.'] },
+  secheresse: { id: 'secheresse', icon: '💧', label: 'La guerre de l’eau', gaugeLabel: 'Partage de l’eau', riskLabel: 'Pénurie', months: 6, drift: { gauge: 3, risk: 5 },
+    stages: ['Nappes phréatiques au plus bas : arrêtés de restriction dans soixante départements.', 'Agriculteurs contre villes, golfs contre maraîchers : chacun réclame son eau.', 'Des villages ravitaillés par camions-citernes.'] },
+  autonomie: { id: 'autonomie', icon: '🏝️', label: 'Une région réclame son autonomie', gaugeLabel: 'Dialogue', riskLabel: 'Tensions', months: 8, drift: { gauge: 3, risk: 4 },
+    stages: ['L’assemblée régionale vote une motion pour un statut d’autonomie.', 'Manifestations, drapeaux, négociations à huis clos avec l’État.', 'Le compromis est à portée de main… ou la rupture.'] },
+  ia: { id: 'ia', icon: '🤖', label: 'L’IA de l’État déraille', gaugeLabel: 'Contrôle', riskLabel: 'Décisions absurdes', months: 5, drift: { gauge: 4, risk: 5 },
+    stages: ['L’algorithme qui gère les aides sociales suspend 200 000 allocations sans raison.', 'Impôts recalculés au hasard, convocations absurdes : la confiance s’effondre.', 'Les ingénieurs tentent de comprendre ce que la machine a appris.'] },
+  frelons: { id: 'frelons', icon: '🐝', label: 'L’invasion des frelons géants', gaugeLabel: 'Pièges posés', riskLabel: 'Ruches détruites', months: 4, drift: { gauge: 5, risk: 6 },
+    stages: ['Des nuées de frelons géants s’abattent sur les ruchers du Sud-Ouest.', 'Pique-niques annulés, apiculteurs désespérés, pots de miel hors de prix.', 'Pièges, nids détruits, appel aux volontaires : la riposte s’organise.'] },
 };
 
 export function crises(d: GameState): Partial<Record<CrisisArcId, CrisisArc>> {
@@ -170,6 +183,69 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         s.credibility = clamp(s.credibility - 5);
         lose('La taupe a filé', 'Elle a quitté le pays avec des secrets d’État. Le Parlement réclame des comptes.');
+      }
+      break;
+    case 'blackout':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 5);
+        win('La lumière revenue', 'Le réseau électrique est rétabli partout. On salue la mobilisation des techniciens… et la vôtre.');
+      } else {
+        s.popularity = clamp(s.popularity - 6);
+        economy(d).growth -= 0.4;
+        lose('La nuit noire', 'Trois semaines de coupures, des entreprises à l’arrêt : le pays vous en veut.');
+      }
+      break;
+    case 'crue':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5);
+        win('Paris sauvé des eaux', 'Les digues ont tenu, les quartiers ont été protégés. Les images des sacs de sable font le tour du monde.');
+      } else {
+        s.popularity = clamp(s.popularity - 5);
+        economy(d).confidence = clamp(economy(d).confidence - 5);
+        lose('La Seine a tout emporté', 'Des milliards de dégâts, des milliers de sinistrés. L’État a été lent.');
+      }
+      break;
+    case 'secheresse':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 4);
+        electorate(d).offsets.ruraux = clamp(electorate(d).offsets.ruraux + 4, -30, 30);
+        win('Le pacte de l’eau', 'Un accord de partage entre agriculteurs, villes et industriels. Les pluies d’automne font le reste.');
+      } else {
+        s.popularity = clamp(s.popularity - 5);
+        electorate(d).offsets.ruraux = clamp(electorate(d).offsets.ruraux - 5, -30, 30);
+        lose('Les robinets à sec', 'Des villages privés d’eau tout l’été. Le monde rural ne pardonne pas.');
+      }
+      break;
+    case 'autonomie':
+      if (a.gauge >= 55 && a.risk < 60) {
+        s.influence = clamp(s.influence + 4); s.credibility = clamp(s.credibility + 3);
+        win('Un statut d’autonomie négocié', `${a.meta ?? 'La région'} obtient de nouvelles compétences, dans la République. Un compromis salué des deux côtés.`);
+      } else if (a.risk >= 70) {
+        s.popularity = clamp(s.popularity - 4); s.stress = clamp(s.stress + 8);
+        lose('La rupture', `Les négociations avec ${a.meta ?? 'la région'} échouent dans la colère. Les tensions dureront des années.`);
+      } else {
+        pushNews(d, 'actu', 'neutral', 'Statu quo', `Ni accord ni rupture avec ${a.meta ?? 'la région'} : le dossier est renvoyé à plus tard.`);
+      }
+      break;
+    case 'ia':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 5);
+        electorate(d).offsets.jeunes = clamp(electorate(d).offsets.jeunes + 3, -30, 30);
+        win('L’IA remise au pas', 'Algorithme audité, décisions corrigées, contrôle humain rétabli : un modèle cité en Europe.');
+      } else {
+        s.credibility = clamp(s.credibility - 6);
+        lose('Le scandale de l’algorithme', 'Des familles privées d’aides pendant des mois. La commission d’enquête sera sévère.');
+      }
+      break;
+    case 'frelons':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 3);
+        electorate(d).offsets.ruraux = clamp(electorate(d).offsets.ruraux + 3, -30, 30);
+        win('Les frelons vaincus', 'Les ruchers repartent, le miel revient sur les marchés. On vous surnomme « l’apiculteur de la République ».');
+      } else {
+        s.popularity = clamp(s.popularity - 2);
+        electorate(d).offsets.ruraux = clamp(electorate(d).offsets.ruraux - 4, -30, 30);
+        lose('Le miel a disparu', 'Un tiers des ruches détruites. Les apiculteurs manifestent en combinaison devant la préfecture.');
       }
       break;
     case 'dissolution': {

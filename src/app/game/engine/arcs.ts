@@ -19,7 +19,7 @@ export function activeArcs(d: GameState): string[] {
   if (d.war) out.push('Guerre');
   if (d.plot) out.push('Complot');
   if (d.zombie && !d.zombie.vaccine) out.push('Épidémie Z');
-  const names = { cyber: 'Cyberattaque', proces: 'Procès', jo: 'Jeux olympiques', dissolution: 'Dissolution', krach: 'Krach financier', megafeux: 'Méga-feux', agriculteurs: 'Révolte des campagnes', taupe: 'Taupe' } as const;
+  const names = { cyber: 'Cyberattaque', proces: 'Procès', jo: 'Jeux olympiques', dissolution: 'Dissolution', krach: 'Krach financier', megafeux: 'Méga-feux', agriculteurs: 'Révolte des campagnes', taupe: 'Taupe', blackout: 'Black-out', crue: 'Crue de la Seine', secheresse: 'Guerre de l’eau', autonomie: 'Autonomie régionale', ia: 'IA de l’État', frelons: 'Frelons géants' } as const;
   for (const [id, a] of Object.entries(d.crises ?? {})) if (a) out.push(names[id as keyof typeof names]);
   return out;
 }

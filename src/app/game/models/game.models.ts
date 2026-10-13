@@ -293,6 +293,10 @@ export type Effect =
   | { kind: 'promise'; domain: DomainRef; text?: string; months?: number; keep?: boolean }
   | { kind: 'localProject'; id?: string; boost?: number; attachment?: number }
   | { kind: 'rivalPlot'; counter?: boolean; start?: TargetRef }
+  | { kind: 'economy'; growth?: number; unemployment?: number; deficit?: number; inflation?: number; confidence?: number }
+  | { kind: 'segment'; segment: Segment | '*'; delta: number }
+  | { kind: 'coalition'; partyId?: string; open?: boolean; mood?: number; leave?: boolean }
+  | { kind: 'circo'; move: CircoKind }
   | { kind: 'crisis'; arc: CrisisArcId; start?: boolean; gauge?: number; risk?: number; meta?: string }
   | { kind: 'zombie'; start?: 'alerte' | 'minimiser' | 'confiner'; infection?: number; containment?: number; panic?: number; cure?: number; shelter?: boolean }
   | { kind: 'scheme'; type?: string; targetId?: TargetRef; progress?: number; secrecy?: number; abandon?: boolean; ally?: TargetRef };
@@ -329,7 +333,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -1037,6 +1041,10 @@ export interface GameState {
   territory?: TerritoryState;
   rivalPlots?: RivalPlot[];
   crises?: Partial<Record<CrisisArcId, CrisisArc>>;
+  economy?: EconomyState;
+  electorate?: ElectorateState;
+  electoralMap?: ElectoralMap | null;
+  coalition?: Coalition | null;
   plot?: PlotState | null;
   player: Player;
   party: Party;
@@ -1349,13 +1357,66 @@ export interface TerritoryState {
   /** Attachement des habitants (0-100) : compte aux élections locales */
   attachment: number;
   projects: LocalProject[];
+  /** Région de la circonscription (code de région, ou « OM » pour l'outre-mer) */
+  region?: string;
+  /** Bastion, circonscription disputée ou terre de mission */
+  kind?: CircoKind;
+}
+
+export type CircoKind = 'bastion' | 'disputee' | 'mission';
+
+/** L'économie française : réagit aux réformes, aux crises et à la conjoncture */
+export interface EconomyState {
+  /** Taux de chômage (%) */
+  unemployment: number;
+  /** Croissance annuelle du PIB (%) */
+  growth: number;
+  /** Déficit public (% du PIB) */
+  deficit: number;
+  /** Dette publique (% du PIB) */
+  debt: number;
+  /** Inflation annuelle (%) */
+  inflation: number;
+  /** Confiance des ménages et des entreprises (0-100) */
+  confidence: number;
+  /** Note souveraine : 0 = AAA, 1 = AA+, … */
+  rating: number;
+  /** Prochaine revue de la note (mois) */
+  nextReview: number;
+  history: { week: number; unemployment: number; growth: number; deficit: number; debt: number; inflation: number }[];
+}
+
+/** Votre cote par catégorie d'électeurs : écart (en points) à votre popularité générale */
+export interface ElectorateState {
+  offsets: Record<Segment, number>;
+}
+
+/** La carte électorale : le parti en tête dans chaque région */
+export interface ElectoralMap {
+  label: string;
+  week: number;
+  regions: Record<string, { partyId: string; share: number }>;
+}
+
+/** Une coalition de gouvernement avec un parti voisin */
+export interface Coalition {
+  partyId: string;
+  name: string;
+  color: string;
+  since: number;
+  /** Humeur du partenaire (0-100) : trop basse, il claque la porte */
+  mood: number;
+  /** Points de majorité qu'il apporte */
+  bonus: number;
+  ministries: number;
 }
 
 /** Un complot qu'un rival mène contre vous */
 export interface RivalPlot { npcId: string; since: number; progress: number; kind: 'dossier' | 'rumeurs' | 'investiture' }
 
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
-export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe';
+export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
+  | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

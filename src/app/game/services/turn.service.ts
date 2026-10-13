@@ -14,6 +14,8 @@ import { monthlyRivalCareers, monthlyRivalPlots } from '../engine/rivals';
 import { monthlyPromises } from '../engine/promises';
 import { monthlyTerritory } from '../engine/territory';
 import { monthlyCrises } from '../engine/crises';
+import { monthlyEconomy, monthlyElectorate } from '../engine/country';
+import { monthlyCoalition } from '../engine/coalition';
 import { checkAchievements } from '../data/achievements';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { autoMinigames } from '../engine/minigame';
@@ -134,6 +136,9 @@ export class TurnService {
     monthlyPromises(d);
     monthlyTerritory(d);
     monthlyCrises(d, rng);
+    monthlyEconomy(d, rng);
+    monthlyElectorate(d);
+    monthlyCoalition(d, rng);
     monthlyWar(d, rng);
     monthlyAssembly(d, rng);
     weeklyObjectives(d, rng);

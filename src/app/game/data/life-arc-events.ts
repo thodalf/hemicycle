@@ -206,6 +206,75 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'blackout_gate', weight: 1, minRank: 'conseiller_municipal', eligible: d => !d.crises?.blackout && !d.player.flags['blackoutDone'] && d.week > 20 && [10, 11, 0, 1].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'La France dans le noir',
+      context: 'Moins quinze degrés, une consommation record, une ligne à très haute tension qui saute : la panne se propage en cascade. Vingt millions de foyers sans électricité.',
+      choices: [
+        c('crise', 'Rejoindre la cellule de crise du gestionnaire de réseau', [cr('blackout', 8, 0, true), { kind: 'flag', key: 'blackoutDone', value: true }, s('energy', -6)], 'Une nuit devant les écrans de contrôle, à la lampe frontale.'),
+        c('terrain', 'Aller ouvrir des gymnases chauffés', [cr('blackout', 2, -4, true), { kind: 'flag', key: 'blackoutDone', value: true }, s('popularity', 2)], 'Couvertures, soupe chaude, groupes électrogènes : les images marquent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'crue_gate', weight: 1, minRank: 'depute', eligible: d => !d.crises?.crue && !d.player.flags['crueDone'] && d.week > 24 && [0, 1, 2, 3].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'La crue centennale',
+      context: 'Après trois semaines de pluie, la Seine dépasse les huit mètres au pont d’Austerlitz. Les modèles annoncent un niveau jamais vu depuis 1910.',
+      choices: [
+        c('anticiper', 'Faire évacuer les quartiers bas dès maintenant', [cr('crue', 8, 0, true), { kind: 'flag', key: 'crueDone', value: true }, s('popularity', -1)], 'Cent mille personnes évacuées « pour rien », râlent certains. Pour l’instant.'),
+        c('attendre', 'Attendre les prochaines prévisions', [cr('crue', 0, 8, true), { kind: 'flag', key: 'crueDone', value: true }], 'L’eau, elle, n’attend pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'secheresse_gate', weight: 1, minRank: 'conseiller_municipal', eligible: d => !d.crises?.secheresse && !d.player.flags['secheresseDone'] && d.week > 30 && [5, 6, 7, 8].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'Plus une goutte',
+      context: 'Huit mois sans vraie pluie. Les préfets multiplient les arrêtés, des communes n’ont plus d’eau au robinet, et les agriculteurs réclament les réserves.',
+      choices: [
+        c('partage', 'Proposer une conférence du partage de l’eau', [cr('secheresse', 8, 0, true), { kind: 'flag', key: 'secheresseDone', value: true }, { kind: 'segment', segment: 'ruraux', delta: 2 }], 'Agriculteurs, maires, industriels autour d’une table. Ça promet.'),
+        c('villes', 'Priorité absolue à l’eau potable des villes', [cr('secheresse', 2, 4, true), { kind: 'flag', key: 'secheresseDone', value: true }, { kind: 'segment', segment: 'ruraux', delta: -3 }, { kind: 'segment', segment: 'cadres', delta: 1 }], 'Les campagnes se sentent sacrifiées.'),
+      ],
+    }),
+  },
+  {
+    tag: 'autonomie_gate', weight: 0.8, minRank: 'depute', eligible: d => !d.crises?.autonomie && !d.player.flags['autonomieDone'] && d.week > 40,
+    build: (d, rng) => {
+      const region = rng.pick(['la Corse', 'la Bretagne', 'l’Alsace', 'le Pays basque']);
+      return {
+        title: `${region.charAt(0).toUpperCase()}${region.slice(1)} réclame son autonomie`,
+        context: `L’assemblée régionale vote à une large majorité une motion pour un « statut d’autonomie » : langue, fiscalité, foncier. Paris doit répondre.`,
+        choices: [
+          c('negocier', 'Ouvrir des négociations', [cr('autonomie', 8, 0, true, region), { kind: 'flag', key: 'autonomieDone', value: true }, s('credibility', 1)], 'Une délégation est reçue place Beauvau. Les jacobins s’étranglent.'),
+          c('ferme', '« La République est une et indivisible »', [cr('autonomie', 0, 8, true, region), { kind: 'flag', key: 'autonomieDone', value: true }, { kind: 'segment', segment: 'retraites', delta: 2 }], 'Applaudissements à Paris, sifflets là-bas.'),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'ia_gate', weight: 0.9, minRank: 'depute', eligible: d => !d.crises?.ia && !d.player.flags['iaDone'] && d.week > 30,
+    build: () => ({
+      title: 'L’algorithme devient fou',
+      context: 'Le nouveau système d’intelligence artificielle de l’administration suspend des allocations, recalcule des impôts, convoque des retraités au service militaire. Personne ne sait l’arrêter.',
+      choices: [
+        c('debrancher', 'Exiger qu’on le débranche immédiatement', [cr('ia', 8, 0, true), { kind: 'flag', key: 'iaDone', value: true }, { kind: 'segment', segment: 'retraites', delta: 2 }], 'Retour au papier et aux tampons. Les files d’attente s’allongent, mais les erreurs cessent.'),
+        c('corriger', 'Le corriger en marche', [cr('ia', 2, 6, true), { kind: 'flag', key: 'iaDone', value: true }, { kind: 'segment', segment: 'jeunes', delta: 1 }], 'Les ingénieurs promettent un correctif « sous huit jours ».'),
+      ],
+    }),
+  },
+  {
+    tag: 'frelons_gate', weight: 0.8, minRank: 'conseiller_municipal', eligible: d => !d.crises?.frelons && !d.player.flags['frelonsDone'] && d.week > 14 && [4, 5, 6, 7, 8].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'Les frelons géants arrivent',
+      context: 'Des frelons de cinq centimètres ravagent les ruchers. Un apiculteur en larmes vous montre une ruche vide à la télévision. Les réseaux parlent déjà de « frelonpocalypse ».',
+      choices: [
+        c('plan', 'Lancer un plan national anti-frelons', [cr('frelons', 8, 0, true), { kind: 'flag', key: 'frelonsDone', value: true }, { kind: 'segment', segment: 'ruraux', delta: 2 }], 'On vous moque un peu. Les apiculteurs, eux, vous remercient.'),
+        c('relativiser', 'Relativiser : « ce sont des insectes »', [cr('frelons', 0, 8, true), { kind: 'flag', key: 'frelonsDone', value: true }, s('popularity', -1)], 'La phrase tourne en boucle sur les réseaux. Mauvais choix.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -377,6 +446,138 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('demenir', 'Ne rien confirmer', [cr('taupe', 4), s('credibility', 1)], 'Le secret tient encore quelques semaines.'),
         c('off', 'Lui donner des éléments en off', [s('influence', 2), cr('taupe', -4, 4), { kind: 'exposure', delta: 4 }], 'Un article bien informé paraît. La taupe aussi le lit.'),
+      ],
+    }),
+  },
+  {
+    tag: 'bo_hopital', weight: 1, eligible: d => !!d.crises?.blackout,
+    build: () => ({
+      title: 'Un hôpital à court de carburant',
+      context: 'Les groupes électrogènes du CHU n’ont plus que six heures d’autonomie. Des patients sont sous respirateur.',
+      choices: [
+        c('armee', 'Faire livrer du gazole par l’armée', [cr('blackout', 8, -4), s('credibility', 2)], 'Les camions militaires arrivent à l’aube.'),
+        c('transferer', 'Transférer les patients vers une autre région', [cr('blackout', 3, 2), s('energy', -5)], 'Une noria d’ambulances dans la nuit.'),
+      ],
+    }),
+  },
+  {
+    tag: 'bo_delestage', weight: 0.8, eligible: d => !!d.crises?.blackout,
+    build: () => ({
+      title: 'Qui couper en premier ?',
+      context: 'Pour éviter une nouvelle panne générale, il faut délester. Les usines, ou les particuliers ?',
+      choices: [
+        c('usines', 'Couper les usines', [cr('blackout', 6), { kind: 'economy', growth: -0.2 }, { kind: 'segment', segment: 'populaires', delta: -2 }], 'Le chômage partiel explose, mais les foyers ont chaud.'),
+        c('foyers', 'Couper les foyers deux heures par jour', [cr('blackout', 6, 4), { kind: 'segment', segment: 'retraites', delta: -3 }], 'Des retraités dans le froid : les images sont terribles.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cr_metro', weight: 1, eligible: d => !!d.crises?.crue,
+    build: () => ({
+      title: 'Le métro va être noyé',
+      context: 'L’eau menace d’envahir le réseau souterrain. Murer les bouches de métro, c’est paralyser Paris pour des mois.',
+      choices: [
+        c('murer', 'Murer les stations les plus exposées', [cr('crue', 10, -4), { kind: 'economy', growth: -0.1 }], 'Des murs de parpaings dans les couloirs. Le réseau est sauvé.'),
+        c('pomper', 'Tout miser sur les pompes', [cr('crue', 4, 4)], 'Les pompes tournent jour et nuit… et tombent en panne à 3 h du matin.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cr_sinistres', weight: 0.8, eligible: d => !!d.crises?.crue,
+    build: () => ({
+      title: 'Les sinistrés attendent',
+      context: 'Des familles dorment dans des gymnases depuis dix jours. Les assureurs traînent.',
+      choices: [
+        c('fonds', 'Débloquer un fonds d’urgence', [cr('crue', 4, -6), { kind: 'economy', deficit: 0.1 }, s('popularity', 2)], 'Un chèque de 1 500 € par foyer en quarante-huit heures.'),
+        c('assureurs', 'Convoquer les assureurs', [cr('crue', 2, -2), s('credibility', 2)], 'Ils promettent d’accélérer. Promettent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'se_golf', weight: 1, eligible: d => !!d.crises?.secheresse,
+    build: () => ({
+      title: 'Les golfs continuent d’arroser',
+      context: 'Une vidéo montre des greens verts comme au printemps, à côté d’un champ de maïs grillé. L’indignation est générale.',
+      choices: [
+        c('interdire', 'Interdire l’arrosage des golfs', [cr('secheresse', 6, -4), { kind: 'segment', segment: 'populaires', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: -2 }], 'Les golfeurs protestent. Tout le monde s’en moque.'),
+        c('derogation', 'Maintenir une dérogation « pour l’emploi »', [cr('secheresse', 0, 6), { kind: 'segment', segment: 'ruraux', delta: -3 }], 'L’argument passe mal.'),
+      ],
+    }),
+  },
+  {
+    tag: 'se_bassines', weight: 0.8, eligible: d => !!d.crises?.secheresse,
+    build: () => ({
+      title: 'La bataille des méga-bassines',
+      context: 'Des réserves d’eau géantes pour l’irrigation : les agriculteurs les réclament, les écologistes manifestent contre.',
+      choices: [
+        c('pour', 'Soutenir les bassines', [cr('secheresse', 4, 2), { kind: 'segment', segment: 'ruraux', delta: 3 }, { kind: 'segment', segment: 'jeunes', delta: -3 }], 'Les tracteurs applaudissent, les militants climat vous conspuent.'),
+        c('moratoire', 'Un moratoire et une concertation', [cr('secheresse', 6, 0), { kind: 'segment', segment: 'jeunes', delta: 2 }, { kind: 'segment', segment: 'ruraux', delta: -1 }], 'Personne n’est satisfait, mais personne ne casse rien.'),
+      ],
+    }),
+  },
+  {
+    tag: 'au_manif', weight: 1, eligible: d => !!d.crises?.autonomie,
+    build: d => ({
+      title: 'Une grande manifestation',
+      context: `Cinquante mille personnes défilent pour l’autonomie de ${d.crises!.autonomie!.meta ?? 'la région'}. Quelques casseurs en marge du cortège.`,
+      choices: [
+        c('recevoir', 'Recevoir les organisateurs', [cr('autonomie', 8, -4)], 'Une rencontre longue, franche, utile.'),
+        c('fermete', 'Condamner les violences, sans un mot de plus', [cr('autonomie', 0, 6), { kind: 'segment', segment: 'retraites', delta: 1 }], 'Le message passe à Paris. Là-bas, il blesse.'),
+      ],
+    }),
+  },
+  {
+    tag: 'au_referendum', weight: 0.7, eligible: d => !!d.crises?.autonomie,
+    build: () => ({
+      title: 'Un référendum local ?',
+      context: 'Les élus régionaux proposent de consulter la population sur le futur statut.',
+      choices: [
+        c('accepter', 'Accepter une consultation non contraignante', [cr('autonomie', 10, 4), s('credibility', 2)], 'Le débat démocratique s’ouvre. L’issue est incertaine.'),
+        c('refuser', 'Refuser : « la Constitution ne le permet pas »', [cr('autonomie', -2, 8)], 'Juridiquement solide. Politiquement explosif.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ia_lanceur', weight: 1, eligible: d => !!d.crises?.ia,
+    build: () => ({
+      title: 'Une ingénieure lanceuse d’alerte',
+      context: 'Une ingénieure du projet affirme qu’on avait signalé les failles de l’IA dès les tests, et que sa hiérarchie a passé outre.',
+      choices: [
+        c('proteger', 'La protéger et l’écouter', [cr('ia', 10, -2), s('credibility', 2)], 'Ses notes techniques permettent de trouver le bug.'),
+        c('minimiser', 'Parler d’un « cas isolé »', [cr('ia', 0, 6), s('credibility', -2)], 'Elle publie ses courriels. Mauvaise semaine.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ia_victimes', weight: 0.8, eligible: d => !!d.crises?.ia,
+    build: () => ({
+      title: 'Les victimes de l’algorithme',
+      context: 'Une association rassemble des milliers de familles privées d’aides. Elles réclament réparation.',
+      choices: [
+        c('indemniser', 'Indemniser tout le monde, vite', [cr('ia', 4, -8), { kind: 'economy', deficit: 0.1 }, { kind: 'segment', segment: 'populaires', delta: 3 }], 'Des virements partent par centaines de milliers.'),
+        c('cas_par_cas', 'Examiner les dossiers au cas par cas', [cr('ia', 2, 3)], 'Une procédure de plus. Gérée… par l’algorithme ?'),
+      ],
+    }),
+  },
+  {
+    tag: 'fr_ecole', weight: 1, eligible: d => !!d.crises?.frelons,
+    build: () => ({
+      title: 'Un nid géant dans une école',
+      context: 'Un nid de la taille d’un ballon de plage découvert dans la cour d’une école maternelle. Les parents paniquent.',
+      choices: [
+        c('pompiers', 'Envoyer les pompiers en combinaison', [cr('frelons', 6, -2), s('popularity', 1)], 'Le nid est détruit en direct à la télévision régionale.'),
+        c('fermer', 'Fermer l’école une semaine', [cr('frelons', 2, 0), { kind: 'segment', segment: 'jeunes', delta: -1 }], 'Les parents doivent s’organiser. Ils râlent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fr_miel', weight: 0.8, eligible: d => !!d.crises?.frelons,
+    build: () => ({
+      title: 'Le prix du miel s’envole',
+      context: 'Le pot de miel français dépasse les vingt euros. Des importations douteuses inondent les rayons.',
+      choices: [
+        c('controles', 'Renforcer les contrôles sur le miel importé', [cr('frelons', 2, -2), { kind: 'segment', segment: 'ruraux', delta: 2 }], 'Les apiculteurs applaudissent.'),
+        c('aides', 'Indemniser les apiculteurs', [cr('frelons', 4, -4), { kind: 'economy', deficit: 0.05 }], 'Un geste apprécié dans les campagnes.'),
       ],
     }),
   },

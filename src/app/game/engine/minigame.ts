@@ -79,7 +79,12 @@ export function resolveMinigame(d: GameState, id: string, rawScore: number, rng:
   // Concours : il faut au moins « réussi » pour être reçu·e ; le classement décide du corps
   const exam = g.reward.some(e => e.kind === 'civil' && e.join);
   const passed = tier === 'brillant' || tier === 'reussi';
-  const reward = exam ? examOutcome(g.reward, passed, tier === 'brillant') : g.reward;
+  let reward = exam ? examOutcome(g.reward, passed, tier === 'brillant') : g.reward;
+  // Négociation de coalition : ratée, pas d'accord ; mitigée, un partenaire déjà méfiant
+  if (g.reward.some(e => e.kind === 'coalition')) {
+    reward = tier === 'rate' ? reward.filter(e => e.kind !== 'coalition')
+      : reward.map(e => e.kind === 'coalition' ? { ...e, mood: tier === 'brillant' ? 15 : tier === 'mitige' ? -20 : 0 } : e);
+  }
   if (exam && !passed) pushNews(d, 'systeme', 'negative', 'Recalé·e au concours', 'Votre nom n’apparaît pas sur la liste des admis. Vous pourrez retenter votre chance l’an prochain.');
   switch (tier) {
     case 'brillant': effects = [...boostGains(reward, 1.5), { kind: 'stat', stat: 'stress', delta: -2 }]; break;

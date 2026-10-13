@@ -2,6 +2,8 @@ import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { localBonus } from '../../engine/territory';
+import { CIRCO_HINTS, CIRCO_LABELS, MAP_REGIONS } from '../../engine/country';
+import { CircoKind } from '../../models/game.models';
 import { promiseProgress } from '../../engine/promises';
 import { DOMAIN_LABELS, Domain } from '../../models/game.models';
 
@@ -13,6 +15,7 @@ import { DOMAIN_LABELS, Domain } from '../../models/game.models';
     @if (game.s().territory; as t) {
       <section class="card terr" aria-label="Votre territoire">
         <div class="card-title"><span>{{ t.name }}</span><span class="chip">Attachement {{ t.attachment | number: '1.0-0' }}</span></div>
+        <p class="kind" [class]="'k-' + (t.kind ?? 'disputee')"><strong>{{ kindLabel(t.kind) }}</strong>@if (regionName(t.region); as rn) { · {{ rn }} } <span class="muted">— {{ kindHint(t.kind) }}</span></p>
         <svg viewBox="0 0 100 100" class="map" role="img" [attr.aria-label]="'Carte de ' + t.name">
           <path class="land" d="M10,38 C14,18 36,8 56,12 C76,14 94,26 92,48 C96,66 86,88 62,90 C40,94 18,86 10,68 C4,58 6,46 10,38 Z" />
           @for (c of t.communes; track c.name) {
@@ -68,6 +71,7 @@ import { DOMAIN_LABELS, Domain } from '../../models/game.models';
     .bar { height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; i { display: block; height: 100%; background: var(--accent); } }
     .good { color: var(--good); font-weight: 600; }
     .note { margin: 0; font-size: 11.5px; }
+    .kind { margin: 0; font-size: 12px; padding-left: 8px; border-left: 3px solid var(--warn); } .kind.k-bastion { border-left-color: var(--good); } .kind.k-mission { border-left-color: var(--bad); }
     .promises li { display: grid; grid-template-columns: 1fr 60px; gap: 8px; align-items: center; font-size: 12.5px; padding-left: 8px; border-left: 3px solid var(--line); }
     .promises li.s-tenue { border-left-color: var(--good); grid-template-columns: 1fr; } .promises li.s-trahie { border-left-color: var(--bad); grid-template-columns: 1fr; }
     .pt { display: grid; small { font-size: 11px; } }
@@ -79,4 +83,7 @@ export class TerritoryPanelComponent {
   protected readonly promises = computed(() => [...(this.game.s().promises ?? [])].reverse().slice(0, 6));
   protected prog(p: Parameters<typeof promiseProgress>[1]): number { return promiseProgress(this.game.s(), p); }
   protected label(d: Domain): string { return DOMAIN_LABELS[d]; }
+  protected kindLabel(k?: CircoKind): string { return CIRCO_LABELS[k ?? 'disputee']; }
+  protected kindHint(k?: CircoKind): string { return CIRCO_HINTS[k ?? 'disputee']; }
+  protected regionName(id?: string): string | undefined { return MAP_REGIONS.find(r => r.id === id)?.name; }
 }

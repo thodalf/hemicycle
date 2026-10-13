@@ -35,6 +35,8 @@ import { keepPromise, makePromise } from './promises';
 import { boostLocal, startLocalProject, territory } from './territory';
 import { counterPlots } from './rivals';
 import { adjustCrisis } from './crises';
+import { adjustEconomy, adjustSegment, moveCirco } from './country';
+import { adjustCoalition } from './coalition';
 
 /* ============================================================
  *  Moteur d'effets — fonctions pures appliquées sur un brouillon
@@ -438,6 +440,18 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       case 'rivalPlot':
         if (e.counter) summary.push(...counterPlots(d, rng));
+        break;
+      case 'economy':
+        summary.push(...adjustEconomy(d, e));
+        break;
+      case 'segment':
+        summary.push(...adjustSegment(d, e));
+        break;
+      case 'coalition':
+        summary.push(...adjustCoalition(d, e, rng));
+        break;
+      case 'circo':
+        summary.push(...moveCirco(d, e.move, rng));
         break;
       case 'crisis':
         summary.push(...adjustCrisis(d, e));

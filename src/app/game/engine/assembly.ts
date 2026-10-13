@@ -31,8 +31,10 @@ function inGovernment(d: GameState): boolean {
 }
 
 /** Parti qui gouverne (et son allié le plus proche) */
-function governingIds(d: GameState): string[] {
+export function governingIds(d: GameState): string[] {
   const parties = [d.party, ...d.otherParties];
+  // Une coalition négociée remplace l'allié naturel
+  if (inGovernment(d) && d.coalition && !d.presidency?.cohabitation) return [d.party.id, d.coalition.partyId];
   let lead = inGovernment(d) ? d.party.id : d.presidential.incumbentPartyId ?? d.party.id;
   if (d.presidency?.cohabitation) {
     // L'opposition tient l'Assemblée : le grand parti le plus éloigné de vous

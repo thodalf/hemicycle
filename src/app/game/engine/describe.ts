@@ -39,6 +39,24 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'promise': return [{ text: e.keep ? 'Rapproche une promesse de son terme' : 'Promesse à tenir sous deux ans (+15 de maîtrise)', tone: e.keep ? 'good' : 'neutral' }];
     case 'localProject': return [{ text: e.boost ? `Chantier local : ${e.boost} mois d’avance` : e.attachment ? `Attachement du territoire ${e.attachment > 0 ? '+' : ''}${e.attachment}` : 'Lance un chantier local', tone: 'good' }];
     case 'rivalPlot': return [{ text: 'Déjoue les manœuvres des rivaux', tone: 'good' }];
+    case 'economy': {
+      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      const pt = (v: number) => `${v > 0 ? '+' : '−'}${Math.abs(v).toLocaleString('fr-FR')} pt`;
+      if (e.growth) out.push({ text: `Croissance ${pt(e.growth)}`, tone: e.growth > 0 ? 'good' : 'bad' });
+      if (e.unemployment) out.push({ text: `Chômage ${pt(e.unemployment)}`, tone: e.unemployment < 0 ? 'good' : 'bad' });
+      if (e.deficit) out.push({ text: `Déficit ${pt(e.deficit)}`, tone: e.deficit < 0 ? 'good' : 'bad' });
+      if (e.inflation) out.push({ text: `Inflation ${pt(e.inflation)}`, tone: e.inflation < 0 ? 'good' : 'bad' });
+      if (e.confidence) out.push({ text: `Confiance ${e.confidence > 0 ? '+' : ''}${e.confidence}`, tone: e.confidence > 0 ? 'good' : 'bad' });
+      return out;
+    }
+    case 'segment': {
+      const labels: Record<string, string> = { jeunes: 'jeunes', retraites: 'retraités', populaires: 'classes populaires', cadres: 'cadres', ruraux: 'ruraux', '*': 'tous les électorats' };
+      return [{ text: `${e.delta > 0 ? '+' : ''}${e.delta} chez les ${labels[e.segment]}`.replace('chez les tous', 'dans tous'), tone: e.delta > 0 ? 'good' : 'bad' }];
+    }
+    case 'coalition': return e.open ? [{ text: 'Ouvre des négociations de coalition', tone: 'neutral' }]
+      : e.mood ? [{ text: `Humeur du partenaire ${e.mood > 0 ? '+' : ''}${e.mood}`, tone: e.mood > 0 ? 'good' : 'bad' }]
+      : e.leave ? [{ text: 'Rompt la coalition', tone: 'bad' }] : [{ text: 'Forme une coalition', tone: 'good' }];
+    case 'circo': return [{ text: e.move === 'bastion' ? 'Parachutage dans un bastion' : e.move === 'mission' ? 'Parachutage en terre de mission' : 'Parachutage dans une circonscription disputée', tone: 'neutral' }];
     case 'crisis': {
       const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
       if (e.start) out.push({ text: 'Déclenche une crise', tone: 'bad' });

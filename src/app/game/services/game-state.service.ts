@@ -1,5 +1,6 @@
 import { initHostile, startInvasion, startWar } from '../engine/war';
 import { initTerritory } from '../engine/territory';
+import { ensureCirco, initEconomy, initElectorate } from '../engine/country';
 import { initFamily } from '../engine/family';
 import { welcomePhone } from '../engine/phone';
 import { migrateTeamPay } from '../engine/team-pay';
@@ -167,6 +168,9 @@ export function migrate(s: GameState): GameState {
   s.schemes ??= [];
   s.promises ??= [];
   s.territory ??= initTerritory();
+  s.economy ??= initEconomy(s);
+  s.electorate ??= initElectorate(s);
+  ensureCirco(s);
   s.family ??= initFamily(s);
   s.rivalPlots ??= [];
   s.crises ??= {};
@@ -217,6 +221,9 @@ export class GameStateService {
     welcomePhone(state);
     state.family = initFamily(state);
     state.territory = initTerritory();
+    state.economy = initEconomy(state);
+    state.electorate = initElectorate(state);
+    ensureCirco(state);
     if (opts.scenario === 'invasion') startInvasion(state, 'karstanie');
     if (opts.scenario === 'complot') startPlot(state, new Rng(state));
     if (opts.scenario === 'guerre_totale') { startWar(state, 'meridia', true, { total: true }); if (state.war) { state.war.front = 47; state.war.morale = 58; } }

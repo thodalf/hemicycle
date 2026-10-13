@@ -233,6 +233,11 @@ export const MINIGAMES: MinigameDef[] = [
     who: 'Vos partenaires', unit: 'circ.', min: 0, max: 60,
   },
   {
+    id: 'negociation_coalition', kind: 'marchandage', icon: '🏛️', title: 'Négociation de coalition',
+    rule: 'Combien de ministères céder au partenaire ? Au-dessous de son exigence, il quitte la table ; au-dessus, votre parti crie à la trahison. Cinq offres au plus.',
+    who: 'Le partenaire', unit: 'ministères', min: 0, max: 14,
+  },
+  {
     id: 'pointage', kind: 'pointage', icon: '🏛️', title: 'Rallier les indécis',
     rule: 'Des députés hésitent : cliquez sur eux avant qu’ils ne se décident ailleurs.', good: '🟡', bad: '🔴',
   },

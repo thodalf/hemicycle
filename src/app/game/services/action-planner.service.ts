@@ -1,3 +1,4 @@
+import { actionSegments } from '../engine/country';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { inMonth } from '../engine/calendar';
 import { ALIEN_PHASES } from '../engine/alien';
@@ -146,6 +147,8 @@ export class ActionPlannerService {
       if (req.placement !== undefined && Number(s.player.flags['placement'] ?? 0) === req.placement) return { ok: false, reason: req.placement === 0 ? 'Rien n’est placé' : 'Déjà fait' };
       if (req.schemes && !(s.schemes ?? []).length) return { ok: false, reason: 'Aucun complot en cours' };
       if (req.heir) { const why = canAnoint(s); if (why) return { ok: false, reason: why }; }
+      if (req.coalition && !s.coalition) return { ok: false, reason: 'Aucune coalition en cours' };
+      if (req.governing && !s.presidency && !['ministre', 'premier_ministre'].includes(s.player.rankId)) return { ok: false, reason: 'Réservé aux membres du gouvernement' };
       if (req.promises && !(s.promises ?? []).some(x => x.status === 'en_cours')) return { ok: false, reason: 'Aucune promesse en cours' };
       if (req.secondRound && !inSecondRound(s)) return { ok: false, reason: 'Seulement entre les deux tours de la présidentielle' };
       if (req.team && !s.player.team.length) return { ok: false, reason: 'Il faut une équipe' };
@@ -216,6 +219,7 @@ export class ActionPlannerService {
       if (action.cooldown) d.cooldowns[action.id] = d.week + action.cooldown;
 
       recordObjectiveEvent(d, 'category', action.category);
+      actionSegments(d, action, ctx);
       const lastUse = Number(d.player.flags[`last_${action.id}`] ?? -99);
       const prevStreak = d.week - lastUse <= 1 ? Number(d.player.flags[`streak_${action.id}`] ?? 0) : -1;
       const record = () => { d.player.flags[`streak_${action.id}`] = prevStreak + 1; d.player.flags[`last_${action.id}`] = d.week; };

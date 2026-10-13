@@ -1,6 +1,8 @@
 import { formationDecision } from '../engine/government';
+import { coalitionDecision } from '../engine/coalition';
+import { CIRCO_HINTS, CIRCO_LABELS } from '../engine/country';
 import {
-  DOMAIN_LABELS, Decision, DecisionChoice, Domain, EffectContext, GameState,
+  DOMAIN_LABELS, Decision, DecisionChoice, Domain, Effect, EffectContext, GameState,
 } from '../models/game.models';
 import type { Rng } from '../engine/rng';
 import { rankOrder } from './ranks';
@@ -126,6 +128,17 @@ type Template = (d: GameState, rng: Rng, ctx: EffectContext) => Decision | null;
 
 const TEMPLATES: Record<string, Template> = {
   former_gouvernement: d => formationDecision(d, !!d.government?.composition),
+  coalition: d => coalitionDecision(d),
+  parachutage: d => ({
+    id: uid(d, 'dec'), tag: 'parachutage', week: d.week, deadlineWeek: d.week + 1, source: 'parti',
+    title: 'Changer de circonscription',
+    context: `Le bureau national vous propose trois circonscriptions pour les prochaines législatives. Quitter ${d.territory?.name ?? 'la vôtre'}, c’est repartir de zéro auprès des électeurs.`,
+    choices: (['bastion', 'disputee', 'mission'] as const).map((k): DecisionChoice => ({
+      id: k, label: CIRCO_LABELS[k], hint: CIRCO_HINTS[k],
+      effects: [{ kind: 'circo', move: k } as Effect, ...(k === 'bastion' ? [{ kind: 'stat', stat: 'politicalCapital', delta: -10 } as Effect] : k === 'mission' ? [{ kind: 'stat', stat: 'influence', delta: 2 } as Effect] : [])],
+      outcome: k === 'bastion' ? 'Le sortant, prié de laisser sa place, ne vous le pardonnera pas.' : k === 'mission' ? 'Personne n’y croit. C’est bien pour ça que vous y allez.' : 'Tout reste à faire.',
+    })).concat([{ id: 'rester', label: 'Finalement, rester', hint: 'Fidèle à vos électeurs', effects: [{ kind: 'localProject', attachment: 3 } as Effect], outcome: 'Vos électeurs apprécient la fidélité.' }]),
+  }),
   interview: (d, rng) => {
     const domain = d.agendaDomain;
     return {
