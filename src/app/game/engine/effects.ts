@@ -379,6 +379,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       }
       case 'flagAdd':
         d.player.flags[e.key] = Number(d.player.flags[e.key] ?? 0) + e.delta;
+        if (e.key === 'e2t') summary.push(`Second tour ${e.delta > 0 ? '+' : ''}${e.delta}`);
         break;
       case 'dossierScale': {
         const domain = e.domain === '$domain' ? ctx.domain : e.domain;

@@ -5,6 +5,7 @@ import { boostMedia } from '../engine/staff-perks';
 import { queueMinigame } from '../engine/minigame';
 import { leadsWar, warPowerBlock } from '../engine/war';
 import { civilActive } from '../engine/civil';
+import { inSecondRound } from '../engine/entre-deux-tours';
 import { STAFF_BY_ROLE } from '../data/staff';
 import {
   ActionCategory, ActionDefinition, Domain, GameState, Payer, PlannedAction,
@@ -137,6 +138,7 @@ export class ActionPlannerService {
       if (req.noGovernment && ['ministre', 'premier_ministre', 'president'].includes(s.player.rankId)) return { ok: false, reason: 'Incompatible avec une fonction gouvernementale' };
       if (req.minFunds && s.player.finances.personal < req.minFunds) return { ok: false, reason: `Il faut au moins ${req.minFunds.toLocaleString('fr-FR')} € d’épargne` };
       if (req.placement !== undefined && Number(s.player.flags['placement'] ?? 0) === req.placement) return { ok: false, reason: req.placement === 0 ? 'Rien n’est placé' : 'Déjà fait' };
+      if (req.secondRound && !inSecondRound(s)) return { ok: false, reason: 'Seulement entre les deux tours de la présidentielle' };
       if (req.team && !s.player.team.length) return { ok: false, reason: 'Il faut une équipe' };
       if (req.totalWar && !s.war?.total) return { ok: false, reason: 'Seulement en guerre totale' };
       if (req.civil === true && !civilActive(s)) return { ok: false, reason: 'Réservé aux hauts fonctionnaires en poste' };

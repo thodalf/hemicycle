@@ -345,6 +345,24 @@ export class WeekPlannerComponent {
         title: ELECTIONS[e.type].label, rounds, winner: name(e.result!.winnerId), playerWon: e.result!.winnerId === 'player',
       }), 600);
     }
+    // Soirée du premier tour : qualifié·e pour le second
+    const qualified = after.elections.find(x => !x.resolved && x.firstRound && x.finalists && before.elections.some(b => b.id === x.id && !b.firstRound));
+    if (!e && qualified?.firstRound) {
+      this.anim.ballot();
+      const name = (id: string) => id === 'player' ? after.player.name : after.npcs.find(n => n.id === id)?.name ?? id;
+      const color = (id: string) => {
+        if (id === 'player') return after.party.color;
+        const pid = after.npcs.find(n => n.id === id)?.partyId;
+        return [after.party, ...after.otherParties].find(p => p.id === pid)?.color ?? '#8a8f9a';
+      };
+      const rows = Object.entries(qualified.firstRound).sort((a, b) => b[1] - a[1])
+        .map(([id, share]) => ({ name: name(id), color: color(id), share, player: id === 'player' }));
+      const rival = name(qualified.finalists!.find(id => id !== 'player')!);
+      setTimeout(() => this.anim.election.set({
+        title: 'Présidentielle · premier tour', rounds: [{ label: 'Premier tour', rows }], winner: name(qualified.finalists![0]), playerWon: true,
+        verdict: { title: 'Qualifié·e !', text: `Second tour face à ${rival}, le mois prochain. Avant cela : le débat.` },
+      }), 600);
+    }
 
     // Guerre : le front a bougé
     if (after.war && before.war) {

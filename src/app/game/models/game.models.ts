@@ -314,7 +314,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -468,6 +468,10 @@ export interface ScheduledElection {
   candidateIds: string[];
   resolved: boolean;
   result?: ElectionResult;
+  /** Présidentielle : premier tour joué, second tour le mois suivant */
+  firstRound?: Record<string, number>;
+  finalists?: [string, string];
+  secondRoundWeek?: number;
 }
 
 // ── Débat (combat au tour par tour) ─────────────────────────
@@ -475,7 +479,7 @@ export interface ScheduledElection {
 /** Triangle : Faits > Émotion > Attaque > Faits. La parade neutralise l'attaque. */
 export type DebateMove = 'faits' | 'attaque' | 'emotion' | 'parade';
 export type DebateSpecial = 'petite_phrase' | 'fact_check' | 'anecdote' | 'bilan' | 'programme';
-export type DebateStakes = 'face_a_face' | 'hemicycle' | 'debat_electoral' | 'duel_interne';
+export type DebateStakes = 'face_a_face' | 'hemicycle' | 'debat_electoral' | 'duel_interne' | 'entre_deux_tours';
 export type DebateStatus = 'en_cours' | 'gagne' | 'perdu' | 'nul';
 
 export interface DebateCard {
@@ -580,6 +584,26 @@ export interface PresidentialCalendar {
   parrainages: number;
   /** Rang à retrouver en cas de défaite */
   prevRank?: RankId;
+  /** Baromètre mensuel des intentions de vote (les 18 mois qui précèdent le scrutin) */
+  barometer?: Barometer[];
+}
+
+/** Un duel de second tour (hypothèse ou sondage d'entre-deux-tours) */
+export interface PollDuel {
+  a: string;
+  b: string;
+  results: Record<string, number>;
+}
+
+export interface Barometer {
+  week: number;
+  pollster: string;
+  /** Premier tour : candidatId → % */
+  results: Record<string, number>;
+  /** Hypothèses de second tour */
+  duels: PollDuel[];
+  /** Vous êtes testé·e sans être (encore) candidat·e */
+  hypothetical: boolean;
 }
 
 export interface PresidencyState {

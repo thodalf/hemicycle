@@ -8,6 +8,7 @@ import { ofParty } from './world';
 import { effectValue, withCounterweight } from './actions';
 import { LIFE_EVENTS } from './life-events';
 import { EXTRA_EVENTS } from './extra-events';
+import { CAMPAIGN_EVENTS, MORE_EVENTS, inPresidentialRace } from './campaign-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
 import { RANK_EVENTS } from './rank-events';
@@ -1425,6 +1426,11 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const dated = EXTRA_EVENTS.filter(e => CALENDAR_TAGS.has(e.tag) && canFire(e, 10));
     if (dated.length && rng.chance(0.85)) ev = pick(dated);
   }
+  // La course à l'Élysée et les campagnes
+  if (!ev && (inPresidentialRace(d) || d.player.finances.legalCeiling !== null) && rng.chance(0.3)) {
+    const pool = CAMPAIGN_EVENTS.filter(e => canFire(e, 8));
+    if (pool.length) ev = pick(pool);
+  }
   // Les affaires de la fonction occupée, puis celles du monde
   if (!ev && d.week > 2 && rng.chance(0.2)) {
     const pool = RANK_EVENTS.filter(e => canFire(e, 10));
@@ -1434,7 +1440,7 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const pool = INTL_EVENTS.filter(e => canFire(e, 12));
     if (pool.length) ev = pick(pool);
   }
-  if (!ev && d.week > 2 && rng.chance(0.34)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS, ...PEACE_EVENTS, ...EXTRA_EVENTS.filter(e => !CALENDAR_TAGS.has(e.tag))].filter(e => canFire(e, 14)));
+  if (!ev && d.week > 2 && rng.chance(0.34)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS, ...PEACE_EVENTS, ...EXTRA_EVENTS.filter(e => !CALENDAR_TAGS.has(e.tag)), ...MORE_EVENTS].filter(e => canFire(e, 14)));
   if (ev) {
     const { choices, ...built } = ev.build(d, rng);
     const usable = choices

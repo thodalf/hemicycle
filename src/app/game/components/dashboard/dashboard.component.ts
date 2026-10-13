@@ -15,6 +15,7 @@ import { PatrimoineComponent } from '../patrimoine/patrimoine.component';
 import { VitalsComponent } from '../vitals/vitals.component';
 import { FxLayerComponent } from '../fx-layer/fx-layer.component';
 import { ElectionNightComponent } from '../election-night/election-night.component';
+import { PresidentialPollsComponent } from '../presidential-polls/presidential-polls.component';
 import { FxService } from '../../services/fx.service';
 import { AuthService } from '../../services/auth.service';
 import { RANKS } from '../../data/ranks';
@@ -51,7 +52,7 @@ import { Milestone } from '../../models/game.models';
     DecimalPipe,
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
-    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent,
+    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
     WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
@@ -121,6 +122,7 @@ import { Milestone } from '../../models/game.models';
         <app-plot-panel />
         <app-war-panel />
         @if (!game.s().presidency) { <app-presidency-panel /> }
+        <app-presidential-polls />
         @if (program.pending()) {
           <section class="card program-cta">
             <div>

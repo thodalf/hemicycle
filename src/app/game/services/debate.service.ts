@@ -54,7 +54,7 @@ export class DebateService {
     pushNews(d, 'decision', tone, `${debate.title} face à ${debate.opponentName} : ${verdict}${debate.ko ? ' par K.-O.' : ''}`,
       debate.rewardSummary.join(' · '));
     if (debate.status === 'gagne') recordObjectiveEvent(d, 'debate_win');
-    if (debate.status === 'gagne' && (debate.ko || debate.stakes === 'debat_electoral')) {
+    if (debate.status === 'gagne' && (debate.ko || debate.stakes === 'debat_electoral' || debate.stakes === 'entre_deux_tours')) {
       debate.rewardSummary.push(...applyEffects(d, [{ kind: 'booster', count: 1, reason: 'Une victoire éclatante attire les talents.' }], {}, rng));
     }
     refreshObjectives(d, rng);

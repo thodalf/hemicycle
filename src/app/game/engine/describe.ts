@@ -36,7 +36,9 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'stance': return [{ text: `Ligne ${e.delta > 0 ? 'vers la droite' : 'vers la gauche'} (${Math.abs(e.delta)})`, tone: 'neutral' }];
     case 'flagAdd': return e.key === 'illegal' ? [{ text: 'Illégal : risque d’enquête', tone: 'bad' }]
       : e.key === 'hygiene' ? [{ text: `${n(e.delta)} hygiène de vie`, tone: tone(e.delta) }]
-      : e.key === 'protection' ? [{ text: `${n(e.delta)} protection`, tone: tone(e.delta) }] : [];
+      : e.key === 'protection' ? [{ text: `${n(e.delta)} protection`, tone: tone(e.delta) }]
+      : e.key === 'e2t' ? [{ text: `${n(e.delta)} au second tour`, tone: tone(e.delta) }]
+      : e.key === 'debatePrep' ? [{ text: 'Sang-froid au prochain débat', tone: 'good' }] : [];
     case 'skillPoints': return [{ text: `${n(e.delta)} pt de compétence`, tone: tone(e.delta) }];
     case 'partyTreasury': return [{ text: `${n(e.delta)} k€ caisse du parti`, tone: tone(e.delta) }];
     case 'press': {

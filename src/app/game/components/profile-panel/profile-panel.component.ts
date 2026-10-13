@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { ProgressionService } from '../../services/progression.service';
-import { CONVERSIONS, TALENTS } from '../../data/talents';
+import { CONVERSIONS, CONVERSION_COST, TALENTS } from '../../data/talents';
 import { LEADER_PAY_LIMITS, leaderPayCheck, leaderPayPreview, remuneration, setLeaderPay } from '../../engine/remuneration';
 import { CORPS_BY_ID, civilActive, civilTitle, promoThreshold } from '../../engine/civil';
 
@@ -150,12 +150,12 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
           </li>
         }
       </ul>
-      @if (allMax() && game.player().skillPoints > 0) {
+      @if (allMax()) {
         <div class="convert">
-          <span class="muted">Ou convertir 1 point :</span>
+          <span class="muted">Ou convertir {{ conversionCost }} points :</span>
           <div class="c-btns">
             @for (c of conversions; track c.id) {
-              <button class="btn small" (click)="progression.convertPoint(c.id)">{{ c.label }}</button>
+              <button class="btn small" [disabled]="game.player().skillPoints < conversionCost" (click)="progression.convertPoint(c.id)">{{ c.label }}</button>
             }
           </div>
         </div>
@@ -217,6 +217,7 @@ export class ProfilePanelComponent {
   protected readonly domains = DOMAINS;
   protected readonly levels = [0, 1, 2, 3, 4];
   protected readonly conversions = CONVERSIONS;
+  protected readonly conversionCost = CONVERSION_COST;
   protected readonly talents = computed(() => TALENTS.map(def => ({ def, level: this.game.player().talents?.[def.id] ?? 0 })));
   protected readonly allMax = computed(() => DOMAINS.every(d => this.game.player().skills[d] >= 5));
   protected range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }

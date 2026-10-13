@@ -20,16 +20,16 @@ export interface TalentDef {
 }
 
 export const TALENTS: TalentDef[] = [
-  { id: 'orateur', icon: '🎤', label: 'Orateur·rice', effect: 'Vos interventions dans l’hémicycle font basculer davantage de voix.', max: 3, cost: 1 },
-  { id: 'endurance', icon: '🏃', label: 'Endurance', effect: '+3 d’énergie et −1 de stress chaque mois, par niveau.', max: 3, cost: 1 },
-  { id: 'reseau', icon: '📱', label: 'Carnet d’adresses', effect: '+1 appel sans fatigue par mois, par niveau.', max: 2, cost: 1 },
-  { id: 'stratege', icon: '♟️', label: 'Stratège', effect: '+1 point d’action chaque mois, par niveau.', max: 2, cost: 3 },
-  { id: 'charisme', icon: '✨', label: 'Charisme', effect: 'Votre popularité s’érode 25 % moins vite, par niveau.', max: 3, cost: 1 },
-  { id: 'incorruptible', icon: '🛡️', label: 'Incorruptible', effect: '−1 d’exposition aux scandales chaque mois, par niveau.', max: 3, cost: 1 },
-  { id: 'resilience', icon: '❤️', label: 'Résilience', effect: '+0,5 de santé chaque mois, par niveau.', max: 3, cost: 1 },
-  { id: 'sang_froid', icon: '🧊', label: 'Sang-froid', effect: 'Les mini-jeux sont plus faciles (−7 % de difficulté par niveau).', max: 3, cost: 1 },
-  { id: 'mobilisateur', icon: '📣', label: 'Mobilisateur·rice', effect: '+1 de dynamique de campagne chaque mois, par niveau.', max: 2, cost: 1 },
-  { id: 'gestionnaire', icon: '💶', label: 'Bon gestionnaire', effect: '+5 points de rémunération mis de côté chaque mois, par niveau.', max: 3, cost: 1 },
+  { id: 'orateur', icon: '🎤', label: 'Orateur·rice', effect: 'Vos interventions dans l’hémicycle font basculer davantage de voix.', max: 3, cost: 2 },
+  { id: 'endurance', icon: '🏃', label: 'Endurance', effect: '+3 d’énergie et −1 de stress chaque mois, par niveau.', max: 3, cost: 2 },
+  { id: 'reseau', icon: '📱', label: 'Carnet d’adresses', effect: '+1 appel sans fatigue par mois, par niveau.', max: 2, cost: 2 },
+  { id: 'stratege', icon: '♟️', label: 'Stratège', effect: '+1 point d’action chaque mois, par niveau.', max: 2, cost: 5 },
+  { id: 'charisme', icon: '✨', label: 'Charisme', effect: 'Votre popularité s’érode 25 % moins vite, par niveau.', max: 3, cost: 2 },
+  { id: 'incorruptible', icon: '🛡️', label: 'Incorruptible', effect: '−1 d’exposition aux scandales chaque mois, par niveau.', max: 3, cost: 2 },
+  { id: 'resilience', icon: '❤️', label: 'Résilience', effect: '+0,5 de santé chaque mois, par niveau.', max: 3, cost: 2 },
+  { id: 'sang_froid', icon: '🧊', label: 'Sang-froid', effect: 'Les mini-jeux sont plus faciles (−7 % de difficulté par niveau).', max: 3, cost: 2 },
+  { id: 'mobilisateur', icon: '📣', label: 'Mobilisateur·rice', effect: '+1 de dynamique de campagne chaque mois, par niveau.', max: 2, cost: 2 },
+  { id: 'gestionnaire', icon: '💶', label: 'Bon gestionnaire', effect: '+5 points de rémunération mis de côté chaque mois, par niveau.', max: 3, cost: 2 },
 ];
 export const TALENTS_BY_ID = new Map(TALENTS.map(t => [t.id, t]));
 
@@ -37,7 +37,10 @@ export function talent(d: GameState, id: TalentId): number {
   return d.player.talents?.[id] ?? 0;
 }
 
-/** Quand dossiers et talents sont au maximum : convertir un point */
+/** Points dépensés par conversion */
+export const CONVERSION_COST = 2;
+
+/** Quand les dossiers sont au maximum : convertir des points */
 export const CONVERSIONS = [
   { id: 'capital', label: '+10 capital politique', effects: [{ kind: 'stat', stat: 'politicalCapital', delta: 10 }] },
   { id: 'credibilite', label: '+3 crédibilité', effects: [{ kind: 'stat', stat: 'credibility', delta: 3 }] },

@@ -92,6 +92,7 @@ export const STAKES_INFO: Record<DebateStakes, { title: string; rounds: number; 
   hemicycle: { title: 'Joute dans l’hémicycle', rounds: 3, bonus: 2 },
   debat_electoral: { title: 'Débat décisif', rounds: 5, bonus: 10 },
   duel_interne: { title: 'Duel au bureau national', rounds: 4, bonus: 4 },
+  entre_deux_tours: { title: 'Débat d’entre-deux-tours', rounds: 6, bonus: 12 },
 };
 
 const STYLE_BY_TRAIT: Record<NpcTrait, Partial<Record<DebateMove, number>>> = {
@@ -204,6 +205,9 @@ export function createDebate(
   const party = [d.party, ...d.otherParties].find(p => p.id === npc.partyId);
   const deck = buildDeck(d, rng, topics);
   const hasCoach = d.player.staff.includes('coach');
+  // Répétitions : un débat préparé commence avec plus de sang-froid (deux séances au plus)
+  const prep = Math.min(2, Number(d.player.flags['debatePrep'] ?? 0));
+  d.player.flags['debatePrep'] = 0;
 
   const debate: DebateState = {
     id: nextId(d, 'debat'),
@@ -222,7 +226,7 @@ export function createDebate(
     stanceShift: 0,
     partyImpact: { ligne_dure: 0, moderes: 0, reformistes: 0 },
     flipflops: 0,
-    composure: clamp(55 + d.player.stats.credibility / 4 + (hasCoach ? 20 : 0) - d.player.stats.stress / 5),
+    composure: clamp(55 + d.player.stats.credibility / 4 + (hasCoach ? 20 : 0) - d.player.stats.stress / 5 + prep * 12),
     oppComposure: clamp(60 + npc.influence / 4),
     oppPower: clamp(28 + (npc.popularity + npc.influence) * 0.22 + info.bonus, 25, 72),
     oppStyle: style,
@@ -248,6 +252,7 @@ function defaultAudienceLean(d: GameState, stakes: DebateStakes, rng: Rng): numb
     case 'face_a_face': return rng.range(-35, 35);
     case 'hemicycle': return rng.range(-12, 12);
     case 'debat_electoral': return rng.range(-15, 15);
+    case 'entre_deux_tours': return rng.range(-8, 8);
   }
 }
 
@@ -507,6 +512,11 @@ export function debateRewards(debate: DebateState): Effect[] {
       perdu: [{ kind: 'momentum', delta: -20 }, { kind: 'stat', stat: 'popularity', delta: -4 }, { kind: 'stat', stat: 'stress', delta: 10 }],
       nul: [{ kind: 'momentum', delta: 3 }],
     },
+    entre_deux_tours: {
+      gagne: [{ kind: 'flagAdd', key: 'e2t', delta: 5 }, { kind: 'momentum', delta: 15 }, { kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'npcStat', npcId: opp, stat: 'popularity', delta: -6 }],
+      perdu: [{ kind: 'flagAdd', key: 'e2t', delta: -5 }, { kind: 'momentum', delta: -12 }, { kind: 'stat', stat: 'popularity', delta: -3 }, { kind: 'stat', stat: 'stress', delta: 12 }],
+      nul: [{ kind: 'flagAdd', key: 'e2t', delta: 1 }, { kind: 'momentum', delta: 2 }],
+    },
     duel_interne: {
       gagne: [{ kind: 'faction', factionId: '*', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 4 }, { kind: 'npcStat', npcId: opp, stat: 'influence', delta: -6 }],
       perdu: [{ kind: 'faction', factionId: '*', delta: -5 }, { kind: 'stat', stat: 'influence', delta: -3 }],
@@ -517,6 +527,8 @@ export function debateRewards(debate: DebateState): Effect[] {
   const effects = [...R[debate.stakes][status], { kind: 'npcRelation', npcId: opp, delta: -8 } as Effect];
   if (ko && status === 'gagne') effects.push({ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'politicalCapital', delta: 8 });
   if (ko && status === 'perdu') effects.push({ kind: 'stat', stat: 'credibility', delta: -4 }, { kind: 'stat', stat: 'stress', delta: 10 });
+  // Un K.-O. le soir du grand débat marque le second tour
+  if (ko && debate.stakes === 'entre_deux_tours') effects.push({ kind: 'flagAdd', key: 'e2t', delta: status === 'gagne' ? 2 : -2 });
   // Positionnement idéologique et réaction des courants
   if (debate.stanceShift) effects.push({ kind: 'stance', delta: debate.stanceShift });
   for (const [factionId, raw] of Object.entries(debate.partyImpact) as [FactionId, number][]) {

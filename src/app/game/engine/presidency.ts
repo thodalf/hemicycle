@@ -163,7 +163,7 @@ function openPresidentialCampaign(d: GameState, opens: number): void {
 }
 
 /** Adversaires : chefs des autres partis, président sortant, et le chef de votre parti si vous êtes dissident·e */
-function presidentialRivals(d: GameState): string[] {
+export function presidentialRivals(d: GameState): string[] {
   const c = d.presidential;
   const ids = d.npcs
     .filter(n => n.partyId !== d.party.id && n.rankId === 'chef_parti')

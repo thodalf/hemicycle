@@ -13,13 +13,13 @@ import { GameStateService } from '../../services/game-state.service';
       @if (engine.active(); as e) {
         <div class="card-title">
           <span>{{ engine.config()!.label }}</span>
-          <span class="chip accent">{{ weeksLeft() > 0 ? 'Dans ' + weeksLeft() + ' mois' : 'Mois du vote' }}</span>
+          <span class="chip accent">{{ e.secondRoundWeek ? 'Second tour ' + game.month(e.secondRoundWeek) : weeksLeft() > 0 ? 'Dans ' + weeksLeft() + ' mois' : 'Mois du vote' }}</span>
         </div>
         @if (game.week() < e.campaignStartWeek) {
           <p class="muted">La campagne s’ouvre en {{ game.month(e.campaignStartWeek) }}.</p>
         }
         @if (rows().length) {
-          <div class="eyebrow">Sondage · {{ game.month(engine.latestPoll()!.week) }}</div>
+          <div class="eyebrow">{{ e.secondRoundWeek ? 'Sondage du second tour' : 'Sondage' }} · {{ game.month(engine.latestPoll()!.week) }}</div>
           <ul class="poll">
             @for (r of rows(); track r.id) {
               <li [class.me]="r.id === 'player'">

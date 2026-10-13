@@ -48,6 +48,8 @@ export interface ElectionNight {
   rounds: { label: string; rows: { name: string; color: string; share: number; player: boolean }[] }[];
   winner: string;
   playerWon: boolean;
+  /** Soirée de premier tour : verdict personnalisé (qualifié·e pour le second tour) */
+  verdict?: { title: string; text: string };
 }
 
 @Injectable({ providedIn: 'root' })

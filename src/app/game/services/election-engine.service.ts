@@ -1,4 +1,3 @@
-import { youngPartyMalus } from '../engine/founding';
 import { inMonth } from '../engine/calendar';
 import { campaignRefund } from '../engine/loans';
 import { campaignOpensAt, canDeclare, declareCandidacy, incumbentBonus, presidentialResult } from '../engine/presidency';
@@ -6,8 +5,9 @@ import { Injectable, computed, inject } from '@angular/core';
 import { ElectionType, GameState, ScheduledElection } from '../models/game.models';
 import { ELECTIONS, RANKS } from '../data/ranks';
 import { createDebate } from '../engine/debate';
-import { programReport } from '../engine/programme';
-import { applyEffects, partySupport, pushNews } from '../engine/effects';
+import { monthlyBarometer, pushBarometer, ranking, takeBarometer, voteShares } from '../engine/electoral';
+import { entreDeuxToursDecision } from '../engine/entre-deux-tours';
+import { applyEffects, pushNews } from '../engine/effects';
 import { Rng, clamp, nextId } from '../engine/rng';
 import { GameStateService } from './game-state.service';
 
@@ -47,6 +47,7 @@ export class ElectionEngineService {
 
   weekly(d: GameState, rng: Rng): void {
     this.schedule(d);
+    monthlyBarometer(d, rng);
     const election = d.elections.find(e => !e.resolved);
     if (!election) return;
     const cfg = ELECTIONS[election.type];
@@ -67,7 +68,14 @@ export class ElectionEngineService {
 
     if (d.week >= election.campaignStartWeek && d.week < election.week) {
       d.player.momentum = clamp(d.player.momentum * (d.player.staff.includes('directeur_campagne') ? 0.95 : 0.9));
-      d.polls.push({ week: d.week, electionId: election.id, results: this.shares(d, election, rng, 2.5) });
+      if (election.type === 'presidentielle') {
+        // Le baromètre continue pendant la campagne, avec les candidats officiels
+        const b = takeBarometer(d, rng, election.candidateIds, false);
+        pushBarometer(d, b);
+        d.polls.push({ week: d.week, electionId: election.id, results: b.results });
+      } else {
+        d.polls.push({ week: d.week, electionId: election.id, results: this.shares(d, election, rng, 2.5) });
+      }
       if (d.week === election.week - 1) {
         const latest = d.polls.at(-1)!.results;
         const rival = election.candidateIds.filter(id => id !== 'player').sort((a, b) => latest[b] - latest[a])[0];
@@ -82,7 +90,9 @@ export class ElectionEngineService {
       }
     }
 
-    if (d.week >= election.week) this.resolve(d, election, rng);
+    if (election.secondRoundWeek) {
+      if (d.week >= election.secondRoundWeek) this.resolveSecondRound(d, election, rng);
+    } else if (d.week >= election.week) this.resolve(d, election, rng);
   }
 
   /** Programme le prochain scrutin quand le joueur remplit les conditions d'investiture */
@@ -128,47 +138,73 @@ export class ElectionEngineService {
       .map(n => n.id);
   }
 
-  private score(d: GameState, id: string, type: ElectionType): number {
-    // Primaire : il faut coller à la ligne du parti. Ailleurs : l'électorat est au centre.
-    const center = type === 'primaire' ? d.party.position : 0;
-    const penalty = (pos: number) => Math.abs(pos - center) * 0.1;
-    if (id === 'player') {
-      const s = d.player.stats;
-      const base = type === 'primaire'
-        ? partySupport(d) * 0.6 + s.popularity * 0.3 + s.influence * 0.2
-        : s.popularity * 0.55 + s.influence * 0.2 + s.credibility * 0.2;
-      const program = type !== 'presidentielle' ? 0
-        : d.program?.validated ? programReport(d).electoralBonus : -6;
-      const incumbent = type === 'presidentielle' ? incumbentBonus(d, 'player') : 0;
-      return base + d.player.momentum * 0.35 + 5 - penalty(d.player.stance) + program + incumbent - (type === 'primaire' ? 0 : youngPartyMalus(d));
-    }
-    const npc = d.npcs.find(n => n.id === id)!;
-    const notoriety = type === 'municipales' ? 8 : type === 'legislatives' ? 14 : 22;
-    const npcPos = [d.party, ...d.otherParties].find(p => p.id === npc.partyId)?.position ?? 0;
-    const incumbent = type === 'presidentielle' ? incumbentBonus(d, id) : 0;
-    return npc.popularity * 0.55 + npc.influence * 0.25 + notoriety + incumbent - penalty(npcPos);
-  }
-
   private shares(d: GameState, e: ScheduledElection, rng: Rng, noise: number, ids = e.candidateIds): Record<string, number> {
-    const raw = ids.map(id => Math.max(1, Math.pow(this.score(d, id, e.type), 2) * rng.range(1 - noise / 20, 1 + noise / 20)));
-    const total = raw.reduce((a, b) => a + b, 0);
-    return Object.fromEntries(ids.map((id, i) => [id, Math.round((raw[i] / total) * 1000) / 10]));
+    return voteShares(d, e.type, ids, rng, noise);
   }
 
   private resolve(d: GameState, e: ScheduledElection, rng: Rng): void {
-    const cfg = ELECTIONS[e.type];
     const firstRound = this.shares(d, e, rng, 4);
-    const ranked = Object.entries(firstRound).sort((a, b) => b[1] - a[1]);
+    const ranked = ranking(firstRound);
+    // Présidentielle : si vous êtes qualifié·e, deux semaines d'entre-deux-tours (le mois suivant)
+    if (e.type === 'presidentielle' && ranked[0][1] < 50 && ranked.length > 1 && (ranked[0][0] === 'player' || ranked[1][0] === 'player')) {
+      this.openSecondRound(d, e, firstRound, rng);
+      return;
+    }
     let winnerId = ranked[0][0];
     let secondRound: Record<string, number> | undefined;
     if (ranked[0][1] < 50 && ranked.length > 1) {
       secondRound = this.shares(d, e, rng, 4, [ranked[0][0], ranked[1][0]]);
       winnerId = Object.entries(secondRound).sort((a, b) => b[1] - a[1])[0][0];
     }
+    this.finish(d, e, firstRound, secondRound, winnerId, rng);
+  }
+
+  /** Premier tour joué, vous êtes au second : ralliements, débat, sondage */
+  private openSecondRound(d: GameState, e: ScheduledElection, firstRound: Record<string, number>, rng: Rng): void {
+    const ranked = ranking(firstRound);
+    const finalists: [string, string] = [ranked[0][0], ranked[1][0]];
+    const rival = finalists.find(id => id !== 'player')!;
+    e.firstRound = firstRound;
+    e.finalists = finalists;
+    e.secondRoundWeek = d.week + 1;
+    d.player.flags['e2t'] = 0;
+    const poll = voteShares(d, 'presidentielle', finalists, rng, 2.5);
+    d.polls.push({ week: d.week, electionId: e.id, results: poll });
+    const name = this.candidate(rival).name;
+    const me = firstRound['player'];
+    const first = ranked[0][0] === 'player';
+    d.player.stats.stress = clamp(d.player.stats.stress + 8);
+    d.player.momentum = clamp(d.player.momentum + (first ? 8 : 4));
+    const f = (v: number) => v.toLocaleString('fr-FR');
+    pushNews(d, 'election', 'positive', `Qualifié·e pour le second tour (${f(me)} %)`,
+      `${first ? 'En tête du premier tour' : 'Deuxième du premier tour'} : duel face à ${name} (${f(firstRound[rival])} %). Sondage du second tour : ${f(poll['player'])} % – ${f(poll[rival])} %. Vote le mois prochain.`);
+    const decision = entreDeuxToursDecision(d, e, firstRound, rng);
+    if (decision) d.pendingDecisions.push(decision);
+    const debate = createDebate(d, rng, 'entre_deux_tours', rival, 0);
+    if (debate) {
+      d.debate = debate;
+      pushNews(d, 'election', 'neutral', `Le débat d’entre-deux-tours face à ${debate.opponentName}`,
+        'Vingt millions de téléspectateurs. Le débat qui peut faire basculer le second tour.');
+    }
+  }
+
+  /** Le second tour, un mois après le premier */
+  private resolveSecondRound(d: GameState, e: ScheduledElection, rng: Rng): void {
+    const finalists = e.finalists!;
+    const bonus = { player: Number(d.player.flags['e2t'] ?? 0) };
+    const secondRound = voteShares(d, 'presidentielle', finalists, rng, 3, bonus);
+    const winnerId = ranking(secondRound)[0][0];
+    d.player.flags['e2t'] = 0;
+    this.finish(d, e, e.firstRound!, secondRound, winnerId, rng);
+  }
+
+  private finish(d: GameState, e: ScheduledElection, firstRound: Record<string, number>, secondRound: Record<string, number> | undefined, winnerId: string, rng: Rng): void {
+    const cfg = ELECTIONS[e.type];
+    const ranked = ranking(firstRound);
 
     // Dépassement du plafond : recours devant le juge électoral
     const invalidated = winnerId === 'player' && !!d.player.flags['depassement'] && rng.chance(0.4);
-    if (invalidated) winnerId = ranked.find(([id]) => id !== 'player')![0];
+    if (invalidated) winnerId = (secondRound ? ranking(secondRound) : ranked).find(([id]) => id !== 'player')![0];
 
     e.resolved = true;
     e.result = { firstRound, secondRound, winnerId };

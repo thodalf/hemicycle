@@ -1,4 +1,4 @@
-import { CONVERSIONS, TALENTS_BY_ID, TalentId, talent } from '../data/talents';
+import { CONVERSIONS, CONVERSION_COST, TALENTS_BY_ID, TalentId, talent } from '../data/talents';
 import { Injectable, computed, inject } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, Effect, GameState, StatKey } from '../models/game.models';
 import { RANKS } from '../data/ranks';
@@ -68,8 +68,8 @@ export class ProgressionService {
   convertPoint(id: string): void {
     this.game.mutate((d, rng) => {
       const c = CONVERSIONS.find(x => x.id === id);
-      if (!c || d.player.skillPoints < 1) return;
-      d.player.skillPoints -= 1;
+      if (!c || d.player.skillPoints < CONVERSION_COST) return;
+      d.player.skillPoints -= CONVERSION_COST;
       applyEffects(d, c.effects as unknown as Effect[], {}, rng);
     });
   }

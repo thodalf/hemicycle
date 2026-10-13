@@ -2042,6 +2042,93 @@ const RAW_ACTIONS: ActionDefinition[] = [
     cost: { ap: 3, money: 1500 }, maxPerMonth: 1,
     effects: [{ kind: 'stat', stat: 'energy', delta: 60 }, { kind: 'stat', stat: 'stress', delta: -45 }, { kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'influence', delta: -3 }, { kind: 'momentum', delta: -6 }, { kind: 'faction', factionId: '*', delta: -1 }],
   },
+
+  // ── Présidentielle : pré-campagne, campagne, entre-deux-tours ─
+  {
+    id: 'meeting_geant', minigame: 'discours', label: 'Meeting géant au Zénith', category: 'terrain', minRank: 'militant', requires: { declared: true },
+    description: 'Six mille personnes, des drapeaux, une heure de discours. Le meeting qui fait la une du 20 heures.',
+    cost: { ap: 2, energy: 18, money: 18000 }, cooldown: 2,
+    effects: [{ kind: 'momentum', delta: 10 }, { kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'cohesion', delta: 2 }],
+  },
+  {
+    id: 'lettre_maires', label: 'Écrire aux 35 000 maires de France', category: 'parti', minRank: 'militant', requires: { declared: true },
+    description: 'Une lettre personnelle à chaque maire : vos engagements pour les communes, et une demande de parrainage.',
+    cost: { ap: 1, energy: 5, money: 6000 }, cooldown: 3,
+    effects: [{ kind: 'parrainages', delta: 45 }, { kind: 'contact', contactId: 'ct-maires', trust: 3 }],
+  },
+  {
+    id: 'sondage_qualitatif', label: 'Commander une étude d’opinion qualitative', category: 'argent', minRank: 'militant', requires: { declared: true },
+    description: 'Des groupes d’électeurs derrière une glace sans tain : ce qui les touche, ce qui les agace.',
+    cost: { ap: 1, money: 9000 }, cooldown: 3,
+    effects: [{ kind: 'momentum', delta: 5 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'dossier', domain: '$domain', delta: 2 }],
+    target: 'domain',
+  },
+  {
+    id: 'livre_programme', label: 'Publier un livre-programme', category: 'medias', minRank: 'depute', requires: { declared: true },
+    description: 'Deux cents pages pour dire qui vous êtes et ce que vous ferez. Tournée des librairies incluse.',
+    cost: { ap: 2, energy: 12 }, cooldown: 12,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 4 }, { kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'momentum', delta: 4 }, { kind: 'income', base: 4000, scale: 'popularity', mult: 60 }],
+  },
+  {
+    id: 'repetition_debat', label: 'Répéter le grand débat avec un sparring-partner', category: 'dossiers', minRank: 'depute', requires: { declared: true },
+    description: 'Un ancien ministre joue votre adversaire. Chronomètre, pupitres, questions pièges. Votre prochain débat commence avec plus de sang-froid.',
+    cost: { ap: 1, energy: 10 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -3 }, { kind: 'flagAdd', key: 'debatePrep', delta: 1 }],
+  },
+  {
+    id: 'meeting_e2t', label: 'Meeting d’entre-deux-tours', category: 'terrain', minRank: 'militant', requires: { secondRound: true },
+    description: 'Le dernier grand rassemblement : il faut parler à ceux qui n’ont pas voté pour vous au premier tour.',
+    cost: { ap: 2, energy: 15, money: 15000 }, maxPerMonth: 1,
+    effects: [{ kind: 'flagAdd', key: 'e2t', delta: 2 }, { kind: 'momentum', delta: 6 }, { kind: 'stat', stat: 'popularity', delta: 2 }],
+  },
+  {
+    id: 'appel_abstentionnistes', label: 'Appel aux abstentionnistes', category: 'medias', minRank: 'militant', requires: { secondRound: true },
+    description: 'Une vidéo, une tribune, des milliers de SMS : « Ne laissez pas les autres décider à votre place. »',
+    cost: { ap: 1, energy: 6 }, maxPerMonth: 1,
+    effects: [{ kind: 'flagAdd', key: 'e2t', delta: 1.5 }, { kind: 'stat', stat: 'popularity', delta: 1 }],
+    risk: { baseChance: 0.25, scaleWith: 'popularity', scaleWeight: 0.5, onFailure: [{ kind: 'flagAdd', key: 'e2t', delta: -1 }], failureNews: 'La vidéo est jugée moralisatrice. Effet inverse chez les abstentionnistes.' },
+  },
+  {
+    id: 'tribune_rassemblement', label: 'Tribune « Pour une France rassemblée »', category: 'medias', minRank: 'militant', requires: { secondRound: true },
+    description: 'Une main tendue aux électeurs des candidats éliminés, publiée dans tous les quotidiens régionaux.',
+    cost: { ap: 1, energy: 4 }, maxPerMonth: 1,
+    effects: [{ kind: 'flagAdd', key: 'e2t', delta: 1 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
+  },
+
+  // ── Vie politique ordinaire ─
+  {
+    id: 'radios_locales', label: 'Tournée des radios locales', category: 'medias', minRank: 'militant',
+    description: 'France Bleu, radios associatives, webradios étudiantes : six antennes en une journée, des auditeurs qui appellent.',
+    cost: { ap: 1, energy: 8, money: 800 }, cooldown: 3,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'influence', delta: 1 }, { kind: 'dossier', domain: '$domain', delta: 2 }],
+    target: 'domain',
+  },
+  {
+    id: 'permanence_mobile', label: 'Permanence mobile en camping-car', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Un camping-car aux couleurs du parti, garé sur les places de marché des villages oubliés.',
+    cost: { ap: 1, energy: 12, money: 600 }, maxPerMonth: 1,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'contact', contactId: 'ct-maires', trust: 2 }, { kind: 'dossier', domain: 'territoires', delta: 2 }],
+  },
+  {
+    id: 'diner_off', label: 'Dîner « off » avec des journalistes', category: 'medias', minRank: 'depute',
+    description: 'Une table discrète, quatre éditorialistes, et des confidences « qui ne sortiront pas ».',
+    cost: { ap: 1, energy: 6, money: 400 }, cooldown: 2,
+    effects: [{ kind: 'stat', stat: 'influence', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
+    risk: { baseChance: 0.25, onFailure: [{ kind: 'exposure', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: -3 }], failureNews: 'Une de vos confidences fait la une du Canard. « Off », vraiment ?' },
+  },
+  {
+    id: 'nuit_urgences', label: 'Une nuit aux urgences avec les soignants', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'De 20 heures à 6 heures, sans caméra : brancards dans les couloirs, infirmières à bout.',
+    cost: { ap: 1, energy: 18 }, cooldown: 3,
+    effects: [{ kind: 'dossier', domain: 'sante', delta: 5 }, { kind: 'contact', contactId: 'ct-soignants', trust: 4 }, { kind: 'stat', stat: 'credibility', delta: 2 }],
+  },
+  {
+    id: 'convention_citoyenne', label: 'Organiser une convention citoyenne locale', category: 'terrain', minRank: 'depute',
+    description: 'Cinquante citoyens tirés au sort, trois week-ends, et des propositions que vous vous engagez à porter.',
+    cost: { ap: 2, energy: 12, money: 3000 }, cooldown: 6,
+    effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'dossier', domain: '$domain', delta: 4 }],
+    target: 'domain',
+  },
 ];
 
 /* ── Contrepoids automatiques ────────────────────────────────

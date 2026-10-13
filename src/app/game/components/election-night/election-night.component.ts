@@ -36,8 +36,8 @@ import { FxService } from '../../services/fx.service';
             }
             @if (revealed()) {
               <div class="verdict" [class.won]="e.playerWon">
-                <strong>{{ e.playerWon ? 'Élu·e !' : 'Battu·e' }}</strong>
-                <span>{{ e.playerWon ? 'Les militants explosent de joie.' : e.winner + ' l’emporte.' }}</span>
+                <strong>{{ e.verdict?.title ?? (e.playerWon ? 'Élu·e !' : 'Battu·e') }}</strong>
+                <span>{{ e.verdict?.text ?? (e.playerWon ? 'Les militants explosent de joie.' : e.winner + ' l’emporte.') }}</span>
               </div>
               @if (!e.playerWon) { <div class="rain" aria-hidden="true">@for (d of drops; track d) { <i [style.left.%]="d * 4.1" [style.animation-delay.ms]="d * 97 % 900"></i> }</div> }
             }
@@ -76,6 +76,7 @@ import { FxService } from '../../services/fx.service';
     @keyframes winner { 50% { box-shadow: inset 0 0 0 2px #e6b45c, 0 0 18px rgba(230,180,92,.5); } }
     @keyframes verdict { from { opacity: 0; transform: scale(.4) rotate(-6deg); } }
     @keyframes rain { to { transform: translateY(520px); } }
+    @media (max-width: 480px) { .row { grid-template-columns: minmax(0, 112px) 1fr 54px; gap: 8px; font-size: 13px; } header h2 { font-size: 19px; } }
     @media (prefers-reduced-motion: reduce) { .night *, .night { animation: none !important; transition: none !important; } }
   `,
 })

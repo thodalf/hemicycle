@@ -277,6 +277,17 @@ Standalone components, zoneless, Signals partout.
   présente aussi). La primaire se tient dans l’année qui précède et vaut déclaration. Campagne de cinq mois,
   programme, sondages, débat décisif, soirée électorale. Sans vous, les PNJ se disputent l’Élysée ; l’alternance
   fait tomber les ministres du camp battu.
+- **Sondages présidentiels** (`engine/electoral.ts`, carte « Sondages · présidentielle ») : dix-huit mois avant le
+  scrutin, un baromètre mensuel (instituts fictifs, marge ±2,5 pts) donne les intentions de vote au premier tour,
+  l’évolution sur une courbe, et des hypothèses de second tour. Vous y êtes testé·e dès que vous êtes déclaré·e, ou
+  sans l’être (popularité 12 et mandat de député·e, ou tête du parti). Bons sondages : parrainages et influence en plus.
+- **Entre-deux-tours** (`engine/entre-deux-tours.ts`) : qualifié·e au premier tour, le second a lieu le mois suivant.
+  Soirée de premier tour, sondage du second tour, décision « les ralliements » (négocier avec le troisième, rassembler,
+  front républicain, meetings), actions dédiées (meeting d’entre-deux-tours, appel aux abstentionnistes, tribune) et
+  **débat d’entre-deux-tours** en six manches : victoire +5 au second tour (+2 de plus par K.-O.), défaite −5.
+  Actions de campagne : meeting géant au Zénith, lettre aux 35 000 maires (parrainages), étude qualitative, livre-programme,
+  répétitions du débat (sang-froid au débat suivant). Événements de campagne : sondage assassin, mails piratés, soutien
+  d’une star, comptes de campagne, meeting en hologramme, trou dans le programme, ancien président, débat boycotté.
 - **Présidence** : panneau « Palais de l’Élysée » — cote de confiance (usure du pouvoir), majorité à l’Assemblée
   (cohabitation possible), sécurité, menace, Premier ministre, réformes. Onglet **Élysée** : allocution, Conseil des
   ministres, réforme (adoptée si majorité), 49.3, dissolution (législatives anticipées), référendum, voyage d’État,
@@ -412,7 +423,7 @@ Standalone components, zoneless, Signals partout.
 - **Équipe** : six recrues (conseillère technique, coach média, plume, trésorier, directrice de campagne, spin doctor),
   chacune avec un avantage et un salaire hebdomadaire.
 - **Objectifs** : trois défis actifs avec échéance et récompense (point de compétence, PA bonus, capital…) ; plus d’objectifs « rallier un courant ».
-- **Talents** : un point de compétence tombe chaque mois. Une fois les dossiers au niveau 5, il s’investit dans dix talents permanents (Profil → Talents) : Orateur·rice (votes en séance), Endurance (énergie/stress), Carnet d’adresses (+1 appel gratuit), Stratège (+1 PA/mois, 3 pt le niveau), Charisme (érosion de popularité −25 %), Incorruptible (exposition), Résilience (santé), Sang-froid (mini-jeux plus faciles), Mobilisateur·rice (dynamique de campagne), Bon gestionnaire (+5 points d’épargne). Quand les dossiers sont au maximum, un point peut aussi se convertir : +10 capital, +3 crédibilité, +3 influence ou +3 popularité (`data/talents.ts`).
+- **Talents** : un point de compétence tombe chaque mois. Une fois les dossiers au niveau 5, il s’investit dans dix talents permanents (Profil → Talents) : Orateur·rice (votes en séance), Endurance (énergie/stress), Carnet d’adresses (+1 appel gratuit), Stratège (+1 PA/mois, 5 pt le niveau ; les autres 2 pt), Charisme (érosion de popularité −25 %), Incorruptible (exposition), Résilience (santé), Sang-froid (mini-jeux plus faciles), Mobilisateur·rice (dynamique de campagne), Bon gestionnaire (+5 points d’épargne). Quand les dossiers sont au maximum, 2 points peuvent aussi se convertir : +10 capital, +3 crédibilité, +3 influence ou +3 popularité (`data/talents.ts`).
 - **Crises nationales** : inondations, grève, krach, sommet européen, violences urbaines ; verrouillent l’actualité deux mois.
 
 ## Arborescence
@@ -538,6 +549,7 @@ src/app/game/
     ├── profile-panel/    Jauges, finances, prochain palier, dossiers & compétences, talents
     ├── party-panel/      Courants, rivaux, réseau
     ├── election-panel/   Sondages, tendance, plafond de dépenses
+    ├── presidential-polls/ Baromètre présidentiel, hypothèses de second tour, entre-deux-tours
     ├── news-feed/        Fil d'actualité
     └── new-game/         Création du personnage
 ```
