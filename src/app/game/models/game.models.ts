@@ -46,13 +46,15 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'zombie' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'zombie' | 'crise' | 'territoire' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
   contact: 'Premier contact',
   securite: 'Sécurité',
   zombie: 'Épidémie Z',
+  crise: 'Crise',
+  territoire: 'Territoire',
   intrigue: 'Intrigues',
   guerre: 'Guerre',
   arriere: 'Effort de guerre',
@@ -286,6 +288,12 @@ export type Effect =
   | { kind: 'government'; majority?: number; cohesion?: number; form?: string; fall?: boolean }
   | { kind: 'flag'; key: string; value: boolean | number }
   | { kind: 'phoneBook'; npcId: TargetRef }
+  | { kind: 'family'; partner?: 'meet' | 'marry' | 'divorce'; child?: boolean; parentHealth?: number; childPath?: 'politique' | 'adverse' | 'ailleurs' }
+  | { kind: 'heir'; npcId: TargetRef }
+  | { kind: 'promise'; domain: DomainRef; text?: string; months?: number; keep?: boolean }
+  | { kind: 'localProject'; id?: string; boost?: number; attachment?: number }
+  | { kind: 'rivalPlot'; counter?: boolean; start?: TargetRef }
+  | { kind: 'crisis'; arc: CrisisArcId; start?: boolean; gauge?: number; risk?: number; meta?: string }
   | { kind: 'zombie'; start?: 'alerte' | 'minimiser' | 'confiner'; infection?: number; containment?: number; panic?: number; cure?: number; shelter?: boolean }
   | { kind: 'scheme'; type?: string; targetId?: TargetRef; progress?: number; secrecy?: number; abandon?: boolean };
 
@@ -321,7 +329,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -1022,6 +1030,12 @@ export interface GameState {
   schemes?: Scheme[];
   /** Épidémie Z en cours */
   zombie?: ZombieState | null;
+  family?: FamilyState;
+  heir?: HeirState | null;
+  promises?: Promise[];
+  territory?: TerritoryState;
+  rivalPlots?: RivalPlot[];
+  crises?: Partial<Record<CrisisArcId, CrisisArc>>;
   plot?: PlotState | null;
   player: Player;
   party: Party;
@@ -1259,6 +1273,61 @@ export interface MinigameState {
 }
 
 // ── Premier contact ─────────────────────────────────────────
+
+// ── Vie privée ──────────────────────────────────────────────
+
+export interface Relative {
+  name: string;
+  /** Mois de naissance (enfants) */
+  born?: number;
+  gender?: 'f' | 'm';
+  /** Parents : santé 0-100 */
+  health?: number;
+  alive: boolean;
+  /** Enfant adulte : sa voie */
+  path?: 'politique' | 'adverse' | 'ailleurs';
+}
+
+export interface FamilyState {
+  partner: (Relative & { since: number; married?: boolean }) | null;
+  children: Relative[];
+  parents: Relative[];
+  /** Divorces passés */
+  divorces: number;
+}
+
+/** Votre dauphin·e : son ascension rejaillit sur vous */
+export interface HeirState { npcId: string; since: number; lastRank: RankId }
+
+/** Une promesse publique, à tenir avant l'échéance */
+export interface Promise {
+  id: string;
+  text: string;
+  domain: Domain;
+  madeWeek: number;
+  dueWeek: number;
+  /** Maîtrise du dossier au moment de la promesse */
+  baseline: number;
+  status: 'en_cours' | 'tenue' | 'trahie';
+}
+
+/** Un projet local dans votre territoire */
+export interface LocalProject { id: string; label: string; icon: string; done: number; months: number; x: number; y: number; finished?: boolean }
+
+export interface TerritoryState {
+  name: string;
+  communes: { name: string; x: number; y: number }[];
+  /** Attachement des habitants (0-100) : compte aux élections locales */
+  attachment: number;
+  projects: LocalProject[];
+}
+
+/** Un complot qu'un rival mène contre vous */
+export interface RivalPlot { npcId: string; since: number; progress: number; kind: 'dossier' | 'rumeurs' | 'investiture' }
+
+/** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
+export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution';
+export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */
 export interface ZombieState {

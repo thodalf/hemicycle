@@ -19,6 +19,9 @@ import { PresidentialPollsComponent } from '../presidential-polls/presidential-p
 import { SchemesPanelComponent } from '../schemes-panel/schemes-panel.component';
 import { ZombiePanelComponent } from '../zombie-panel/zombie-panel.component';
 import { TutorialComponent } from '../tutorial/tutorial.component';
+import { JournalComponent } from '../journal/journal.component';
+import { CrisisPanelComponent } from '../crisis-panel/crisis-panel.component';
+import { TerritoryPanelComponent } from '../territory-panel/territory-panel.component';
 import { FxService } from '../../services/fx.service';
 import { AuthService } from '../../services/auth.service';
 import { RANKS } from '../../data/ranks';
@@ -55,7 +58,7 @@ import { Milestone } from '../../models/game.models';
     DecimalPipe,
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
-    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ZombiePanelComponent, TutorialComponent,
+    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
     WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
@@ -87,6 +90,7 @@ import { Milestone } from '../../models/game.models';
           <app-scenario-panel />
         }
         <app-life-panel />
+        <app-territory-panel />
         <section class="card budget-card wealth-card">
           <div class="card-title"><span>Patrimoine</span>
             <span class="chip" [class.bad]="wealth.image().popularity < 0" [class.good]="wealth.image().popularity > 0">{{ wealth.image().label }}</span></div>
@@ -123,6 +127,7 @@ import { Milestone } from '../../models/game.models';
         <app-team-panel />
       </div>
       <main class="col-main">
+        <app-crisis-panel />
         <app-zombie-panel />
         <app-plot-panel />
         <app-schemes-panel />
@@ -225,7 +230,11 @@ import { Milestone } from '../../models/game.models';
               }
             </ol>
           }
-          <button class="btn primary" (click)="game.quit()">Retour à mes parties</button>
+          <div class="obit-btns">
+            <button class="btn" (click)="memoirs.set(true)">📜 Journal et mémoires</button>
+            <button class="btn primary" (click)="game.quit()">Retour à mes parties</button>
+          </div>
+          @if (memoirs()) { <app-journal (closed)="memoirs.set(false)" /> }
         </article>
       </div>
     } @else if (chapter(); as m) {
@@ -267,6 +276,7 @@ import { Milestone } from '../../models/game.models';
     .chapter.k-victoire { border-top-color: var(--good); }
     .chapter.k-revers { border-top-color: var(--bad); }
     .obit-wrap { background: rgba(8, 8, 10, .78); }
+    .obit-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
     .obit { max-width: 560px; max-height: calc(100dvh - 32px); overflow: auto; text-align: center; padding: 30px 28px;
       font-family: var(--font-display); border: 1px solid var(--ink-3); animation: rise .8s ease;
       h2 { font-size: 34px; margin: 6px 0 2px; } .dates { margin: 0; color: var(--ink-2); }
@@ -363,6 +373,7 @@ export class DashboardComponent {
   protected readonly wealthOpen = signal(false);
   protected readonly bank = inject(BankService);
   protected readonly bankOpen = signal(false);
+  protected readonly memoirs = signal(false);
   private readonly fx = inject(FxService);
   private lastRank = this.game.player().rankId;
   private lastStatus = this.game.s().status;

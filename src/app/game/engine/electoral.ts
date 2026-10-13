@@ -5,6 +5,7 @@ import { programReport } from './programme';
 import { partySupport, pushNews } from './effects';
 import { addParrainages, incumbentBonus, presidentialRivals } from './presidency';
 import { Rng, clamp } from './rng';
+import { localBonus } from './territory';
 
 /* ============================================================
  *  Intentions de vote : le score d'un·e candidat·e, les parts
@@ -30,7 +31,8 @@ export function candidateScore(d: GameState, id: string, type: ElectionType, bon
     const program = type !== 'presidentielle' ? 0
       : d.program?.validated ? programReport(d).electoralBonus : campaign ? -6 : 0;
     const incumbent = type === 'presidentielle' ? incumbentBonus(d, 'player') : 0;
-    return base + d.player.momentum * 0.35 + 5 - penalty(d.player.stance) + program + incumbent - (type === 'primaire' ? 0 : youngPartyMalus(d)) + bonus;
+    const local = type === 'municipales' || type === 'legislatives' ? localBonus(d) : 0;
+    return base + d.player.momentum * 0.35 + 5 - penalty(d.player.stance) + program + incumbent - (type === 'primaire' ? 0 : youngPartyMalus(d)) + bonus + local;
   }
   const npc = d.npcs.find(n => n.id === id);
   if (!npc) return 1;

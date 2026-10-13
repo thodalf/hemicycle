@@ -138,6 +138,78 @@ const ORDINARY: ActionDefinition[] = [
     cost: { ap: 1, energy: 10 }, cooldown: 2, effects: [st('popularity', 1), st('influence', 1), { kind: 'health', delta: 1 }] },
 ];
 
+
+/* ── Territoire, promesses, dauphin, famille, rivaux ─────────── */
+const cr = (arc: 'cyber' | 'proces' | 'jo' | 'dissolution', gauge = 0, risk = 0): Effect => ({ kind: 'crisis', arc, ...(gauge ? { gauge } : {}), ...(risk ? { risk } : {}) });
+
+const LIFE: ActionDefinition[] = [
+  { id: 'terr_lancer', label: 'Lancer un grand projet pour le territoire', category: 'territoire', minRank: 'conseiller_municipal',
+    description: 'Médiathèque, maison de santé, tramway… Un chantier de plusieurs mois ; à l’inauguration, les habitants s’en souviendront dans l’isoloir.',
+    cost: { ap: 2, politicalCapital: 10 }, cooldown: 2, effects: [{ kind: 'localProject' }] },
+  { id: 'terr_subventions', label: 'Arracher des subventions pour un chantier', category: 'territoire', minRank: 'depute',
+    description: 'Préfecture, région, ministère : chaque euro accélère le chantier en cours.',
+    cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [{ kind: 'localProject', boost: 2 }] },
+  { id: 'terr_permanences', label: 'Tenir des permanences dans les communes', category: 'territoire', minRank: 'conseiller_municipal',
+    description: 'Une salle des fêtes, un café, des doléances : vous faites le tour des communes.',
+    cost: { ap: 1, energy: 10 }, maxPerMonth: 1, effects: [{ kind: 'localProject', attachment: 4 }, st('popularity', 1)] },
+  { id: 'terr_fete', label: 'Organiser la fête de la circonscription', category: 'territoire', minRank: 'conseiller_municipal',
+    description: 'Bal populaire, feu d’artifice et produits du terroir.',
+    cost: { ap: 1, energy: 8, money: 1500 }, cooldown: 6, effects: [{ kind: 'localProject', attachment: 5 }, st('popularity', 2)] },
+  { id: 'promesse_publique', label: 'Faire une promesse publique', category: 'medias', minRank: 'militant', target: 'domain',
+    description: 'Un engagement chiffré, devant les caméras. Ça rapporte tout de suite ; à l’échéance (deux ans), la presse vérifiera : il faudra 15 points de maîtrise de plus sur ce dossier.',
+    cost: { ap: 1, energy: 4 }, cooldown: 3, effects: [st('popularity', 3), { kind: 'momentum', delta: 3 }, { kind: 'promise', domain: '$domain' }] },
+  { id: 'tenir_promesse', label: 'Faire avancer une promesse', category: 'dossiers', minRank: 'conseiller_municipal', requires: { promises: true },
+    description: 'Mobiliser services, budgets et alliés pour honorer votre parole.',
+    cost: { ap: 2, politicalCapital: 8 }, maxPerMonth: 1, effects: [{ kind: 'promise', domain: '$domain', keep: true }, st('credibility', 1)] },
+  { id: 'adouber_dauphin', label: 'Adouber un·e dauphin·e', category: 'parti', minRank: 'militant', target: 'npc', requires: { heir: true },
+    description: 'En fin de carrière, désigner votre héritier·e politique : chacune de ses victoires rejaillira sur vous.',
+    cost: { ap: 1, energy: 4 }, effects: [{ kind: 'heir', npcId: '$target' }] },
+  { id: 'dejouer_manoeuvres', label: 'Déjouer les manœuvres adverses', category: 'intrigue', minRank: 'conseiller_municipal',
+    description: 'Vos informateurs remontent les fils : ce que vos rivaux préparent contre vous, et de quoi riposter.',
+    cost: { ap: 1, money: 2000 }, maxPerMonth: 1, personalOnly: true, effects: [{ kind: 'rivalPlot', counter: true }] },
+  { id: 'interview_piege', minigame: 'interview_piege', label: 'Accepter l’interview piège d’un ténor de la matinale', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Le journaliste le plus redouté de France, en direct, sans notes. Six questions, quelques secondes chacune.',
+    cost: { ap: 1, energy: 8 }, cooldown: 2, effects: [st('popularity', 3), st('credibility', 2), st('influence', 1)] },
+  { id: 'cmp_nuit', minigame: 'cmp', label: 'Siéger en commission mixte paritaire', category: 'fonction', minRank: 'depute', onlyRanks: ['depute', 'ministre', 'premier_ministre', 'chef_parti'],
+    description: 'Une nuit de tractations avec les sénateurs pour sauver votre texte, amendement par amendement.',
+    cost: { ap: 2, energy: 12 }, cooldown: 3, effects: [st('influence', 3), st('credibility', 2), { kind: 'flagAdd', key: 'billSupport', delta: 4 }] },
+  { id: 'vacances_famille', label: 'Partir en vacances en famille', category: 'repos', minRank: 'militant',
+    description: 'Une semaine loin de tout, téléphone coupé. On vous le reprochera peut-être.',
+    cost: { ap: 2, money: 2500 }, cooldown: 6, effects: [st('stress', -12), st('energy', 15), st('popularity', -1)] },
+  { id: 'diner_famille', label: 'Un dîner en famille, sans téléphone', category: 'repos', minRank: 'militant',
+    description: 'Ce soir, la politique attendra.',
+    cost: { ap: 1 }, cooldown: 1, effects: [st('stress', -5), st('energy', 4)] },
+
+  // Cyberattaque
+  { id: 'cy_anssi', label: 'Mobiliser les experts de l’ANSSI', category: 'crise', minRank: 'militant', requires: { arc: 'cyber' },
+    description: 'Les meilleurs informaticiens de l’État, jour et nuit.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [cr('cyber', 12)] },
+  { id: 'cy_rancon', label: 'Refuser publiquement de payer la rançon', category: 'crise', minRank: 'militant', requires: { arc: 'cyber' },
+    description: 'L’État ne cède pas au chantage. Les pirates, eux, publient des données.', cost: { ap: 1 }, cooldown: 3, effects: [cr('cyber', 4, 8), st('credibility', 3)] },
+  { id: 'cy_transparence', label: 'Informer les Français touchés', category: 'crise', minRank: 'militant', requires: { arc: 'cyber' },
+    description: 'Changer ses mots de passe, surveiller ses comptes : des consignes claires.', cost: { ap: 1, energy: 6 }, maxPerMonth: 1, effects: [cr('cyber', 0, -10), st('popularity', 1)] },
+  // Procès
+  { id: 'pr_avocats', label: 'S’offrir les meilleurs avocats', category: 'crise', minRank: 'militant', requires: { arc: 'proces' },
+    description: 'Un ténor du barreau, des contre-expertises, des nuits sur le dossier.', cost: { ap: 1, money: 8000 }, maxPerMonth: 1, personalOnly: true, effects: [cr('proces', 12)] },
+  { id: 'pr_medias', label: 'Plaider votre cause dans les médias', category: 'crise', minRank: 'militant', requires: { arc: 'proces' },
+    description: '« Je suis innocent·e. » L’opinion vous suit… les juges, moins.', cost: { ap: 1, energy: 6 }, maxPerMonth: 1, effects: [cr('proces', 4, 3), st('popularity', 2)] },
+  { id: 'pr_temoins', label: 'Retrouver des témoins à décharge', category: 'crise', minRank: 'militant', requires: { arc: 'proces' },
+    description: 'Anciens collaborateurs, comptables, élus : qui peut confirmer votre version ?', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('proces', 7, -6)] },
+  // Jeux olympiques
+  { id: 'jo_chantiers', label: 'Accélérer les chantiers olympiques', category: 'crise', minRank: 'militant', requires: { arc: 'jo' },
+    description: 'Visites de chantier, cellules de suivi, pénalités de retard.', cost: { ap: 1, politicalCapital: 8 }, maxPerMonth: 1, effects: [cr('jo', 10, 2)] },
+  { id: 'jo_syndicats', label: 'Négocier avec les syndicats des transports', category: 'crise', minRank: 'militant', requires: { arc: 'jo' },
+    description: 'Une prime olympique contre la paix sociale pendant les Jeux.', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('jo', 0, -10)] },
+  { id: 'jo_promo', label: 'Porter la flamme dans votre ville', category: 'crise', minRank: 'militant', requires: { arc: 'jo' },
+    description: 'Un kilomètre en courant, une foule en liesse, des images pour toujours.', cost: { ap: 1, energy: 10 }, cooldown: 6, effects: [cr('jo', 4), st('popularity', 3)] },
+  // Dissolution
+  { id: 'di_porte', label: 'Porte-à-porte jour et nuit', category: 'crise', minRank: 'militant', requires: { arc: 'dissolution' },
+    description: 'Trois semaines, mille portes. Les militants suivent.', cost: { ap: 1, energy: 15 }, maxPerMonth: 2, effects: [cr('dissolution', 12)] },
+  { id: 'di_meeting', label: 'Un meeting dans chaque commune', category: 'crise', minRank: 'militant', requires: { arc: 'dissolution' },
+    description: 'Préaux d’école, salles des fêtes, gymnases.', cost: { ap: 1, energy: 10, money: 2000 }, maxPerMonth: 1, effects: [cr('dissolution', 8), { kind: 'momentum', delta: 5 }] },
+  { id: 'di_desistement', label: 'Négocier un accord de désistement', category: 'crise', minRank: 'militant', requires: { arc: 'dissolution' },
+    description: 'Un parti voisin retire son candidat chez vous ; vous lui rendez la pareille ailleurs.', cost: { ap: 1, politicalCapital: 10 }, maxPerMonth: 1, effects: [cr('dissolution', 0, -15), { kind: 'cohesion', delta: -3 }] },
+];
+
 /** Deux actions par ministère */
 function min(domain: Domain, id: string, label: string, description: string, cost: ActionDefinition['cost'], effects: Effect[], extra: Partial<ActionDefinition> = {}): ActionDefinition {
   return { id, label, description, category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre'], requires: { portfolio: domain }, cost, effects, cooldown: 3, ...extra };
@@ -199,4 +271,4 @@ const MINISTRIES: ActionDefinition[] = [
     { ap: 2, energy: 10, politicalCapital: 10 }, [dos('justice', 5), ct('ct-avocats', 4), st('popularity', 2)], { cooldown: 6 }),
 ];
 
-export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...MINISTRIES];
+export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...LIFE, ...MINISTRIES];

@@ -39,6 +39,13 @@ export const ENEMIES: EnemyDef[] = [
 ];
 export const ENEMIES_BY_ID = new Map(ENEMIES.map(e => [e.id, e]));
 
+/** L'État le plus hostile, avec son article (« la Karstanie ») */
+export function worstEnemyName(d: GameState): string {
+  const h = d.intl.hostile ?? {};
+  const worst = [...ENEMIES].sort((a, b) => (h[a.id] ?? 0) - (h[b.id] ?? 0))[0];
+  return worst.the;
+}
+
 /* ── Les États hostiles : relations, menaces, invasion ─────── */
 
 /** Relations de départ avec les États fictifs */

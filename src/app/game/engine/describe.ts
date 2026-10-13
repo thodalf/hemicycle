@@ -34,6 +34,18 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'npcStat': return [{ text: `${n(e.delta)} ${e.stat === 'popularity' ? 'popularité' : 'influence'} de la cible`, tone: tone(e.delta, true) }];
     case 'contact': return e.trust ? [{ text: `${n(e.trust)} confiance${e.contactId === '$target' ? ' du contact' : ''}`, tone: tone(e.trust) }] : [];
     case 'stance': return [{ text: `Ligne ${e.delta > 0 ? 'vers la droite' : 'vers la gauche'} (${Math.abs(e.delta)})`, tone: 'neutral' }];
+    case 'family': return [{ text: e.partner === 'meet' ? 'Une nouvelle histoire' : e.partner === 'marry' ? 'Mariage' : e.partner === 'divorce' ? 'Séparation' : e.child ? 'Un enfant' : e.parentHealth ? `Santé de votre parent ${e.parentHealth > 0 ? '+' : ''}${e.parentHealth}` : 'Vie de famille', tone: e.partner === 'divorce' || (e.parentHealth ?? 0) < 0 ? 'bad' : 'neutral' }];
+    case 'heir': return [{ text: 'Désigne votre dauphin·e', tone: 'good' }];
+    case 'promise': return [{ text: e.keep ? 'Rapproche une promesse de son terme' : 'Promesse à tenir sous deux ans (+15 de maîtrise)', tone: e.keep ? 'good' : 'neutral' }];
+    case 'localProject': return [{ text: e.boost ? `Chantier local : ${e.boost} mois d’avance` : e.attachment ? `Attachement du territoire ${e.attachment > 0 ? '+' : ''}${e.attachment}` : 'Lance un chantier local', tone: 'good' }];
+    case 'rivalPlot': return [{ text: 'Déjoue les manœuvres des rivaux', tone: 'good' }];
+    case 'crisis': {
+      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      if (e.start) out.push({ text: 'Déclenche une crise', tone: 'bad' });
+      if (e.gauge) out.push({ text: `Avancée ${e.gauge > 0 ? '+' : ''}${e.gauge}`, tone: e.gauge > 0 ? 'good' : 'bad' });
+      if (e.risk) out.push({ text: `Risque ${e.risk > 0 ? '+' : ''}${e.risk}`, tone: e.risk > 0 ? 'bad' : 'good' });
+      return out;
+    }
     case 'zombie': {
       if (e.start) return [{ text: 'Déclenche l’épidémie Z', tone: 'bad' }];
       const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];

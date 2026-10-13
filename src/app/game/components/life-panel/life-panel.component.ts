@@ -3,11 +3,14 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { TurnService } from '../../services/turn.service';
 import { healthLabel, lifeRisks, lifeSummary } from '../../engine/life';
+import { childAge } from '../../engine/family';
+import { JournalComponent } from '../journal/journal.component';
+import { AchievementsComponent } from '../achievements/achievements.component';
 
 /** Âge, santé, risques et chapitres de vie ; retraite */
 @Component({
   selector: 'app-life-panel',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, JournalComponent, AchievementsComponent],
   template: `
     <section class="card life">
       <div class="card-title"><span>Une vie</span><span class="chip" [class]="'t-' + health().tone">{{ health().label }}</span></div>
@@ -25,6 +28,27 @@ import { healthLabel, lifeRisks, lifeSummary } from '../../engine/life';
         <div class="b-row"><span>Complot contre vous</span><strong class="mono">{{ risks().assassination * 100 | number: '1.2-2' }} %</strong></div>
         <p class="muted tip">Le stress tue : au-delà de 55, il abîme la santé, double la mortalité naturelle à 100 et expose à l’infarctus. L’épuisement et l’âge abîment aussi la santé ; bilans, sport et cures (onglet Santé) l’entretiennent. Les hautes fonctions exposent aux complots, qui se voient venir : on enquête et on se protège avant qu’ils ne frappent ; une voiture de sport, aux accidents.</p>
       </details>
+
+      <div class="family">
+        <div class="eyebrow">Famille</div>
+        <ul>
+          <li>{{ fam().partner ? (fam().partner!.married ? 'Marié·e à ' : 'En couple avec ') + fam().partner!.name : fam().divorces ? 'Séparé·e' : 'Célibataire' }}</li>
+          @for (k of fam().children; track $index) {
+            <li>{{ k.gender === 'f' ? '👧' : '👦' }} {{ k.name }}, {{ kidAge(k.born ?? 0) }} an{{ kidAge(k.born ?? 0) > 1 ? 's' : '' }}{{ k.path === 'politique' ? ' · milite avec vous' : k.path === 'adverse' ? ' · dans le camp d’en face' : k.path === 'ailleurs' ? ' · loin de la politique' : '' }}</li>
+          }
+          @for (pa of fam().parents; track pa.name) {
+            <li [class.muted]="!pa.alive">{{ pa.name === 'Maman' ? 'Votre mère' : 'Votre père' }} : {{ pa.alive ? 'santé ' + (pa.health ?? 0 | number: '1.0-0') : 'disparu·e' }}</li>
+          }
+          @if (heir(); as h) { <li>🎖️ Dauphin·e : <strong>{{ h }}</strong></li> }
+        </ul>
+      </div>
+
+      <div class="links">
+        <button class="link" (click)="journal.set(true)">📖 Journal de bord</button>
+        <button class="link" (click)="trophies.set(true)">🏆 Succès</button>
+      </div>
+      @if (journal()) { <app-journal (closed)="journal.set(false)" /> }
+      @if (trophies()) { <app-achievements (closed)="trophies.set(false)" /> }
 
       @if (milestones().length) {
         <div class="chapters">
@@ -55,6 +79,8 @@ import { healthLabel, lifeRisks, lifeSummary } from '../../engine/life';
   `,
   styles: `
     .life { display: grid; gap: 6px; }
+    .family ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px; font-size: 12.5px; }
+    .links { display: flex; gap: 14px; flex-wrap: wrap; }
     .card-title { margin-bottom: 4px; }
     .b-row { display: flex; justify-content: space-between; font-size: 13px; }
     .g { display: grid; gap: 4px; }
@@ -85,6 +111,11 @@ export class LifePanelComponent {
   protected readonly game = inject(GameStateService);
   private readonly turn = inject(TurnService);
   protected readonly all = signal(false);
+  protected readonly journal = signal(false);
+  protected readonly trophies = signal(false);
+  protected readonly fam = computed(() => this.game.s().family ?? { partner: null, children: [], parents: [], divorces: 0 });
+  protected readonly heir = computed(() => { const h = this.game.s().heir; return h ? this.game.s().npcs.find(n => n.id === h.npcId)?.name ?? null : null; });
+  protected kidAge(born: number): number { return childAge(this.game.s(), born); }
   protected readonly confirm = signal(false);
   protected readonly age = computed(() => Math.floor(this.game.player().age));
   protected readonly health = computed(() => healthLabel(this.game.player().health));

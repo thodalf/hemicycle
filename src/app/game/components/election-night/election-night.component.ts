@@ -26,13 +26,16 @@ import { FxService } from '../../services/fx.service';
                   @for (row of r.rows; track row.name; let i = $index) {
                     <div class="row" [class.me]="row.player" [class.win]="revealed() && row.name === e.winner && ri === e.rounds.length - 1">
                       <span class="name">{{ row.name }}</span>
-                      <span class="track"><span class="fill" [style.background]="row.color" [style.width.%]="grown() ? row.share : 0"
-                        [style.transition-delay.ms]="i * 180"></span></span>
-                      <span class="pct mono">{{ row.share.toLocaleString('fr-FR', { maximumFractionDigits: 1 }) }} %</span>
+                      <span class="track"><span class="fill" [style.background]="row.color" [style.width.%]="grown() ? live(ri, i, row.share) : 0"></span></span>
+                      <span class="pct mono">{{ live(ri, i, row.share).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) }} %</span>
                     </div>
                   }
                 </div>
               }
+            }
+            @if (!revealed()) { <div class="counted mono">Bureaux dépouillés : {{ counted() }} %</div> }
+            @if (calls().length) {
+              <ul class="calls" aria-live="polite">@for (c of calls(); track $index) { <li>📞 {{ c }}</li> }</ul>
             }
             @if (revealed()) {
               <div class="verdict" [class.won]="e.playerWon">
@@ -63,7 +66,9 @@ import { FxService } from '../../services/fx.service';
     .row.win { background: rgba(230, 180, 92, .14); box-shadow: inset 0 0 0 1px #e6b45c; animation: winner 1s ease 2; }
     .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .track { height: 16px; border-radius: 4px; background: #1d2433; overflow: hidden; }
-    .fill { display: block; height: 100%; width: 0; border-radius: 4px; transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
+    .fill { display: block; height: 100%; width: 0; border-radius: 4px; transition: width .25s linear; }
+    .counted { font-size: 12px; color: #8a8f9a; }
+    .calls { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 12.5px; color: #c9c6bd; li { animation: fade .3s ease; } }
     .pct { text-align: right; }
     .verdict { display: grid; justify-items: center; gap: 2px; padding: 10px; animation: verdict .6s cubic-bezier(.2,.9,.3,1.4) both;
       strong { font: 700 40px var(--font-display); color: #f08a72; } span { color: #b4b2ab; } }
@@ -88,6 +93,16 @@ export class ElectionNightComponent {
   protected readonly roundShown = signal(0);
   protected readonly revealed = signal(false);
   protected readonly drops = Array.from({ length: 24 }, (_, i) => i);
+  protected readonly counted = signal(0);
+  protected readonly calls = signal<string[]>([]);
+  /** Écart de chaque ligne aux premiers bureaux dépouillés (il se résorbe au fil du comptage) */
+  private noise: number[] = [];
+
+  protected live(ri: number, i: number, share: number): number {
+    if (ri < this.roundShown()) return share;
+    const left = 1 - this.counted() / 100;
+    return Math.max(0, Math.round((share + (this.noise[i] ?? 0) * left) * 10) / 10);
+  }
   private timers: ReturnType<typeof setTimeout>[] = [];
 
   private readonly run = effect(() => {
@@ -96,15 +111,29 @@ export class ElectionNightComponent {
     this.timers = [];
     if (!e) return;
     this.phase.set('countdown'); this.countdown.set(3); this.grown.set(false); this.roundShown.set(0); this.revealed.set(false);
+    this.counted.set(0); this.calls.set([]);
     const at = (ms: number, fn: () => void) => this.timers.push(setTimeout(fn, ms));
+    const reroll = () => { this.noise = Array.from({ length: 8 }, () => (Math.random() - 0.5) * 12); };
+    // Le dépouillement : bureau par bureau, les écarts se resserrent
+    const count = (start: number, r: number) => {
+      const rows = e.rounds[r].rows;
+      const me = rows.find(x => x.player);
+      const lead = rows[0];
+      for (let k = 1; k <= 20; k++) at(start + k * 160, () => this.counted.set(k * 5));
+      at(start + 900, () => this.calls.update(c => [...c, me && me === lead ? 'Votre directeur de campagne : « Les premiers bureaux sont bons ! Les villes n’ont pas encore parlé. »' : 'Votre directeur de campagne : « C’est serré… Les campagnes votent tard. »']));
+      at(start + 2300, () => this.calls.update(c => [...c, rows.length > 2 ? 'Votre attachée de presse : « Les télés veulent une réaction. On attend les grandes villes ? »' : 'Votre mère : « Je ne regarde plus, ça me donne des palpitations. »']));
+    };
     at(900, () => this.countdown.set(2));
     at(1800, () => this.countdown.set(1));
-    at(2700, () => { this.phase.set('results'); at(60, () => this.grown.set(true)); });
-    let t = 2700 + 1900;
+    at(2700, () => { reroll(); this.phase.set('results'); at(60, () => this.grown.set(true)); });
+    count(2700, 0);
+    let t = 2700 + 3600;
     for (let r = 1; r < e.rounds.length; r++) {
-      at(t, () => { this.grown.set(false); this.roundShown.set(r); at(60, () => this.grown.set(true)); });
-      t += 1900;
+      at(t, () => { reroll(); this.counted.set(0); this.roundShown.set(r); });
+      count(t, r);
+      t += 3600;
     }
+    at(t - 200, () => this.calls.update(c => [...c, e.verdict ? 'Le chef du parti : « Bravo. Mais rien n’est fait : place au second tour. »' : e.playerWon ? 'Le chef du parti : « Félicitations. Ce soir, c’est ta victoire. »' : 'Votre conjoint·e : « Rentre. On est fiers de toi quand même. »']));
     at(t, () => {
       this.revealed.set(true);
       if (e.playerWon) {

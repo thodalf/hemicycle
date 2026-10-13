@@ -8,11 +8,11 @@ import { SCHEMES, abandonScheme, discoveryRisk } from '../../engine/schemes';
   selector: 'app-schemes-panel',
   imports: [DecimalPipe],
   template: `
-    @if (rows().length) {
+    @if (rows().length || threats().length) {
       <section class="card schemes" aria-label="Vos complots">
         <div class="card-title">
-          <span>Vos complots</span>
-          <span class="chip">{{ rows().length }} / 3</span>
+          <span>Intrigues</span>
+          <span class="chip">{{ rows().length }} / 3 complots</span>
         </div>
         <ul>
           @for (r of rows(); track r.s.id) {
@@ -32,7 +32,15 @@ import { SCHEMES, abandonScheme, discoveryRisk } from '../../engine/schemes';
             </li>
           }
         </ul>
-        <p class="muted note">Onglet Intrigues : faire avancer vos complots, brouiller les pistes. À 100, le complot aboutit.</p>
+        @if (threats().length) {
+          <div class="eyebrow">On complote contre vous</div>
+          <ul class="threats">
+            @for (t of threats(); track t.name) {
+              <li><span>⚠️ {{ t.name }} · {{ t.kind }}</span><span class="bar"><i class="t" [style.width.%]="t.progress"></i></span></li>
+            }
+          </ul>
+        }
+        <p class="muted note">Onglet Intrigues : faire avancer vos complots, brouiller les pistes, déjouer les manœuvres adverses. À 100, un complot aboutit.</p>
       </section>
     }
   `,
@@ -49,6 +57,8 @@ import { SCHEMES, abandonScheme, discoveryRisk } from '../../engine/schemes';
     .mono { text-align: right; }
     .risk { font-size: 11.5px; color: var(--ink-3); } .risk.hot { color: var(--bad); font-weight: 600; }
     .note { margin: 0; font-size: 11.5px; }
+    .threats li { display: grid; grid-template-columns: 1fr 80px; gap: 8px; align-items: center; font-size: 12.5px; padding: 0; border: 0; }
+    .bar i.t { background: var(--bad); }
   `,
 })
 export class SchemesPanelComponent {
@@ -57,6 +67,11 @@ export class SchemesPanelComponent {
   protected readonly rows = computed(() => {
     const s = this.game.s();
     return (s.schemes ?? []).map(x => ({ s: x, def: SCHEMES[x.type], risk: discoveryRisk(s, x) }));
+  });
+  protected readonly threats = computed(() => {
+    const s = this.game.s();
+    const label = { dossier: 'monte un dossier', rumeurs: 'fait courir des rumeurs', investiture: 'vise votre investiture' } as const;
+    return (s.rivalPlots ?? []).map(p => ({ name: s.npcs.find(n => n.id === p.npcId)?.name ?? '?', kind: label[p.kind], progress: p.progress }));
   });
   protected abandon(id: string): void {
     this.confirm.set(null);

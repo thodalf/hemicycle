@@ -8,6 +8,12 @@ import { monthlyHostile, monthlyWar } from '../engine/war';
 import { monthlyPhone } from '../engine/phone';
 import { monthlyPlot } from '../engine/plot';
 import { monthlySchemes } from '../engine/schemes';
+import { monthlyFamily, monthlyHeir } from '../engine/family';
+import { monthlyRivalCareers, monthlyRivalPlots } from '../engine/rivals';
+import { monthlyPromises } from '../engine/promises';
+import { monthlyTerritory } from '../engine/territory';
+import { monthlyCrises } from '../engine/crises';
+import { checkAchievements } from '../data/achievements';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { autoMinigames } from '../engine/minigame';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
@@ -119,6 +125,13 @@ export class TurnService {
     monthlyPhone(d, rng);
     monthlyPlot(d, rng);
     monthlySchemes(d, rng);
+    monthlyFamily(d, rng);
+    monthlyHeir(d, rng);
+    monthlyRivalCareers(d, rng);
+    monthlyRivalPlots(d, rng);
+    monthlyPromises(d);
+    monthlyTerritory(d);
+    monthlyCrises(d, rng);
     monthlyWar(d, rng);
     monthlyAssembly(d, rng);
     weeklyObjectives(d, rng);
@@ -127,6 +140,7 @@ export class TurnService {
     weeklyProject(d, rng);
     settleEndings(d);
     weeklyLife(d, rng);
+    for (const a of checkAchievements(d)) pushNews(d, 'systeme', 'positive', `🏆 Succès débloqué : ${a.title}`, a.text);
   }
 
   /** Se consacrer à son projet : possible hors campagne électorale, avec un projet en cours */

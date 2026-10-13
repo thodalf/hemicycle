@@ -1,4 +1,6 @@
 import { initHostile, startInvasion, startWar } from '../engine/war';
+import { initTerritory } from '../engine/territory';
+import { initFamily } from '../engine/family';
 import { welcomePhone } from '../engine/phone';
 import { migrateTeamPay } from '../engine/team-pay';
 import { reviveFromAssassination, startPlot } from '../engine/plot';
@@ -163,6 +165,11 @@ export function migrate(s: GameState): GameState {
   }
   for (const c of [...NEW_CONTACTS, ...CULTES]) if (!s.contacts.some(x => x.id === c.id)) s.contacts.push({ ...c });
   s.schemes ??= [];
+  s.promises ??= [];
+  s.territory ??= initTerritory();
+  s.family ??= initFamily(s);
+  s.rivalPlots ??= [];
+  s.crises ??= {};
   if (s.debate && s.debate.audienceLean === undefined) s.debate = null;
   return s;
 }
@@ -208,6 +215,8 @@ export class GameStateService {
     weeklyObjectives(state, new Rng(state));
     ensurePartyFinance(state);
     welcomePhone(state);
+    state.family = initFamily(state);
+    state.territory = initTerritory();
     if (opts.scenario === 'invasion') startInvasion(state, 'karstanie');
     if (opts.scenario === 'complot') startPlot(state, new Rng(state));
     if (opts.scenario === 'guerre_totale') { startWar(state, 'meridia', true, { total: true }); if (state.war) { state.war.front = 47; state.war.morale = 58; } }

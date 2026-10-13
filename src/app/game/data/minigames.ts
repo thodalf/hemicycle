@@ -4,7 +4,7 @@
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp';
 
 export interface TriItem {
   text: string;
@@ -256,6 +256,14 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'interro_carte', kind: 'grille', icon: '🎙️', title: 'L’interro surprise',
     rule: 'Le journaliste vous teste en direct sur la carte de France : un département par case, sans vous tromper trop souvent.',
+  },
+  {
+    id: 'interview_piege', kind: 'interview', icon: '🎙️', title: 'L’interview piège',
+    rule: 'Six questions en direct, quelques secondes pour chacune : répondre sur le fond, esquiver avec élégance ou contre-attaquer. Touches 1 à 3.',
+  },
+  {
+    id: 'cmp', kind: 'cmp', icon: '🌙', title: 'La nuit de la commission mixte paritaire',
+    rule: 'Amendement par amendement : tenir, faire un compromis ou céder. Il faut assez de concessions pour un accord, sans tout lâcher.',
   },
   {
     id: 'trivial', kind: 'quiz', icon: '🧀', title: 'Trivial politique',

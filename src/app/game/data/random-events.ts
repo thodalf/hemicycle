@@ -11,6 +11,7 @@ import { EXTRA_EVENTS } from './extra-events';
 import { CAMPAIGN_EVENTS, MORE_EVENTS, inPresidentialRace } from './campaign-events';
 import { ZOMBIE_EVENTS, ZOMBIE_GATE } from './zombie-events';
 import { canStartArc } from '../engine/arcs';
+import { CRISIS_EVENTS, CRISIS_GATES, FAMILY_EVENTS, MISC_ARC_EVENTS } from './life-arc-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
 import { RANK_EVENTS } from './rank-events';
@@ -1423,6 +1424,20 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const pool = ZOMBIE_EVENTS.filter(e => canFire(e, 6));
     if (pool.length) ev = pick(pool);
   }
+  // Les crises au long cours : la porte d'entrée (rare), puis leurs rebondissements
+  if (!ev && room && d.week > 6 && rng.chance(0.03)) {
+    const pool = CRISIS_GATES.filter(e => canFire(e, 18));
+    if (pool.length) ev = pick(pool);
+  }
+  if (!ev && d.crises && Object.values(d.crises).some(Boolean) && rng.chance(0.4)) {
+    const pool = CRISIS_EVENTS.filter(e => canFire(e, 4));
+    if (pool.length) ev = pick(pool);
+  }
+  // La vie de famille
+  if (!ev && d.week > 3 && rng.chance(0.1)) {
+    const pool = FAMILY_EVENTS.filter(e => canFire(e, 10));
+    if (pool.length) ev = pick(pool);
+  }
   // La guerre, puis les États hostiles en temps de paix
   if (!ev && d.war && rng.chance(0.35)) {
     const pool = WAR_EVENTS.filter(e => canFire(e, 6));
@@ -1452,7 +1467,7 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const pool = INTL_EVENTS.filter(e => canFire(e, 12));
     if (pool.length) ev = pick(pool);
   }
-  if (!ev && d.week > 2 && rng.chance(0.34)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS, ...PEACE_EVENTS, ...EXTRA_EVENTS.filter(e => !CALENDAR_TAGS.has(e.tag)), ...MORE_EVENTS].filter(e => canFire(e, 14)));
+  if (!ev && d.week > 2 && rng.chance(0.34)) ev = pick([...RANDOM_EVENTS, ...LIFE_EVENTS, ...PEACE_EVENTS, ...EXTRA_EVENTS.filter(e => !CALENDAR_TAGS.has(e.tag)), ...MORE_EVENTS, ...MISC_ARC_EVENTS].filter(e => canFire(e, 14)));
   if (ev) {
     const { choices, ...built } = ev.build(d, rng);
     const usable = choices

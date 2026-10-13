@@ -6,6 +6,7 @@ import { queueMinigame } from '../engine/minigame';
 import { leadsWar, warPowerBlock } from '../engine/war';
 import { civilActive } from '../engine/civil';
 import { inSecondRound } from '../engine/entre-deux-tours';
+import { canAnoint } from '../engine/family';
 import { STAFF_BY_ROLE } from '../data/staff';
 import {
   ActionCategory, ActionDefinition, Domain, GameState, Payer, PlannedAction,
@@ -93,6 +94,8 @@ export class ActionPlannerService {
       if (a.category === 'arriere') return !!s.war;
       if (a.category === 'securite') return !!s.plot;
       if (a.category === 'zombie') return !!s.zombie;
+      if (a.category === 'crise') return Object.values(s.crises ?? {}).some(Boolean);
+      if (a.requires?.arc && !s.crises?.[a.requires.arc]) return false;
       if (a.category === 'administration') return civilActive(s);
       if (a.category === 'international' && !intlRelevant(s)) return false;
       if (a.category === 'international' && rankOrder(a.minRank) >= rankOrder('ministre') && rankOrder(s.player.rankId) >= rankOrder('ministre') && !intlPower(s)) return false;
@@ -142,6 +145,8 @@ export class ActionPlannerService {
       if (req.minFunds && s.player.finances.personal < req.minFunds) return { ok: false, reason: `Il faut au moins ${req.minFunds.toLocaleString('fr-FR')} € d’épargne` };
       if (req.placement !== undefined && Number(s.player.flags['placement'] ?? 0) === req.placement) return { ok: false, reason: req.placement === 0 ? 'Rien n’est placé' : 'Déjà fait' };
       if (req.schemes && !(s.schemes ?? []).length) return { ok: false, reason: 'Aucun complot en cours' };
+      if (req.heir) { const why = canAnoint(s); if (why) return { ok: false, reason: why }; }
+      if (req.promises && !(s.promises ?? []).some(x => x.status === 'en_cours')) return { ok: false, reason: 'Aucune promesse en cours' };
       if (req.secondRound && !inSecondRound(s)) return { ok: false, reason: 'Seulement entre les deux tours de la présidentielle' };
       if (req.team && !s.player.team.length) return { ok: false, reason: 'Il faut une équipe' };
       if (req.totalWar && !s.war?.total) return { ok: false, reason: 'Seulement en guerre totale' };

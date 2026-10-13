@@ -4,6 +4,7 @@ import { AuthService } from '../../services/auth.service';
 import { GameStateService } from '../../services/game-state.service';
 import { SLOTS, SlotMeta } from '../../services/save-store';
 import { GameState } from '../../models/game.models';
+import { AchievementsComponent } from '../achievements/achievements.component';
 
 interface ExportFile {
   format: 'hemicycle-save';
@@ -17,6 +18,7 @@ interface Downloads { save(o: { filename: string; data: string | Blob }): Promis
 /** Menu des parties : trois emplacements, reprise, export, import, suppression */
 @Component({
   selector: 'app-slots',
+  imports: [AchievementsComponent],
   template: `
     <main class="wrap">
       <header class="head">
@@ -25,8 +27,10 @@ interface Downloads { save(o: { filename: string; data: string | Blob }): Promis
           <h1>Bonjour, {{ auth.account()?.name }}</h1>
           <span class="where" [class]="'k-' + auth.account()?.kind">{{ storageLabel() }}</span>
         </div>
+        <button class="btn small" (click)="trophies.set(true)">🏆 Succès</button>
         <button class="btn small" (click)="logout()">{{ auth.account()?.kind === 'guest' ? 'Se connecter' : 'Changer de compte' }}</button>
       </header>
+      @if (trophies()) { <app-achievements (closed)="trophies.set(false)" /> }
 
       @if (loading()) {
         <p class="muted">Chargement des sauvegardes…</p>
@@ -111,6 +115,7 @@ interface Downloads { save(o: { filename: string; data: string | Blob }): Promis
   `,
 })
 export class SlotsComponent {
+  protected readonly trophies = signal(false);
   protected readonly auth = inject(AuthService);
   private readonly game = inject(GameStateService);
   readonly create$ = output<number>({ alias: 'create' });

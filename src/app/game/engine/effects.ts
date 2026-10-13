@@ -30,6 +30,11 @@ import { adjustAlien } from './alien';
 import { addNumber, grantNumber } from './phone';
 import { adjustScheme } from './schemes';
 import { adjustZombie } from './zombie';
+import { adjustFamily, anoint } from './family';
+import { keepPromise, makePromise } from './promises';
+import { boostLocal, startLocalProject, territory } from './territory';
+import { counterPlots } from './rivals';
+import { adjustCrisis } from './crises';
 
 /* ============================================================
  *  Moteur d'effets — fonctions pures appliquées sur un brouillon
@@ -40,6 +45,7 @@ import { adjustZombie } from './zombie';
 export function pushNews(d: GameState, kind: NewsKind, tone: Tone, title: string, body?: string): void {
   d.news.unshift({ id: nextId(d, 'news'), week: d.week, kind, tone, title, body });
   if (d.news.length > 150) d.news.length = 150;
+  if (kind === 'scandale' && tone === 'negative') d.player.flags['scandals'] = Number(d.player.flags['scandals'] ?? 0) + 1;
 }
 
 /** Soutien pondéré des courants au joueur (0‑100) */
@@ -411,6 +417,31 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         if (got) summary.push(got);
         break;
       }
+      case 'family':
+        summary.push(...adjustFamily(d, e, rng));
+        break;
+      case 'heir': {
+        const id = e.npcId === '$target' ? ctx.targetId : e.npcId;
+        if (id) summary.push(...anoint(d, id));
+        break;
+      }
+      case 'promise': {
+        const domain = e.domain === '$domain' ? ctx.domain : e.domain;
+        if (e.keep) summary.push(...keepPromise(d, domain));
+        else if (domain) summary.push(...makePromise(d, domain, rng, e.months ?? 24, e.text));
+        break;
+      }
+      case 'localProject':
+        if (e.boost) summary.push(...boostLocal(d, e.boost));
+        else if (e.attachment) { const t = territory(d); t.attachment = clamp(t.attachment + e.attachment); summary.push(`Attachement du territoire ${e.attachment > 0 ? '+' : ''}${e.attachment}`); }
+        else summary.push(...startLocalProject(d, rng, e.id));
+        break;
+      case 'rivalPlot':
+        if (e.counter) summary.push(...counterPlots(d, rng));
+        break;
+      case 'crisis':
+        summary.push(...adjustCrisis(d, e));
+        break;
       case 'zombie':
         summary.push(...adjustZombie(d, e));
         break;
