@@ -1,4 +1,5 @@
 import { initHostile, startInvasion, startWar } from '../engine/war';
+import { welcomePhone } from '../engine/phone';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { DOMAINS, GameState, StatKey } from '../models/game.models';
@@ -196,6 +197,7 @@ export class GameStateService {
     const state = createInitialState(opts);
     weeklyObjectives(state, new Rng(state));
     ensurePartyFinance(state);
+    welcomePhone(state);
     if (opts.scenario === 'invasion') startInvasion(state, 'karstanie');
     if (opts.scenario === 'guerre_totale') { startWar(state, 'meridia', true, { total: true }); if (state.war) { state.war.front = 47; state.war.morale = 58; } }
     state.news.push(opts.scenario === 'bercy'

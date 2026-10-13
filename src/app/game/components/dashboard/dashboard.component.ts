@@ -34,6 +34,8 @@ import { WorldPanelComponent } from '../world-panel/world-panel.component';
 import { PresidencyPanelComponent } from '../presidency-panel/presidency-panel.component';
 import { WarPanelComponent } from '../war-panel/war-panel.component';
 import { ALIEN_PHASES } from '../../engine/alien';
+import { PhoneComponent } from '../phone/phone.component';
+import { PhoneService } from '../../services/phone.service';
 import { ContactPanelComponent } from '../contact-panel/contact-panel.component';
 import { AssemblyVoteComponent } from '../assembly-vote/assembly-vote.component';
 import { BankComponent } from '../bank/bank.component';
@@ -50,7 +52,7 @@ import { Milestone } from '../../models/game.models';
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, WorldPanelComponent,
-    WarPanelComponent, ContactPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
+    WarPanelComponent, ContactPanelComponent, PhoneComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
   template: `
     <header class="topbar">
@@ -64,12 +66,20 @@ import { Milestone } from '../../models/game.models';
       <span class="save" [class]="'s-' + game.saveStatus()" [title]="saveTip()">
         <span class="dot" aria-hidden="true"></span><span class="save-lbl">{{ saveLabel() }}</span>
       </span>
+      <button class="btn small phone-btn" (click)="phone.show()" [attr.aria-label]="'Téléphone' + (phone.unread() ? ', ' + phone.unread() + ' non lus' : '')">📱@if (phone.unread()) { <b class="badge">{{ phone.unread() }}</b> }</button>
       <button class="btn small quit" (click)="confirmQuit()" aria-label="Mes parties">Mes parties</button>
     </header>
 
     <div class="grid" [attr.data-tab]="tab()">
       <div class="col-left">
         <app-profile-panel />
+        <!-- Votre fonction : Élysée, gouvernement, scénarios -->
+        @if (game.s().presidency) { <app-presidency-panel /> }
+        <app-government-panel />
+        <app-contact-panel />
+        @if (game.s().crown || game.s().lodge || game.s().press || game.s().mole) {
+          <app-scenario-panel />
+        }
         <app-life-panel />
         <section class="card budget-card wealth-card">
           <div class="card-title"><span>Patrimoine</span>
@@ -107,13 +117,8 @@ import { Milestone } from '../../models/game.models';
         <app-team-panel />
       </div>
       <main class="col-main">
-        <app-contact-panel />
         <app-war-panel />
-        <app-presidency-panel />
-        <app-government-panel />
-        @if (game.s().crown || game.s().lodge || game.s().press || game.s().mole) {
-          <app-scenario-panel />
-        }
+        @if (!game.s().presidency) { <app-presidency-panel /> }
         @if (program.pending()) {
           <section class="card program-cta">
             <div>
@@ -178,6 +183,7 @@ import { Milestone } from '../../models/game.models';
       }
     </nav>
 
+    <app-phone />
     <app-election-night />
     <app-fx-layer />
 
@@ -270,6 +276,9 @@ import { Milestone } from '../../models/game.models';
     .save.s-saving .dot { background: var(--warn); animation: save-pulse .8s ease-in-out infinite; }
     .save.s-error { color: var(--bad); .dot { background: var(--bad); } }
     @keyframes save-pulse { 50% { opacity: .3; } }
+    .phone-btn { position: relative; font-size: 15px; padding: 4px 10px;
+      .badge { position: absolute; top: -6px; right: -6px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--bad); color: #fff;
+        font: 700 10.5px var(--font-body); display: grid; place-items: center; } }
     @media (max-width: 1200px) {
       .grid { grid-template-columns: 260px minmax(0, 1fr); }
       .col-right { grid-column: 1 / -1; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
@@ -284,14 +293,14 @@ import { Milestone } from '../../models/game.models';
       .grid[data-tab='moi'] .col-main, .grid[data-tab='moi'] .col-right,
       .grid[data-tab='actu'] .col-left, .grid[data-tab='actu'] .col-main { display: none; }
       /* Barre du haut compacte */
-      .topbar { display: grid; grid-template-columns: auto 1fr auto auto; gap: 4px 10px; padding: 8px 12px; align-items: center; }
+      .topbar { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 4px 10px; padding: 8px 12px; align-items: center; }
       .brand { font-size: 17px; }
       .facts { gap: 10px; font-size: 12px; flex-wrap: nowrap; overflow: hidden; }
       .facts > span:nth-child(n+2) { display: none; }
       .save .save-lbl { display: none; }
       .quit { padding: 4px 8px; }
-      .brand { order: 1; } .facts { order: 2; } .save { order: 3; } .quit { order: 4; justify-self: end; }
-      app-vitals { grid-column: 1 / -1; order: 5; }
+      .brand { order: 1; } .facts { order: 2; } .save { order: 3; } .phone-btn { order: 4; } .quit { order: 5; justify-self: end; }
+      app-vitals { grid-column: 1 / -1; order: 6; }
       .mobile-tabs {
         display: grid; grid-template-columns: repeat(3, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
         background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(10px);
@@ -390,6 +399,7 @@ export class DashboardComponent {
   protected agenda() { return DOMAIN_LABELS[this.game.s().agendaDomain]; }
   protected confirmQuit() { this.game.quit(); }
   private readonly auth = inject(AuthService);
+  protected readonly phone = inject(PhoneService);
   protected saveLabel(): string {
     const who = this.auth.account();
     const st = this.game.saveStatus();

@@ -24,6 +24,10 @@ Standalone components, zoneless, Signals partout.
 
 ## Sur téléphone
 
+- Les panneaux de votre fonction (Élysée une fois élu·e, gouvernement ou ministère, scénarios : Premier contact,
+  Couronne, Loge, Rédaction, Infiltration) sont dans la colonne **Profil** ; l’**Agenda** garde la guerre, les décisions,
+  les objectifs et les actions du mois.
+
 - Barre du haut compacte (date, fatigue, santé, fonds) et **onglets en bas d’écran** : Agenda, Profil, Actualité
   (pastilles pour les décisions en attente et les nouvelles).
 - **Barre « Terminer le mois »** toujours à portée de pouce, avec le nombre d’actions et de PA libres ; si une
@@ -55,6 +59,20 @@ Standalone components, zoneless, Signals partout.
   l’élu·e ou traitement du ministre, **salaire de chef·fe de parti** (versé par le parti, de 2 500 € à 6 500 € selon
   votre soutien interne, prélevé sur sa trésorerie), **traitement de haut fonctionnaire**, salaire de journaliste,
   loyers — avec la rémunération totale, la part mise de côté, les charges (équipe, prêts, biens) et le solde du mois.
+- **Rémunération de ministre** : traitement de ministre ou de Premier·e ministre (traitement brut et indemnité de
+  fonction), indemnité de député·e suspendue pendant la fonction (le ou la suppléant·e siège) et, en quittant le
+  gouvernement, **trois mois d’indemnité de fin de fonctions**.
+- **Téléphone** (`engine/phone.ts`, `components/phone`, bouton 📱 en haut de l’écran, pastille des messages non lus) :
+  chaque mois, des **SMS et appels** de l’équipe (selon le poste : attachée de presse, community manager, sondeur,
+  directrice de campagne…), du chef ou de la cheffe du parti (consigne de vote, bureau politique, rumeurs), du réseau
+  (journalistes, syndicats, associations, lobbies) et de la famille, avec des réponses rapides qui comptent. Un SMS
+  laissé sans réponse deux mois refroidit la relation. **Répertoire** : équipe, parti, collègues, réseau, proches.
+  En appelant, on peut **faire le point** avec l’équipe, **prendre des nouvelles**, **demander du soutien pour un texte**
+  (le chef du parti passe une consigne, les collègues rallient des voix, un journaliste fait un papier, un syndicat
+  mobilise, un lobby fait pression — voix ajoutées au scrutin en cours, ou promises pour votre prochain texte) et
+  **demander de l’argent** (avance du parti pendant une campagne, dîner de donateurs ou « honoraires de conseil »
+  exposés auprès d’un lobby, coup de main de la famille une fois par an). Quatre appels par mois, ensuite chaque
+  appel fatigue. Pendant un scrutin, un bouton « Passer des coups de fil » ouvre le téléphone par-dessus l’hémicycle.
 - **Haute fonction publique** (`engine/civil.ts`) : cinq corps (préfectoral, Conseil d’État, Inspection des finances,
   diplomatique, Cour des comptes), quatre grades chacun (de sous-préfet·e à préfet·e de région, de secrétaire des
   affaires étrangères à ambassadeur·rice…), traitement de 4 200 € à 10 200 €. On y entre par le **concours de l’INSP**
@@ -418,6 +436,7 @@ src/app/game/
 │   ├── mole.ts                Scénario Infiltré·e : couverture, rapports, soupçons
 │   ├── alien.ts               Scénario Premier contact : phases, jauges, fins
 │   ├── civil.ts               Haute fonction publique : corps, grades, concours, disponibilité
+│   ├── phone.ts               Téléphone : SMS, appels, répertoire, soutiens et demandes d’argent
 │   ├── remuneration.ts        Rémunération du mois : mandat, parti, fonction publique, charges
 │   ├── life.ts                Âge, santé, mort, chapitres de vie, retraite, nécrologie
 │   ├── presidency.ts          Calendrier présidentiel, candidature, parrainages, présidence, crises
@@ -445,6 +464,7 @@ src/app/game/
 │   ├── patrimoine.service.ts        Achats et ventes de biens
 │   ├── fx.service.ts                Effets visuels 2D éphémères
 │   ├── pwa.service.ts               Webapp : installation, mises à jour, hors ligne
+│   ├── phone.service.ts             Téléphone : ouverture, conversations, appels
 │   └── team.service.ts              Recrutement / renvoi
 └── components/
     ├── dashboard/        Grille 3 colonnes + écran de fin
@@ -469,6 +489,7 @@ src/app/game/
     ├── minigame/         Les quatorze mini-jeux (games/ : mot du jour, Départodoku, Trivial, protocole, plan de table, défense antiaérienne, déminage)
     ├── contact-panel/    Panneau du Premier contact (ciel, vaisseau, jauges)
     ├── pwa-banner/       Bandeaux d’installation, de mise à jour et hors ligne
+    ├── phone/            Le téléphone (messages, conversation, répertoire, appels)
     ├── fx-layer/         Calque d’animations 2D
     ├── emblem/           Illustrations animées des décisions
     ├── election-night/   Soirée électorale animée

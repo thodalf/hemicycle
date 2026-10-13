@@ -5,6 +5,7 @@ import { AssemblyService } from '../../services/assembly.service';
 import { GameStateService } from '../../services/game-state.service';
 import { FxService } from '../../services/fx.service';
 import { BALLOT_LABELS } from '../../engine/assembly';
+import { PhoneService } from '../../services/phone.service';
 import { HemicycleComponent } from '../hemicycle/hemicycle.component';
 
 const DURATION = 2200;
@@ -30,6 +31,7 @@ const DURATION = 2200;
             <div class="tags">
               <span class="tag">À la une : {{ domain() }}</span>
               <span class="tag">{{ roleLabel() }}</span>
+              @if (v.status === 'debat') { <button type="button" class="tag phone-tag" (click)="phone.show(); phone.tab.set('repertoire')">📱 Passer des coups de fil</button> }
             </div>
           </header>
 
@@ -164,6 +166,7 @@ const DURATION = 2200;
     .intro { margin: 6px 0 10px; color: rgba(241,239,233,.85); font-size: 13.5px; max-width: 70ch; }
     .tags { display: flex; gap: 6px; flex-wrap: wrap; }
     .tag { font-size: 11.5px; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.14); }
+    .phone-tag { border: 1px solid rgba(255,255,255,.5); color: inherit; font: inherit; font-size: 11.5px; cursor: pointer; background: rgba(255,255,255,.22); }
     .gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding: 14px 20px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
     .g { display: grid; gap: 4px; strong { font-size: 17px; } small { font-size: 11px; } }
     .track { position: relative; height: 6px; border-radius: 3px; background: var(--surface); border: 1px solid var(--line); }
@@ -214,6 +217,7 @@ const DURATION = 2200;
   `,
 })
 export class AssemblyVoteComponent {
+  protected readonly phone = inject(PhoneService);
   protected readonly svc = inject(AssemblyService);
   protected readonly game = inject(GameStateService);
   private readonly fx = inject(FxService);

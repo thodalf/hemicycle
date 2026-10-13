@@ -172,6 +172,13 @@ export function scheduleVote(d: GameState, rng: Rng, billId?: string, forcedOrig
     mood: Math.round(rng.range(-0.4, 0.3) * 100) / 100, ...(own ? { own: true } : {}),
   };
   v.partyLine = own ? 'pour' : ownGroup ? lineOf(probs(groupScore(d, v, ownGroup))) : 'abstention';
+  // Les voix promises au téléphone se reportent sur un texte de votre camp
+  const promised = Number(d.player.flags['billSupport'] ?? 0);
+  if (promised && (own || mine)) {
+    v.swing += v.partyLine === 'contre' ? -promised : promised;
+    d.player.flags['billSupport'] = 0;
+    pushNews(d, 'action', 'positive', 'Vos coups de fil paient', `${promised} voix promises au téléphone se reportent sur le texte.`);
+  }
   d.vote = v;
   d.player.flags[`bill_${bill.id}`] = d.week;
   d.player.flags['lastVote'] = d.week;

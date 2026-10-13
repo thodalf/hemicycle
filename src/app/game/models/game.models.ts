@@ -958,6 +958,7 @@ export interface GameState {
   minigames: MinigameState[];
   /** Premier contact avec une civilisation extraterrestre */
   alien: AlienState | null;
+  phone?: PhoneState;
   player: Player;
   party: Party;
   otherParties: PartyInfo[];
@@ -994,6 +995,43 @@ export interface Loan {
 }
 
 // ── Guerre ──────────────────────────────────────────────────
+
+// ── Téléphone ───────────────────────────────────────────────
+
+export interface PhoneReply {
+  id: string;
+  label: string;
+  effects: Effect[];
+  /** Réponse de l'interlocuteur */
+  answer?: string;
+}
+
+export interface PhoneMessage {
+  id: string;
+  week: number;
+  kind: 'sms' | 'appel';
+  /** Clé de l'interlocuteur : equipe:<id>, chef, contact:<id>, collegue:<id>, proche */
+  who: string;
+  from: string;
+  role: string;
+  text: string;
+  /** Message envoyé (ou appel passé) par vous */
+  outgoing?: boolean;
+  replies?: PhoneReply[];
+  answered?: string;
+  read?: boolean;
+  /** Résumé des effets, affiché sous la bulle */
+  summary?: string[];
+}
+
+export interface PhoneState {
+  messages: PhoneMessage[];
+  /** Appels passés ce mois-ci */
+  callsUsed: number;
+  callsWeek: number;
+  /** Dernier appel à chacun (mois) */
+  called: Record<string, number>;
+}
 
 export interface WarLogEntry {
   week: number;

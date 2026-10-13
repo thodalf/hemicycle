@@ -13,6 +13,22 @@ import { weeklyCharges } from './patrimoine';
  *  partent dans le train de vie : un tiers est mis de côté.
  * ============================================================ */
 
+/** Rangs rémunérés comme membres du gouvernement */
+export const MINISTERIAL = new Set<RankId>(['ministre', 'premier_ministre']);
+
+/** En quittant le gouvernement : trois mois de traitement (indemnité de fin de fonctions) */
+export function trackMinisterialExit(d: GameState): void {
+  const p = d.player;
+  const ids = Object.keys(RANKS) as RankId[];
+  const idx = p.flags['prevRankIdx'];
+  const prev = typeof idx === 'number' ? ids[idx] : undefined;
+  if (prev && MINISTERIAL.has(prev) && !MINISTERIAL.has(p.rankId) && p.rankId !== 'president') {
+    p.flags['finFonctionsUntil'] = d.week + 3;
+    p.flags['finFonctionsAmount'] = RANKS[prev].monthlyIncome;
+  }
+  p.flags['prevRankIdx'] = ids.indexOf(p.rankId);
+}
+
 /** Part de la rémunération épargnée chaque mois */
 export const SAVING_RATE = 0.35;
 
@@ -63,7 +79,12 @@ export function remuneration(d: GameState): Remuneration {
   const active = civilActive(d);
   const job = active ? JOB_PART[p.rankId] ?? 0 : 0;
   const base = rank.monthlyIncome - job;
-  if (base > 0) lines.push({ label: active && p.rankId === 'conseiller_municipal' ? 'Indemnité municipale' : BASE_LABEL[p.rankId], amount: base });
+  if (base > 0) lines.push({ label: active && p.rankId === 'conseiller_municipal' ? 'Indemnité municipale' : BASE_LABEL[p.rankId], amount: base, ...(MINISTERIAL.has(p.rankId) ? { note: 'Traitement brut et indemnité de fonction, versés par l’État' } : {}) });
+  if (MINISTERIAL.has(p.rankId)) lines.push({ label: 'Indemnité de député·e', amount: 0, note: 'Suspendue : votre suppléant·e siège à l’Assemblée' });
+  const end = Number(p.flags['finFonctionsUntil'] ?? 0);
+  if (end > d.week && !MINISTERIAL.has(p.rankId)) {
+    lines.push({ label: 'Indemnité de fin de fonctions ministérielles', amount: Number(p.flags['finFonctionsAmount'] ?? 0), note: `Encore ${end - d.week} mois` });
+  }
   if (p.civil) {
     const def = CORPS_BY_ID.get(p.civil.corps)!;
     lines.push(active
