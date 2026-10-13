@@ -1,4 +1,4 @@
-import { GameState } from '../models/game.models';
+import { Effect, GameState } from '../models/game.models';
 import { monthlyZombie } from './zombie';
 import { createDecision } from '../data/decisions';
 import { rankOrder } from '../data/ranks';
@@ -68,8 +68,21 @@ function weeklyLodge(d: GameState, rng: Rng): void {
   const l = d.lodge!;
   l.fraternite = clamp(l.fraternite - 0.6);
   l.discretion = clamp(l.discretion + 0.5);
-  // Un grade élevé ouvre des portes : un peu d'influence chaque mois
-  if (l.grade >= 2) d.player.stats.influence = clamp(d.player.stats.influence + 0.15 * l.grade);
+  // La loge ouvre des portes dès l'initiation : influence et capital politique chaque mois
+  d.player.stats.influence = clamp(d.player.stats.influence + 0.2 + 0.15 * l.grade);
+  d.player.stats.politicalCapital = clamp(d.player.stats.politicalCapital + 1 + l.grade * 0.5);
+  // Un frère rend service : plus la fraternité est forte, plus c'est fréquent
+  if (l.fraternite >= 35 && rng.chance(0.08 + l.fraternite / 600)) {
+    const favor = rng.pick<{ title: string; text: string; effects: Effect[] }>([
+      { title: 'Un frère vous rend service', text: 'Un frère banquier débloque un don pour votre compte de campagne.', effects: [{ kind: 'funds', account: 'campaign', delta: 2000 + l.grade * 1000 }] },
+      { title: 'Un frère vous rend service', text: 'Un frère député vous promet sa voix et celles de deux amis sur votre prochain texte.', effects: [{ kind: 'flagAdd', key: 'billSupport', delta: 4 }, { kind: 'stat', stat: 'influence', delta: 1 }] },
+      { title: 'Un frère vous rend service', text: 'Un frère journaliste vous consacre un portrait flatteur.', effects: [{ kind: 'stat', stat: 'popularity', delta: 3 }] },
+      { title: 'Un frère vous rend service', text: 'Un frère vous glisse le portable d’une personnalité qui compte.', effects: [{ kind: 'phoneBook', npcId: '$any' }] },
+      { title: 'Un frère vous rend service', text: 'Un frère haut fonctionnaire vous ouvre un dossier sensible.', effects: [{ kind: 'dossier', domain: d.agendaDomain, delta: 4 }, { kind: 'stat', stat: 'credibility', delta: 1 }] },
+    ]);
+    const summary = applyEffects(d, favor.effects, {}, rng);
+    pushNews(d, 'reseau', 'positive', favor.title, `${favor.text} ${summary.join(' · ')}`);
+  }
 
   if (nextGradeReady(d)) {
     const decision = createDecision('elevation', d, rng, {});

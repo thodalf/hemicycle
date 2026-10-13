@@ -10,6 +10,7 @@ import { LIFE_EVENTS } from './life-events';
 import { EXTRA_EVENTS } from './extra-events';
 import { CAMPAIGN_EVENTS, MORE_EVENTS, inPresidentialRace } from './campaign-events';
 import { ZOMBIE_EVENTS, ZOMBIE_GATE } from './zombie-events';
+import { canStartArc } from '../engine/arcs';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
 import { RANK_EVENTS } from './rank-events';
@@ -120,7 +121,8 @@ const GATEWAY_EVENTS: RandomEvent[] = [
         context: `À la fin d’un dîner, ${who} vous glisse : « Vous avez l’étoffe. Accepteriez-vous que je vous présente à ma loge ? » Il faudra passer l’enquête, puis le bandeau.`,
         choices: [
           c('accepter', 'Accepter d’être initié·e (600 €)', [
-            { kind: 'joinLodge' }, { kind: 'funds', account: 'personal', delta: -600 }, s('influence', 2),
+            { kind: 'joinLodge' }, { kind: 'funds', account: 'personal', delta: -600 }, s('influence', 5), s('politicalCapital', 10),
+            { kind: 'phoneBook', npcId: '$any' }, { kind: 'phoneBook', npcId: '$any' },
             ...(npc ? [{ kind: 'npcRelation' as const, npcId: npc.id, delta: 10 }] : []),
           ], 'Trois coups frappés à la porte du temple : vous êtes Apprenti·e.', { needMoney: 600 }),
           c('reflechir', 'Demander à réfléchir', [s('stress', 1)], '« Prenez votre temps. Nous saurons vous retrouver. »'),
@@ -139,6 +141,7 @@ const GATEWAY_EVENTS: RandomEvent[] = [
       choices: [
         c('frapper', 'Frapper à la porte du temple (600 €)', [
           { kind: 'joinLodge' }, { kind: 'lodge', fraternite: 8 }, { kind: 'funds', account: 'personal', delta: -600 },
+          s('influence', 4), s('credibility', 2), s('politicalCapital', 8), { kind: 'phoneBook', npcId: '$any' },
         ], 'Vos futurs frères et sœurs vous accueillent chaleureusement.', { needMoney: 600 }),
         c('conference', 'Donner la conférence et en rester là', [s('credibility', 2), s('energy', -5), { kind: 'dossier', domain: d.agendaDomain, delta: 2 }], 'Un débat de haute tenue.'),
         c('decliner', 'Décliner', [], 'Vous avez d’autres priorités.'),
@@ -1397,7 +1400,9 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
 
   let ev: RandomEvent | undefined;
   // Portes d'entrée Couronne / Loge : tirage à part, une seule par mois
-  if (d.week >= 4) {
+  // Jamais plus de deux grands arcs à la fois
+  const room = canStartArc(d);
+  if (d.week >= 4 && room) {
     const gates = GATEWAY_EVENTS.filter(e => canFire(e, 8));
     const crownGates = gates.filter(e => e.tag === 'emissaire_royaliste' || e.tag === 'bal_legitimiste');
     const lodgeGates = gates.filter(e => e.tag === 'parrain_loge' || e.tag === 'tenue_blanche');
@@ -1407,13 +1412,13 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     else if (pressGates.length && rng.chance(0.045)) ev = pick(pressGates);
   }
   // Premier contact : la porte d'entrée (rare), puis les rebondissements du dossier
-  if (!ev && d.week >= 4 && canFire(ALIEN_GATE, 12) && rng.chance(d.scenario === 'carriere' ? 0.012 : 0.006)) ev = ALIEN_GATE;
+  if (!ev && room && d.week >= 4 && canFire(ALIEN_GATE, 12) && rng.chance(d.scenario === 'carriere' ? 0.012 : 0.006)) ev = ALIEN_GATE;
   if (!ev && d.alien && rng.chance(0.4)) {
     const pool = ALIEN_EVENTS.filter(e => canFire(e, 10));
     if (pool.length) ev = pick(pool);
   }
   // Épidémie Z : la porte d'entrée (rare), puis l'épidémie domine l'actualité
-  if (!ev && canFire(ZOMBIE_GATE, 12) && rng.chance(0.008)) ev = ZOMBIE_GATE;
+  if (!ev && room && canFire(ZOMBIE_GATE, 12) && rng.chance(0.008)) ev = ZOMBIE_GATE;
   if (!ev && d.zombie && rng.chance(0.45)) {
     const pool = ZOMBIE_EVENTS.filter(e => canFire(e, 6));
     if (pool.length) ev = pick(pool);
@@ -1423,7 +1428,7 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const pool = WAR_EVENTS.filter(e => canFire(e, 6));
     if (pool.length) ev = pick(pool);
   }
-  if (!ev && canFire(INVASION_EVENT, 24) && rng.chance(0.12)) ev = INVASION_EVENT;
+  if (!ev && room && canFire(INVASION_EVENT, 24) && rng.chance(0.12)) ev = INVASION_EVENT;
   if (!ev && !d.war && d.week > 3 && rng.chance(0.06)) {
     const pool = HOSTILE_EVENTS.filter(e => canFire(e, 12));
     if (pool.length) ev = pick(pool);

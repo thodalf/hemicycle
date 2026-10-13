@@ -1,4 +1,5 @@
 import { Decision, Effect, GameState, Tone, WarState } from '../models/game.models';
+import { canStartArc } from './arcs';
 import { RANKS } from '../data/ranks';
 import { PARTNERS_BY_ID } from './intl';
 import { addMilestone } from './life';
@@ -120,7 +121,7 @@ export function monthlyHostile(d: GameState, rng: Rng): void {
     if (leadsWar(d) && !d.pendingDecisions.some(x => x.tag === 'menace_etat')) d.pendingDecisions.push(threatDecision(d, worst));
   }
   const last = Number(p.flags['lastWar'] ?? -99);
-  if (rel <= INVASION_THRESHOLD && d.week - last >= 18 && rng.chance(0.22)) startInvasion(d, worst);
+  if (rel <= INVASION_THRESHOLD && d.week - last >= 18 && canStartArc(d) && rng.chance(0.22)) startInvasion(d, worst);
 }
 
 function threatDecision(d: GameState, id: string): Decision {

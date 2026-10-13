@@ -2,6 +2,7 @@ import { Decision, Effect, GameState, PlotState } from '../models/game.models';
 import { addMilestone, assassinationRisk, die } from './life';
 import { pushNews } from './effects';
 import { Rng, clamp, nextId } from './rng';
+import { canStartArc } from './arcs';
 
 /* ============================================================
  *  Le complot : plus d'assassinat « tombé du ciel ». Quand la
@@ -155,7 +156,7 @@ export function monthlyPlot(d: GameState, rng: Rng): void {
   if (d.status !== 'en_cours') return;
   if (!d.plot) {
     // Les complots naissent là où le risque d'attentat est réel ; ils se voient venir
-    if (rng.chance(assassinationRisk(d) * 8)) startPlot(d, rng);
+    if (canStartArc(d) && rng.chance(assassinationRisk(d) * 8)) startPlot(d, rng);
     return;
   }
   const p = d.plot;

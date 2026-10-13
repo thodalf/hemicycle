@@ -479,9 +479,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         if (!d.lodge) {
           d.lodge = {
             loge: 'Les Compagnons de l’Aube', obedience: 'l’Obédience de l’Équerre et du Compas',
-            grade: 0, fraternite: 30, discretion: 85, planches: 0,
+            grade: 0, fraternite: 40, discretion: 85, planches: 0,
           };
-          pushNews(d, 'systeme', 'neutral', 'Initiation', 'Vous êtes reçu·e Apprenti·e à la loge Les Compagnons de l’Aube. Nouvel onglet : Loge.');
+          pushNews(d, 'systeme', 'neutral', 'Initiation', 'Vous êtes reçu·e Apprenti·e à la loge Les Compagnons de l’Aube. Des frères bien placés vous ouvrent leur carnet d’adresses. Nouvel onglet : Loge.');
           summary.push('Initié·e en loge');
         }
         break;
