@@ -28,7 +28,7 @@ import { monthlySecrets } from '../engine/secrets';
 import { monthlyCharacter } from '../engine/character';
 import { monthlyCouncil } from '../engine/council';
 import { monthlyFrondes } from '../engine/frondes';
-import { monthlyStruggle } from '../engine/grand';
+import { monthlyDecisions, monthlyStruggle } from '../engine/grand';
 import { checkAchievements } from '../data/achievements';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
@@ -147,6 +147,7 @@ export class TurnService {
     monthlyCouncil(d, rng);
     monthlyFrondes(d, rng);
     monthlyStruggle(d, rng);
+    monthlyDecisions(d, rng);
     monthlyPlot(d, rng);
     monthlySchemes(d, rng);
     monthlyFamily(d, rng);

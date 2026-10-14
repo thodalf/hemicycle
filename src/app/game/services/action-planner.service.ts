@@ -29,6 +29,8 @@ import { intlPower, intlRelevant } from '../engine/intl';
 import { reservedAp } from '../engine/projects';
 import { ASSETS_BY_ID } from '../data/assets';
 import { Rng } from '../engine/rng';
+import { checkCharte } from '../engine/grand';
+import { GREAT_INFO_BY_ID, decisionActive } from '../data/great-decisions';
 import { recordObjectiveEvent } from '../engine/objectives';
 import { GameStateService } from './game-state.service';
 
@@ -163,6 +165,7 @@ export class ActionPlannerService {
       if (req.dread && (s.player.dread ?? 0) < req.dread) return { ok: false, reason: `Il faut inspirer de la crainte (${req.dread})` };
       if (req.struggle && s.struggle?.id !== req.struggle) return { ok: false, reason: 'Seulement pendant cette grande lutte' };
       if (req.lifestyle && s.player.lifestyle?.id !== req.lifestyle) return { ok: false, reason: 'Réservé à ce style de vie' };
+      if (req.decision && !decisionActive(s, req.decision)) return { ok: false, reason: `Réservé : « ${GREAT_INFO_BY_ID.get(req.decision)?.label ?? req.decision} »` };
       if (req.knownSecret && !(s.secrets ?? []).some(x => x.known && !x.exposed && x.owner !== 'player')) return { ok: false, reason: 'Aucun secret en main' };
       if (req.governing && !s.presidency && !['ministre', 'premier_ministre'].includes(s.player.rankId)) return { ok: false, reason: 'Réservé aux membres du gouvernement' };
       if (req.promises && !(s.promises ?? []).some(x => x.status === 'en_cours')) return { ok: false, reason: 'Aucune promesse en cours' };
@@ -237,6 +240,7 @@ export class ActionPlannerService {
 
       recordObjectiveEvent(d, 'category', action.category);
       onAction(d, action);
+      checkCharte(d, action.id, rng);
       if (cost.renown) d.player.renown = Math.max(0, (d.player.renown ?? 0) - cost.renown);
       actionSegments(d, action, ctx);
       actionImage(d, action, ctx);

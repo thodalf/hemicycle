@@ -1,6 +1,7 @@
 import { Decision, Effect, FactionId, Fronde, GameState } from '../models/game.models';
 import { rankOrder } from '../data/ranks';
 import { pushNews } from './effects';
+import { decisionActive } from '../data/great-decisions';
 import { Rng, clamp, nextId } from './rng';
 
 /* ============================================================
@@ -27,9 +28,12 @@ export function monthlyFrondes(d: GameState, rng: Rng): void {
   const list = frondes(d);
   const dread = d.player.dread ?? 0;
   const nego = d.player.lifestyle?.perks.includes('nego_3') ? 0.8 : 1;
+  // Purge : plus aucune fronde pendant trois ans. Pacte des courants : elles grandissent deux fois moins vite
+  const purged = decisionActive(d, 'purge') && d.week - Number(d.player.flags['gd_purge']) < 36;
+  const pact = decisionActive(d, 'pacte_courants') ? 0.5 : 1;
   for (const f of d.party.factions) {
     let fr = list.find(x => x.factionId === f.id);
-    if (!fr && f.supportForPlayer < 30 && rng.chance(0.25)) {
+    if (!fr && !purged && f.supportForPlayer < 30 && rng.chance(0.25)) {
       const leader = d.party.leaderNpcId === 'player';
       const demand: Fronde['demand'] = leader && f.supportForPlayer < 18 ? 'demission' : rng.pick(['ligne', 'postes', 'consultation'] as const);
       fr = { factionId: f.id, demand, strength: 20, since: d.week };
@@ -37,7 +41,8 @@ export function monthlyFrondes(d: GameState, rng: Rng): void {
       pushNews(d, 'parti', 'negative', `Fronde : ${f.name}`, `Le courant ${f.name.toLowerCase()} s’organise et ${DEMANDS[demand].text}.`);
     }
     if (!fr) continue;
-    fr.strength = clamp(fr.strength + ((35 - f.supportForPlayer) / 4 + (50 - d.party.cohesion) / 12) * nego - dread / 25);
+    const grow = ((35 - f.supportForPlayer) / 4 + (50 - d.party.cohesion) / 12) * nego;
+    fr.strength = clamp(fr.strength + (grow > 0 ? grow * pact : grow) - dread / 25);
     if (f.supportForPlayer >= 45 || fr.strength <= 0) {
       d.frondes = list.filter(x => x !== fr);
       pushNews(d, 'parti', 'positive', `La fronde ${f.name.toLowerCase()} s’éteint`, 'Les mécontents rentrent dans le rang.');

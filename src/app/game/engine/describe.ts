@@ -28,6 +28,7 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'secret': return [{ text: e.reveal ? 'secret rendu public' : e.type ? 'un secret de plus' : 'découvrir un secret', tone: e.reveal || e.type ? 'bad' : 'good' }];
     case 'hook': return [{ text: `levier ${e.strength}`, tone: 'good' }];
     case 'struggle': return [{ text: e.balance ? `lutte ${e.balance < 0 ? '◀' : '▶'} ${Math.abs(e.balance)}` : `lutte +${e.progress ?? 0}`, tone: 'neutral' }];
+    case 'edict': return [{ text: e.op === 'violate' ? 'rompt votre charte' : 'renie l’engagement', tone: 'bad' }];
     case 'fronde': return [{ text: `${e.delta < 0 ? 'affaiblit' : 'renforce'} la fronde`, tone: e.delta < 0 ? 'good' : 'bad' }];
     case 'dossier': return [{ text: `${n(e.delta)} dossier ${e.domain === '$domain' ? 'ciblé' : DOMAIN_LABELS[e.domain].toLowerCase()}`, tone: tone(e.delta) }];
     case 'faction': {

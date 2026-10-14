@@ -1,7 +1,7 @@
 import { adjustKingdom } from './kingdom';
 import { recordOpinion } from './memories';
 import { adjustSecret, grantHook } from './secrets';
-import { adjustStruggle } from './grand';
+import { adjustEdict, adjustStruggle } from './grand';
 import { adjustFronde } from './frondes';
 import { exposureTraitMult, gainTrait, masteryTraitMult, npcRelationMult, relationTraitMult, statTraitMult } from './traits';
 import { TraitId } from '../data/traits';
@@ -454,6 +454,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       case 'fronde':
         summary.push(...adjustFronde(d, e));
+        break;
+      case 'edict':
+        summary.push(...adjustEdict(d, e, rng));
         break;
       case 'phoneBook': {
         const id = e.npcId === '$target' ? ctx.targetId : e.npcId;

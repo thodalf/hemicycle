@@ -3,6 +3,7 @@ import { applyEffects, pushNews } from './effects';
 import { engrave, recordOpinion } from './memories';
 import { Rng, clamp, nextId } from './rng';
 import { nameRng } from '../data/names';
+import { decisionActive } from '../data/great-decisions';
 
 /* ============================================================
  *  Secrets et moyens de pression. Chaque personnalité peut
@@ -146,6 +147,8 @@ export function blackmail(d: GameState, secretId: string, rng: Rng): string[] {
   const def = SECRET_BY_ID.get(s.type)!;
   const out = grantHook(d, npc.id, 'fort', `Vous connaissez son secret : ${def.label.toLowerCase()}`);
   d.player.dread = clamp((d.player.dread ?? 0) + 4 + def.gravity * 2);
+  // Sous charte éthique, le chantage est un parjure
+  if (decisionActive(d, 'charte')) applyEffects(d, [{ kind: 'edict', id: 'charte', op: 'violate' }], {}, rng);
   const before = npc.relationToPlayer;
   npc.relationToPlayer = clamp(npc.relationToPlayer - 25, -100, 100);
   recordOpinion(d, npc, npc.relationToPlayer - before, 'Vous le ou la faites chanter');

@@ -2,7 +2,8 @@ import { ActionDefinition, Decision, GameState } from '../models/game.models';
 import { LIFESTYLE_BY_ID, PERK_BY_ID, RENOWN_TIERS, XP_PER_PERK, renownTier } from '../data/lifestyles';
 import { TRAITS, TraitId } from '../data/traits';
 import { gainTrait, hasTrait } from './traits';
-import { pushNews } from './effects';
+import { applyEffects, pushNews } from './effects';
+import { decisionActive } from '../data/great-decisions';
 import { Rng, clamp, nextId } from './rng';
 
 /* ============================================================
@@ -104,7 +105,7 @@ export function monthlyCharacter(d: GameState, rng: Rng): void {
   const after = renownTier(p.renown);
   if (after > before) pushNews(d, 'systeme', 'positive', `Renommée : ${RENOWN_TIERS[after].label}`, `${RENOWN_TIERS[after].icon} Votre nom compte désormais. De nouvelles actions d’éclat sont possibles.`);
   // La crainte s'estompe si on ne l'entretient pas
-  p.dread = clamp((p.dread ?? 0) - 0.8);
+  p.dread = clamp((p.dread ?? 0) - (decisionActive(d, 'purge') ? 0.4 : 0.8));
 }
 
 function stressBreak(d: GameState, rng: Rng): Decision {

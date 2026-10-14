@@ -172,6 +172,8 @@ export interface Player {
   traits?: string[];
   /** Style de vie choisi, expérience et avantages débloqués */
   lifestyle?: { id: string; xp: number; perks: string[] } | null;
+  /** Données des grandes décisions : allié réconcilié, chef des exclus, sujet du livre blanc… */
+  edictData?: Record<string, string>;
   /** Renommée (s'accumule, se dépense pour les actions d'éclat) */
   renown?: number;
   /** Crainte inspirée (0-100) */
@@ -245,6 +247,7 @@ export type Effect =
   | { kind: 'hook'; npcId: string; strength: 'faible' | 'fort'; reason?: string }
   | { kind: 'struggle'; balance?: number; progress?: number }
   | { kind: 'fronde'; factionId?: FactionId | '*'; delta: number }
+  | { kind: 'edict'; id: string; op: 'break' | 'violate' }
   | { kind: 'dossier'; domain: DomainRef; delta: number }
   | { kind: 'funds'; account: 'personal' | 'campaign'; delta: number }
   | { kind: 'faction'; factionId: FactionId | '*' | '$target'; delta: number }
@@ -360,7 +363,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean; renownTier?: number; dread?: number; struggle?: string; lifestyle?: string; knownSecret?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean; renownTier?: number; dread?: number; struggle?: string; lifestyle?: string; knownSecret?: boolean; decision?: string };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */

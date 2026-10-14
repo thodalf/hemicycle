@@ -894,6 +894,17 @@ const COUNTRY: ActionDefinition[] = [
     description: 'Votre style Intrigant : chauffeurs, secrétaires, garçons d’étage.', cost: { ap: 1, money: 1000 }, cooldown: 2, effects: [{ kind: 'secret' }, { kind: 'dread', delta: 2 }] },
   { id: 'ls_essai', label: 'Publier un essai remarqué', category: 'medias', minRank: 'militant', requires: { lifestyle: 'intellectuel' },
     description: 'Votre style Intellectuel : 200 pages qui font débat.', cost: { ap: 1, energy: 7 }, cooldown: 4, effects: [st('credibility', 3), { kind: 'renown', delta: 8 }] },
+  // Débloquées par les grandes décisions
+  { id: 'tt_note', label: 'Commander une note à votre think tank', category: 'reseau', minRank: 'militant', target: 'domain', requires: { decision: 'think_tank' },
+    description: 'Vos chercheurs passent un dossier au crible : chiffres, comparaisons européennes, propositions.', cost: { ap: 1, energy: 3 }, cooldown: 2, effects: [{ kind: 'dossier', domain: '$domain', delta: 10 }, st('credibility', 2)] },
+  { id: 'tt_colloque', label: 'Organiser un colloque de votre think tank', category: 'reseau', minRank: 'militant', requires: { decision: 'think_tank' },
+    description: 'Universitaires, patrons, hauts fonctionnaires : une journée d’échanges sous votre bannière.', cost: { ap: 1, energy: 6, money: 2500 }, cooldown: 4, effects: [st('influence', 3), { kind: 'renown', delta: 10 }, { kind: 'segment', segment: 'cadres', delta: 3 }] },
+  { id: 'tt_rapport', label: 'Publier un rapport choc', category: 'reseau', minRank: 'militant', requires: { decision: 'think_tank' },
+    description: 'Un titre qui claque, des propositions radicales : tout le monde en parle, pour ou contre.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [st('popularity', 2), st('credibility', 2), { kind: 'renown', delta: 8 }, st('stress', 4)] },
+  { id: 'mvt_meeting', label: 'Grand meeting de votre mouvement', category: 'terrain', minRank: 'militant', requires: { decision: 'mouvement' },
+    description: 'Des milliers de sympathisants, des drapeaux à votre nom, pas un logo du parti.', cost: { ap: 1, energy: 10, money: 1500 }, cooldown: 2, effects: [st('popularity', 4), { kind: 'segment', segment: 'jeunes', delta: 3 }, { kind: 'faction', factionId: '*', delta: -2 }, { kind: 'renown', delta: 6 }] },
+  { id: 'mvt_petition', label: 'Lancer une pétition nationale', category: 'terrain', minRank: 'militant', requires: { decision: 'mouvement' },
+    description: 'Vos comités sillonnent les marchés : un million de signatures en ligne de mire.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [st('popularity', 2), st('influence', 2), { kind: 'segment', segment: 'populaires', delta: 3 }] },
   // Encore du quotidien
   { id: 'nuit_sdf', label: 'Ouvrir un gymnase aux sans-abri par grand froid', category: 'terrain', minRank: 'conseiller_municipal',
     description: 'Lits de camp, soupe chaude, bénévoles : personne ne dormira dehors cette nuit.', cost: { ap: 1, energy: 7 }, cooldown: 4, effects: [dos('social', 3), seg('populaires', 2), st('popularity', 1)] },

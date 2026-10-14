@@ -9,7 +9,8 @@ import { opinionBreakdown } from '../../engine/memories';
 import { HOOK_USES, HookUse, SECRET_BY_ID, blackmail, expose, hookOn, hookReady, knownSecretsOf, playerSecrets, useHook } from '../../engine/secrets';
 import { DEMANDS, frondes } from '../../engine/frondes';
 import { ACTIVITIES, ActivityDef, activityAvailability, guestPool, startActivity } from '../../engine/activities';
-import { PHASES, STRUGGLE_BY_ID, decisionsState, takeDecision } from '../../engine/grand';
+import { PHASES, STRUGGLE_BY_ID, breakDecision, cooldownText, decisionCooldown, decisionsState, takeDecision } from '../../engine/grand';
+import { DECISION_INTERVAL, decisionActive } from '../../data/great-decisions';
 
 type Tab = 'personnages' | 'parti' | 'activites' | 'decisions' | 'lutte';
 
@@ -58,7 +59,7 @@ type Tab = 'personnages' | 'parti' | 'activites' | 'decisions' | 'lutte';
                     }
                     @for (sec of known(n.id); track sec.id) {
                       <div class="secret">🤫 <b>{{ secretLabel(sec.type) }}</b> <small class="muted">— {{ secretText(sec.type) }}</small>
-                        <span class="btns"><button class="btn small" (click)="doBlackmail(sec.id, $event)">Faire chanter</button><button class="btn small" (click)="doExpose(sec.id, $event)">Dénoncer</button></span>
+                        <span class="btns"><button class="btn small" [class.danger]="charte()" [title]="charte() ? 'Votre charte éthique l’interdit : ce serait un parjure' : ''" (click)="doBlackmail(sec.id, $event)">{{ charte() ? 'Faire chanter (parjure)' : 'Faire chanter' }}</button><button class="btn small" (click)="doExpose(sec.id, $event)">Dénoncer</button></span>
                       </div>
                     }
                     @if (hook(n.id); as h) {
@@ -112,13 +113,50 @@ type Tab = 'personnages' | 'parti' | 'activites' | 'decisions' | 'lutte';
           }
         }
         @case ('decisions') {
-          @for (x of decisions(); track x.g.id) {
-            <div class="act" [class.off]="x.block">
-              <span class="ic">{{ x.g.icon }}</span>
-              <span class="tx"><strong>{{ x.g.label }}</strong><small class="muted">{{ x.g.desc }}{{ cost(x.g.cost) }}</small>
-                @if (x.block && !x.done) { <small class="reason">{{ x.block }}</small> }</span>
-              @if (x.done) { <span class="chip good">Fait</span> } @else { <button class="btn small" [disabled]="!!x.block" (click)="decide(x.g.id, $event)">Décider</button> }
-            </div>
+          <div class="gd-head">
+            <div class="row2"><strong>Une grande décision tous les huit ans</strong>
+              @if (cooldown(); as cd) { <span class="chip warn">Prochaine dans {{ cd }}</span> } @else { <span class="chip good">Une décision est possible</span> }</div>
+            <div class="bar clock"><i [style.width.%]="clockPct()"></i></div>
+            <small class="muted">Chaque décision vous engage pour la vie : un avantage durable, un prix durable, et chaque année un rendez-vous qui vous demande des comptes. On peut la renier… à grand prix.</small>
+          </div>
+          @if (engaged().length) {
+            <span class="eyebrow">Vos engagements</span>
+            @for (x of engaged(); track x.g.id) {
+              <article class="gd mine-gd" [class.broken]="x.broken">
+                <header><span class="ic">{{ x.g.icon }}</span><strong>{{ x.g.label }}</strong>
+                  <span class="chip" [class.good]="!x.broken && !x.running" [class.warn]="x.running" [class.bad]="x.broken">{{ x.broken ? 'Renié' : x.running ? 'En cours' : 'En vigueur' }}</span></header>
+                @if (x.since !== null) { <small class="muted">Depuis {{ month(x.since) }}</small> }
+                @if (!x.broken) {
+                  <ul class="pc">
+                    @for (t of x.g.pros; track t) { <li class="pro">{{ t }}</li> }
+                    @for (t of x.g.cons; track t) { <li class="con">{{ t }}</li> }
+                  </ul>
+                  @if (confirmBreak() === x.g.id) {
+                    <div class="confirm bad"><span>Renier : {{ x.g.breakText }}. Le délai de huit ans ne repart pas à zéro.</span>
+                      <span class="btns"><button class="btn small danger" (click)="renounce(x.g.id, $event)">Renier pour de bon</button><button class="btn small" (click)="confirmBreak.set(null)">Annuler</button></span></div>
+                  } @else { <span class="btns"><button class="btn small ghost" (click)="confirmBreak.set(x.g.id)">Renier…</button></span> }
+                }
+              </article>
+            }
+          }
+          <span class="eyebrow">Les grandes décisions</span>
+          @for (x of open_(); track x.g.id) {
+            <article class="gd" [class.off]="!!x.block">
+              <header><span class="ic">{{ x.g.icon }}</span><strong>{{ x.g.label }}</strong><span class="chip">{{ costLabel(x.g.cost) }}</span></header>
+              <p class="muted small">{{ x.g.desc }}</p>
+              <ul class="pc">
+                @for (t of x.g.pros; track t) { <li class="pro">{{ t }}</li> }
+                @for (t of x.g.cons; track t) { <li class="con">{{ t }}</li> }
+              </ul>
+              @if (x.excl.length) { <small class="excl">⛔ Incompatible avec : {{ x.excl.join(', ') }}</small> }
+              @if (x.cond) { <small class="reason">{{ x.cond }}</small> }
+              @if (!x.block) {
+                @if (confirm() === x.g.id) {
+                  <div class="confirm"><span><b>C’est pour la vie.</b> Votre prochaine grande décision ne viendra pas avant huit ans.</span>
+                    <span class="btns"><button class="btn small primary" (click)="decide(x.g.id, $event)">Je m’engage</button><button class="btn small" (click)="confirm.set(null)">Annuler</button></span></div>
+                } @else { <span class="btns"><button class="btn small primary" (click)="confirm.set(x.g.id)">Décider…</button></span> }
+              }
+            </article>
           }
         }
         @case ('lutte') {
@@ -171,6 +209,21 @@ type Tab = 'personnages' | 'parti' | 'activites' | 'decisions' | 'lutte';
     .tug { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 12px; font-weight: 600;
       .track { position: relative; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--left), var(--line), var(--right)); i { position: absolute; top: -4px; width: 4px; height: 16px; margin-left: -2px; background: var(--ink); border-radius: 2px; transition: left .5s ease; } } }
     .small { font-size: 12.5px; }
+    .btn.danger { background: var(--bad); color: var(--surface); border-color: var(--bad); }
+    .btn.ghost { background: none; color: var(--ink-2); }
+    .gd-head { display: grid; gap: 5px; padding: 10px; border-radius: 10px; background: var(--surface-2); .row2 { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; } }
+    .clock i { background: linear-gradient(90deg, var(--accent), var(--good)); }
+    .eyebrow { margin-top: 4px; }
+    .gd { display: grid; gap: 6px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); animation: open .25s ease;
+      header { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; .ic { font-size: 24px; } strong { font: 700 14px var(--font-display); } }
+      p { margin: 0; } &.off { opacity: .78; } .reason { color: var(--bad); font-size: 12px; } .excl { font-size: 11.5px; color: var(--ink-3); } }
+    .gd.mine-gd { border-color: color-mix(in srgb, var(--good) 45%, var(--line)); background: color-mix(in srgb, var(--good) 5%, var(--surface)); }
+    .gd.broken { border-color: var(--line); background: var(--surface-2); opacity: .7; }
+    .pc { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12px;
+      li { padding-left: 20px; position: relative; } li::before { position: absolute; left: 0; }
+      .pro::before { content: '✅'; } .con::before { content: '⚠️'; } .con { color: var(--ink-2); } }
+    .confirm { display: grid; gap: 6px; padding: 8px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); font-size: 12.5px; animation: open .2s ease;
+      &.bad { background: color-mix(in srgb, var(--bad) 10%, var(--surface)); } }
   `,
 })
 export class GrandPanelComponent {
@@ -191,6 +244,13 @@ export class GrandPanelComponent {
   protected readonly mine = computed(() => playerSecrets(this.s()));
   protected readonly activities = computed(() => ACTIVITIES.map(def => ({ def, block: activityAvailability(this.s(), def) })));
   protected readonly decisions = computed(() => decisionsState(this.s()));
+  protected readonly engaged = computed(() => this.decisions().filter(x => x.done));
+  protected readonly open_ = computed(() => this.decisions().filter(x => !x.done).sort((a, b) => Number(!!a.cond) - Number(!!b.cond)));
+  protected readonly cooldown = computed(() => { const m = decisionCooldown(this.s()); return m ? cooldownText(m) : null; });
+  protected readonly clockPct = computed(() => 100 - (decisionCooldown(this.s()) / DECISION_INTERVAL) * 100);
+  protected readonly charte = computed(() => decisionActive(this.s(), 'charte'));
+  protected readonly confirm = signal<string | null>(null);
+  protected readonly confirmBreak = signal<string | null>(null);
   protected readonly struggle = computed(() => { const st = this.s().struggle; return st ? { s: st, def: STRUGGLE_BY_ID.get(st.id)! } : null; });
 
   protected rank(id: string) { return RANKS[id as keyof typeof RANKS]?.label ?? ''; }
@@ -243,8 +303,21 @@ export class GrandPanelComponent {
   }
 
   protected decide(id: string, ev: Event): void {
+    const label = this.decisions().find(x => x.g.id === id)?.g.label ?? '';
     this.game.mutate((d, rng) => { takeDecision(d, id, rng); });
-    this.fx.spotlight('Grande décision', '');
+    this.confirm.set(null);
+    this.fx.stamp('Grande décision', 'good', label);
     this.fx.burstAt(ev.currentTarget as Element, 'good');
+  }
+
+  protected renounce(id: string, ev: Event): void {
+    this.game.mutate((d, rng) => { breakDecision(d, id, rng); });
+    this.confirmBreak.set(null);
+    this.fx.stamp('Engagement renié', 'bad', 'On s’en souviendra');
+    this.fx.burstAt(ev.currentTarget as Element, 'bad');
+  }
+
+  protected costLabel(c: { politicalCapital?: number; money?: number; renown?: number }) {
+    return [c.politicalCapital ? `◆ ${c.politicalCapital} capital` : '', c.money ? `${c.money.toLocaleString('fr-FR')} €` : '', c.renown ? `★ ${c.renown} renommée` : ''].filter(Boolean).join(' · ');
   }
 }

@@ -2,6 +2,7 @@ import { AssemblyVote, CustomBill, DOMAIN_LABELS, Decision, Domain, Effect, Game
 import { assemblyGroups, forecast, governingIds, ownOrigin, scheduleVote, voteRole } from './assembly';
 import { applyEffects, pushNews } from './effects';
 import { economy } from './country';
+import { decisionActive } from '../data/great-decisions';
 import { Rng, clamp, fr, nextId } from './rng';
 
 /* ============================================================
@@ -171,7 +172,7 @@ export function quoteBill(d: GameState, b: BillDraft): BillQuote {
   if (cl >= 55) notes.push(`Texte ${cleavageLabel(cl)} : risque de mobilisation dans la rue après l’adoption.`);
   if (budget < 0) notes.push(`Des économies : ${fr(-budget)} Md€ par an, au prix de quelques mécontents.`);
   return {
-    ap: b.scale, energy: 4 + 4 * b.scale, politicalCapital: Math.round(Math.max(6, pc)),
+    ap: b.scale, energy: 4 + 4 * b.scale, politicalCapital: Math.round(Math.max(6, pc)) + (decisionActive(d, 'pacte_courants') ? 5 : 0),
     budget, deficit: Math.round((budget / 28) * 100) / 100, opinion, adoptedChance, role, partyGap: Math.round(partyGap), notes,
     cleavage: cl, winners: wl.winners.map(s => SEG_LABEL[s]), losers: wl.losers.map(s => SEG_LABEL[s]),
   };
