@@ -680,6 +680,33 @@ const COUNTRY: ActionDefinition[] = [
     description: 'Des machines rapatriées d’Asie, des emplois revenus : une belle histoire à raconter.', cost: { ap: 1, energy: 6 }, cooldown: 4, effects: [seg('populaires', 2), dos('economie', 2), st('credibility', 1)] },
   { id: 'debat_twitch', label: 'Débattre sur une plateforme de streaming', category: 'medias', minRank: 'conseiller_municipal',
     description: 'Deux heures face à un streamer et 80 000 spectateurs qui commentent en direct.', cost: { ap: 1, energy: 7 }, cooldown: 4, effects: [seg('jeunes', 4), st('popularity', 1), st('stress', 2)] },
+  // La pénurie de médicaments
+  { id: 'penurie_pharmacies', label: 'Faire la tournée des pharmacies', category: 'crise', minRank: 'militant', requires: { arc: 'penurie_medicaments' },
+    description: 'Écouter les pharmaciens, recenser les ruptures, rassurer les patients.', cost: { ap: 1, energy: 7 }, cooldown: 2, effects: [cr('penurie_medicaments', 4, -4), seg('retraites', 2)] },
+  { id: 'penurie_stocks', label: 'Créer des stocks stratégiques', category: 'crise', minRank: 'militant', requires: { arc: 'penurie_medicaments' },
+    description: 'Quatre mois de réserve pour les 300 médicaments essentiels.', cost: { ap: 1, politicalCapital: 8 }, maxPerMonth: 1, effects: [cr('penurie_medicaments', 9, -2), eco({ deficit: 0.03 })] },
+  { id: 'penurie_europe', label: 'Proposer des achats européens groupés', category: 'crise', minRank: 'depute', requires: { arc: 'penurie_medicaments' },
+    description: 'Vingt-sept pays qui négocient ensemble : les laboratoires écoutent.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [cr('penurie_medicaments', 6), dos('diplomatie', 2)] },
+  // Le train du futur
+  { id: 'train_investisseurs', label: 'Réunir les investisseurs du train', category: 'crise', minRank: 'militant', requires: { arc: 'train_futur' },
+    description: 'Banques, fonds souverains, constructeurs : il manque deux milliards.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [cr('train_futur', 8), seg('cadres', 1)] },
+  { id: 'train_enquete', label: 'Animer l’enquête publique', category: 'crise', minRank: 'militant', requires: { arc: 'train_futur' },
+    description: 'Salles des fêtes, cartes du tracé, questions des riverains.', cost: { ap: 1, energy: 8 }, cooldown: 2, effects: [cr('train_futur', 3, -6), seg('ruraux', 2)] },
+  { id: 'train_emplois', label: 'Promettre des emplois locaux sur le chantier', category: 'crise', minRank: 'militant', requires: { arc: 'train_futur' },
+    description: 'Clauses d’embauche locale, formations : le chantier devient une chance.', cost: { ap: 1, energy: 4 }, cooldown: 3, effects: [cr('train_futur', 4, -3), seg('populaires', 2)] },
+  // Encore du quotidien
+  { id: 'nuit_sdf', label: 'Ouvrir un gymnase aux sans-abri par grand froid', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Lits de camp, soupe chaude, bénévoles : personne ne dormira dehors cette nuit.', cost: { ap: 1, energy: 7 }, cooldown: 4, effects: [dos('social', 3), seg('populaires', 2), st('popularity', 1)] },
+  { id: 'atelier_reparation', label: 'Lancer un café-réparation', category: 'terrain', minRank: 'militant',
+    description: 'Grille-pains, vélos, ordinateurs : on répare ensemble au lieu de jeter.', cost: { ap: 1, energy: 5 }, cooldown: 4, effects: [dos('ecologie', 2), seg('retraites', 1), seg('jeunes', 1)] },
+  { id: 'interview_presse_regionale', label: 'Donner une grande interview à la presse régionale', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Deux pages dans le quotidien qu’on lit au café, de la boulangerie au PMU.', cost: { ap: 1, energy: 4 }, cooldown: 3, effects: [st('popularity', 2), seg('ruraux', 2), seg('retraites', 1)] },
+  { id: 'seminaire_parti', label: 'Organiser un séminaire de réflexion du parti', category: 'parti', minRank: 'conseiller_municipal',
+    description: 'Un week-end au vert, des ateliers, une motion commune.', cost: { ap: 1, energy: 6, money: 400 }, cooldown: 6, effects: [{ kind: 'cohesion', delta: 4 }, { kind: 'faction', factionId: '*', delta: 2 }, st('influence', 1)] },
+  { id: 'rencontre_agriculteurs_bio', label: 'Rencontrer de jeunes agriculteurs bio', category: 'terrain', minRank: 'militant',
+    description: 'Installation, foncier, prix : ils veulent vivre de leur travail.', cost: { ap: 1, energy: 6 }, cooldown: 4, effects: [seg('ruraux', 2), seg('jeunes', 1), dos('ecologie', 1)] },
+  { id: 'visite_commissariat_nuit', label: 'Accompagner une patrouille de police municipale', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Rodéos urbains, tapage, une rixe évitée de justesse.', cost: { ap: 1, energy: 7 }, cooldown: 4, effects: [dos('securite', 2), seg('retraites', 2), st('credibility', 1)] },
 ];
 
 export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...LIFE, ...MINISTRIES, ...COUNTRY, ...APOCALYPSE];

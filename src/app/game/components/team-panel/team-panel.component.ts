@@ -1,3 +1,4 @@
+import { PersonLinkComponent } from '../person-link/person-link.component';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RankId, Recruit, StaffRole } from '../../models/game.models';
 import { askOf, moraleLabel, moraleOf, moraleTarget, offerChance, payBounds } from '../../engine/team-pay';
@@ -10,7 +11,7 @@ import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
 /** Équipe recrutée, vivier de candidats et boosters à ouvrir */
 @Component({
   selector: 'app-team-panel',
-  imports: [RecruitCardComponent],
+  imports: [PersonLinkComponent, RecruitCardComponent],
   template: `
     <section class="card">
       <div class="card-title">
@@ -65,7 +66,7 @@ import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
               <span class="ico" aria-hidden="true">{{ icons[p.def.role] }}</span>
               <span class="p-main">
                 <strong>{{ p.def.title }}</strong>
-                <small class="muted">{{ p.holder ? p.holder.name : p.unlocked ? 'Poste vacant' : 'Dès le rang ' + rankLabel(p.def.minRank) }}</small>
+                <small class="muted">@if (p.holder) { <app-person [name]="p.holder.name" /> } @else { {{ p.unlocked ? 'Poste vacant' : 'Dès le rang ' + rankLabel(p.def.minRank) }} }</small>
                 <small class="perk">{{ p.def.perk }}</small>
               </span>
               @if (!p.holder && p.unlocked) {

@@ -1,3 +1,4 @@
+import { PersonLinkComponent } from '../person-link/person-link.component';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
@@ -18,7 +19,7 @@ const fr = (v: number) => v.toLocaleString('fr-FR', { maximumFractionDigits: 1 }
 /** Baromètre présidentiel : intentions de vote, courbes, hypothèses de second tour, entre-deux-tours */
 @Component({
   selector: 'app-presidential-polls',
-  imports: [DecimalPipe],
+  imports: [PersonLinkComponent, DecimalPipe],
   template: `
     @if (secondRound(); as sr) {
       <section class="card polls e2t" aria-label="Entre-deux-tours">
@@ -41,7 +42,7 @@ const fr = (v: number) => v.toLocaleString('fr-FR', { maximumFractionDigits: 1 }
         <div class="eyebrow">Résultats du premier tour</div>
         <ul class="bars compact">
           @for (r of sr.first; track r.id) {
-            <li [class.me]="r.me"><span class="cand">{{ r.name }}</span>
+            <li [class.me]="r.me"><span class="cand"><app-person [name]="r.name" /></span>
               <span class="track"><span [style.width.%]="r.value * 1.8" [style.background]="r.color"></span></span>
               <span class="mono">{{ r.value | number: '1.1-1' }}</span></li>
           }
@@ -60,7 +61,7 @@ const fr = (v: number) => v.toLocaleString('fr-FR', { maximumFractionDigits: 1 }
         <ul class="bars">
           @for (r of rows(); track r.id; let i = $index) {
             <li [class.me]="r.me" [class.cut]="i === 1">
-              <span class="cand">{{ r.name }}</span>
+              <span class="cand"><app-person [name]="r.name" /></span>
               <span class="track"><span [style.width.%]="r.value * 1.8" [style.background]="r.color"></span></span>
               <span class="mono">{{ r.value | number: '1.1-1' }}</span>
               <span class="mono d" [class.pos]="r.delta > 0.05" [class.neg]="r.delta < -0.05">{{ r.delta > 0.05 ? '▲' : r.delta < -0.05 ? '▼' : '' }}{{ r.delta > 0.05 || r.delta < -0.05 ? (Math.abs(r.delta) | number: '1.1-1') : '' }}</span>

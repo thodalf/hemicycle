@@ -847,6 +847,72 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'ev_appel_inconnu', weight: 0.5,
+    build: () => ({
+      title: 'Un ancien camarade de promotion',
+      context: 'Un ancien camarade de fac, devenu grand patron, vous invite à dîner « en souvenir du bon vieux temps ». Il a sûrement une idée derrière la tête.',
+      choices: [
+        c('diner', 'Accepter le dîner', [s('influence', 2), { kind: 'segment', segment: 'cadres', delta: 1 }, { kind: 'exposure', delta: 1 }], 'Il voulait juste un conseil… et votre numéro direct.'),
+        c('decliner', 'Décliner poliment', [s('credibility', 1)], 'Il insistera. Plus tard.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_greve_eboueurs', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Grève des éboueurs',
+      context: 'Les poubelles s’entassent depuis dix jours. Les rats sortent en plein jour ; les touristes photographient.',
+      choices: [
+        c('negocier', 'Négocier une prime de pénibilité', [{ kind: 'segment', segment: 'populaires', delta: 2 }, s('politicalCapital', -4), s('popularity', 1)], 'Les camions repartent le lendemain matin.'),
+        c('requisition', 'Réquisitionner une entreprise privée', [{ kind: 'segment', segment: 'cadres', delta: 1 }, { kind: 'segment', segment: 'populaires', delta: -2 }], 'Les rues sont propres. Les syndicats, eux, s’en souviendront.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_jumeaux', weight: 0.4,
+    build: () => ({
+      title: 'Des jumeaux portent votre prénom',
+      context: 'Une famille de votre circonscription a appelé ses jumeaux comme vous, « en remerciement » pour une crèche que vous avez sauvée.',
+      choices: [
+        c('visite', 'Leur rendre visite avec un cadeau', [s('popularity', 2), s('stress', -3)], 'Deux bébés, un doudou chacun, et une photo qui fait le tour du canton.'),
+        c('lettre', 'Envoyer une lettre émue', [s('popularity', 1)], 'La lettre est encadrée au-dessus des berceaux.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_debat_ia', weight: 0.5, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Vos discours écrits par une IA ?',
+      context: 'Un journaliste affirme qu’un de vos discours a été rédigé par une intelligence artificielle. Il a un logiciel de détection.',
+      choices: [
+        c('nier', 'Démentir : « Je les écris moi-même »', [s('credibility', 1), s('stress', 2)], 'Vous publiez vos brouillons raturés. Le doute s’éteint.'),
+        c('assumer', 'Assumer : « C’est un outil, comme un stylo »', [{ kind: 'segment', segment: 'jeunes', delta: 2 }, { kind: 'segment', segment: 'retraites', delta: -2 }, s('credibility', -1)], 'Le débat sur l’IA en politique est lancé, et vous êtes au centre.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_fete_quartier', weight: 0.6, eligible: d => [5, 6, 7].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'La fête des voisins',
+      context: 'Tables dans la cour, merguez et salades : la fête des voisins de votre immeuble vous attend ce soir.',
+      choices: [
+        c('venir', 'Venir avec un gâteau maison', [s('popularity', 1), s('stress', -4), s('energy', 2)], 'Votre fondant au chocolat est jugé « honnête ». On vous parle enfin d’autre chose que de politique.'),
+        c('travail', 'Rester travailler', [{ kind: 'dossier', domain: 'economie', delta: 1 }], 'Les rires montent jusqu’à votre fenêtre.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_lettre_detenu', weight: 0.4, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'La lettre d’un détenu',
+      context: 'Un détenu vous écrit : il a passé un diplôme en prison et cherche un employeur pour sa libération conditionnelle.',
+      choices: [
+        c('aider', 'L’aider à trouver un emploi', [{ kind: 'dossier', domain: 'justice', delta: 3 }, s('credibility', 1), { kind: 'segment', segment: 'retraites', delta: -1 }], 'Une entreprise de BTP l’embauche. Il vous écrit encore, un an plus tard, pour dire merci.'),
+        c('transmettre', 'Transmettre à une association', [{ kind: 'dossier', domain: 'justice', delta: 1 }], 'L’association prend le relais.'),
+      ],
+    }),
+  },
 ];
 
 /** Une petite phrase : un moment où une formule peut rester (tirage à part) */

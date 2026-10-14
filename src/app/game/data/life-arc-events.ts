@@ -440,6 +440,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'penurie_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.penurie_medicaments && !d.player.flags['penurieDone'] && d.week > 16,
+    build: () => ({
+      title: 'Rupture dans les pharmacies',
+      context: 'Les pharmaciens tirent la sonnette d’alarme : 400 médicaments en rupture, dont des antibiotiques pour enfants. Les usines sont en Asie, les stocks à zéro.',
+      choices: [
+        c('relocaliser', 'Lancer un plan de relocalisation', [cr('penurie_medicaments', 6, 2, true), { kind: 'flag', key: 'penurieDone', value: true }, { kind: 'economy', deficit: 0.05 }], 'Trois usines rouvriront. Il faudra tenir d’ici là.'),
+        c('importer', 'Acheter en urgence à l’étranger', [cr('penurie_medicaments', 3, 4, true), { kind: 'flag', key: 'penurieDone', value: true }, s('popularity', 1)], 'Des cargaisons arrivent… à prix d’or, et pas pour tout.'),
+      ],
+    }),
+  },
+  {
+    tag: 'train_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.train_futur && !d.player.flags['trainDone'] && d.week > 20,
+    build: () => ({
+      title: 'Paris–Marseille en 1 h 10',
+      context: 'Un consortium franco-européen présente un train à sustentation magnétique. Il cherche un parrain politique pour porter le projet.',
+      choices: [
+        c('porter', 'Porter le projet', [cr('train_futur', 6, 3, true), { kind: 'flag', key: 'trainDone', value: true }, s('influence', 2), { kind: 'segment', segment: 'cadres', delta: 2 }], 'Vous voilà « ministre officieux du futur ».'),
+        c('prudence', 'Exiger d’abord une étude indépendante', [cr('train_futur', 3, 1, true), { kind: 'flag', key: 'trainDone', value: true }, s('credibility', 2)], 'Le projet avance, plus lentement, plus sûrement.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1074,6 +1096,50 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('negocier', 'Négocier des primes et des contrôles', [cr('expo_universelle', 4, -4), { kind: 'segment', segment: 'populaires', delta: 2 }, { kind: 'economy', deficit: 0.05 }], 'Le travail reprend, dans de meilleures conditions.'),
         c('tenir', 'Tenir bon sur les délais', [cr('expo_universelle', 2, 5), { kind: 'segment', segment: 'cadres', delta: 1 }], 'Le chantier prend trois semaines de retard.'),
+      ],
+    }),
+  },
+  {
+    tag: 'penurie_insuline', weight: 1, eligible: d => !!d.crises?.penurie_medicaments,
+    build: () => ({
+      title: 'Les diabétiques inquiets',
+      context: 'L’insuline manque dans trois régions. Des associations de patients manifestent devant le ministère.',
+      choices: [
+        c('stocks', 'Débloquer les stocks militaires', [cr('penurie_medicaments', 6, -5), { kind: 'segment', segment: 'retraites', delta: 2 }], 'Les camions de l’armée livrent les pharmacies dans la nuit.'),
+        c('rationner', 'Organiser un rationnement par ordonnance', [cr('penurie_medicaments', 3, -2), s('popularity', -1)], 'Équitable, mais angoissant pour les patients.'),
+      ],
+    }),
+  },
+  {
+    tag: 'penurie_generiques', weight: 0.8, eligible: d => !!d.crises?.penurie_medicaments,
+    build: () => ({
+      title: 'Un laboratoire veut augmenter ses prix',
+      context: 'Un grand laboratoire propose de rouvrir une usine en France… si l’État accepte de payer ses médicaments 40 % plus cher.',
+      choices: [
+        c('accepter', 'Accepter, sous conditions', [cr('penurie_medicaments', 8), { kind: 'economy', deficit: 0.05 }], 'L’usine de Normandie redémarre en deux mois.'),
+        c('public', 'Créer un pôle public de production', [cr('penurie_medicaments', 5, 2), { kind: 'segment', segment: 'populaires', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: -1 }], 'Ambitieux, mais il faudra du temps.'),
+      ],
+    }),
+  },
+  {
+    tag: 'train_zad', weight: 1, eligible: d => !!d.crises?.train_futur,
+    build: () => ({
+      title: 'Une ZAD sur le tracé',
+      context: 'Des opposants occupent une forêt sur le tracé du train magnétique. Ils dénoncent « un TGV pour les riches ».',
+      choices: [
+        c('dialoguer', 'Ouvrir une concertation et modifier le tracé', [cr('train_futur', 2, -6), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Le tracé contourne la forêt. Trois mois de perdus, une crise évitée.'),
+        c('evacuer', 'Faire évacuer le site', [cr('train_futur', 5, 4), { kind: 'segment', segment: 'jeunes', delta: -2 }], 'Les images de l’évacuation tournent en boucle.'),
+      ],
+    }),
+  },
+  {
+    tag: 'train_essai', weight: 0.8, eligible: d => !!d.crises?.train_futur,
+    build: () => ({
+      title: 'Le premier essai à grande vitesse',
+      context: 'Le prototype doit atteindre 600 km/h devant les caméras du monde entier. On vous propose de monter à bord.',
+      choices: [
+        c('monter', 'Monter à bord', [cr('train_futur', 6), s('popularity', 3), s('stress', 3)], '603 km/h. Votre sourire crispé fait le tour du monde.'),
+        c('quai', 'Regarder depuis le quai', [cr('train_futur', 3), s('credibility', 1)], 'Prudent. Le record est battu, sans vous.'),
       ],
     }),
   },

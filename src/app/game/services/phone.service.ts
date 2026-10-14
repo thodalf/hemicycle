@@ -20,6 +20,34 @@ export class PhoneService {
   readonly directory = computed(() => directory(this.game.s()));
   readonly calls = computed(() => callStatus(this.game.s()));
 
+  /** Toutes les personnes nommables du jeu → clé de conversation (répertoire d'abord) */
+  readonly people = computed(() => {
+    const s = this.game.s();
+    const map = new Map<string, string>();
+    const add = (name: string | undefined, key: string) => {
+      const n = (name ?? '').split(' · ')[0].trim();
+      if (n.length >= 4 && !map.has(n) && n !== s.player.name) map.set(n, key);
+    };
+    for (const e of directory(s)) add(e.name, e.key);
+    for (const n of s.npcs) add(n.name, `perso:${n.id}`);
+    for (const c of s.contacts) add(c.name, `contact:${c.id}`);
+    for (const r of s.player.team) add(r.name, `equipe:${r.id}`);
+    return map;
+  });
+
+  /** La clé de conversation d'une personne, si elle existe */
+  keyFor(name: string): string | null {
+    return this.people().get((name ?? '').split(' · ')[0].trim()) ?? null;
+  }
+
+  /** Ouvrir la conversation téléphonique avec une personne */
+  openPerson(name: string): boolean {
+    const key = this.keyFor(name);
+    if (!key) return false;
+    this.show(key);
+    return true;
+  }
+
   show(who?: string): void {
     this.open.set(true);
     if (who) this.openThread(who);

@@ -338,6 +338,8 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
       .grid { grid-template-columns: 1fr; padding: 12px 12px calc(84px + env(safe-area-inset-bottom, 0px)); gap: 12px; }
       .col-left, .col-main, .col-right { gap: 12px; }
       .col-right { grid-template-columns: 1fr; }
+      /* Sur l'agenda, la barre « Terminer le mois » s'ajoute aux onglets : plus de marge en bas */
+      .grid[data-tab='agenda'] { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
       /* L'agenda d'abord : décisions et actions du mois avant les tableaux de bord */
       .col-main > app-decision-panel { order: -2; }
       .col-main > app-week-planner { order: -1; }

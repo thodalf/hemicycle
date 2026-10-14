@@ -1,3 +1,4 @@
+import { LinkedTextComponent } from '../person-link/person-link.component';
 import { Component, computed, inject } from '@angular/core';
 import { DOMAIN_LABELS, Decision } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
@@ -16,7 +17,7 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
  */
 @Component({
   selector: 'app-decision-panel',
-  imports: [EmblemComponent],
+  imports: [LinkedTextComponent, EmblemComponent],
   template: `
     @if (turn.lastOutcome(); as o) {
       <div class="outcome" [class.bad]="o.tone === 'negative'" role="status">
@@ -47,7 +48,7 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
           }
         </header>
         <h3>{{ d.title }}</h3>
-        <p class="context">{{ d.context }}</p>
+        <p class="context"><app-linked-text [text]="d.context" /></p>
         <div class="choices">
           @for (c of d.choices; track c.id) {
             @let available = turn.isChoiceAvailable(d, c);

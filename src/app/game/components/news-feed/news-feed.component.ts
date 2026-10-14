@@ -1,3 +1,4 @@
+import { LinkedTextComponent } from '../person-link/person-link.component';
 import { Component, computed, inject, signal } from '@angular/core';
 import { NewsItem, NewsKind } from '../../models/game.models';
 import { START_DATE } from '../../data/ranks';
@@ -11,6 +12,7 @@ const KIND_LABELS: Record<NewsKind, string> = {
 /** Fil d'actualité groupé par mois, du plus récent au plus ancien */
 @Component({
   selector: 'app-news-feed',
+  imports: [LinkedTextComponent],
   template: `
     <section class="card">
       <div class="card-title">
@@ -27,8 +29,8 @@ const KIND_LABELS: Record<NewsKind, string> = {
             @for (n of g.items; track n.id) {
               <li [class]="n.tone">
                 <div class="meta">{{ kind(n.kind) }}</div>
-                <strong>{{ n.title }}</strong>
-                @if (n.body) { <p>{{ n.body }}</p> }
+                <strong><app-linked-text [text]="n.title" /></strong>
+                @if (n.body) { <p><app-linked-text [text]="n.body" /></p> }
               </li>
             }
           </ol>

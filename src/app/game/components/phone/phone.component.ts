@@ -31,7 +31,7 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
             <header class="th-head">
               <button type="button" class="back" (click)="phone.thread.set(null); calling.set(false)" aria-label="Retour">‹</button>
               <span class="avatar" aria-hidden="true">{{ t.icon }}</span>
-              <div class="who"><strong>{{ t.name }}@if (phone.romance()?.key === t.key) { <span class="heart" title="Une histoire en cours"> 💗</span> }</strong><small>{{ t.role }}{{ t.bond !== undefined ? ' · relation ' + (t.bond > 0 ? '+' : '') + t.bond : '' }}</small></div>
+              <div class="who"><strong>{{ t.name }}@if (phone.romance()?.key === t.key) { <span class="heart" title="Une histoire en cours"> 💗</span> }</strong><small>{{ t.role || roleOf(t.key) }}{{ t.bond !== undefined ? ' · relation ' + (t.bond > 0 ? '+' : '') + t.bond : '' }}</small></div>
               @if (t.callable) { <button type="button" class="call-btn" (click)="calling.set(!calling())" aria-label="Appeler">📞</button> }
             </header>
             <div class="bubbles" role="log" #log>
@@ -45,7 +45,7 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
                     <span class="react-bar" role="group" aria-label="Réagir">@for (r of reactions; track r) { <button type="button" (click)="phone.react(m.id, r)">{{ r }}</button> }</span>
                   }
                 </div>
-              } @empty { <p class="empty">Aucun message. Un coup de fil ?</p> }
+              } @empty { <p class="empty">{{ t.callable ? 'Aucun message. Un coup de fil ?' : 'Vous n’avez pas encore son numéro. Demandez-le au chef du parti, à un·e collègue ou à un·e journaliste.' }}</p> }
             </div>
             @if (pending(); as m) {
               <div class="replies">
@@ -274,6 +274,12 @@ export class PhoneComponent {
 
   private readonly all = computed<PhoneMessage[]>(() => this.game.s().phone?.messages ?? []);
 
+  /** Rôle d'une personne hors répertoire (personnalité sans numéro…) */
+  protected roleOf(key: string): string {
+    const s = this.game.s();
+    if (key.startsWith('perso:')) { const n = s.npcs.find(x => x.id === key.slice(6)); const party = n ? [s.party, ...s.otherParties].find(p => p.id === n.partyId) : null; return n ? `${party?.name ?? 'Personnalité'} · numéro inconnu` : ''; }
+    return '';
+  }
   protected readonly threads = computed(() => {
     const dir = new Map(this.phone.directory().map(e => [e.key, e]));
     const out = new Map<string, { who: string; name: string; icon: string; last: string; week: number; unread: number; waiting: boolean; urgent: boolean }>();

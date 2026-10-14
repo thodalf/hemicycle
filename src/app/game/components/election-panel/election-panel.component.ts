@@ -1,3 +1,4 @@
+import { PersonLinkComponent } from '../person-link/person-link.component';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { ELECTIONS } from '../../data/ranks';
@@ -7,7 +8,7 @@ import { GameStateService } from '../../services/game-state.service';
 /** Sondages dynamiques, plafond de dépenses et résultats */
 @Component({
   selector: 'app-election-panel',
-  imports: [DecimalPipe],
+  imports: [PersonLinkComponent, DecimalPipe],
   template: `
     <section class="card">
       @if (engine.active(); as e) {
@@ -23,7 +24,7 @@ import { GameStateService } from '../../services/game-state.service';
           <ul class="poll">
             @for (r of rows(); track r.id) {
               <li [class.me]="r.id === 'player'">
-                <span class="cand">{{ r.name }}</span>
+                <span class="cand"><app-person [name]="r.name" /></span>
                 <span class="track"><span [style.width.%]="r.value * 1.6" [style.background]="r.color"></span></span>
                 <span class="mono">{{ r.value | number: '1.1-1' }}</span>
               </li>

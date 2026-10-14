@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, effect, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, effect, computed, inject, signal } from '@angular/core';
 import {
   ActionCategory, ActionDefinition, CATEGORY_LABELS, DOMAINS, DOMAIN_LABELS, Domain, Payer, PlannedAction,
 } from '../../models/game.models';
@@ -62,6 +62,18 @@ export class WeekPlannerComponent {
   protected readonly planner = inject(ActionPlannerService);
   protected readonly turn = inject(TurnService);
   private readonly anim = inject(FxService);
+  /** Barre du bas : masquée quand le vrai bouton est visible ; repliable */
+  protected readonly endVisible = signal(false);
+  protected readonly mini = signal(false);
+  private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly watchEnd = afterNextRender(() => {
+    const el = (this.host.nativeElement as HTMLElement).querySelector('.plan button.end');
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(entries => this.endVisible.set(entries.some(e => e.isIntersecting)), { threshold: 0.2 });
+    io.observe(el);
+    this.destroy.onDestroy(() => io.disconnect());
+  });
+  private readonly destroy = inject(DestroyRef);
 
   /** Onglets présents dans ce scénario, scénario en premier */
   protected readonly categories = computed(() => {

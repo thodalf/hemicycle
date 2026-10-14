@@ -1,3 +1,4 @@
+import { PersonLinkComponent } from '../person-link/person-link.component';
 import { DecimalPipe } from '@angular/common';
 import { durationLabel, monthLabel } from '../../engine/calendar';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -14,7 +15,7 @@ import { canPush, dropPledge as dropPledgeFn, pledges, pushCost, pushPledge as p
 /** Calendrier présidentiel, candidature et tableau de bord de l'Élysée */
 @Component({
   selector: 'app-presidency-panel',
-  imports: [DecimalPipe],
+  imports: [PersonLinkComponent, DecimalPipe],
   template: `
     @if (game.s().presidency; as pr) {
       <section class="card elysee">
@@ -22,14 +23,14 @@ import { canPush, dropPledge as dropPledgeFn, pledges, pushCost, pushPledge as p
           <span class="seal-title"><span class="seal" aria-hidden="true"></span>Palais de l’Élysée</span>
           <span class="chip accent">{{ pr.mandates > 1 ? 'Second mandat' : 'Premier mandat' }}</span>
         </div>
-        <p class="muted small">Premier ministre : <strong>{{ pr.primeMinister }}</strong>
+        <p class="muted small">Premier ministre : <strong><app-person [name]="pr.primeMinister" /></strong>
           @if (pr.cohabitation) { · <span class="chip bad">Cohabitation</span> }
           · {{ pr.reforms }} réforme(s) adoptée(s) · fin du mandat en {{ dateLabel(cal().nextWeek) }}</p>
         @if (cabinet().length) {
           <details class="cabinet">
             <summary>Votre gouvernement ({{ cabinetStyle(pr.cabinetStyle) }})</summary>
             <ul>
-              @for (m of cabinet(); track m.dom) { <li><span class="muted">{{ m.label }}</span> <strong>{{ m.name }}</strong></li> }
+              @for (m of cabinet(); track m.dom) { <li><span class="muted">{{ m.label }}</span> <strong><app-person [name]="m.name" /></strong></li> }
             </ul>
             <small class="muted">Leurs numéros sont dans votre téléphone. Pour remanier, appelez n’importe quel contact : « Lui confier un ministère », « Lui proposer Matignon ».</small>
           </details>

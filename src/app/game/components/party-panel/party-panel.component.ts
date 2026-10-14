@@ -1,3 +1,4 @@
+import { PersonLinkComponent } from '../person-link/person-link.component';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FoundPartyComponent } from '../found-party/found-party.component';
@@ -15,7 +16,7 @@ const CONTACT_LABELS: Record<ContactType, string> = {
 /** Courants internes, rivaux et carnet d'adresses */
 @Component({
   selector: 'app-party-panel',
-  imports: [DecimalPipe, StanceAxisComponent, FoundPartyComponent],
+  imports: [PersonLinkComponent, DecimalPipe, StanceAxisComponent, FoundPartyComponent],
   template: `
     <section class="card">
       <div class="card-title">
@@ -54,7 +55,7 @@ const CONTACT_LABELS: Record<ContactType, string> = {
           <li>
             <span class="who">
               <span class="dot" [style.background]="partyColor(n.partyId)"></span>
-              <span><strong>{{ n.name }}</strong><small class="muted">{{ rankLabel(n.rankId) }}</small></span>
+              <span><strong><app-person [name]="n.name" /></strong><small class="muted">{{ rankLabel(n.rankId) }}</small></span>
             </span>
             <span class="rel mono" [class.pos]="n.relationToPlayer > 15" [class.neg]="n.relationToPlayer < -15">
               {{ n.relationToPlayer > 0 ? '+' : '' }}{{ n.relationToPlayer | number: '1.0-0' }}
@@ -69,7 +70,7 @@ const CONTACT_LABELS: Record<ContactType, string> = {
       <ul class="people">
         @for (c of game.s().contacts; track c.id) {
           <li>
-            <span class="who"><span><strong>{{ c.name }}</strong><small class="muted">{{ contactLabel(c.type) }}</small></span></span>
+            <span class="who"><span><strong><app-person [name]="c.name" /></strong><small class="muted">{{ contactLabel(c.type) }}</small></span></span>
             <span class="mono small">{{ c.trust | number: '1.0-0' }} ·
               <span [class.pos]="c.balance > 0" [class.neg]="c.balance < 0">{{ c.balance > 0 ? '+' : '' }}{{ c.balance }}</span>
             </span>

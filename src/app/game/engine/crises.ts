@@ -65,6 +65,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Un volcan islandais a obscurci le ciel : l’été n’est pas venu.', 'Récoltes perdues, rationnement, files d’attente devant les boulangeries.', 'Les premiers rayons percent. Il faut tenir encore un peu.'] },
   sosie: { id: 'sosie', icon: '🎭', label: 'Votre sosie', gaugeLabel: 'Vérité rétablie', riskLabel: 'Dégâts du sosie', months: 6, drift: { gauge: 3, risk: 5 },
     stages: ['Un homme qui vous ressemble trait pour trait inaugure des ronds-points à votre place.', 'Le sosie donne des interviews, signe des pétitions et contredit vos discours.', 'Il annonce votre ralliement… au parti adverse. Il faut le démasquer.'] },
+  penurie_medicaments: { id: 'penurie_medicaments', icon: '💊', label: 'La pénurie de médicaments', gaugeLabel: 'Approvisionnement', riskLabel: 'Ruptures de stock', months: 5, drift: { gauge: 3, risk: 5 },
+    stages: ['Amoxicilline, insuline, antidouleurs : les pharmacies affichent « rupture » sur des centaines de produits.', 'Les patients chroniques s’inquiètent ; les médecins rationnent les ordonnances.', 'Les premières lignes de production relocalisées démarrent.'] },
+  train_futur: { id: 'train_futur', icon: '🚄', label: 'Le train du futur', gaugeLabel: 'Avancement du projet', riskLabel: 'Oppositions locales', months: 10, drift: { gauge: 3, risk: 3 },
+    stages: ['Un consortium propose un train à sustentation magnétique : Paris–Marseille en 1 h 10.', 'Tracé contesté, enquêtes publiques, zadistes sur le parcours.', 'Premier essai à 600 km/h sur la voie test de la Beauce.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -328,6 +332,28 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.popularity = clamp(s.popularity - 8);
         economy(d).growth -= 1;
         lose('L’exode', 'Des millions de Français partis vers le Sud, des villages vidés. Le pays mettra des années à se relever.');
+      }
+      break;
+    case 'penurie_medicaments':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 5); s.popularity = clamp(s.popularity + 3);
+        electorate(d).offsets.retraites = clamp(electorate(d).offsets.retraites + 3, -30, 30);
+        win('Les pharmacies réapprovisionnées', 'Stocks stratégiques, usines relocalisées, achats européens groupés : la France ne manquera plus d’amoxicilline.');
+      } else {
+        s.popularity = clamp(s.popularity - 5);
+        electorate(d).offsets.retraites = clamp(electorate(d).offsets.retraites - 3, -30, 30);
+        lose('Les ruptures s’installent', 'Des patients sans traitement, des pharmaciens à bout : la pénurie devient chronique.');
+      }
+      break;
+    case 'train_futur':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); s.influence = clamp(s.influence + 3);
+        economy(d).growth += 0.15; d.intl.prestige = clamp(d.intl.prestige + 4);
+        win('Paris–Marseille en 1 h 10', 'Le premier train magnétique commercial du monde est français. Les commandes affluent de trois continents.');
+      } else {
+        s.credibility = clamp(s.credibility - 4);
+        economy(d).deficit += 0.1;
+        lose('Le train qui ne partit jamais', 'Recours, tracé abandonné, consortium en faillite : il reste quinze kilomètres de voie test dans la Beauce.');
       }
       break;
     case 'tempete_solaire':

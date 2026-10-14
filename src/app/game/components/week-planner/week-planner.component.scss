@@ -116,7 +116,14 @@
     .proj-mini { position: relative; font-size: 11.5px; color: var(--accent); padding-bottom: 4px; overflow: hidden;
       i { position: absolute; left: 0; bottom: 0; height: 3px; border-radius: 2px; background: var(--accent); transition: width .5s; } }
     .warn-btn { background: var(--bad-soft); color: var(--bad); border-color: transparent; font-weight: 600; }
+    transition: transform .25s ease, opacity .25s ease;
+    .fold { border: 0; background: none; color: var(--ink-3); font-size: 14px; padding: 6px 4px; cursor: pointer; }
   }
+  /* Quand le vrai bouton « Terminer le mois » est à l'écran, la barre s'efface */
+  .mobile-end.hide { transform: translateY(140%); opacity: 0; pointer-events: none; }
+  /* Repliée : une simple pastille, pour ne rien masquer */
+  .mobile-end.mini { left: auto; right: 8px; padding: 4px 6px; gap: 4px;
+    .summary { display: none; } .btn { padding: 8px 10px; font-size: 13px; } }
 }
 
 .fx { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }

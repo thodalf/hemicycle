@@ -1,3 +1,4 @@
+import { PersonLinkComponent } from '../person-link/person-link.component';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
@@ -6,7 +7,7 @@ import { SCHEMES, abandonScheme, discoveryRisk } from '../../engine/schemes';
 /** Vos complots en cours : progression, discrétion, risque d'être découvert */
 @Component({
   selector: 'app-schemes-panel',
-  imports: [DecimalPipe],
+  imports: [PersonLinkComponent, DecimalPipe],
   template: `
     @if (rows().length || threats().length) {
       <section class="card schemes" aria-label="Vos complots">
@@ -41,7 +42,7 @@ import { SCHEMES, abandonScheme, discoveryRisk } from '../../engine/schemes';
           <div class="eyebrow">On complote contre vous</div>
           <ul class="threats">
             @for (t of threats(); track t.name) {
-              <li><span>⚠️ {{ t.name }} · {{ t.kind }}</span><span class="bar"><i class="t" [style.width.%]="t.progress"></i></span></li>
+              <li><span>⚠️ <app-person [name]="t.name" /> · {{ t.kind }}</span><span class="bar"><i class="t" [style.width.%]="t.progress"></i></span></li>
             }
           </ul>
         }
