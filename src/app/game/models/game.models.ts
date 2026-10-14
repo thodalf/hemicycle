@@ -414,6 +414,8 @@ export interface Npc {
   /** -100 (ennemi juré) … +100 (allié fidèle) */
   relationToPlayer: number;
   isRival: boolean;
+  /** Âge (années, fractionnaire) : les personnalités vieillissent */
+  age?: number;
 }
 
 export interface NetworkContact {
@@ -1075,6 +1077,8 @@ export interface GameState {
   cooldowns: Record<string, number>;
   /** Ministres nommés par téléphone, pour le gouvernement en place */
   cabinetPicks?: { salt: string; picks: Partial<Record<Domain, string>> };
+  /** Départs des personnalités : décès, retraites, reconversions… */
+  npcLog?: import('../engine/npc-life').NpcLogEntry[];
 }
 
 // ── Emprunts ────────────────────────────────────────────────
@@ -1445,7 +1449,7 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
-  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision';
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

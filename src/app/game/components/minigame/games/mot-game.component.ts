@@ -1,7 +1,9 @@
 import { dailyPlayed, dailyWord, markDailyPlayed } from '../../../engine/daily';
 import { Component, DestroyRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
 import { MinigameDef } from '../../../data/minigames';
-import { MotSave, clearSave, loadSave, writeSave } from '../../../engine/arcade-save';
+import { MotResult, MotSave, clearSave, loadSave, saveResult, writeSave } from '../../../engine/arcade-save';
+import { todayKey } from '../../../engine/daily';
+import { ArcadeResultComponent } from '../../arcade-panel/arcade-result.component';
 
 type Mark = 'ok' | 'mal' | 'non';
 const ROWS = 6;
@@ -24,6 +26,7 @@ export function markGuess(guess: string, word: string): Mark[] {
 
 @Component({
   selector: 'app-mot-game',
+  imports: [ArcadeResultComponent],
   template: `
     <div class="mot" [class.shake]="shaking()">
       <div class="board" [style.--n]="word.length" role="grid" aria-label="Grille du mot">
@@ -36,6 +39,11 @@ export function markGuess(guess: string, word: string): Mark[] {
         }
       </div>
       <p class="said" aria-live="polite">{{ message() || ' ' }}</p>
+      @if (result(); as r) {
+        <app-arcade-result [result]="r" [showBoard]="false" />
+        <button type="button" class="btn primary cont" (click)="done.emit(score)">Continuer</button>
+      }
+      @if (!result()) {
       <div class="kbd" aria-label="Clavier">
         @for (line of keys; track $index; let last = $last) {
           <div class="kline">
@@ -47,6 +55,7 @@ export function markGuess(guess: string, word: string): Mark[] {
           </div>
         }
       </div>
+      }
     </div>
   `,
   styles: `
@@ -63,6 +72,7 @@ export function markGuess(guess: string, word: string): Mark[] {
     .tile.non { animation: flip .45s ease both; }
     @keyframes flip { 0% { transform: rotateX(90deg); } 100% { transform: none; } }
     .said { min-height: 20px; margin: 0; font-size: 13px; font-weight: 600; text-align: center; }
+    .cont { justify-self: center; margin-top: 6px; }
     .kbd { display: grid; gap: 5px; width: 100%; max-width: 480px; }
     .kline { display: flex; gap: 4px; justify-content: center; }
     .key { flex: 1; min-width: 0; height: 40px; border: 0; border-radius: 6px; background: var(--surface-2); color: var(--ink); font: 600 14px var(--font-body); cursor: pointer; }
@@ -89,6 +99,8 @@ export class MotGameComponent {
   protected readonly message = signal('');
   protected readonly shaking = signal(false);
   private over = false;
+  protected score = 0;
+  protected readonly result = signal<MotResult | null>(null);
   private timer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
@@ -194,7 +206,14 @@ export class MotGameComponent {
     if (key) clearSave(key);
     if (this.def().daily) markDailyPlayed();
     const score = found ? ROW_SCORE[this.guesses().length - 1] : 0.3 * this.live();
+    this.score = score;
     this.progress.emit({ live: score, time: 0 });
+    if (key) {
+      const r: Omit<MotResult, 'day'> = { kind: 'mot', id: key, title: this.def().title, icon: this.def().icon, word: this.word, guesses: this.guesses(), found };
+      saveResult(r);
+      this.result.set({ ...r, day: todayKey() });
+      return;
+    }
     setTimeout(() => this.done.emit(score), 1500);
   }
 

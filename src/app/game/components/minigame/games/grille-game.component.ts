@@ -2,11 +2,17 @@ import { Component, DestroyRef, ElementRef, computed, inject, input, output, sig
 import { MinigameDef } from '../../../data/minigames';
 import { normalize } from '../../../data/departements';
 import { Grid, GridItem, gridFromIds, makeGrid } from '../../../data/grids';
-import { GridSave, clearSave, loadSave, writeSave } from '../../../engine/arcade-save';
+import { GridResult, GridSave, clearSave, dailyRand, loadSave, saveResult, writeSave } from '../../../engine/arcade-save';
+import { ArcadeResultComponent } from '../../arcade-panel/arcade-result.component';
+
+/** Trois erreurs permises */
+const MAX_MISTAKES = 3;
+import { todayKey } from '../../../engine/daily';
 
 /** Grilles façon Metrodoku : villes de France, stations de métro, capitales du monde */
 @Component({
   selector: 'app-grille-game',
+  imports: [ArcadeResultComponent],
   template: `
     <div class="doku">
       <div class="head">
@@ -43,6 +49,15 @@ import { GridSave, clearSave, loadSave, writeSave } from '../../../engine/arcade
       }
       @if (message()) { <p class="said" aria-live="polite">{{ message() }}</p> }
       @if (!over()) { <button type="button" class="btn" (click)="giveUp()">Rendre la grille</button> }
+      @if (result(); as r) {
+        <app-arcade-result [result]="r" [openAll]="true" />
+        <button type="button" class="btn primary" (click)="done.emit(r.found / 9)">Continuer</button>
+      } @else if (over() && !saveKey()) {
+        <details class="all-ans"><summary>Toutes les réponses possibles</summary>
+          <ul>@for (row of grid.rows; track row.id; let i = $index) { @for (c of grid.cols; track c.id; let j = $index) {
+            <li><span class="muted">{{ row.label }} × {{ c.label }}</span> {{ names(grid.answers[i][j]) }}</li> } }</ul>
+        </details>
+      }
     </div>
   `,
   styles: `
@@ -78,6 +93,7 @@ import { GridSave, clearSave, loadSave, writeSave } from '../../../engine/arcade
     .sugg button:hover { background: var(--surface-2); }
     .said { margin: 0; font-size: 13px; text-align: center; font-weight: 600; }
     .btn { justify-self: center; }
+    .all-ans { font-size: 12px; summary { cursor: pointer; font-weight: 600; } ul { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 4px; max-height: 200px; overflow: auto; } }
     @media (prefers-reduced-motion: reduce) { .cell { animation: none !important; } }
   `,
 })
@@ -98,6 +114,8 @@ export class GrilleGameComponent {
   protected readonly message = signal('');
   protected readonly over = signal(false);
   protected readonly left = signal(12);
+  /** Résultat de la partie du jour (salle de jeux) */
+  protected readonly result = signal<GridResult | null>(null);
   private readonly box = viewChild<ElementRef<HTMLInputElement>>('box');
   private timer: ReturnType<typeof setInterval> | null = null;
 
@@ -110,12 +128,13 @@ export class GrilleGameComponent {
     const key = this.saveKey();
     const saved = key ? loadSave<GridSave>(key) : null;
     const restored = saved?.kind === 'grille' ? gridFromIds(id, saved.rows, saved.cols) : null;
-    this.grid = restored ?? makeGrid(id);
-    this.left.set(Math.round(12 / Math.max(0.8, this.diff())));
+    // Salle de jeux : la grille du jour, la même pour tout le monde
+    this.grid = restored ?? makeGrid(id, key ? dailyRand(key) : Math.random);
+    this.left.set(MAX_MISTAKES);
     if (restored && saved) {
       const byKey = new Map(this.grid.set.items.map(x => [x.key, x]));
       this.cells.set([0, 1, 2].map(r => [0, 1, 2].map(c => byKey.get(saved.cells[r * 3 + c] ?? '') ?? null)));
-      this.left.set(saved.left);
+      this.left.set(Math.min(MAX_MISTAKES, saved.left));
       this.message.set(`Partie reprise : ${this.filled()} case(s) déjà remplie(s).`);
     }
     this.persist();
@@ -193,6 +212,10 @@ export class GrilleGameComponent {
     this.finish('Grille rendue.');
   }
 
+  protected names(xs: GridItem[]): string {
+    return xs.map(x => x.name).join(', ');
+  }
+
   private finish(text: string): void {
     if (this.over()) return;
     this.over.set(true);
@@ -213,6 +236,20 @@ export class GrilleGameComponent {
     const score = this.filled() / 9;
     this.message.set(`${text} ${this.filled()} case(s) sur 9.`);
     this.progress.emit({ live: score, time: 0 });
-    setTimeout(() => this.done.emit(score), 2200);
+    if (key) {
+      const view = (c: { label: string; badge?: string; color?: string }) => ({ label: c.label, ...(c.badge ? { badge: c.badge, color: c.color } : {}) });
+      const r: Omit<GridResult, 'day'> = {
+        kind: 'grille', id: key, title: this.def().title, icon: this.grid.set.corner,
+        rows: this.grid.rows.map(view), cols: this.grid.cols.map(view),
+        cells: this.cells().flat().map(x => x?.name ?? null),
+        answers: this.grid.answers.flat().map(opts => opts.map(o => o.name)),
+        found: this.filled(), mistakes: MAX_MISTAKES - this.left(), maxMistakes: MAX_MISTAKES,
+        outcome: this.filled() === 9 ? 'complete' : this.left() <= 0 ? 'perdu' : 'abandon',
+      };
+      saveResult(r);
+      this.result.set({ ...r, day: todayKey() });
+      return;
+    }
+    setTimeout(() => this.done.emit(score), 4000);
   }
 }

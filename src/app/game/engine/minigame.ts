@@ -94,8 +94,6 @@ export function resolveMinigame(d: GameState, id: string, rawScore: number, rng:
   }
   const summary = applyEffects(d, effects, ctx, rng);
   // Salle de jeux : une partie brillante rend un point d'action
-  // Les gains mensuels d'une grille sont pris à la fin de la partie
-  if (g.arcade && g.paid && g.arcade !== 'sutom') d.player.flags[`arcade_${g.arcade}`] = d.week;
   if (g.arcade && g.paid && tier === 'brillant') {
     d.player.actionPoints.current += 1;
     summary.push('+1 point d’action');

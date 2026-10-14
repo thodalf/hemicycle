@@ -1,16 +1,18 @@
 import { Effect, GameState } from '../models/game.models';
 import { MINIGAMES_BY_ID } from '../data/minigames';
 import { dailyPlayed } from './daily';
+import { loadResult } from './arcade-save';
 import { difficultyOf } from './minigame';
 import { nextId } from './rng';
 
 /* ============================================================
  *  La salle de jeux : le mot du jour, Metrodoku, Capitalodoku et
  *  Villodoku se jouent à tout moment, hors agenda, sans coûter de
- *  point d'action. Chaque partie rapporte des avantages immédiats :
- *  une fois par jour réel pour le mot du jour, une fois par mois de
- *  jeu pour les grilles. Les parties suivantes se jouent pour le
- *  plaisir. Un résultat brillant rend un point d'action.
+ *  point d'action. Une partie par jour réel et par jeu (la même
+ *  grille pour tout le monde), avec des gains immédiats ; une fois
+ *  terminée, abandonnée ou perdue, on consulte les résultats et
+ *  toutes les réponses possibles, et on les partage. Un résultat
+ *  brillant rend un point d'action.
  * ============================================================ */
 
 export type ArcadeId = 'sutom' | 'metro' | 'capitales' | 'villes';
@@ -35,19 +37,19 @@ export const ARCADE: ArcadeGame[] = [
     reward: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'energy', delta: 6 }, { kind: 'stat', stat: 'stress', delta: -4 }],
   },
   {
-    id: 'metro', gameId: 'metrodoku', icon: 'Ⓜ', label: 'Metrodoku', limit: 'mois',
+    id: 'metro', gameId: 'metrodoku', icon: 'Ⓜ', label: 'Metrodoku', limit: 'jour',
     blurb: 'Neuf stations du métro parisien, des lignes décrites par leur tracé : la grille que tout Paris fait entre deux correspondances.',
     gains: 'Influence, jeunes et cadres',
     reward: [{ kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'segment', segment: 'jeunes', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -2 }],
   },
   {
-    id: 'capitales', gameId: 'capitalodoku', icon: '🌍', label: 'Capitalodoku', limit: 'mois',
+    id: 'capitales', gameId: 'capitalodoku', icon: '🌍', label: 'Capitalodoku', limit: 'jour',
     blurb: 'Les capitales du monde par continent, par géographie et par taille. Les diplomates notent tout.',
     gains: 'Crédibilité, dossier diplomatie, prestige',
     reward: [{ kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'dossier', domain: 'diplomatie', delta: 4 }, { kind: 'intl', prestige: 1 }],
   },
   {
-    id: 'villes', gameId: 'departodoku', icon: '🇫🇷', label: 'Villodoku', limit: 'mois',
+    id: 'villes', gameId: 'departodoku', icon: '🇫🇷', label: 'Villodoku', limit: 'jour',
     blurb: 'Les villes de France par région, par taille et par géographie. Un élu qui connaît son pays, ça se remarque.',
     gains: 'Dossier territoires, crédibilité, ruraux',
     reward: [{ kind: 'dossier', domain: 'territoires', delta: 5 }, { kind: 'stat', stat: 'credibility', delta: 1 }, { kind: 'segment', segment: 'ruraux', delta: 2 }],
@@ -56,17 +58,21 @@ export const ARCADE: ArcadeGame[] = [
 
 export const ARCADE_BY_ID = new Map(ARCADE.map(a => [a.id, a]));
 
-/** Les gains sont-ils encore à prendre ? */
-export function arcadeRewardOpen(d: GameState, a: ArcadeGame): boolean {
-  if (a.limit === 'jour') return !dailyPlayed();
-  return Number(d.player.flags[`arcade_${a.id}`] ?? -1) !== d.week;
+/** Les gains sont-ils encore à prendre ? (une partie par jour réel) */
+export function arcadeRewardOpen(_d: GameState, a: ArcadeGame): boolean {
+  return !arcadeDone(a);
+}
+
+/** La partie du jour est-elle jouée ? */
+export function arcadeDone(a: ArcadeGame): boolean {
+  return !!loadResult(a.id) || (a.id === 'sutom' && dailyPlayed());
 }
 
 /** Peut-on lancer une partie ? */
 export function arcadeAvailability(d: GameState, a: ArcadeGame): { ok: boolean; reason?: string } {
   if (d.status === 'mort') return { ok: false, reason: 'Partie terminée' };
   if ((d.minigames ?? []).length) return { ok: false, reason: 'Un autre jeu est en cours' };
-  if (a.limit === 'jour' && dailyPlayed()) return { ok: false, reason: 'Déjà joué aujourd’hui : nouveau mot demain' };
+  if (arcadeDone(a)) return { ok: false, reason: a.id === 'sutom' ? 'Déjà joué aujourd’hui : nouveau mot demain' : 'Grille du jour jouée : nouvelle grille demain' };
   return { ok: true };
 }
 
@@ -78,7 +84,7 @@ export function startArcade(d: GameState, id: ArcadeId): boolean {
   const paid = arcadeRewardOpen(d, a);
   d.minigames ??= [];
   d.minigames.push({
-    id: nextId(d, 'jeu'), gameId: a.gameId, title: def.title, origin: paid ? 'Salle de jeux' : 'Salle de jeux · pour le plaisir',
+    id: nextId(d, 'jeu'), gameId: a.gameId, title: def.title, origin: 'Salle de jeux · partie du jour',
     reward: paid ? a.reward : [], penalty: [], difficulty: Math.min(1, difficultyOf(d)), status: 'pret', arcade: a.id, paid,
   });
   return true;

@@ -179,6 +179,30 @@ const CONTACTS: ScenContact[] = [
           : { answer: 'On a fait un essai. Avec tout le respect que je vous dois : non.', effects: [st('stress', 2)] } },
     ],
   },
+  // ── La comète ──
+  {
+    key: 'sc:comete', icon: '☄️', when: d => !!d.crises?.comete,
+    name: () => 'Dr Léa Moreau-Saïd', role: () => 'Directrice de la mission de déviation · Agence spatiale européenne',
+    options: () => [
+      { id: 'sc_comete_point', label: 'Faire le point sur la trajectoire', hint: 'Les derniers calculs de l’Observatoire.', ask: 'Où en est la comète ?', cooldown: 1,
+        run: () => ({ answer: 'Les calculs se précisent : une chance sur quarante maintenant. Le vaisseau est prêt à 80 %.', effects: [{ kind: 'crisis', arc: 'comete', gauge: 4 }, st('stress', -1)] }) },
+      { id: 'sc_comete_live', label: 'Organiser un direct depuis Kourou', hint: 'Montrer la fusée aux Français : rassurant… si tout se passe bien.', ask: 'Et si on montrait la fusée en direct ?', cooldown: 4,
+        run: (d, rng) => rng.chance(0.7)
+          ? { answer: 'Le direct est superbe. Les Français voient enfin qu’on agit.', effects: [{ kind: 'crisis', arc: 'comete', risk: -6 }, st('popularity', 2)] }
+          : { answer: 'Une alarme retentit pendant le direct. Fausse alerte, mais l’image tourne en boucle.', effects: [{ kind: 'crisis', arc: 'comete', risk: 5 }] } },
+    ],
+  },
+  // ── Le référendum ──
+  {
+    key: 'sc:referendum', icon: '🗳️', when: d => !!d.crises?.referendum,
+    name: () => 'Samia Berthier', role: () => 'Initiatrice de la pétition · collectif citoyen',
+    options: () => [
+      { id: 'sc_ref_terrain', label: 'Coordonner les bénévoles', hint: 'Son réseau de quarante mille bénévoles.', ask: 'On coordonne nos équipes de terrain ?', cooldown: 2,
+        run: () => ({ answer: 'Nos bénévoles tractent dans 600 villes ce week-end. Envoyez-nous vos militants.', effects: [{ kind: 'crisis', arc: 'referendum', gauge: 6 }, { kind: 'segment', segment: 'populaires', delta: 1 }] }) },
+      { id: 'sc_ref_sondage', label: 'Partager un sondage interne', hint: 'Les chiffres bruts de son collectif.', ask: 'Vous avez des chiffres frais ?', cooldown: 3,
+        run: () => ({ answer: 'Au coude à coude. Ce sont les retraités qui feront la différence.', effects: [{ kind: 'crisis', arc: 'referendum', gauge: 3, risk: -2 }, st('influence', 1)] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,

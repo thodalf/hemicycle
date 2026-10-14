@@ -571,6 +571,33 @@ const COUNTRY: ActionDefinition[] = [
     description: 'Six cents arbres sur un ancien parking, une classe par parcelle.', cost: { ap: 1, energy: 8, politicalCapital: 4 }, cooldown: 6, effects: [dos('ecologie', 3), seg('jeunes', 2), st('popularity', 1)] },
   { id: 'question_ecrite', label: 'Déposer une rafale de questions écrites', category: 'dossiers', minRank: 'depute', target: 'domain',
     description: 'Dix questions précises au gouvernement : les ministères doivent répondre sous deux mois.', cost: { ap: 1, energy: 4 }, cooldown: 3, effects: [{ kind: 'dossier', domain: '$domain', delta: 3 }, st('credibility', 1)] },
+  // La comète
+  { id: 'comete_mission', label: 'Débloquer des crédits pour la mission de déviation', category: 'crise', minRank: 'militant', requires: { arc: 'comete' },
+    description: 'L’Agence spatiale européenne a besoin de chaque euro : vous plaidez pour la part française.', cost: { ap: 1, politicalCapital: 8 }, maxPerMonth: 1, effects: [cr('comete', 10), eco({ deficit: 0.05 })] },
+  { id: 'comete_allocution', label: 'Parler aux Français chaque semaine', category: 'crise', minRank: 'militant', requires: { arc: 'comete' },
+    description: 'Un point hebdomadaire, sobre et chiffré, pour couper court aux rumeurs.', cost: { ap: 1, energy: 6 }, cooldown: 2, effects: [cr('comete', 2, -7), st('credibility', 1)] },
+  { id: 'comete_ecoles', label: 'Faire venir des astronomes dans les écoles', category: 'crise', minRank: 'militant', requires: { arc: 'comete' },
+    description: 'Expliquer plutôt qu’effrayer : les enfants rassurent leurs parents.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [cr('comete', 3, -4), dos('education', 2), seg('jeunes', 1)] },
+  // Le référendum
+  { id: 'referendum_meeting', label: 'Tenir un meeting de campagne référendaire', category: 'crise', minRank: 'militant', requires: { arc: 'referendum' },
+    description: 'Une salle de 3 000 personnes, des drapeaux, une seule question.', cost: { ap: 1, energy: 10, money: 800 }, cooldown: 2, effects: [cr('referendum', 8), st('popularity', 1)] },
+  { id: 'referendum_porte', label: 'Faire du porte-à-porte sur la question', category: 'crise', minRank: 'militant', requires: { arc: 'referendum' },
+    description: 'Convaincre un indécis à la fois, sur le palier.', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('referendum', 5, -2), seg('populaires', 1)] },
+  { id: 'referendum_allies', label: 'Rallier des personnalités de l’autre bord', category: 'crise', minRank: 'conseiller_municipal', requires: { arc: 'referendum' },
+    description: 'Un ancien adversaire qui vous rejoint vaut dix tracts.', cost: { ap: 1, politicalCapital: 7 }, cooldown: 3, effects: [cr('referendum', 6, -4), st('influence', 1)] },
+  // Encore du quotidien
+  { id: 'visite_ehpad', label: 'Passer une après-midi dans un Ehpad', category: 'terrain', minRank: 'militant',
+    description: 'Un loto, un goûter, et des soignantes qui racontent leurs journées sans fin.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [seg('retraites', 3), dos('sante', 2), st('stress', -1)] },
+  { id: 'nuit_hackers', label: 'Rencontrer des hackers éthiques', category: 'dossiers', minRank: 'conseiller_municipal',
+    description: 'Ils ont trouvé trois failles dans les sites de la mairie. Ils veulent un merci, pas une plainte.', cost: { ap: 1, energy: 5 }, cooldown: 4, effects: [dos('numerique', 4), seg('jeunes', 1)] },
+  { id: 'brocante', label: 'Tenir un stand à la grande brocante', category: 'terrain', minRank: 'militant',
+    description: 'Vos vieux livres et vos disques à un euro : les gens viennent surtout pour discuter.', cost: { ap: 1, energy: 7 }, cooldown: 4, effects: [st('popularity', 2), seg('populaires', 1), { kind: 'funds', account: 'personal', delta: 40 }] },
+  { id: 'mentor_jeunes', label: 'Parrainer de jeunes militants', category: 'parti', minRank: 'conseiller_municipal',
+    description: 'Trois étudiants à former : prise de parole, terrain, réseaux.', cost: { ap: 1, energy: 6 }, cooldown: 4, effects: [{ kind: 'cohesion', delta: 2 }, seg('jeunes', 2), st('influence', 1)] },
+  { id: 'velo_tour', label: 'Faire le tour des communes à vélo électrique', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Cent vingt kilomètres en trois jours, de mairie en mairie, sans voiture.', cost: { ap: 1, energy: 12 }, cooldown: 6, effects: [seg('ruraux', 3), dos('ecologie', 2), { kind: 'health', delta: 1 }] },
+  { id: 'hommage_disparus', label: 'Rendre hommage aux figures disparues', category: 'parti', minRank: 'conseiller_municipal',
+    description: 'Une plaque, une rue, un discours : la mémoire des grands anciens du parti.', cost: { ap: 1, energy: 4 }, cooldown: 6, effects: [{ kind: 'cohesion', delta: 3 }, seg('retraites', 1), st('credibility', 1)] },
 ];
 
 export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...LIFE, ...MINISTRIES, ...COUNTRY, ...APOCALYPSE];

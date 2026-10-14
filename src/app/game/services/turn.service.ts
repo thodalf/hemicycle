@@ -18,6 +18,7 @@ import { monthlyEconomy, monthlyElectorate } from '../engine/country';
 import { monthlyCoalition } from '../engine/coalition';
 import { monthlyApocalypse } from '../engine/apocalypse';
 import { monthlyImage, monthlyLaws, monthlyQuotes } from '../engine/legacy';
+import { monthlyNpcLife } from '../engine/npc-life';
 import { checkAchievements } from '../data/achievements';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { autoMinigames } from '../engine/minigame';
@@ -134,6 +135,7 @@ export class TurnService {
     monthlyRomance(d, rng);
     monthlyHeir(d, rng);
     monthlyRivalCareers(d, rng);
+    monthlyNpcLife(d, rng);
     monthlyRivalPlots(d, rng);
     monthlyPromises(d);
     monthlyTerritory(d);

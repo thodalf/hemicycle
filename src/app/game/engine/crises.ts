@@ -65,6 +65,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Un volcan islandais a obscurci le ciel : l’été n’est pas venu.', 'Récoltes perdues, rationnement, files d’attente devant les boulangeries.', 'Les premiers rayons percent. Il faut tenir encore un peu.'] },
   sosie: { id: 'sosie', icon: '🎭', label: 'Votre sosie', gaugeLabel: 'Vérité rétablie', riskLabel: 'Dégâts du sosie', months: 6, drift: { gauge: 3, risk: 5 },
     stages: ['Un homme qui vous ressemble trait pour trait inaugure des ronds-points à votre place.', 'Le sosie donne des interviews, signe des pétitions et contredit vos discours.', 'Il annonce votre ralliement… au parti adverse. Il faut le démasquer.'] },
+  comete: { id: 'comete', icon: '☄️', label: 'La comète', gaugeLabel: 'Mission de déviation', riskLabel: 'Panique', months: 6, drift: { gauge: 4, risk: 5 },
+    stages: ['Les astronomes confirment : une comète de deux kilomètres croisera l’orbite terrestre dans six mois.', 'La mission européenne de déviation se prépare à Kourou ; les bunkers se vendent à prix d’or.', 'Le vaisseau a décollé. Le monde retient son souffle.'] },
+  referendum: { id: 'referendum', icon: '🗳️', label: 'Le référendum d’initiative citoyenne', gaugeLabel: 'Campagne de votre camp', riskLabel: 'Campagne adverse', months: 5, drift: { gauge: 3, risk: 4 },
+    stages: ['Un million de signatures : le premier référendum d’initiative citoyenne est convoqué.', 'Meetings, débats télévisés, tracts : le pays se passionne pour la question posée.', 'Dernière ligne droite : les sondages sont au coude à coude.'] },
   templiers: { id: 'templiers', icon: '🗝️', label: 'Le trésor des Templiers', gaugeLabel: 'Fouilles officielles', riskLabel: 'Pillards et fièvre', months: 7, drift: { gauge: 3, risk: 5 },
     stages: ['Une crypte scellée est découverte sous une église de votre département : des coffres frappés de la croix templière.', 'Chasseurs de trésor, youtubeurs et illuminés campent autour du chantier.', 'Les archéologues s’apprêtent à ouvrir le dernier coffre.'] },
   eurovision: { id: 'eurovision', icon: '🎤', label: 'L’Eurovision en France', gaugeLabel: 'Préparation du show', riskLabel: 'Risque de fiasco', months: 8, drift: { gauge: 4, risk: 4 },
@@ -316,6 +320,26 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.popularity = clamp(s.popularity - 8);
         economy(d).growth -= 1;
         lose('L’exode', 'Des millions de Français partis vers le Sud, des villages vidés. Le pays mettra des années à se relever.');
+      }
+      break;
+    case 'comete':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 6); s.credibility = clamp(s.credibility + 4);
+        d.intl.prestige = clamp(d.intl.prestige + 5);
+        win('La comète déviée', 'À 3 h 12, le choc du vaisseau dévie la comète de quelques degrés. Elle passe au large, superbe, dans le ciel de toute l’Europe.');
+      } else {
+        s.popularity = clamp(s.popularity - 4);
+        economy(d).growth -= 0.5; economy(d).confidence = clamp(economy(d).confidence - 10);
+        lose('La grande panique', 'La comète passe finalement au large, mais la panique a vidé les rayons, fermé les écoles et fait chuter la Bourse.');
+      }
+      break;
+    case 'referendum':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); s.influence = clamp(s.influence + 3);
+        win('Le référendum gagné', 'Votre camp l’emporte avec 54 % des voix. La participation, record, donne une légitimité éclatante au résultat.');
+      } else {
+        s.popularity = clamp(s.popularity - 4); s.influence = clamp(s.influence - 2);
+        lose('Le référendum perdu', 'Le camp adverse l’emporte. Vous reconnaissez la défaite d’une voix blanche, sous les huées.');
       }
       break;
     case 'templiers':

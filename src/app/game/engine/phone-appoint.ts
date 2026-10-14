@@ -53,6 +53,39 @@ function personOf(d: GameState, e: PhoneEntry) {
   return { npc, contact };
 }
 
+/* ── Les personnages des scénarios au gouvernement ── */
+
+interface ScenMin { hint: string; chance: number; effects: Effect[]; yes: string; no: string; news: string }
+const SCEN_MIN: Record<string, ScenMin> = {
+  'sc:loge': { hint: 'Un frère au gouvernement : des réseaux précieux, une discrétion menacée.', chance: 0.8, effects: [{ kind: 'lodge', discretion: -6, fraternite: 4 }, { kind: 'stat', stat: 'influence', delta: 2 }], yes: 'J’accepte, mon frère. Le tablier restera au vestiaire.', no: 'Ma place est à l’atelier, pas au conseil des ministres.', news: 'Les réseaux maçonniques se réjouissent discrètement.' },
+  'sc:grandmaitre': { hint: 'Le Grand Maître au gouvernement : l’obédience entière derrière vous… et la presse sur votre dos.', chance: 0.6, effects: [{ kind: 'lodge', discretion: -10, fraternite: 6 }, { kind: 'stat', stat: 'influence', delta: 3 }], yes: 'Pour la République, j’accepte.', no: 'L’obédience doit rester hors du pouvoir. C’est non.', news: 'Un Grand Maître ministre : une première qui fait jaser.' },
+  'sc:alien': { hint: 'Un extraterrestre ministre : le monde entier vous regarde.', chance: 0.6, effects: [{ kind: 'alien', confiance: 8, panique: 6 }, { kind: 'intl', prestige: 2 }, { kind: 'stat', stat: 'popularity', delta: 2 }], yes: '« ACCEPTE. MINISTÈRE. BUREAU. PETIT. »', no: '« NON. NOUS. OBSERVONS. »', news: 'Première mondiale : un être venu des étoiles au conseil des ministres.' },
+  'sc:prince': { hint: 'Le Prince au gouvernement : les royalistes jubilent, les républicains s’étranglent.', chance: 0.7, effects: [{ kind: 'crown', soutien: 5, legitimite: 4 }, { kind: 'stat', stat: 'credibility', delta: -1 }], yes: 'Servir la France est un devoir que mes ancêtres connaissaient bien.', no: 'Un prince ne sert pas sous un président. Pas encore.', news: 'Le prétendant au trône entre au gouvernement de la République.' },
+  'sc:redac': { hint: 'Votre rédaction au gouvernement : un communicant de génie, une indépendance perdue.', chance: 0.75, effects: [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'press', independance: -6 }], yes: 'J’accepte. Je laisse la direction de la rédaction à mon adjointe.', no: 'Un journaliste ne passe pas de l’autre côté. Jamais.', news: 'Un journaliste au gouvernement : ses confrères crient au mélange des genres.' },
+  'sc:handler': { hint: 'Votre officier traitant au gouvernement : discret, efficace, inquiétant.', chance: 0.5, effects: [{ kind: 'mole', cover: -6 }, { kind: 'dossier', domain: 'securite', delta: 3 }], yes: 'Ce n’était pas prévu au plan. Mais j’accepte.', no: 'Mon métier, c’est l’ombre. Oubliez ce coup de fil.', news: 'Un ministre au parcours très discret fait son entrée au gouvernement.' },
+  'sc:viro': { hint: 'La virologue au gouvernement : la science aux commandes.', chance: 0.8, effects: [{ kind: 'dossier', domain: 'sante', delta: 6 }, { kind: 'stat', stat: 'credibility', delta: 2 }], yes: 'D’accord. Mais je garde un pied au labo.', no: 'Mon labo a besoin de moi plus que votre gouvernement.', news: 'Une virologue reconnue entre au gouvernement.' },
+  'sc:cema': { hint: 'La cheffe d’état-major au gouvernement : l’armée applaudit, les antimilitaristes moins.', chance: 0.7, effects: [{ kind: 'dossier', domain: 'securite', delta: 5 }, { kind: 'segment', segment: 'retraites', delta: 2 }], yes: 'À vos ordres. Pour la première fois, c’est moi qui les reçois.', no: 'Ma place est auprès de mes troupes.', news: 'Une générale au gouvernement : l’uniforme rangé au placard.' },
+  'sc:dgsi': { hint: 'Le commissaire de la DGSI au gouvernement : il sait tout sur tout le monde.', chance: 0.7, effects: [{ kind: 'dossier', domain: 'securite', delta: 4 }, { kind: 'exposure', delta: -2 }], yes: 'J’accepte. J’ai déjà lu le dossier de chacun de vos ministres.', no: 'Mieux vaut que je reste là où je vois tout.', news: 'Un patron du renseignement au gouvernement.' },
+  'sc:pretre': { hint: 'Le Grand Prêtre de l’Aube Noire au gouvernement ? Une très mauvaise idée.', chance: 0.9, effects: [{ kind: 'apocalypse', cult: 8, darkness: 6 }, { kind: 'stat', stat: 'credibility', delta: -3 }], yes: 'L’Aube se lève sur la République. Merci.', no: 'Nous n’avons pas besoin de vos titres pour régner.', news: 'Un mystérieux gourou entre au gouvernement. L’inquiétude monte.' },
+  'sc:diable': { hint: 'Monsieur Nicolas au gouvernement : tout réussira… à un prix.', chance: 0.95, effects: [{ kind: 'apocalypse', darkness: 10 }, { kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'influence', delta: 3 }], yes: 'Avec un plaisir infini. J’ai toujours aimé l’administration.', no: 'Pas encore. J’ai mieux à faire.', news: 'Un ministre en costume blanc, au sourire inoubliable, fait son entrée.' },
+  'sc:coalition': { hint: 'Le partenaire de coalition récompensé : il s’accroche à l’alliance.', chance: 0.9, effects: [{ kind: 'coalition', mood: 15 }], yes: 'Voilà un geste qui scelle notre alliance.', no: 'Mon parti préfère garder sa liberté.', news: 'Le partenaire de coalition obtient un ministère de plus.' },
+  'sc:sosie': { hint: 'Votre sosie au gouvernement ? Le pays ne saura plus qui est qui.', chance: 0.7, effects: [{ kind: 'crisis', arc: 'sosie', risk: 6 }, { kind: 'stat', stat: 'popularity', delta: 1 }], yes: '« Ministre ? Mais je l’étais déjà, dans ma tête. »', no: '« Je préfère être vous. »', news: 'Deux visages identiques au conseil des ministres : la photo officielle fait le tour du monde.' },
+  'sc:intersyndicale': { hint: 'La porte-parole de l’intersyndicale au gouvernement : la grève vacille.', chance: 0.55, effects: [{ kind: 'crisis', arc: 'greve_generale', gauge: 10 }, { kind: 'segment', segment: 'populaires', delta: 3 }, { kind: 'segment', segment: 'cadres', delta: -2 }], yes: 'J’accepte, si les salaires sont le premier dossier.', no: 'Mon camp, c’est la rue. Pas les ministères.', news: 'La porte-parole de l’intersyndicale entre au gouvernement.' },
+  'sc:templiers': { hint: 'La médiéviste au gouvernement : le patrimoine à l’honneur.', chance: 0.8, effects: [{ kind: 'crisis', arc: 'templiers', gauge: 4 }, { kind: 'dossier', domain: 'education', delta: 3 }], yes: 'Un ministère ? Je peux garder ma truelle ?', no: 'La crypte n’attendra pas.', news: 'La découvreuse de la crypte des Templiers entre au gouvernement.' },
+  'sc:comete': { hint: 'La directrice de la mission au gouvernement : la science rassure.', chance: 0.6, effects: [{ kind: 'crisis', arc: 'comete', risk: -5 }, { kind: 'stat', stat: 'credibility', delta: 2 }], yes: 'J’accepte, mais je pilote la mission jusqu’au bout.', no: 'Pas avant que la comète soit passée.', news: 'L’astrophysicienne de la mission de déviation entre au gouvernement.' },
+  'sc:referendum': { hint: 'L’initiatrice de la pétition au gouvernement : la société civile au pouvoir.', chance: 0.65, effects: [{ kind: 'crisis', arc: 'referendum', gauge: 6 }, { kind: 'segment', segment: 'populaires', delta: 2 }], yes: 'Si c’est pour porter nos idées, j’accepte.', no: 'Je reste une citoyenne. C’est ma force.', news: 'L’initiatrice du référendum citoyen devient ministre.' },
+  'sc:eurovision': { hint: 'Le producteur de l’Eurovision au gouvernement : paillettes garanties.', chance: 0.8, effects: [{ kind: 'segment', segment: 'jeunes', delta: 3 }, { kind: 'crisis', arc: 'eurovision', gauge: 3 }], yes: 'Fabuleux ! Je fais refaire la salle du conseil.', no: 'Après la finale, peut-être. Pas avant.', news: 'Le producteur de l’Eurovision devient ministre.' },
+};
+
+function scenKey(key: string): string {
+  return key.startsWith('sc:anx_') ? 'sc:anx' : key;
+}
+
+/** Le nom inscrit au gouvernement (sans la fonction) */
+function ministerName(e: PhoneEntry): string {
+  return e.name.split(' · ')[0];
+}
+
 /** Les options « nommer » ajoutées aux appels */
 export function appointOptions(d: GameState, e: PhoneEntry, block?: string): CallOption[] {
   const who = appointer(d);
@@ -72,17 +105,19 @@ export function appointOptions(d: GameState, e: PhoneEntry, block?: string): Cal
     return out;
   }
 
-  if (!npc && !contact) return out;
+  const scen = e.kind === 'scenario';
+  if (!npc && !contact && !scen) return out;
   if (npc && npc.id === d.presidency?.pmNpcId) return out;
-  if (who === 'president') {
+  if (who === 'president' && !scen) {
     const isPm = npc ? d.presidency?.pmNpcId === npc.id : d.presidency?.primeMinister === e.name;
     if (!isPm) out.push({ id: 'nommer_pm', label: '🏛️ Lui proposer Matignon', hint: npc && npc.partyId !== d.party.id ? 'Un Premier ministre venu d’un autre parti : majorité élargie, parti furieux.' : contact ? 'La société civile à Matignon : audace saluée, majorité fragile.' : 'Un Premier ministre de votre camp. Il ou elle peut refuser.', ok: !block && !pmBusy, reason: block ?? pmBusy });
   }
-  const cur = new Set(DOMAINS.filter(dom => pickedMinister(d, dom) === e.name || d.presidency?.cabinet?.[dom] === e.name));
+  const nm = ministerName(e);
+  const cur = new Set(DOMAINS.filter(dom => pickedMinister(d, dom) === nm || d.presidency?.cabinet?.[dom] === nm));
   for (const dom of DOMAINS) {
     out.push({
       id: `min_${dom}`, label: `💼 ${MIN_SHORT[dom]}`, chip: MIN_SHORT[dom], group: 'ministere',
-      hint: `Lui confier le ministère ${MINISTRIES[dom]}.`,
+      hint: scen ? `${SCEN_MIN[scenKey(e.key)]?.hint ?? 'Une figure de votre aventure au gouvernement : audace garantie.'} Ministère ${MINISTRIES[dom]}.` : `Lui confier le ministère ${MINISTRIES[dom]}.`,
       ok: !block && !monthBusy && !cur.has(dom), reason: block ?? monthBusy ?? (cur.has(dom) ? 'Déjà à ce poste' : undefined),
     });
   }
@@ -121,6 +156,19 @@ export function appointCall(d: GameState, e: PhoneEntry, id: string, rng: Rng): 
     effects.push(st('credibility', 1), st('politicalCapital', -3), ...(pres ? [{ kind: 'presidency', approval: 1 } as Effect] : []));
     pushNews(d, 'actu', 'neutral', `Remaniement : ${repl} ministre ${MINISTRIES[dom]}`, `${e.name} quitte le gouvernement après un coup de téléphone. ${repl}, réputé·e pour sa rigueur, prend le portefeuille.`);
     return { answer: rng.pick(['Vous auriez pu me le dire en face.', 'Je m’y attendais. Je rends les clés demain matin.', 'Après tout ce que j’ai fait pour vous ? Très bien.']), effects, notes: [`${repl} remplace ${e.name}`] };
+  }
+
+  // Un personnage de scénario au gouvernement
+  if (e.kind === 'scenario' && id.startsWith('min_')) {
+    const dom = id.slice(4) as Domain;
+    const prof = SCEN_MIN[scenKey(e.key)];
+    const nm = ministerName(e);
+    if (!rng.chance(prof?.chance ?? 0.7)) return { answer: prof?.no ?? 'Merci, mais ce n’est pas pour moi.', effects: [st('stress', 1)], notes: ['Proposition déclinée'] };
+    setPick(d, dom, nm);
+    d.player.flags['appointWeek'] = d.week;
+    effects.push(st('politicalCapital', -4), ...(prof?.effects ?? [{ kind: 'dossier', domain: dom, delta: 3 } as Effect, st('popularity', 1)]));
+    pushNews(d, 'actu', 'neutral', `${nm}, ministre ${MINISTRIES[dom]}`, prof?.news ?? `Une nomination inattendue : ${nm} rejoint le gouvernement.`);
+    return { answer: prof?.yes ?? 'J’accepte. Je n’aurais jamais cru vivre ça.', effects, notes: [`${nm} ministre ${MINISTRIES[dom]}`] };
   }
 
   // Acceptera-t-il ?

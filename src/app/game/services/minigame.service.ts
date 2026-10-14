@@ -2,6 +2,7 @@ import { Injectable, computed, inject } from '@angular/core';
 import { MINIGAMES_BY_ID } from '../data/minigames';
 import { DELEGATE_SCORE, closeMinigame, resolveMinigame } from '../engine/minigame';
 import { ArcadeId, startArcade, quitArcade } from '../engine/arcade';
+import { loadResult, resultScore } from '../engine/arcade-save';
 import { GameStateService } from './game-state.service';
 
 /** Façade des mini-jeux : le premier de la file, son résultat, sa fermeture */
@@ -34,7 +35,11 @@ export class MinigameService {
   /** Salle de jeux : renoncer sans gain */
   quit(): void {
     const g = this.current();
-    if (g) this.game.mutate(d => quitArcade(d, g.id));
+    if (!g) return;
+    // Partie déjà terminée : on encaisse le résultat au lieu de l'abandonner
+    const r = g.arcade && g.status === 'pret' ? loadResult(g.arcade) : null;
+    if (r) { this.finish(resultScore(r)); return; }
+    this.game.mutate(d => quitArcade(d, g.id));
   }
 
   close(): void {

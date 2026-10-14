@@ -374,6 +374,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'comete_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.comete && !d.player.flags['cometeDone'] && d.week > 30,
+    build: () => ({
+      title: 'Une comète dans le ciel',
+      context: 'L’Observatoire de Paris confirme une nouvelle stupéfiante : une comète de deux kilomètres croisera l’orbite terrestre dans six mois. Une chance sur trente de collision.',
+      choices: [
+        c('verite', 'Dire toute la vérité, chiffres à l’appui', [cr('comete', 6, 4, true), { kind: 'flag', key: 'cometeDone', value: true }, s('credibility', 3)], 'Une allocution grave et précise. Les Français écoutent, inquiets mais rassurés par la franchise.'),
+        c('rassurer', 'Rassurer : « Aucun danger »', [cr('comete', 2, 2, true), { kind: 'flag', key: 'cometeDone', value: true }, s('popularity', 1)], 'La panique est évitée… jusqu’à ce que les chiffres fuitent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'referendum_gate', weight: 0.6, minRank: 'conseiller_municipal', eligible: d => !d.crises?.referendum && !d.player.flags['referendumDone'] && d.week > 16,
+    build: () => ({
+      title: 'Un million de signatures',
+      context: 'Une pétition sur la semaine de quatre jours atteint un million de signatures : le premier référendum d’initiative citoyenne aura lieu dans cinq mois. Il faut choisir votre camp.',
+      choices: [
+        c('oui', 'Faire campagne pour le oui', [cr('referendum', 5, 3, true), { kind: 'flag', key: 'referendumDone', value: true }, { kind: 'segment', segment: 'jeunes', delta: 2 }, { kind: 'segment', segment: 'populaires', delta: 1 }, { kind: 'segment', segment: 'cadres', delta: -1 }], 'Vous voilà tête d’affiche du oui. Les sondages sont serrés.'),
+        c('non', 'Faire campagne pour le non', [cr('referendum', 5, 3, true), { kind: 'flag', key: 'referendumDone', value: true }, { kind: 'segment', segment: 'cadres', delta: 2 }, { kind: 'segment', segment: 'retraites', delta: 1 }, { kind: 'segment', segment: 'jeunes', delta: -1 }], 'Vous prenez la tête du non. Le patronat applaudit.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -876,6 +898,50 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('plafonner', 'Négocier un plafond avec les hôteliers', [cr('eurovision', 5, -3), s('politicalCapital', -4)], 'Un accord arraché à deux heures du matin : 250 euros maximum.'),
         c('camping', 'Ouvrir un village de tentes géant', [cr('eurovision', 3, 2), s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Le « camping de l’Eurovision » devient l’endroit le plus festif d’Europe.'),
+      ],
+    }),
+  },
+  {
+    tag: 'comete_bunkers', weight: 1, eligible: d => !!d.crises?.comete,
+    build: () => ({
+      title: 'La ruée vers les bunkers',
+      context: 'Des promoteurs vendent des places dans d’anciens abris antiatomiques à 80 000 euros. Les files s’allongent, les arnaques aussi.',
+      choices: [
+        c('interdire', 'Interdire la vente et sanctionner les escrocs', [cr('comete', 2, -6), s('credibility', 2)], 'La DGCCRF ferme douze officines en une semaine.'),
+        c('laisser', 'Laisser faire le marché', [cr('comete', 0, 4), { kind: 'segment', segment: 'cadres', delta: 1 }], 'Les riches s’enterrent, les autres regardent le ciel.'),
+      ],
+    }),
+  },
+  {
+    tag: 'comete_ciel', weight: 0.8, eligible: d => !!d.crises?.comete,
+    build: () => ({
+      title: 'La comète visible à l’œil nu',
+      context: 'La comète apparaît désormais chaque soir au-dessus de l’horizon. Des millions de Français sortent la regarder, entre fascination et angoisse.',
+      choices: [
+        c('nuit', 'Organiser une « nuit des étoiles » nationale', [cr('comete', 4, -4), s('popularity', 2), { kind: 'dossier', domain: 'education', delta: 2 }], 'Astronomes amateurs, télescopes sur les places : la peur se change en émerveillement.'),
+        c('couvre_feu', 'Recommander de rester chez soi', [cr('comete', 0, 3), s('popularity', -1)], 'Personne n’obéit. Tout le monde est dehors.'),
+      ],
+    }),
+  },
+  {
+    tag: 'referendum_debat', weight: 1, eligible: d => !!d.crises?.referendum,
+    build: () => ({
+      title: 'Le grand débat du référendum',
+      context: 'France 2 organise le débat décisif : vous face au chef de file du camp adverse, deux heures en direct.',
+      choices: [
+        c('chiffres', 'Miser sur les chiffres', [cr('referendum', 6, -1), s('credibility', 2), s('energy', -5)], 'Graphiques, études, exemples étrangers : solide, un peu austère.'),
+        c('emotion', 'Miser sur l’émotion', [cr('referendum', 8, 2), s('popularity', 2), s('energy', -5)], 'Une histoire vraie, une famille, une voix qui tremble : la salle est conquise.'),
+      ],
+    }),
+  },
+  {
+    tag: 'referendum_fake', weight: 0.8, eligible: d => !!d.crises?.referendum,
+    build: () => ({
+      title: 'Une fausse information virale',
+      context: 'Une rumeur affirme que votre camp serait financé par une puissance étrangère. Elle est partagée deux millions de fois.',
+      choices: [
+        c('dementir', 'Publier tous vos comptes de campagne', [cr('referendum', 5, -4), s('credibility', 2), { kind: 'exposure', delta: -1 }], 'Transparence totale : la rumeur s’essouffle en trois jours.'),
+        c('riposter', 'Riposter en attaquant l’adversaire', [cr('referendum', 3, 3), s('credibility', -1)], 'La campagne devient un pugilat. Les indécis décrochent.'),
       ],
     }),
   },

@@ -32,10 +32,62 @@ export function clearSave(id: string): void {
   try { if (typeof localStorage !== 'undefined') localStorage.removeItem(key(id)); } catch { /* navigation privée */ }
 }
 
+/* ── Résultat du jour (partie terminée : plus de nouvelle partie avant demain) ── */
+
+export interface CritView { label: string; badge?: string; color?: string }
+export type Outcome = 'complete' | 'abandon' | 'perdu';
+export interface GridResult {
+  kind: 'grille'; id: string; day: string; title: string; icon: string;
+  rows: CritView[]; cols: CritView[];
+  /** Réponse donnée dans chaque case (ou null) */
+  cells: (string | null)[];
+  /** Toutes les réponses possibles de chaque case */
+  answers: string[][];
+  found: number; mistakes: number; maxMistakes: number; outcome: Outcome;
+}
+export interface MotResult { kind: 'mot'; id: string; day: string; title: string; icon: string; word: string; guesses: { text: string; marks: ('ok' | 'mal' | 'non')[] }[]; found: boolean }
+export type ArcadeResult = GridResult | MotResult;
+
+const rkey = (id: string) => `hemicycle.arcade.result.${id}`;
+
+export function saveResult(r: Omit<GridResult, 'day'> | Omit<MotResult, 'day'>): void {
+  try { if (typeof localStorage !== 'undefined') localStorage.setItem(rkey(r.id), JSON.stringify({ ...r, day: todayKey() })); } catch { /* navigation privée */ }
+}
+
+export function loadResult(id: string): ArcadeResult | null {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(rkey(id));
+    if (!raw) return null;
+    const r = JSON.parse(raw) as ArcadeResult;
+    if (r.day !== todayKey()) { localStorage.removeItem(rkey(id)); return null; }
+    return r;
+  } catch { return null; }
+}
+
+/** Une graine stable pour la grille du jour : la même pour tout le monde */
+export function dailyRand(id: string): () => number {
+  let h = 2166136261;
+  for (const ch of `${id}-${todayKey()}`) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  let a = h || 1;
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /** « 4/9 », « 2 essais » : où en est la partie en cours */
 export function saveProgress(id: string): string | null {
   const s = loadSave(id);
   if (!s) return null;
   if (s.kind === 'grille') return `${s.cells.filter(Boolean).length}/9`;
   return s.guesses.length ? `${s.guesses.length} essai${s.guesses.length > 1 ? 's' : ''}` : null;
+}
+
+/** Le score (0-1) d'une partie terminée */
+export function resultScore(r: ArcadeResult): number {
+  if (r.kind === 'grille') return r.found / 9;
+  return r.found ? [1, 1, 0.92, 0.8, 0.65, 0.5][r.guesses.length - 1] ?? 0.5 : 0.1;
 }

@@ -5,6 +5,7 @@ import { DOMAINS } from '../models/game.models';
 import { MINISTRIES } from './government';
 import { dateCall, romanceOptions } from './phone-extra';
 import { askCall, askOptions, isAsk, monthlyDebts } from './phone-asks';
+import { npcAge } from './npc-life';
 import { appointCall, appointOptions, cabinetSalt, isAppoint, pickedMinister } from './phone-appoint';
 import { scenarioAsk, scenarioCall, scenarioEntries, scenarioOptions } from './phone-scenario';
 import { applyEffects, campaignOpen, partySupport } from './effects';
@@ -164,7 +165,7 @@ export function directory(d: GameState): PhoneEntry[] {
     .filter(n => n.partyId === d.party.id && n.id !== d.party.leaderNpcId && n.relationToPlayer >= 0)
     .sort((a, b) => b.relationToPlayer - a.relationToPlayer)
     .slice(0, 4);
-  for (const n of colleagues) out.push({ key: `collegue:${n.id}`, kind: 'collegue', name: n.name, role: 'Collègue du parti', icon: '🧑‍💼', bond: Math.round(n.relationToPlayer) });
+  for (const n of colleagues) out.push({ key: `collegue:${n.id}`, kind: 'collegue', name: n.name, role: `Collègue du parti · ${npcAge(n)} ans`, icon: '🧑‍💼', bond: Math.round(n.relationToPlayer) });
   for (const g of governmentRoster(d)) out.push({ key: g.key, kind: 'gouvernement', name: g.name, role: g.role, icon: g.key === 'gouv:pr' ? '🇫🇷' : g.key === 'gouv:pm' ? '🏛️' : '💼' });
   const shown = new Set([d.party.leaderNpcId, ...colleagues.map(n => n.id)]);
   const parties = [d.party, ...d.otherParties];
@@ -172,7 +173,7 @@ export function directory(d: GameState): PhoneEntry[] {
     const n = d.npcs.find(x => x.id === id);
     if (!n || shown.has(n.id)) continue;
     const party = parties.find(x => x.id === n.partyId);
-    out.push({ key: `perso:${n.id}`, kind: 'personnalite', name: n.name, role: `${RANKS[n.rankId]?.label ?? 'Élu·e'} · ${party?.name ?? 'sans parti'}`, icon: n.isRival ? '⚔️' : '⭐', bond: Math.round(n.relationToPlayer) });
+    out.push({ key: `perso:${n.id}`, kind: 'personnalite', name: n.name, role: `${RANKS[n.rankId]?.label ?? 'Élu·e'} · ${party?.name ?? 'sans parti'} · ${npcAge(n)} ans`, icon: n.isRival ? '⚔️' : '⭐', bond: Math.round(n.relationToPlayer) });
   }
   out.push(...scenarioEntries(d));
   for (const c of d.contacts) out.push({ key: `contact:${c.id}`, kind: 'contact', name: c.name, role: CONTACT_LABEL[c.type], icon: CONTACT_ICON[c.type], bond: Math.round(c.trust) });
@@ -345,16 +346,16 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     answer = res.answer;
     effects.push(...res.effects);
     note = res.note;
-  } else if (e.kind === 'scenario') {
-    const res = scenarioCall(d, e, optionId, rng);
-    answer = res.answer;
-    effects.push(...res.effects);
-    notes = res.notes ?? [];
   } else if (isAppoint(optionId)) {
     const res = appointCall(d, e, optionId, rng);
     answer = res.answer;
     effects.push(...res.effects);
     notes = res.notes;
+  } else if (e.kind === 'scenario') {
+    const res = scenarioCall(d, e, optionId, rng);
+    answer = res.answer;
+    effects.push(...res.effects);
+    notes = res.notes ?? [];
   } else if (isAsk(d, e, optionId)) {
     const res = askCall(d, e, optionId, rng);
     answer = res.answer;

@@ -4,6 +4,7 @@ import { monthIndex, yearOf } from '../engine/calendar';
 import { accountability, segmentRows } from '../engine/country';
 import { annexedEnemies } from '../engine/annex';
 import { SEGMENTS } from './programme';
+import { freshDeparture } from '../engine/npc-life';
 
 /* ============================================================
  *  Rendez-vous du calendrier (Euro et Coupe du monde, Tour de
@@ -564,6 +565,116 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
       choices: [
         c('jouer', 'Jouer en direct', [{ kind: 'minigame', gameId: 'motus_tele', title: 'Le mot de la matinale', reward: [s('popularity', 2), { kind: 'segment', segment: 'retraites', delta: 1 }], penalty: [s('popularity', -1)] }], 'Première lettre : à vous de jouer.'),
         c('passer', 'Passer directement à l’interview', [s('credibility', 1)], 'Sérieux, peut-être un peu trop.'),
+      ],
+    }),
+  },
+  {
+    tag: 'pnj_obseques', weight: 4, eligible: d => !!freshDeparture(d, ['mort']),
+    build: d => {
+      const e = freshDeparture(d, ['mort'])!;
+      const done: Effect = { kind: 'flag', key: `npcEv_${e.npcId}_${e.week}`, value: true };
+      const mine = e.partyId === d.party.id;
+      const close = e.relation >= 20;
+      return {
+        title: `Les obsèques de ${e.name}`,
+        context: `${e.name} est mort·e à ${e.age} ans. ${mine ? 'Tout le parti est en deuil.' : e.relation <= -20 ? 'Vous vous êtes beaucoup affrontés.' : 'Une figure de la vie politique s’en va.'} La cérémonie a lieu jeudi ; ${e.successor} prend la relève.`,
+        choices: [
+          c('eloge', close || mine ? 'Prononcer l’éloge funèbre' : 'Assister à la cérémonie', [done, s('stress', 3), s('credibility', 2), ...(mine ? [{ kind: 'cohesion', delta: 3 } as Effect] : []), { kind: 'npcRelation', npcId: e.npcId, delta: 10 }],
+            close || mine ? 'Votre voix se brise à la dernière phrase. Les caméras s’éteignent par pudeur.' : 'Au premier rang, en silence. Son successeur vient vous serrer la main.'),
+          c('hommage', 'Un hommage écrit, sobre', [done, s('credibility', 1)], 'Quelques lignes justes, reprises par la presse.'),
+          ...(e.relation <= -20 ? [c('adversaire', 'Saluer « un adversaire loyal »', [done, s('credibility', 3), { kind: 'segment', segment: 'retraites', delta: 1 } as Effect], '« Nous n’étions d’accord sur rien, mais je l’estimais. » Une phrase qui vous honore.')] : []),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'pnj_depart', weight: 3, eligible: d => !!freshDeparture(d, ['retraite', 'prive', 'international', 'maladie']),
+    build: d => {
+      const e = freshDeparture(d, ['retraite', 'prive', 'international', 'maladie'])!;
+      const done: Effect = { kind: 'flag', key: `npcEv_${e.npcId}_${e.week}`, value: true };
+      const what = e.fate === 'retraite' ? 'son pot de départ à la retraite' : e.fate === 'prive' ? 'son dernier jour avant de rejoindre le privé' : e.fate === 'international' ? 'sa réception d’adieu avant de partir à l’étranger' : 'un dernier déjeuner avant de se retirer pour se soigner';
+      return {
+        title: `Le départ de ${e.name}`,
+        context: `${e.name} (${e.age} ans) vous invite à ${what}. Son successeur, ${e.successor}, sera là aussi.`,
+        choices: [
+          c('y_aller', 'Y aller, et faire connaissance avec le successeur', [done, s('energy', -3), { kind: 'npcRelation', npcId: e.npcId, delta: 12 }, s('influence', 1)], `Un discours ému, un verre, et une longue conversation avec ${e.successor}.`),
+          c('carte', 'Envoyer une carte', [done], 'Une carte chaleureuse, et rien de plus.'),
+          ...(e.fate === 'prive' ? [c('pantouflage', 'Dénoncer le pantouflage', [done, s('credibility', 2), { kind: 'segment', segment: 'populaires', delta: 1 } as Effect, { kind: 'npcRelation', npcId: e.npcId, delta: -8 } as Effect], 'Votre tribune sur les allers-retours public-privé fait du bruit.')] : []),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'pnj_ineligible', weight: 3, eligible: d => !!freshDeparture(d, ['ineligible']),
+    build: d => {
+      const e = freshDeparture(d, ['ineligible'])!;
+      const done: Effect = { kind: 'flag', key: `npcEv_${e.npcId}_${e.week}`, value: true };
+      return {
+        title: `${e.name} condamné·e`,
+        context: `${e.name} est déclaré·e inéligible pour cinq ans. Les journalistes attendent votre réaction.`,
+        choices: [
+          c('exemplarite', 'Appeler à l’exemplarité des élus', [done, s('credibility', 2), ...(e.partyId === d.party.id ? [{ kind: 'cohesion', delta: -2 } as Effect] : [])], 'Une réaction ferme, saluée par les associations anticorruption.'),
+          c('presomption', 'Rappeler qu’il y a un appel possible', [done, ...(e.partyId === d.party.id ? [{ kind: 'cohesion', delta: 2 } as Effect] : []), s('credibility', -1)], 'Prudent, peut-être trop.'),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'ev_doyen_assemblee', weight: 0.5, minRank: 'depute',
+    build: () => ({
+      title: 'Le doyen de l’Assemblée',
+      context: 'Le doyen de l’Assemblée, 91 ans, annonce qu’il se représentera. « Tant que la tête suit. » Les plus jeunes ricanent.',
+      choices: [
+        c('saluer', 'Saluer son énergie', [{ kind: 'segment', segment: 'retraites', delta: 2 }, s('popularity', 1)], 'Il vous invite à déjeuner et vous raconte la IVe République.'),
+        c('renouveau', 'Plaider pour le renouvellement', [{ kind: 'segment', segment: 'jeunes', delta: 2 }, { kind: 'segment', segment: 'retraites', delta: -1 }], '« Place aux jeunes » : la formule fait mouche.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_anniversaire_rival', weight: 0.5, eligible: d => d.npcs.some(n => n.isRival),
+    build: (d) => {
+      const n = [...d.npcs].filter(x => x.isRival).sort((a, b) => (b.age ?? 0) - (a.age ?? 0))[0];
+      return {
+        title: `Les ${Math.floor(n.age ?? 60)} ans de ${n.name}`,
+        context: `${n.name} fête son anniversaire en grande pompe. Vous êtes invité·e, à votre grande surprise.`,
+        choices: [
+          c('venir', 'Y aller avec un cadeau', [{ kind: 'npcRelation', npcId: n.id, delta: 10 }, s('energy', -3)], 'Un livre dédicacé, une coupe de champagne, une trêve d’un soir.'),
+          c('decliner', 'Décliner poliment', [{ kind: 'npcRelation', npcId: n.id, delta: -2 }], 'Votre absence est remarquée, et commentée.'),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'ev_pluie_meeting', weight: 0.6,
+    build: () => ({
+      title: 'Discours sous la pluie',
+      context: 'Une averse diluvienne s’abat sur votre meeting en plein air. Les militants vous regardent : on remballe ?',
+      choices: [
+        c('continuer', 'Continuer, trempé·e jusqu’aux os', [s('popularity', 3), { kind: 'momentum', delta: 2 }, { kind: 'health', delta: -1 }], 'La photo, cheveux collés et poing levé, devient l’image de la semaine.'),
+        c('abri', 'Se replier sous le préau', [s('stress', -1)], 'Un discours écourté, mais tout le monde est au sec.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_livre_memoires', weight: 0.5, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Un éditeur vous propose un livre',
+      context: 'Une grande maison d’édition vous propose d’écrire votre vision du pays. Un « nègre » est disponible si besoin.',
+      choices: [
+        c('ecrire', 'L’écrire vous-même, la nuit', [s('credibility', 3), s('energy', -8), { kind: 'funds', account: 'personal', delta: 3000 }], 'Six mois de nuits blanches, un vrai livre, de vraies critiques.'),
+        c('plume', 'Confier l’écriture à une plume', [s('popularity', 1), { kind: 'funds', account: 'personal', delta: 5000 }, { kind: 'exposure', delta: 1 }], 'Un livre fluide… dont un journaliste retrouve vite le vrai auteur.'),
+        c('refuser', 'Refuser : pas le temps', [], 'Vous avez mieux à faire. Pour l’instant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_stage_lyceen', weight: 0.5,
+    build: () => ({
+      title: 'Un stagiaire de troisième',
+      context: 'Un collégien de votre quartier vous demande de l’accueillir pour son stage d’observation. Il a déjà préparé vingt questions.',
+      choices: [
+        c('accueillir', 'L’accueillir toute la semaine', [{ kind: 'segment', segment: 'jeunes', delta: 2 }, s('stress', 1), s('popularity', 1)], 'Son rapport de stage, publié par sa mère, est hilarant et tendre.'),
+        c('equipe', 'Le confier à votre équipe', [s('energy', 1)], 'Il a surtout fait des photocopies.'),
       ],
     }),
   },
