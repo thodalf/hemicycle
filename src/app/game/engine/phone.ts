@@ -5,6 +5,7 @@ import { DOMAINS } from '../models/game.models';
 import { MINISTRIES } from './government';
 import { dateCall, romanceOptions } from './phone-extra';
 import { askCall, askOptions, isAsk, monthlyDebts } from './phone-asks';
+import { appointCall, appointOptions, cabinetSalt, isAppoint, pickedMinister } from './phone-appoint';
 import { scenarioAsk, scenarioCall, scenarioEntries, scenarioOptions } from './phone-scenario';
 import { applyEffects, campaignOpen, partySupport } from './effects';
 import { voteRole } from './assembly';
@@ -36,11 +37,14 @@ export interface PhoneEntry {
 }
 
 export interface CallOption {
-  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage' | 'seduire' | 'rompre' | 'complot' | 'apparition' | `sc_${string}`;
+  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage' | 'seduire' | 'rompre' | 'complot' | 'apparition' | 'nommer_pm' | 'limoger' | `sc_${string}` | `min_${string}`;
   label: string;
   hint: string;
   ok: boolean;
   reason?: string;
+  /** Options regroupées (ministères) : libellé court et groupe */
+  chip?: string;
+  group?: string;
 }
 
 const CONTACT_LABEL: Record<ContactType, string> = {
@@ -101,7 +105,7 @@ export interface GovMember { key: string; name: string; role: string }
 export function governmentRoster(d: GameState): GovMember[] {
   if (!inGovernment(d)) return [];
   const p = d.player;
-  const salt = d.presidential.incumbentName + (d.presidency?.primeMinister ?? '');
+  const salt = cabinetSalt(d);
   const name = (slot: string) => `${GOV_FIRST[hash(slot + salt) % GOV_FIRST.length]} ${GOV_LAST[hash(salt + slot + 'x') % GOV_LAST.length]}`;
   const out: GovMember[] = [];
   if (p.rankId !== 'president' && d.presidential.incumbentId !== 'player') {
@@ -115,7 +119,7 @@ export function governmentRoster(d: GameState): GovMember[] {
     if (p.rankId === 'ministre' && d.portfolio === dom) continue;
     const npc = npcMinisters[i];
     if (npc) i++;
-    out.push({ key: `gouv:${dom}`, name: d.presidency?.cabinet?.[dom] ?? npc?.name ?? name(dom), role: `Ministre ${MINISTRIES[dom]}` });
+    out.push({ key: `gouv:${dom}`, name: pickedMinister(d, dom) ?? d.presidency?.cabinet?.[dom] ?? npc?.name ?? name(dom), role: `Ministre ${MINISTRIES[dom]}` });
   }
   return out;
 }
@@ -286,6 +290,7 @@ export function callOptions(d: GameState, key: string): CallOption[] {
     }
   }
   opts.push(...askOptions(d, e, block));
+  opts.push(...appointOptions(d, e, block));
   opts.push(...romanceOptions(d, e, block));
   return opts;
 }
@@ -329,8 +334,9 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     pacte: 'Et si on arrêtait de se taper dessus, toi et moi ?', tuyau: 'Alors, quoi de neuf dans ton camp ?', conseil: 'J’ai besoin de ton avis.',
     appui: 'Votre parole compte beaucoup pour vos fidèles…', seduire: 'Tu serais libre un soir de la semaine ?', rompre: 'Il faut qu’on parle.', arbitrage: 'J’aurais besoin d’un coup de pouce…',
     complot: 'J’ai un projet… discret. J’aurais besoin de toi.', apparition: 'Tu accepterais de t’afficher à mes côtés ?',
+    nommer_pm: 'J’ai besoin de vous à Matignon. Vous acceptez ?', limoger: key === 'gouv:pm' ? 'Il est temps de tourner la page. J’attends votre démission.' : 'Je vais devoir vous demander de quitter le gouvernement.',
   };
-  const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : ASK[optionId] ?? scenarioAsk(d, e, optionId) ?? 'Je prenais des nouvelles.';
+  const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : ASK[optionId] ?? (optionId.startsWith('min_') ? 'Je voudrais vous confier un ministère. Vous êtes partant·e ?' : undefined) ?? scenarioAsk(d, e, optionId) ?? 'Je prenais des nouvelles.';
   addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: `📞 ${ask}`, outgoing: true, read: true });
 
   let notes: string[] = [];
@@ -344,6 +350,11 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     answer = res.answer;
     effects.push(...res.effects);
     notes = res.notes ?? [];
+  } else if (isAppoint(optionId)) {
+    const res = appointCall(d, e, optionId, rng);
+    answer = res.answer;
+    effects.push(...res.effects);
+    notes = res.notes;
   } else if (isAsk(d, e, optionId)) {
     const res = askCall(d, e, optionId, rng);
     answer = res.answer;

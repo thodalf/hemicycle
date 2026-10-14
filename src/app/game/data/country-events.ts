@@ -367,8 +367,118 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
         c('sobre', 'Une visite de travail, sans faste', [{ kind: 'intl', prestige: 1 }, s('credibility', 1)], 'Deux heures de réunion, un communiqué. Efficace.'),
       ],
     }),
-  }
-
+  },
+  {
+    tag: 'ev_deepfake', weight: 0.8, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Un faux de vous circule',
+      context: 'Une vidéo truquée vous montre en train d’insulter les agriculteurs. Elle a été vue deux millions de fois en une nuit.',
+      choices: [
+        c('dementir', 'Démentir, preuves techniques à l’appui', [s('credibility', 1), s('stress', 3), seg('ruraux', -1)], 'Des experts décortiquent les pixels. Le démenti fait dix fois moins de vues que le faux.'),
+        c('plainte', 'Porter plainte et exiger le retrait', [s('politicalCapital', -3), s('credibility', 2)], 'La plateforme retire la vidéo sous 48 heures. Le mal est en partie fait.'),
+        c('rire', 'Publier un faux… encore plus absurde', [s('popularity', 2), seg('jeunes', 2), s('credibility', -1)], 'Vous voilà en astronaute dansant le twist. Plus personne ne croit aucune vidéo.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_baguette', weight: 0.7,
+    build: () => ({
+      title: 'La meilleure baguette de France',
+      context: 'Le boulanger de votre quartier remporte le concours national de la meilleure baguette. Il fournira l’Élysée pendant un an.',
+      choices: [
+        c('visite', 'Passer le féliciter, en tablier', [s('popularity', 2), seg('ruraux', 1), seg('retraites', 1), s('energy', -3)], 'Photo devant le fournil, croûte dorée : la plus partagée de votre mois.'),
+        c('message', 'Un message de félicitations', [s('popularity', 1)], 'Il l’affiche à côté de la caisse.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_danse_virale', weight: 0.6,
+    build: () => ({
+      title: 'Votre danse fait le tour des réseaux',
+      context: 'Filmé·e à un mariage, vous dansez sur un tube de l’été. Huit millions de vues, des milliers de reprises.',
+      choices: [
+        c('assumer', 'Assumer, et relever le défi', [seg('jeunes', 3), s('popularity', 2), s('credibility', -1)], 'Un ministre étranger vous répond en vidéo. La diplomatie de la danse est née.'),
+        c('ignorer', 'Ne rien dire', [s('credibility', 1)], 'La vague passe en quatre jours.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_pont_fissure', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Un pont fissuré',
+      context: 'Une fissure inquiétante apparaît sur le pont qui relie les deux moitiés de votre ville. Les ingénieurs hésitent.',
+      choices: [
+        c('fermer', 'Fermer le pont par précaution', [s('credibility', 2), s('popularity', -1), seg('ruraux', -1)], 'Trente minutes de détour pour tout le monde, mais personne en danger.'),
+        c('surveiller', 'Le laisser ouvert sous surveillance', [s('popularity', 1), { kind: 'exposure', delta: 2 }], 'Des capteurs, des inspections hebdomadaires… et des nuits agitées.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_lettre_enfant', weight: 0.7,
+    build: () => ({
+      title: 'La lettre d’une enfant',
+      context: 'Une écolière de neuf ans vous écrit au crayon de couleur : « Pourquoi les grands ne règlent pas le problème des déchets dans la mer ? »',
+      choices: [
+        c('repondre', 'Lui répondre à la main, et aller voir sa classe', [s('popularity', 2), s('stress', -3), { kind: 'dossier', domain: 'ecologie', delta: 2 }, s('energy', -3)], 'Vingt-quatre questions, aucune langue de bois possible. La meilleure matinée du mois.'),
+        c('courrier', 'Une réponse type du secrétariat', [s('credibility', -1)], 'La maman publie la lettre type. Quelques commentaires piquants.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_canicule_ecoles', weight: 2, eligible: d => [5, 6].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'Canicule dans les écoles',
+      context: 'Trente-huit degrés dans les salles de classe. Des parents gardent leurs enfants à la maison ; les enseignants réclament des ventilateurs.',
+      choices: [
+        c('plan', 'Réclamer un plan de rénovation des écoles', [{ kind: 'dossier', domain: 'education', delta: 3 }, seg('jeunes', 1), eco({ deficit: 0.05 })], 'Isolation, arbres dans les cours, stores : un chantier de dix ans.'),
+        c('horaires', 'Avancer les horaires de classe', [s('popularity', 1), seg('populaires', -1)], 'Cours de 7 h à 12 h. Les familles qui travaillent s’organisent comme elles peuvent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_marche_noel', weight: 2, eligible: d => monthIndex(d.week) === 11,
+    build: () => ({
+      title: 'Le marché de Noël',
+      context: 'Vin chaud, chalets en bois et chorale d’enfants : le marché de Noël ouvre ce week-end.',
+      choices: [
+        c('inaugurer', 'L’inaugurer en personne', [s('popularity', 2), seg('retraites', 1), s('energy', -3), s('stress', -2)], 'Un bonnet rouge, un gobelet fumant et cent poignées de main.'),
+        c('famille', 'Y aller en famille, incognito', [s('stress', -5), s('energy', 3)], 'Personne ne vous reconnaît sous l’écharpe. Une soirée parfaite.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_startup', weight: 0.7,
+    build: () => ({
+      title: 'Une licorne près de chez vous',
+      context: 'Une jeune entreprise de votre région lève 80 millions d’euros pour ses batteries au sodium. Ses fondateurs ont trente ans.',
+      choices: [
+        c('visiter', 'Visiter leurs locaux', [seg('cadres', 2), seg('jeunes', 1), { kind: 'dossier', domain: 'numerique', delta: 2 }, eco({ confidence: 1 })], 'Baby-foot, tableaux blancs, et une usine prévue dans votre circonscription.'),
+        c('emplois', 'Exiger que l’usine reste en France', [seg('populaires', 2), s('credibility', 1)], 'Les fondateurs promettent. Les investisseurs, eux, n’ont rien promis.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_defi_lecteurs', weight: 0.6,
+    build: () => ({
+      title: 'Le défi des lecteurs',
+      context: 'Un quotidien régional met les élus au défi : une grille de capitales du monde, résultats publiés demain en page 3.',
+      choices: [
+        c('jouer', 'Relever le défi', [{ kind: 'minigame', gameId: 'capitalodoku', title: 'Le défi des lecteurs', reward: [s('credibility', 2), s('popularity', 1)], penalty: [s('popularity', -1)] }], 'Le journaliste lance le chronomètre.'),
+        c('decliner', 'Décliner poliment', [s('popularity', -1)], '« Trop occupé·e » : le journal publie une case vide à votre nom.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_metro_panne', weight: 0.6,
+    build: () => ({
+      title: 'Coincé·e dans le métro',
+      context: 'Panne de signalisation : votre rame est bloquée quarante minutes dans un tunnel. Les voyageurs vous ont reconnu·e.',
+      choices: [
+        c('discuter', 'En profiter pour discuter', [s('popularity', 2), seg('populaires', 1), seg('cadres', 1), s('stress', 1)], 'Retraites, loyers, horaires de crèche : le meeting le plus improvisé de votre carrière.'),
+        c('grille', 'Sortir le Metrodoku du journal', [{ kind: 'minigame', gameId: 'metrodoku', title: 'Metrodoku dans le tunnel', reward: [seg('jeunes', 2), s('stress', -3)], penalty: [] }], 'Votre voisin de siège vous souffle une station.'),
+      ],
+    }),
+  },
 ];
 
 /** Une petite phrase : un moment où une formule peut rester (tirage à part) */

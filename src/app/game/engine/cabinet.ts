@@ -98,6 +98,7 @@ export function applyAppointment(d: GameState, e: Extract<Effect, { kind: 'presi
   }
   if (e.cabinet) {
     pr.cabinet = buildCabinet(d, e.cabinet, rng);
+    d.cabinetPicks = undefined;
     pr.cabinetStyle = e.cabinet;
     pr.majority = clamp(pr.majority);
     pushNews(d, 'actu', 'neutral', `Le gouvernement ${pr.primeMinister} est nommé`, DOMAINS.slice(0, 4).map(dom => `${pr.cabinet![dom]} (${DOMAIN_LABELS[dom]})`).join(', ') + '…');

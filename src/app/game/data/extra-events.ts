@@ -566,7 +566,7 @@ export const EXTRA_EVENTS: RandomEvent[] = [
       title: 'Le défi du journal local',
       context: 'La gazette lance un défi aux élus : trouver le mot du jour en six essais. Les scores seront publiés vendredi.',
       choices: [
-        c('jouer', 'Relever le défi', [play('mot_du_jour', 'Le mot de la gazette', [s('popularity', 3)], [s('popularity', -1)])], 'Première lettre : à vous de jouer.'),
+        c('jouer', 'Relever le défi', [play('motus_tele', 'Le mot de la gazette', [s('popularity', 3)], [s('popularity', -1)])], 'Première lettre : à vous de jouer.'),
         c('non', 'Laisser jouer les autres', [], 'Votre adversaire le trouve en deux coups. La gazette le souligne.'),
       ],
     }),

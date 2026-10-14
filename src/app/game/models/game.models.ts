@@ -1073,6 +1073,8 @@ export interface GameState {
   elections: ScheduledElection[];
   /** actionId → mois à partir duquel l'action redevient disponible */
   cooldowns: Record<string, number>;
+  /** Ministres nommés par téléphone, pour le gouvernement en place */
+  cabinetPicks?: { salt: string; picks: Partial<Record<Domain, string>> };
 }
 
 // ── Emprunts ────────────────────────────────────────────────
@@ -1320,6 +1322,10 @@ export interface MinigameState {
   /** 0,7 (facile) … 1,4 (difficile) : dépend de la fatigue et du stress */
   difficulty: number;
   status: 'pret' | 'fini';
+  /** Partie lancée depuis la salle de jeux (hors agenda) */
+  arcade?: string;
+  /** Gains à prendre (sinon : pour le plaisir) */
+  paid?: boolean;
   score?: number;
   tier?: MinigameTier;
   summary?: string[];
@@ -1439,7 +1445,7 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
-  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver';
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

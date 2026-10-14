@@ -1,6 +1,6 @@
 import { epilogue } from '../../engine/legacy';
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DOMAIN_LABELS } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { DebateArenaComponent } from '../debate-arena/debate-arena.component';
@@ -52,9 +52,13 @@ import { ContactPanelComponent } from '../contact-panel/contact-panel.component'
 import { AssemblyVoteComponent } from '../assembly-vote/assembly-vote.component';
 import { BankComponent } from '../bank/bank.component';
 import { MinigameComponent } from '../minigame/minigame.component';
+import { ArcadePanelComponent } from '../arcade-panel/arcade-panel.component';
+import { ARCADE, arcadeRewardOpen } from '../../engine/arcade';
 import { BankService } from '../../services/bank.service';
 import { DEATH_LABELS, lifeSummary } from '../../engine/life';
 import { Milestone } from '../../models/game.models';
+
+type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
 
 @Component({
   selector: 'app-dashboard',
@@ -64,7 +68,7 @@ import { Milestone } from '../../models/game.models';
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ApocalypsePanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, CountryPanelComponent, WorldPanelComponent,
-    WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
+    WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent, ArcadePanelComponent,
   ],
   template: `
     <header class="topbar">
@@ -166,6 +170,7 @@ import { Milestone } from '../../models/game.models';
       </main>
       <div class="col-right">
         <app-news-feed />
+        <app-arcade-panel />
         <app-world-panel />
         <app-country-panel />
         <app-election-panel />
@@ -201,6 +206,7 @@ import { Milestone } from '../../models/game.models';
           <span>{{ t.label }}</span>
           @if (t.id === 'agenda' && game.s().pendingDecisions.length + (game.s().vote ? 1 : 0) + (game.s().minigames.length)) { <b class="badge">{{ game.s().pendingDecisions.length + (game.s().vote ? 1 : 0) + (game.s().minigames.length) }}</b> }
           @if (t.id === 'actu' && unread()) { <b class="badge dot-badge" aria-label="Nouvelles"></b> }
+          @if (t.id === 'jeux' && arcadeOpen() && tab() !== 'jeux') { <b class="badge dot-badge good-dot" aria-label="Gains à prendre"></b> }
         </button>
       }
     </nav>
@@ -314,7 +320,8 @@ import { Milestone } from '../../models/game.models';
     .save.s-error { color: var(--bad); .dot { background: var(--bad); } }
     @keyframes save-pulse { 50% { opacity: .3; } }
     /* Panneaux sans contenu (pas de guerre, pas de complot…) : pas d'espace vide */
-    .col-main > :empty, .col-left > :empty, .col-right > :empty { display: none; }
+    .col-main > :empty, .col-left > :empty, .col-right > :empty,
+    .col-main > :not(:has(*)), .col-left > :not(:has(*)), .col-right > :not(:has(*)) { display: none; }
     .help-btn { font-weight: 700; min-width: 30px; padding: 4px 8px; }
     .phone-btn { position: relative; font-size: 15px; padding: 4px 10px;
       .badge { position: absolute; top: -6px; right: -6px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--bad); color: #fff;
@@ -328,12 +335,20 @@ import { Milestone } from '../../models/game.models';
       .grid { grid-template-columns: 1fr; padding: 12px 12px calc(84px + env(safe-area-inset-bottom, 0px)); gap: 12px; }
       .col-left, .col-main, .col-right { gap: 12px; }
       .col-right { grid-template-columns: 1fr; }
+      /* L'agenda d'abord : décisions et actions du mois avant les tableaux de bord */
+      .col-main > app-decision-panel { order: -2; }
+      .col-main > app-week-planner { order: -1; }
+      .col-main > :is(app-crisis-panel, app-zombie-panel, app-apocalypse-panel, app-war-panel) { order: -3; }
       /* Une colonne à la fois */
       .grid[data-tab='agenda'] .col-left, .grid[data-tab='agenda'] .col-right,
       .grid[data-tab='moi'] .col-main, .grid[data-tab='moi'] .col-right,
-      .grid[data-tab='actu'] .col-left, .grid[data-tab='actu'] .col-main { display: none; }
+      .grid:is([data-tab='actu'], [data-tab='pays'], [data-tab='jeux']) :is(.col-left, .col-main) { display: none; }
+      /* La colonne de droite se partage entre trois onglets */
+      .grid[data-tab='actu'] .col-right > :not(app-news-feed),
+      .grid[data-tab='jeux'] .col-right > :not(app-arcade-panel),
+      .grid[data-tab='pays'] .col-right > :is(app-news-feed, app-arcade-panel) { display: none; }
       /* Barre du haut compacte */
-      .topbar { display: grid; grid-template-columns: auto 1fr auto auto auto auto; gap: 4px 8px; padding: 8px 12px; align-items: center; }
+      .topbar { display: grid; grid-template-columns: auto 1fr auto auto auto auto; gap: 4px 8px; padding: 8px 12px; align-items: center; background: color-mix(in srgb, var(--bg) 97%, transparent); }
       .brand { font-size: 17px; }
       .facts { gap: 10px; font-size: 12px; flex-wrap: nowrap; overflow: hidden; }
       .facts > span:nth-child(n+2) { display: none; }
@@ -342,7 +357,7 @@ import { Milestone } from '../../models/game.models';
       .brand { order: 1; } .facts { order: 2; } .save { order: 3; } .phone-btn { order: 4; } .help-btn { order: 5; } .quit { order: 6; justify-self: end; }
       app-vitals { grid-column: 1 / -1; order: 7; }
       .mobile-tabs {
-        display: grid; grid-template-columns: repeat(3, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
+        display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
         background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(10px);
         border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px);
       }
@@ -355,6 +370,7 @@ import { Milestone } from '../../models/game.models';
       .mobile-tabs button.on::before { content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); }
       .badge { position: absolute; top: 5px; left: calc(50% + 8px); min-width: 17px; height: 17px; padding: 0 5px; border-radius: 999px;
         background: var(--bad); color: #fff; font-size: 10.5px; line-height: 17px; text-align: center; }
+      .good-dot { background: var(--good); }
       .dot-badge { min-width: 9px; width: 9px; height: 9px; padding: 0; top: 7px; }
       .end { padding: 22px 18px; h2 { font-size: 25px; } }
       .obit { padding: 22px 16px; h2 { font-size: 28px; } }
@@ -369,17 +385,31 @@ export class DashboardComponent {
   /** Navigation mobile : agenda, profil, actualité */
   protected readonly tabs = [
     { id: 'agenda', label: 'Agenda', icon: '🗓️' },
-    { id: 'moi', label: 'Profil', icon: '👤' },
-    { id: 'actu', label: 'Actualité', icon: '📰' },
+    { id: 'moi', label: 'Moi', icon: '👤' },
+    { id: 'pays', label: 'Pays', icon: '🇫🇷' },
+    { id: 'actu', label: 'Actu', icon: '📰' },
+    { id: 'jeux', label: 'Jeux', icon: '🎲' },
   ] as const;
-  protected readonly tab = signal<'agenda' | 'moi' | 'actu'>('agenda');
+  protected readonly tab = signal<Tab>('agenda');
   private readonly seenNews = signal(this.game.s().news[0]?.id ?? '');
   protected readonly unread = computed(() => this.tab() !== 'actu' && (this.game.s().news[0]?.id ?? '') !== this.seenNews());
-  protected setTab(t: 'agenda' | 'moi' | 'actu'): void {
+  protected setTab(t: Tab): void {
     if (t === 'actu' || this.tab() === 'actu') this.seenNews.set(this.game.s().news[0]?.id ?? '');
     this.tab.set(t);
     window.scrollTo({ top: 0 });
   }
+  /** Hauteur de la barre du haut, pour les éléments collants (onglets de l'agenda) */
+  private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly measureTopbar = afterNextRender(() => {
+    const bar = (this.host.nativeElement as HTMLElement).querySelector('.topbar') as HTMLElement | null;
+    if (!bar || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => document.documentElement.style.setProperty('--topbar-h', `${Math.round(bar.getBoundingClientRect().height)}px`));
+    ro.observe(bar);
+    this.destroyRef.onDestroy(() => ro.disconnect());
+  });
+  /** Des gains à prendre dans la salle de jeux */
+  protected readonly arcadeOpen = computed(() => { const s = this.game.s(); return ARCADE.some(a => arcadeRewardOpen(s, a)); });
   protected readonly builderHidden = signal(false);
   protected readonly budget = inject(BudgetService);
   protected readonly budgetOpen = signal(false);

@@ -61,9 +61,22 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
               <div class="call-sheet">
                 <div class="cs-head"><strong>Appeler {{ t.name }}</strong><small class="muted">{{ callInfo() }}</small></div>
                 @for (o of options(); track o.id) {
-                  <button type="button" class="opt" [disabled]="!o.ok" (click)="phone.call(t.key, o.id); calling.set(false)">
-                    <strong>{{ o.label }}</strong><small>{{ o.ok ? o.hint : o.reason }}</small>
-                  </button>
+                  @if (!o.group) {
+                    <button type="button" class="opt" [disabled]="!o.ok" (click)="phone.call(t.key, o.id); calling.set(false)">
+                      <strong>{{ o.label }}</strong><small>{{ o.ok ? o.hint : o.reason }}</small>
+                    </button>
+                  }
+                }
+                @if (ministries().length) {
+                  <div class="opt-group" role="group" aria-label="Lui confier un ministère">
+                    <strong>💼 Lui confier un ministère</strong>
+                    <small class="muted">{{ ministryNote() }}</small>
+                    <div class="chips-row">
+                      @for (o of ministries(); track o.id) {
+                        <button type="button" [disabled]="!o.ok" [title]="o.ok ? o.hint : (o.reason ?? '')" (click)="phone.call(t.key, o.id); calling.set(false)">{{ o.chip }}</button>
+                      }
+                    </div>
+                  </div>
                 }
               </div>
             }
@@ -190,6 +203,12 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
     .post.neg { border-left: 3px solid var(--bad); }
     .call-sheet { display: grid; gap: 6px; padding: 10px 12px 12px; border-top: 1px solid var(--line); background: var(--surface-2); animation: rise .2s ease;
       .cs-head { display: grid; small { font-size: 11px; } } }
+    .opt-group { display: grid; gap: 4px; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 13px;
+      small { font-size: 11.5px; } }
+    .chips-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px;
+      button { padding: 5px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: 12px var(--font-body); cursor: pointer; }
+      button:hover:not(:disabled) { border-color: var(--accent); }
+      button:disabled { opacity: .45; cursor: default; } }
     .opt { display: grid; gap: 2px; text-align: left; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; color: var(--ink); font: inherit;
       strong { font-size: 13px; } small { font-size: 11.5px; color: var(--ink-3); } }
     .opt:hover:not(:disabled) { border-color: var(--good); }
@@ -242,6 +261,12 @@ export class PhoneComponent {
   /** Le dernier SMS reçu qui attend une réponse */
   protected readonly pending = computed(() => this.messages().find(m => !m.outgoing && m.replies?.length && !m.answered) ?? null);
   protected readonly options = computed(() => { this.game.s(); const k = this.phone.thread(); return k ? this.phone.options(k) : []; });
+  protected readonly ministries = computed(() => this.options().filter(o => o.group === 'ministere'));
+  protected readonly ministryNote = computed(() => {
+    const m = this.ministries();
+    const blocked = m.find(o => !o.ok && o.reason && o.reason !== 'Déjà à ce poste');
+    return blocked?.reason ?? 'Un remaniement par mois. Il ou elle peut refuser.';
+  });
 
   protected readonly groups = computed(() => GROUPS.map(g => ({ label: g.label, entries: this.phone.directory().filter(e => e.kind === g.kind) })).filter(g => g.entries.length));
 

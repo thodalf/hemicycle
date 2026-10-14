@@ -129,6 +129,32 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Le bastion de Brest. Badge 0417. Ne le dites à personne.', effects: [{ kind: 'zombie', shelter: true }, { kind: 'exposure', delta: 2 }] }) },
     ],
   },
+  // ── Le sosie ──
+  {
+    key: 'sc:sosie', icon: '🎭', when: d => !!d.crises?.sosie,
+    name: () => 'Votre sosie', role: () => 'Numéro masqué · il vous a laissé un message',
+    options: () => [
+      { id: 'sc_sosie_marche', label: 'Lui proposer un marché', hint: 'Qu’il fasse vos inaugurations ennuyeuses… et rien d’autre. Risqué.', ask: 'Et si on trouvait un arrangement, vous et moi ?', cooldown: 3,
+        run: (d, rng) => rng.chance(0.5)
+          ? { answer: '« Les ronds-points, ça me va. Mais je garde votre écharpe. »', effects: [st('energy', 10), st('stress', -3), { kind: 'crisis', arc: 'sosie', risk: 3 }] }
+          : { answer: '« Un marché ? Avec vous ? Je préfère être l’original. » Il raccroche en riant… avec votre rire.', effects: [{ kind: 'crisis', arc: 'sosie', risk: 4 }, st('stress', 2)] } },
+      { id: 'sc_sosie_piege', label: 'Lui tendre un piège', hint: 'Un faux rendez-vous, des policiers en civil.', ask: 'Retrouvons-nous demain à midi, au café de la gare.', cooldown: 4,
+        run: (d, rng) => rng.chance(0.45)
+          ? { answer: 'Il vient. Les policiers aussi. Ses papiers sont faux, son accent aussi.', effects: [{ kind: 'crisis', arc: 'sosie', gauge: 14 }, st('credibility', 1)] }
+          : { answer: 'Personne au rendez-vous. Le soir même, il poste une photo de vous… à ce café.', effects: [{ kind: 'crisis', arc: 'sosie', gauge: 2, risk: 3 }] } },
+    ],
+  },
+  // ── La grève générale ──
+  {
+    key: 'sc:intersyndicale', icon: '✊', when: d => !!d.crises?.greve_generale,
+    name: () => 'Martine Lebrun', role: () => 'Porte-parole de l’intersyndicale',
+    options: () => [
+      { id: 'sc_greve_canal', label: 'Ouvrir un canal discret', hint: 'Se parler sans caméras : ça avance mieux.', ask: 'On peut se parler franchement, sans micros ?', cooldown: 2,
+        run: () => ({ answer: 'Franchement ? Il faut du concret sur les salaires. Le reste, on peut en discuter.', effects: [{ kind: 'crisis', arc: 'greve_generale', gauge: 6 }, st('influence', 1)] }) },
+      { id: 'sc_greve_concession', label: 'Mettre une concession sur la table', hint: 'Un coup de pouce sur les salaires : la grève reflue, la dette grimpe.', ask: 'Si je vous obtiens un geste sur les salaires, vous suspendez ?', cooldown: 4,
+        run: () => ({ answer: 'Je soumets ça aux assemblées générales ce soir. Je ne promets rien… mais c’est sérieux.', effects: [{ kind: 'crisis', arc: 'greve_generale', gauge: 10, risk: -4 }, { kind: 'economy', deficit: 0.1 }, { kind: 'segment', segment: 'populaires', delta: 1 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,

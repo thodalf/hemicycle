@@ -35,7 +35,7 @@ export function boostGains(effects: Effect[], f: number): Effect[] {
   return effects.map(e => {
     switch (e.kind) {
       case 'stat': return (e.stat === 'stress' ? e.delta < 0 : e.delta > 0) ? { ...e, delta: r(e.delta) } : e;
-      case 'momentum': case 'dossier': case 'faction': case 'cohesion': case 'npcRelation':
+      case 'momentum': case 'dossier': case 'faction': case 'cohesion': case 'npcRelation': case 'segment':
         return e.delta > 0 ? { ...e, delta: r(e.delta) } : e;
       case 'funds': return e.delta > 0 ? { ...e, delta: Math.round(e.delta * f) } : e;
       case 'income': return { ...e, base: Math.round(e.base * f) };
@@ -90,14 +90,20 @@ export function resolveMinigame(d: GameState, id: string, rawScore: number, rng:
     case 'brillant': effects = [...boostGains(reward, 1.5), { kind: 'stat', stat: 'stress', delta: -2 }]; break;
     case 'reussi': effects = reward; break;
     case 'mitige': effects = scaleGains(reward, 0.5); break;
-    default: effects = [...scaleGains(reward, 0.15), ...g.penalty];
+    default: effects = g.arcade ? [] : [...scaleGains(reward, 0.15), ...g.penalty];
   }
   const summary = applyEffects(d, effects, ctx, rng);
+  // Salle de jeux : une partie brillante rend un point d'action
+  if (g.arcade && g.paid && tier === 'brillant') {
+    d.player.actionPoints.current += 1;
+    summary.push('+1 point d’action');
+  }
+  if (g.arcade && !g.paid) summary.push('Pour le plaisir : gains déjà pris');
   g.status = 'fini';
   g.score = Math.round(score * 100) / 100;
   g.tier = tier;
   g.summary = summary;
-  pushNews(d, 'action', tier === 'rate' ? 'negative' : tier === 'mitige' ? 'neutral' : 'positive',
+  if (!g.arcade || g.paid) pushNews(d, 'action', tier === 'rate' ? 'negative' : tier === 'mitige' ? 'neutral' : 'positive',
     `${g.title} : ${TIER_LABELS[tier].replace(' !', '').toLowerCase()}`, summary.join(' · '));
   d.player.flags['minigamesPlayed'] = Number(d.player.flags['minigamesPlayed'] ?? 0) + 1;
   if (tier === 'brillant') d.player.flags['minigamesBrilliant'] = Number(d.player.flags['minigamesBrilliant'] ?? 0) + 1;

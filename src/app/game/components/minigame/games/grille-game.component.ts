@@ -14,16 +14,16 @@ import { Grid, GridItem, makeGrid } from '../../../data/grids';
       </div>
       <div class="grid" role="grid" [attr.aria-label]="'Grille : ' + grid.set.noun + 's'">
         <span class="corner" aria-hidden="true">{{ grid.set.corner }}</span>
-        @for (c of grid.cols; track c.id) { <span class="crit col" role="columnheader">{{ c.label }}</span> }
+        @for (c of grid.cols; track c.id) { <span class="crit col" [class.long]="c.label.length > 28" role="columnheader">{{ c.label }}</span> }
         @for (r of grid.rows; track r.id; let ri = $index) {
-          <span class="crit row" role="rowheader">{{ r.label }}</span>
+          <span class="crit row" [class.long]="r.label.length > 28" role="rowheader">{{ r.label }}</span>
           @for (c of grid.cols; track c.id; let ci = $index) {
             @let v = cells()[ri][ci];
             <button type="button" class="cell" role="gridcell" [class.sel]="sel()?.[0] === ri && sel()?.[1] === ci" [class.done]="!!v" [class.reveal]="!!revealed()[ri][ci]"
               (click)="choose(ri, ci)" [attr.aria-label]="v ? v.name : (r.label + ' et ' + c.label)">
-              @if (v) { <b>{{ v.name }}</b><small>{{ v.tag }}</small> }
-              @else if (revealed()[ri][ci]; as x) { <b>{{ x.name }}</b><small>{{ x.tag }}</small> }
-              @else { <span class="plus">+</span><small class="n">{{ grid.answers[ri][ci].length }} possibles</small> }
+              @if (v) { <b>{{ v.name }}</b>@if (v.tag) { <small>{{ v.tag }}</small> } }
+              @else if (revealed()[ri][ci]; as x) { <b>{{ x.name }}</b>@if (x.tag) { <small>{{ x.tag }}</small> } }
+              @else { <span class="plus">+</span><small class="n">{{ grid.answers[ri][ci].length }} possible{{ grid.answers[ri][ci].length > 1 ? 's' : '' }}</small> }
             </button>
           }
         }
@@ -33,7 +33,7 @@ import { Grid, GridItem, makeGrid } from '../../../data/grids';
           <input #box type="text" [value]="query()" (input)="query.set($any($event.target).value)" (keydown.enter)="pickFirst()" [placeholder]="grid.set.placeholder" [attr.aria-label]="grid.set.noun" autocomplete="off" />
           @if (suggestions().length) {
             <ul class="sugg">
-              @for (s of suggestions(); track s.key) { <li><button type="button" (click)="pick(s)">{{ s.name }} <small class="muted">{{ s.tag }}</small></button></li> }
+              @for (s of suggestions(); track s.key) { <li><button type="button" (click)="pick(s)">{{ s.name }} @if (s.tag) { <small class="muted">{{ s.tag }}</small> }</button></li> }
             </ul>
           }
         </div>
@@ -53,6 +53,8 @@ import { Grid, GridItem, makeGrid } from '../../../data/grids';
     .crit { display: grid; place-items: center; text-align: center; padding: 4px; font-size: 11.5px; font-weight: 600; line-height: 1.2;
       background: var(--surface-2); border-radius: 6px; color: var(--ink-2); hyphens: auto; overflow-wrap: anywhere; }
     .crit.col { min-height: 44px; }
+    .crit.long { font-size: 10.5px; font-weight: 600; }
+    @media (max-width: 420px) { .crit { font-size: 10px; padding: 3px; } .crit.long { font-size: 9.5px; } }
     .cell { aspect-ratio: 1.15; display: grid; place-content: center; justify-items: center; gap: 2px; padding: 4px; border: 2px dashed var(--line);
       border-radius: 8px; background: var(--surface); cursor: pointer; font: inherit; color: var(--ink); text-align: center; min-width: 0; }
     .cell .plus { font-size: 22px; color: var(--ink-3); line-height: 1; }
@@ -140,7 +142,7 @@ export class GrilleGameComponent {
     this.query.set('');
     if (row.test(x) && col.test(x)) {
       this.cells.update(g => g.map((line, i) => line.map((v, j) => (i === r && j === c ? x : v))));
-      this.message.set(`${x.name} (${x.tag}) : bien vu !`);
+      this.message.set(`${x.name}${x.tag ? ` (${x.tag})` : ''} : bien vu !`);
       this.sel.set(null);
       if (this.filled() === 9) this.finish('Grille complète !');
       return;

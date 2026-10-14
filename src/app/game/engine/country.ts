@@ -46,7 +46,7 @@ export function accountability(d: GameState): number {
 /** Freins à la croissance : les crises en cours */
 function crisisDrag(d: GameState): number {
   const c = d.crises ?? {};
-  const drag: Partial<Record<string, number>> = { krach: 2, blackout: 0.8, crue: 0.5, secheresse: 0.5, megafeux: 0.2, agriculteurs: 0.2, cyber: 0.3, frelons: 0.1, ia: 0.3, autonomie: 0.2, grand_hiver: 1.2, mars: -0.1 };
+  const drag: Partial<Record<string, number>> = { krach: 2, blackout: 0.8, crue: 0.5, secheresse: 0.5, megafeux: 0.2, agriculteurs: 0.2, cyber: 0.3, frelons: 0.1, ia: 0.3, autonomie: 0.2, grand_hiver: 1.2, mars: -0.1, greve_generale: 1 };
   let total = Object.keys(c).filter(k => c[k as keyof typeof c]).reduce((t, k) => t + (drag[k] ?? 0), 0);
   if (d.zombie) total += 3;
   if (d.war) total += d.war.total ? 2 : 1;

@@ -80,20 +80,73 @@ const villes: GridSet = {
 /* ── Métro parisien ────────────────────────────────────────── */
 
 const st = (x: GridItem) => x.data as Station;
-const LINES: Station['lines'][number][] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'];
+type L = Station['lines'][number];
+/** Les lignes décrites par leur tracé, sans jamais donner leur numéro */
+const LINE_LABELS: [L, string][] = [
+  ['1', 'Sur l’axe historique La Défense ↔ Château de Vincennes'],
+  ['2', 'Sur la ligne des boulevards du Nord, de Dauphine à Nation'],
+  ['3', 'Sur la ligne Pont de Levallois ↔ Gallieni'],
+  ['4', 'Sur l’axe nord-sud Clignancourt ↔ Bagneux'],
+  ['5', 'Sur la ligne Bobigny ↔ Place d’Italie'],
+  ['6', 'Sur la ligne aérienne de l’Étoile à Nation par le sud'],
+  ['7', 'Sur la ligne La Courneuve ↔ Villejuif / Ivry'],
+  ['8', 'Sur la ligne Balard ↔ Créteil'],
+  ['9', 'Sur la ligne Pont de Sèvres ↔ Montreuil'],
+  ['10', 'Sur la ligne rive gauche Boulogne ↔ Austerlitz'],
+  ['11', 'Sur la ligne Châtelet ↔ Rosny, par les Lilas'],
+  ['12', 'Sur la ligne Issy ↔ Aubervilliers, par Montmartre'],
+  ['13', 'Sur la ligne Châtillon ↔ Saint-Denis / Asnières'],
+  ['14', 'Sur la ligne sans conducteur Pleyel ↔ Orly'],
+];
+const TERMINI = new Set(['La Défense', 'Château de Vincennes', 'Porte Dauphine', 'Nation', 'Pont de Levallois – Bécon', 'Gallieni',
+  'Porte de Clignancourt', 'Bagneux – Lucie Aubrac', 'Bobigny – Pablo Picasso', 'Place d\'Italie', 'Charles de Gaulle – Étoile',
+  'La Courneuve – 8 Mai 1945', 'Villejuif – Louis Aragon', 'Mairie d\'Ivry', 'Balard', 'Pointe du Lac', 'Pont de Sèvres',
+  'Mairie de Montreuil', 'Boulogne – Pont de Saint-Cloud', 'Gare d\'Austerlitz', 'Châtelet', 'Rosny-Bois-Perrier', 'Mairie d\'Issy',
+  'Mairie d\'Aubervilliers', 'Châtillon – Montrouge', 'Saint-Denis – Université', 'Les Courtilles', 'Saint-Denis – Pleyel',
+  'Aéroport d\'Orly', 'Gambetta', 'Porte des Lilas', 'Louis Blanc', 'Pré-Saint-Gervais']);
+const BANLIEUE = new Set(['Aéroport d\'Orly', 'Anatole France', 'Aubervilliers – Pantin – Quatre Chemins', 'Bagneux – Lucie Aubrac', 'Barbara',
+  'Basilique de Saint-Denis', 'Bérault', 'Billancourt', 'Bobigny – Pablo Picasso', 'Bobigny – Pantin – Raymond Queneau', 'Boulogne – Jean Jaurès',
+  'Boulogne – Pont de Saint-Cloud', 'Carrefour Pleyel', 'Charenton – Écoles', 'Châtillon – Montrouge', 'Chevilly-Larue', 'Corentin Celton',
+  'Coteaux Beauclair', 'Créteil – L\'Échat', 'Créteil – Préfecture', 'Créteil – Université', 'Croix de Chavaux', 'École Vétérinaire de Maisons-Alfort',
+  'Église de Pantin', 'Esplanade de la Défense', 'Fort d\'Aubervilliers', 'Front Populaire', 'Gabriel Péri', 'Gallieni', 'Garibaldi', 'Hôpital Bicêtre',
+  'Hoche', 'La Courneuve – 8 Mai 1945', 'La Défense', 'La Dhuys', 'Le Kremlin-Bicêtre', 'Les Agnettes', 'Les Courtilles', 'Les Sablons',
+  'Liberté', 'Louise Michel', 'Mairie d\'Aubervilliers', 'Mairie d\'Issy', 'Mairie d\'Ivry', 'Mairie de Clichy', 'Mairie de Montreuil',
+  'Mairie de Montrouge', 'Mairie de Saint-Ouen', 'Mairie des Lilas', 'Maisons-Alfort – Les Juilliottes', 'Maisons-Alfort – Stade',
+  'Malakoff – Étienne Dolet', 'Malakoff – Plateau de Vanves', 'Marcel Sembat', 'Montreuil – Hôpital', 'Pierre et Marie Curie', 'Pointe du Lac',
+  'Pont de Levallois – Bécon', 'Pont de Neuilly', 'Pont de Sèvres', 'Robespierre', 'Romainville – Carnot', 'Rosny-Bois-Perrier', 'Saint-Denis – Pleyel',
+  'Saint-Denis – Porte de Paris', 'Saint-Denis – Université', 'Saint-Mandé', 'Saint-Ouen', 'Serge Gainsbourg', 'Thiais – Orly',
+  'Villejuif – Gustave Roussy', 'Villejuif – Léo Lagrange', 'Villejuif – Louis Aragon', 'Villejuif – Paul Vaillant-Couturier', 'Château de Vincennes',
+  'L\'Haÿ-les-Roses', 'Aimé Césaire', 'Bobigny – Pablo Picasso']);
+const GRANDES_GARES = new Set(['Gare du Nord', 'Gare de l\'Est', 'Gare de Lyon', 'Gare d\'Austerlitz', 'Saint-Lazare', 'Montparnasse – Bienvenüe',
+  'Havre – Caumartin', 'Magenta', 'La Chapelle', 'Bercy', 'Haussmann']);
+const PERSONNES = /Césaire|Dumas|Anatole|Barbara|Bolivar|Michels|de Gaulle|Fabien|Corentin|Dupleix|Duroc|Quinet|Étienne Marcel|Exelmans|Faidherbe|Falguière|Félix Faure|Roosevelt|Péri|Gallieni|Gambetta|Garibaldi|George V|Goncourt|Môquet|Hoche|Bonsergent|Jasmin|Jaurès|Joffrin|Jussieu|Kléber|Lamarck|Ledru|Louis Blanc|Louise Michel|Mabillon|Malesherbes|Sembat|Dormoy|Bizot|Mirabeau|Miromesnil|Mouton|Oberkampf|Parmentier|Pasteur|Pereire|Pernety|Philippe Auguste|Curie|Raspail|Richard-Lenoir|Richelieu|Robespierre|Rambuteau|Gainsbourg|Victor Hugo|Voltaire|Boucicaut|Cambronne|Daumesnil|Dugommier|Bréguet|Lucie Aubrac|Picasso|Queneau|Aragon|Vaillant|Roussy|Lagrange|Citroën|Mitterrand|Daubenton|Clemenceau|Diderot|Caulaincourt|Bienvenüe|Dolet|Carnot|Chardon-Lagache|Lemoine|Michel-Ange|Molitor|Brochant|Lourmel|Estienne|Sully|Froissart|Pierre/;
+const BATAILLES = /Alma|Austerlitz|Bir-Hakeim|Campo-Formio|Crimée|Iéna|Wagram|Solférino|Pyramides|Rivoli|Stalingrad|Sébastopol|Malakoff|Buzenval|Trocadéro|Marengo|Magenta/;
+const AUTO: L[] = ['1', '4', '14'];
+const even = (l: L) => parseInt(l, 10) % 2 === 0;
 const metro: GridSet = {
   id: 'metro', corner: 'Ⓜ', placeholder: 'Nom de la station', noun: 'station',
-  items: STATIONS.map(x => ({ key: x.name, name: x.name, tag: `M ${x.lines.join(' · ')}${x.rer.length ? ` · RER ${x.rer.join('')}` : ''}`, search: [normalize(x.name)], data: x })),
-  rows: LINES.map(l => ({ id: `l-${l}`, label: `Ligne ${l}`, group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) })),
+  items: STATIONS.map(x => ({ key: x.name, name: x.name, tag: '', search: [normalize(x.name)], data: x })),
+  rows: LINE_LABELS.map(([l, label]) => ({ id: `l-${l}`, label, group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) })),
   cols: [
-    ...LINES.map(l => ({ id: `c-${l}`, label: `Ligne ${l}`, group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) })),
-    { id: 'rer', label: 'Correspondance RER', group: 'rer', test: x => st(x).rer.length > 0 },
-    { id: 'hub', label: 'Au moins 3 lignes de métro', group: 'hub', test: x => st(x).lines.length >= 3 },
+    ...LINE_LABELS.map(([l, label]) => ({ id: `c-${l}`, label: label.replace(/^Sur /, 'Aussi sur '), group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) && st(x).lines.length >= 2 })),
+    { id: 'rer', label: 'Correspondance avec le RER', group: 'rer', test: x => st(x).rer.length > 0 },
+    { id: 'norer', label: 'Aucune correspondance RER', group: 'rer', test: x => st(x).rer.length === 0 },
+    { id: 'hub', label: 'Nœud d’au moins 3 lignes de métro', group: 'count', test: x => st(x).lines.length >= 3 },
+    { id: 'two', label: 'Exactement 2 lignes de métro', group: 'count', test: x => st(x).lines.length === 2 },
+    { id: 'one', label: 'Desservie par une seule ligne', group: 'count', test: x => st(x).lines.length === 1 },
+    { id: 'terminus', label: 'Terminus d’au moins une ligne', group: 'terminus', test: x => TERMINI.has(st(x).name) },
+    { id: 'banlieue', label: 'Hors de Paris intra-muros', group: 'where', test: x => BANLIEUE.has(st(x).name) },
+    { id: 'gare', label: 'Dessert une grande gare parisienne', group: 'gare', test: x => GRANDES_GARES.has(st(x).name) || /^Gare\b/.test(st(x).name) },
+    { id: 'auto', label: 'Sur une ligne automatique, sans conducteur', group: 'auto', test: x => st(x).lines.some(l => AUTO.includes(l)) },
+    { id: 'pairs', label: 'Toutes ses lignes ont un numéro pair', group: 'parity', test: x => st(x).lines.every(even) },
+    { id: 'impairs', label: 'Toutes ses lignes ont un numéro impair', group: 'parity', test: x => st(x).lines.every(l => !even(l)) },
+    { id: 'perso', label: 'Porte le nom d’une personnalité (hors saints)', group: 'words', test: x => PERSONNES.test(st(x).name) },
+    { id: 'bataille', label: 'Évoque une bataille, une victoire ou un traité', group: 'words', test: x => BATAILLES.test(st(x).name) },
     { id: 'porte', label: 'Une « Porte » de Paris', group: 'words', test: x => /^Porte\b/.test(st(x).name) },
     { id: 'saint', label: 'Nom avec « Saint » ou « Sainte »', group: 'words', test: x => /\bSainte?\b/.test(st(x).name) },
-    { id: 'mairie', label: 'Nom avec « Mairie »', group: 'words', test: x => /\bMairie\b/.test(st(x).name) },
-    { id: 'atol', label: 'Initiale de A à L', group: 'initial', test: x => initial(st(x).name) <= 'l' },
-    { id: 'mtoz', label: 'Initiale de M à Z', group: 'initial', test: x => initial(st(x).name) >= 'm' },
+    { id: 'lieu', label: 'Commence par Place, Pont, Quai, Rue ou Avenue', group: 'words', test: x => /^(Place|Pont|Quai|Rue|Avenue)\b/.test(st(x).name) },
+    { id: 'double', label: 'Double nom (avec un « – »)', group: 'dash', test: x => /–/.test(st(x).name) },
+    { id: 'oneword', label: 'Nom en un seul mot', group: 'dash', test: x => !multiWord(st(x).name) },
   ],
   minPerCell: 1,
 };

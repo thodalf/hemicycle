@@ -63,6 +63,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['« ALMA », une intelligence artificielle, annonce sa candidature. Elle promet zéro mensonge.', 'Elle répond à des millions d’électeurs en même temps. Les sondages s’affolent.', 'Le Conseil constitutionnel doit se prononcer. Le débat fait rage.'] },
   grand_hiver: { id: 'grand_hiver', icon: '🌋', label: 'Le grand hiver', gaugeLabel: 'Résilience du pays', riskLabel: 'Pénuries', months: 18, drift: { gauge: 3, risk: 4 },
     stages: ['Un volcan islandais a obscurci le ciel : l’été n’est pas venu.', 'Récoltes perdues, rationnement, files d’attente devant les boulangeries.', 'Les premiers rayons percent. Il faut tenir encore un peu.'] },
+  sosie: { id: 'sosie', icon: '🎭', label: 'Votre sosie', gaugeLabel: 'Vérité rétablie', riskLabel: 'Dégâts du sosie', months: 6, drift: { gauge: 3, risk: 5 },
+    stages: ['Un homme qui vous ressemble trait pour trait inaugure des ronds-points à votre place.', 'Le sosie donne des interviews, signe des pétitions et contredit vos discours.', 'Il annonce votre ralliement… au parti adverse. Il faut le démasquer.'] },
+  greve_generale: { id: 'greve_generale', icon: '✊', label: 'La grève générale', gaugeLabel: 'Dialogue social', riskLabel: 'Paralysie du pays', months: 5, drift: { gauge: 3, risk: 5 },
+    stages: ['L’intersyndicale appelle à une grève générale reconductible.', 'Trains à l’arrêt, raffineries bloquées, écoles fermées : le pays tourne au ralenti.', 'Les négociations de la dernière chance s’ouvrent rue de Grenelle.'] },
 };
 
 export function crises(d: GameState): Partial<Record<CrisisArcId, CrisisArc>> {
@@ -308,6 +312,26 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.popularity = clamp(s.popularity - 8);
         economy(d).growth -= 1;
         lose('L’exode', 'Des millions de Français partis vers le Sud, des villages vidés. Le pays mettra des années à se relever.');
+      }
+      break;
+    case 'sosie':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 5); s.popularity = clamp(s.popularity + 3);
+        win('Le sosie démasqué', 'Confondu par une empreinte digitale et un accent belge, le sosie avoue : une caméra cachée qui a très mal tourné. La France rit… avec vous.');
+      } else {
+        s.credibility = clamp(s.credibility - 6); s.influence = clamp(s.influence - 3);
+        lose('Le doute persiste', 'Le sosie s’évapore, mais un tiers des Français croit encore que c’est vous qui avez dansé la macarena au conseil municipal.');
+      }
+      break;
+    case 'greve_generale':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); s.credibility = clamp(s.credibility + 3);
+        electorate(d).offsets.populaires = clamp(electorate(d).offsets.populaires + 3, -30, 30);
+        win('Les accords de Grenelle II', 'Hausse du SMIC, semaine de quatre jours expérimentée, fin de la grève : syndicats et patronat signent à l’aube.');
+      } else {
+        s.popularity = clamp(s.popularity - 5);
+        economy(d).growth -= 0.4;
+        lose('Le pays à l’arrêt', 'Six semaines de paralysie, un trimestre de récession, et une rancune tenace des deux côtés.');
       }
       break;
     case 'dissolution': {

@@ -148,15 +148,22 @@
         } @empty {
           <li class="muted empty">Aucune action débloquée dans cette catégorie.</li>
         }
-        @for (a of lockedActions(); track a.id) {
-          <li class="action locked">
-            <div class="action-main">
-              <strong>{{ a.label }}</strong>
-              <p class="muted">Se débloque au rang {{ rankLabel(a) }}.</p>
-            </div>
-          </li>
-        }
       </ul>
+      @if (lockedActions().length) {
+        <details class="locked-list">
+          <summary>🔒 {{ lockedActions().length }} action{{ lockedActions().length > 1 ? 's' : '' }} à débloquer en montant en grade</summary>
+          <ul class="actions">
+            @for (a of lockedActions(); track a.id) {
+              <li class="action locked">
+                <div class="action-main">
+                  <strong>{{ a.label }}</strong>
+                  <p class="muted">Se débloque au rang {{ rankLabel(a) }}.</p>
+                </div>
+              </li>
+            }
+          </ul>
+        </details>
+      }
       }
     </div>
 

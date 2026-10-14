@@ -188,8 +188,9 @@ export function scaleGains(effects: Effect[], f: number): Effect[] {
   return effects.map(e => {
     switch (e.kind) {
       case 'stat': return (e.stat === 'stress' ? e.delta < 0 : e.delta > 0) ? { ...e, delta: r(e.delta) } : e;
-      case 'momentum': case 'dossier': case 'faction': case 'cohesion': case 'npcRelation':
+      case 'momentum': case 'dossier': case 'faction': case 'cohesion': case 'npcRelation': case 'segment':
         return e.delta > 0 ? { ...e, delta: r(e.delta) } : e;
+      case 'intl': return (e.prestige ?? 0) > 0 ? { ...e, prestige: r(e.prestige!) } : e;
       case 'funds': return e.delta > 0 ? { ...e, delta: Math.round(e.delta * f) } : e;
       case 'income': return { ...e, base: Math.round(e.base * f), mult: e.mult ? e.mult * f : e.mult };
       case 'press': return { ...e, audience: (e.audience ?? 0) > 0 ? r(e.audience!) : e.audience, reputation: (e.reputation ?? 0) > 0 ? r(e.reputation!) : e.reputation };

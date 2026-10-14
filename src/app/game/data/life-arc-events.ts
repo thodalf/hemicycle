@@ -330,6 +330,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'sosie_gate', weight: 0.6, minRank: 'conseiller_municipal', eligible: d => !d.crises?.sosie && !d.player.flags['sosieDone'] && d.week > 18,
+    build: () => ({
+      title: 'Vous êtes à deux endroits à la fois',
+      context: 'La presse locale publie une photo de vous inaugurant une salle des fêtes… à l’heure exacte où vous étiez en réunion à cent kilomètres. Quelqu’un se fait passer pour vous, et la ressemblance est parfaite.',
+      choices: [
+        c('plainte', 'Porter plainte et alerter la presse', [cr('sosie', 6, 2, true), { kind: 'flag', key: 'sosieDone', value: true }, s('stress', 3)], 'La gendarmerie ouvre une enquête pour usurpation d’identité. Les rédactions adorent.'),
+        c('humour', 'En rire publiquement', [cr('sosie', 3, 4, true), { kind: 'flag', key: 'sosieDone', value: true }, s('popularity', 2)], '« S’il veut faire mes permanences du samedi, qu’il ne se gêne pas. » Le sosie le prend au mot.'),
+      ],
+    }),
+  },
+  {
+    tag: 'greve_gate', weight: 0.6, minRank: 'conseiller_municipal', eligible: d => !d.crises?.greve_generale && !d.player.flags['greveDone'] && d.week > 24,
+    build: () => ({
+      title: 'L’appel à la grève générale',
+      context: 'Après une réforme de trop, l’intersyndicale unanime appelle à une grève générale reconductible à partir de lundi. Les cheminots, les raffineurs et les enseignants suivent.',
+      choices: [
+        c('negocier', 'Appeler à ouvrir des négociations', [cr('greve_generale', 6, 2, true), { kind: 'flag', key: 'greveDone', value: true }, { kind: 'segment', segment: 'populaires', delta: 2 }], 'Les syndicats saluent « un premier pas ». Le patronat grince.'),
+        c('fermete', 'Défendre la fermeté', [cr('greve_generale', 0, 8, true), { kind: 'flag', key: 'greveDone', value: true }, { kind: 'segment', segment: 'cadres', delta: 2 }, { kind: 'segment', segment: 'populaires', delta: -2 }], '« La rue ne gouverne pas. » Les cortèges grossissent.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -743,6 +765,50 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('accueil', 'Organiser l’accueil dans le Sud', [cr('grand_hiver', 6), s('energy', -5), { kind: 'segment', segment: 'populaires', delta: 2 }], 'Gymnases, colonies de vacances, logements vacants réquisitionnés.'),
         c('retenir', 'Aider les familles à rester chez elles', [cr('grand_hiver', 4, -2), { kind: 'economy', deficit: 0.15 }], 'Chèques chauffage, poêles distribués, solidarité de quartier.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sosie_interview', weight: 1, eligible: d => !!d.crises?.sosie,
+    build: () => ({
+      title: 'Le sosie à la télévision',
+      context: 'Votre sosie a donné une interview d’une heure à une chaîne d’info : il y annonce la suppression du 14 Juillet et la nationalisation des boulangeries. Les standards explosent.',
+      choices: [
+        c('dementir', 'Démentir sur toutes les antennes', [cr('sosie', 6, -2), s('energy', -5)], 'Vous enchaînez sept plateaux. À la fin, même vous doutez un peu.'),
+        c('face', 'Proposer un face-à-face en direct', [cr('sosie', 10, 3), s('stress', 4)], 'Deux vous sur le même plateau : record d’audience. Il bafouille sur votre date de naissance.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sosie_mairie', weight: 0.8, eligible: d => !!d.crises?.sosie,
+    build: () => ({
+      title: 'Trois mariages et un sosie',
+      context: 'Le sosie a célébré trois mariages à la mairie en ceinturant votre écharpe tricolore. Les couples sont ravis… mais les mariages sont-ils valables ?',
+      choices: [
+        c('regulariser', 'Recélébrer les mariages vous-même, gratuitement', [cr('sosie', 5, -3), s('popularity', 2), s('energy', -4)], 'Trois couples, deux fois mariés : ils vous invitent tous au baptême.'),
+        c('parquet', 'Saisir le parquet', [cr('sosie', 7), s('credibility', 1), s('popularity', -1)], 'Le procureur ouvre une enquête. Les mariés, eux, font grise mine.'),
+      ],
+    }),
+  },
+  {
+    tag: 'greve_raffineries', weight: 1, eligible: d => !!d.crises?.greve_generale,
+    build: () => ({
+      title: 'Plus d’essence à la pompe',
+      context: 'Les raffineries sont bloquées : une station sur trois est à sec. Des files de voitures s’étirent sur des kilomètres.',
+      choices: [
+        c('requisition', 'Réquisitionner les grévistes', [cr('greve_generale', -2, -6), { kind: 'segment', segment: 'populaires', delta: -2 }, { kind: 'segment', segment: 'ruraux', delta: 2 }], 'Les pompes se remplissent ; les syndicats crient au coup de force.'),
+        c('patience', 'Laisser la négociation suivre son cours', [cr('greve_generale', 4, 2), s('popularity', -1)], 'Vélos, covoiturage, télétravail : le pays s’adapte, en râlant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'greve_cagnotte', weight: 0.8, eligible: d => !!d.crises?.greve_generale,
+    build: () => ({
+      title: 'La cagnotte des grévistes',
+      context: 'Une cagnotte en ligne pour soutenir les grévistes dépasse les deux millions d’euros. On vous demande si vous y avez contribué.',
+      choices: [
+        c('donner', 'Donner, et le dire', [cr('greve_generale', 5), { kind: 'segment', segment: 'populaires', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: -2 }, { kind: 'funds', account: 'personal', delta: -200 }], 'Deux cents euros et un message de solidarité. Les patrons froncent les sourcils.'),
+        c('critiquer', 'Critiquer « une prime au blocage »', [cr('greve_generale', -2, 3), { kind: 'segment', segment: 'cadres', delta: 2 }], 'La formule tourne en boucle. Les grévistes la brandissent sur leurs pancartes.'),
       ],
     }),
   },

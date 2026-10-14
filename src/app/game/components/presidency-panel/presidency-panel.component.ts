@@ -8,6 +8,7 @@ import { PARRAINAGES_REQUIRED } from '../../data/ranks';
 import { campaignOpensAt } from '../../engine/presidency';
 import { lifeRisks } from '../../engine/life';
 import { DOMAINS, DOMAIN_LABELS } from '../../models/game.models';
+import { pickedMinister } from '../../engine/phone-appoint';
 
 /** Calendrier présidentiel, candidature et tableau de bord de l'Élysée */
 @Component({
@@ -23,13 +24,13 @@ import { DOMAINS, DOMAIN_LABELS } from '../../models/game.models';
         <p class="muted small">Premier ministre : <strong>{{ pr.primeMinister }}</strong>
           @if (pr.cohabitation) { · <span class="chip bad">Cohabitation</span> }
           · {{ pr.reforms }} réforme(s) adoptée(s) · fin du mandat en {{ dateLabel(cal().nextWeek) }}</p>
-        @if (pr.cabinet) {
+        @if (cabinet().length) {
           <details class="cabinet">
             <summary>Votre gouvernement ({{ cabinetStyle(pr.cabinetStyle) }})</summary>
             <ul>
               @for (m of cabinet(); track m.dom) { <li><span class="muted">{{ m.label }}</span> <strong>{{ m.name }}</strong></li> }
             </ul>
-            <small class="muted">Leurs numéros sont dans votre téléphone.</small>
+            <small class="muted">Leurs numéros sont dans votre téléphone. Pour remanier, appelez n’importe quel contact : « Lui confier un ministère », « Lui proposer Matignon ».</small>
           </details>
         }
         <div class="gauges">
@@ -153,8 +154,9 @@ export class PresidencyPanelComponent {
     this.fx.stamp('Démission', 'bad', 'Élection anticipée');
   }
   protected readonly cabinet = computed(() => {
-    const c = this.game.s().presidency?.cabinet ?? {};
-    return DOMAINS.filter(dom => c[dom]).map(dom => ({ dom, label: DOMAIN_LABELS[dom], name: c[dom]! }));
+    const s = this.game.s();
+    const c = s.presidency?.cabinet ?? {};
+    return DOMAINS.map(dom => ({ dom, label: DOMAIN_LABELS[dom], name: pickedMinister(s, dom) ?? c[dom] ?? '' })).filter(m => m.name);
   });
   protected cabinetStyle(s?: string): string {
     return ({ fideles: 'de fidèles', courants: 'd’équilibre', ouverture: 'd’ouverture', societe: 'de la société civile', experts: 'd’experts' } as Record<string, string>)[s ?? ''] ?? 'nommé par vous';

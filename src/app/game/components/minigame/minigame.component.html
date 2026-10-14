@@ -19,7 +19,7 @@
             <div class="medal" aria-hidden="true">{{ g.tier === 'brillant' ? '🏆' : g.tier === 'reussi' ? '👏' : g.tier === 'mitige' ? '😐' : '🍅' }}</div>
             <strong class="tier">{{ tierLabels[g.tier!] }}</strong>
             <span class="mono score">Score {{ (g.score ?? 0) * 100 | number: '1.0-0' }} / 100</span>
-            <p class="muted">{{ g.tier === 'brillant' ? 'Gains multipliés par 1,5.' : g.tier === 'reussi' ? 'Gains pleins.' : g.tier === 'mitige' ? 'La moitié des gains.' : 'Presque rien, et quelques dégâts.' }}</p>
+            <p class="muted">@if (g.arcade && !g.paid) { Partie pour le plaisir : les gains de la période sont déjà pris. } @else { {{ g.tier === 'brillant' ? 'Gains multipliés par 1,5.' : g.tier === 'reussi' ? 'Gains pleins.' : g.tier === 'mitige' ? 'La moitié des gains.' : (g.arcade ? 'Presque rien cette fois.' : 'Presque rien, et quelques dégâts.') }} }</p>
             <div class="chips">
               @for (x of g.summary ?? []; track $index) { <span class="chip">{{ x }}</span> }
             </div>
@@ -31,7 +31,8 @@
               <span><b>Brillant</b> (80+) gains ×1,5</span>
               <span><b>Réussi</b> (50+) gains pleins</span>
               <span><b>Mitigé</b> (25+) moitié</span>
-              <span><b>Raté</b> presque rien, et des dégâts</span>
+              <span><b>Raté</b> presque rien{{ g.arcade ? '' : ', et des dégâts' }}</span>
+              @if (g.arcade && g.paid) { <span><b>Brillant</b> rend aussi 1 point d’action</span> }
             </div>
             <p class="muted small">{{ diffLabel() }}.
               @switch (def.kind) {
@@ -40,7 +41,7 @@
                 @case ('poignees') { Touches 1 à 9 au clavier, ou au doigt. }
                 @case ('mot') { Tapez au clavier ou sur le clavier à l’écran, Entrée pour valider. }
                 @case ('quiz') { Touches 1 à 4 au clavier. }
-                @case ('grille') { Tapez un nom ou un numéro de département. }
+                @case ('grille') { Touchez une case, tapez un nom puis choisissez dans la liste. }
                 @case ('interview') { Touches 1 à 3 au clavier. }
                 @case ('deminage') { Clic droit ou « mode balise » pour baliser une munition. }
                 @case ('table') { Touchez un convive puis une place ; deux places pour les échanger. }
@@ -48,7 +49,11 @@
             </p>
             <div class="go">
               <button class="btn primary big" (click)="start()">Jouer</button>
-              <button class="btn" (click)="delegate()">Laisser faire l’équipe (résultat moyen)</button>
+              @if (g.arcade) {
+                <button class="btn" (click)="svc.quit()">Renoncer</button>
+              } @else {
+                <button class="btn" (click)="delegate()">Laisser faire l’équipe (résultat moyen)</button>
+              }
             </div>
           </div>
         } @else {

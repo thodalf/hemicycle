@@ -1,7 +1,7 @@
 import { Component, HostListener, computed, effect, inject, output, signal } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 
-type Tab = 'agenda' | 'moi' | 'actu';
+type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
 interface Step { title: string; text: string; target?: string; tab?: Tab }
 
 const STEPS: Step[] = [
@@ -14,6 +14,7 @@ const STEPS: Step[] = [
   { title: 'Le téléphone', text: 'SMS de l’équipe, du parti, des contacts. Vous pouvez appeler pour demander un soutien sur un texte, de l’argent, ou un numéro de personnalité. Quatre appels par mois sans fatigue.', target: '.phone-btn' },
   { title: 'Monter en grade', text: 'Le panneau « Prochain palier » indique ce qu’il faut pour la prochaine investiture : seuils de stats, soutien du parti. Ensuite, une campagne et une élection. Les objectifs du mois rapportent des bonus.', target: 'app-objectives-panel', tab: 'agenda' },
   { title: 'L’actualité', text: 'Résultats de vos actions, rivaux, sondages, scrutins. Et parfois l’inattendu : une guerre, un complot, un signal venu des étoiles, une épidémie… Tout peut arriver en cours de partie.', target: 'app-news-feed', tab: 'actu' },
+  { title: 'La salle de jeux', text: 'Le mot du jour, Metrodoku, Capitalodoku et Villodoku se jouent à tout moment, sans point d’action. Gains immédiats (une fois par jour pour le mot, une fois par mois pour les grilles), et un point d’action rendu si la partie est brillante.', target: 'app-arcade-panel', tab: 'jeux' },
   { title: 'À vous de jouer', text: 'Pour commencer : un peu de terrain pour la popularité, un dossier à étudier pour la crédibilité, et du repos. Vous pourrez revoir ce tutoriel avec le bouton « ? » en haut de l’écran.' },
 ];
 

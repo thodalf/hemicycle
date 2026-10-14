@@ -503,7 +503,7 @@ export const MINIGAMES: MinigameDef[] = [
   },
   {
     id: 'metrodoku', kind: 'grille', icon: 'Ⓜ', title: 'Metrodoku', grid: 'metro',
-    rule: 'Chaque case attend une station du métro parisien qui vérifie sa ligne et sa colonne (souvent : desservie par les deux lignes). Une station ne sert qu’une fois.',
+    rule: 'Chaque case attend une station du métro parisien qui vérifie sa ligne et sa colonne. Les lignes sont décrites par leur tracé, jamais par leur numéro. Une station ne sert qu’une fois.',
   },
   {
     id: 'capitalodoku', kind: 'grille', icon: '🌍', title: 'Capitalodoku', grid: 'capitales',
