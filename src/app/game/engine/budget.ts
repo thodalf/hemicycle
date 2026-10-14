@@ -9,7 +9,7 @@ import { SEGMENTS } from '../data/programme';
 import { createDecision } from '../data/decisions';
 import { applyEffects, partySupport, pushNews } from './effects';
 import { MINISTRIES } from './government';
-import { Rng, clamp } from './rng';
+import { Rng, clamp, fr } from './rng';
 
 /* ============================================================
  *  Budget du parti (mensuel) et loi de finances (semestrielle).
@@ -120,7 +120,7 @@ export function settlePartyMonth(d: GameState, rng: Rng): void {
 
   const diff = f.members - before;
   pushNews(d, 'parti', r.balance >= 0 ? 'positive' : 'negative', 'Clôture mensuelle des comptes du parti',
-    `Solde ${r.balance >= 0 ? '+' : ''}${r.balance} k€ · trésorerie ${f.treasury} k€ · ${f.members.toLocaleString('fr-FR')} adhérents (${diff >= 0 ? '+' : ''}${diff.toLocaleString('fr-FR')}).`);
+    `Solde ${r.balance >= 0 ? '+' : ''}${fr(r.balance)} k€ · trésorerie ${fr(f.treasury)} k€ · ${f.members.toLocaleString('fr-FR')} adhérents (${diff >= 0 ? '+' : ''}${diff.toLocaleString('fr-FR')}).`);
 
   if (f.treasury < -1500 * k) {
     const decision = createDecision('faillite_parti', d, rng, {});
@@ -154,7 +154,7 @@ export function budgetYear(week: number): number {
 }
 
 export function canHandleNationalBudget(d: GameState): boolean {
-  return d.player.rankId === 'ministre' || d.player.rankId === 'premier_ministre' || d.player.rankId === 'president';
+  return d.player.rankId === 'ministre' || d.player.rankId === 'premier_ministre' || d.player.rankId === 'president' || d.player.rankId === 'roi';
 }
 
 /** Pourquoi c'est vous qui faites le budget : la cohérence du rôle */
@@ -166,6 +166,7 @@ export function budgetRoleNote(d: GameState): string | null {
   }
   if (p.rankId === 'premier_ministre') return 'À Matignon, vous arbitrez le budget entre les ministres avant de le présenter à l’Assemblée.';
   if (p.rankId === 'president') return 'L’Élysée fixe les grands équilibres ; Matignon et Bercy défendent le texte au Parlement.';
+  if (p.rankId === 'roi') return 'Le Palais fixe les grands équilibres ; le gouvernement de Sa Majesté défend le texte au Parlement.';
   return null;
 }
 

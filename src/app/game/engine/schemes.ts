@@ -1,6 +1,6 @@
 import { Effect, EffectContext, GameState, Npc, Scheme, SchemeAlly, SchemeType } from '../models/game.models';
 import { applyEffects, pushNews } from './effects';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, nextId, frSigned } from './rng';
 
 /* ============================================================
  *  Vos complots : espionner, dénigrer, saboter, débaucher,
@@ -119,8 +119,8 @@ export function adjustScheme(d: GameState, e: Extract<Effect, { kind: 'scheme' }
     if (e.progress) s.progress = clamp(s.progress + e.progress);
     if (e.secrecy) s.secrecy = clamp(s.secrecy + e.secrecy);
   }
-  if (list.length && e.progress) out.push(`Complots : progression ${e.progress > 0 ? '+' : ''}${e.progress}`);
-  if (list.length && e.secrecy) out.push(`Complots : discrétion ${e.secrecy > 0 ? '+' : ''}${e.secrecy}`);
+  if (list.length && e.progress) out.push(`Complots : progression ${frSigned(e.progress)}`);
+  if (list.length && e.secrecy) out.push(`Complots : discrétion ${frSigned(e.secrecy)}`);
   for (const s of [...list]) if (s.progress >= 100) out.push(...complete(d, s, rng));
   return out;
 }

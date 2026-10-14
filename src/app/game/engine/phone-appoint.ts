@@ -23,7 +23,7 @@ const PM_COOLDOWN = 6;
 
 /** Qui nomme : le président (hors cohabitation), ou le Premier ministre pour les ministres */
 function appointer(d: GameState): 'president' | 'pm' | null {
-  if (d.player.rankId === 'president' && d.presidency && !d.presidency.cohabitation) return 'president';
+  if ((d.player.rankId === 'president' || d.player.rankId === 'roi') && d.presidency && !d.presidency.cohabitation) return 'president';
   if (d.player.rankId === 'premier_ministre') return 'pm';
   return null;
 }
@@ -77,6 +77,9 @@ const SCEN_MIN: Record<string, ScenMin> = {
   'sc:seisme': { hint: 'Le colonel des secours au gouvernement : l’homme du terrain.', chance: 0.65, effects: [{ kind: 'crisis', arc: 'seisme', gauge: 6 }, { kind: 'dossier', domain: 'securite', delta: 3 }], yes: 'À vos ordres. Mais je garde mon casque au bureau.', no: 'Pas tant que le dernier sinistré n’est pas relogé.', news: 'Le chef des secours du séisme entre au gouvernement.' },
   'sc:loto': { hint: 'Votre notaire au gouvernement : rigueur et discrétion.', chance: 0.5, effects: [{ kind: 'dossier', domain: 'economie', delta: 3 }, { kind: 'exposure', delta: 1 }], yes: 'Ministre ? À mon âge ? Soit, mais je relis tout.', no: 'Je préfère les actes notariés aux décrets.', news: 'Une notaire de province fait son entrée au gouvernement.' },
   'sc:penurie': { hint: 'La présidente des pharmaciens au gouvernement : du concret contre la pénurie.', chance: 0.7, effects: [{ kind: 'crisis', arc: 'penurie_medicaments', gauge: 6 }, { kind: 'dossier', domain: 'sante', delta: 4 }], yes: 'D’accord. Mais je garde ma blouse au ministère.', no: 'Mes confrères ont besoin de moi en officine.', news: 'Une pharmacienne entre au gouvernement pour régler la pénurie.' },
+  'sc:pandas': { hint: 'La soigneuse des pandas au gouvernement : la diplomatie du bambou.', chance: 0.55, effects: [{ kind: 'crisis', arc: 'pandas', gauge: 6 }, { kind: 'dossier', domain: 'diplomatie', delta: 2 }], yes: 'Ministre ? D’accord, si je peux leur rendre visite chaque matin.', no: 'Les pandas ont besoin de moi.', news: 'La soigneuse des pandas entre au gouvernement.' },
+  'sc:coupe': { hint: 'Le patron du Mondial aux Sports : l’homme qui connaît chaque stade.', chance: 0.7, effects: [{ kind: 'crisis', arc: 'coupe_monde', gauge: 6 }, { kind: 'dossier', domain: 'education', delta: 2 }], yes: 'Ministre des Sports pendant le Mondial ? C’est un rêve d’enfant.', no: 'Après la finale, peut-être.', news: 'Le président du comité du Mondial devient ministre.' },
+  'sc:jubile': { hint: 'Le grand chambellan au gouvernement : l’étiquette au service de l’État.', chance: 0.5, effects: [{ kind: 'crisis', arc: 'jubile', gauge: 5 }, { kind: 'kingdom', prestige: 2 }], yes: 'Ce serait un honneur, Majesté.', no: 'Ma place est au Palais, Majesté.', news: 'Le grand chambellan entre au gouvernement.' },
   'sc:train': { hint: 'L’ingénieur du train magnétique au gouvernement : le futur aux commandes.', chance: 0.6, effects: [{ kind: 'crisis', arc: 'train_futur', gauge: 6 }, { kind: 'dossier', domain: 'territoires', delta: 3 }], yes: 'Ministre ? Seulement si je peux garder un bureau dans le hangar.', no: 'Le train ne se finira pas tout seul.', news: 'L’ingénieur du train magnétique devient ministre.' },
   'sc:eurovision': { hint: 'Le producteur de l’Eurovision au gouvernement : paillettes garanties.', chance: 0.8, effects: [{ kind: 'segment', segment: 'jeunes', delta: 3 }, { kind: 'crisis', arc: 'eurovision', gauge: 3 }], yes: 'Fabuleux ! Je fais refaire la salle du conseil.', no: 'Après la finale, peut-être. Pas avant.', news: 'Le producteur de l’Eurovision devient ministre.' },
 };

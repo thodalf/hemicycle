@@ -5,7 +5,7 @@ import { WEEKS_PER_MONTH, dateOfTurn, monthlyChance } from './calendar';
 import { makeFactions, ofParty } from '../data/world';
 import { pushNews } from './effects';
 import { owns } from './patrimoine';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, nextId, frSigned } from './rng';
 
 /* ============================================================
  *  La vie du personnage : âge, santé, mort.
@@ -186,7 +186,7 @@ export function adjustHealth(d: GameState, delta: number): string[] {
   const before = d.player.health;
   d.player.health = clamp(before + delta);
   const real = Math.round(d.player.health - before);
-  return real ? [`Santé ${real > 0 ? '+' : ''}${real}`] : [];
+  return real ? [`Santé ${frSigned(real)}`] : [];
 }
 
 export function weeklyLife(d: GameState, rng: Rng): void {

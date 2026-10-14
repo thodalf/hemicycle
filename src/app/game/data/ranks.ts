@@ -45,6 +45,11 @@ export const RANKS: Record<RankId, RankDefinition> = {
 
 export const rankOrder = (id: RankId) => RANKS[id].order;
 
+/** Chef·fe de l'État : président·e de la République… ou souverain·e */
+export const isHeadOfState = (id: RankId) => id === 'president' || id === 'roi';
+/** Un rang autorisé, en comptant le souverain comme président */
+export const rankAllowed = (allowed: RankId[], id: RankId) => allowed.includes(id) || (id === 'roi' && allowed.includes('president'));
+
 export const ELECTIONS: Record<ElectionType, ElectionConfig> = {
   municipales:    { label: 'Élections municipales',  campaignMonths: 4, interval: 6, legalCeiling: 25_000,  opponents: 2, internal: false },
   legislatives:   { label: 'Élections législatives', campaignMonths: 5, interval: 8, legalCeiling: 60_000,  opponents: 3, internal: false },

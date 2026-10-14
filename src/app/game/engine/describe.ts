@@ -1,4 +1,5 @@
 import { DOMAIN_LABELS, Effect, STAT_LABELS } from '../models/game.models';
+import { frSigned } from './rng';
 
 /* ============================================================
  *  Traduction lisible des effets, pour afficher sur chaque
@@ -34,10 +35,10 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'npcStat': return [{ text: `${n(e.delta)} ${e.stat === 'popularity' ? 'popularité' : 'influence'} de la cible`, tone: tone(e.delta, true) }];
     case 'contact': return e.trust ? [{ text: `${n(e.trust)} confiance${e.contactId === '$target' ? ' du contact' : ''}`, tone: tone(e.trust) }] : [];
     case 'stance': return [{ text: `Ligne ${e.delta > 0 ? 'vers la droite' : 'vers la gauche'} (${Math.abs(e.delta)})`, tone: 'neutral' }];
-    case 'family': return [{ text: e.partner === 'meet' ? 'Une nouvelle histoire' : e.partner === 'marry' ? 'Mariage' : e.partner === 'divorce' ? 'Séparation' : e.child ? 'Un enfant' : e.parentHealth ? `Santé de votre parent ${e.parentHealth > 0 ? '+' : ''}${e.parentHealth}` : 'Vie de famille', tone: e.partner === 'divorce' || (e.parentHealth ?? 0) < 0 ? 'bad' : 'neutral' }];
+    case 'family': return [{ text: e.partner === 'meet' ? 'Une nouvelle histoire' : e.partner === 'marry' ? 'Mariage' : e.partner === 'divorce' ? 'Séparation' : e.child ? 'Un enfant' : e.parentHealth ? `Santé de votre parent ${frSigned(e.parentHealth)}` : 'Vie de famille', tone: e.partner === 'divorce' || (e.parentHealth ?? 0) < 0 ? 'bad' : 'neutral' }];
     case 'heir': return [{ text: 'Désigne votre dauphin·e', tone: 'good' }];
     case 'promise': return [{ text: e.keep ? 'Rapproche une promesse de son terme' : 'Promesse à tenir sous deux ans (+15 de maîtrise)', tone: e.keep ? 'good' : 'neutral' }];
-    case 'localProject': return [{ text: e.boost ? `Chantier local : ${e.boost} mois d’avance` : e.attachment ? `Attachement du territoire ${e.attachment > 0 ? '+' : ''}${e.attachment}` : 'Lance un chantier local', tone: 'good' }];
+    case 'localProject': return [{ text: e.boost ? `Chantier local : ${e.boost} mois d’avance` : e.attachment ? `Attachement du territoire ${frSigned(e.attachment)}` : 'Lance un chantier local', tone: 'good' }];
     case 'rivalPlot': return [{ text: 'Déjoue les manœuvres des rivaux', tone: 'good' }];
     case 'economy': {
       const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
@@ -46,22 +47,22 @@ export function describeEffect(e: Effect): EffectChip[] {
       if (e.unemployment) out.push({ text: `Chômage ${pt(e.unemployment)}`, tone: e.unemployment < 0 ? 'good' : 'bad' });
       if (e.deficit) out.push({ text: `Déficit ${pt(e.deficit)}`, tone: e.deficit < 0 ? 'good' : 'bad' });
       if (e.inflation) out.push({ text: `Inflation ${pt(e.inflation)}`, tone: e.inflation < 0 ? 'good' : 'bad' });
-      if (e.confidence) out.push({ text: `Confiance ${e.confidence > 0 ? '+' : ''}${e.confidence}`, tone: e.confidence > 0 ? 'good' : 'bad' });
+      if (e.confidence) out.push({ text: `Confiance ${frSigned(e.confidence)}`, tone: e.confidence > 0 ? 'good' : 'bad' });
       return out;
     }
     case 'segment': {
       const labels: Record<string, string> = { jeunes: 'jeunes', retraites: 'retraités', populaires: 'classes populaires', cadres: 'cadres', ruraux: 'ruraux', '*': 'tous les électorats' };
-      return [{ text: `${e.delta > 0 ? '+' : ''}${e.delta} chez les ${labels[e.segment]}`.replace('chez les tous', 'dans tous'), tone: e.delta > 0 ? 'good' : 'bad' }];
+      return [{ text: `${frSigned(e.delta)} chez les ${labels[e.segment]}`.replace('chez les tous', 'dans tous'), tone: e.delta > 0 ? 'good' : 'bad' }];
     }
     case 'coalition': return e.open ? [{ text: 'Ouvre des négociations de coalition', tone: 'neutral' }]
-      : e.mood ? [{ text: `Humeur du partenaire ${e.mood > 0 ? '+' : ''}${e.mood}`, tone: e.mood > 0 ? 'good' : 'bad' }]
+      : e.mood ? [{ text: `Humeur du partenaire ${frSigned(e.mood)}`, tone: e.mood > 0 ? 'good' : 'bad' }]
       : e.leave ? [{ text: 'Rompt la coalition', tone: 'bad' }] : [{ text: 'Forme une coalition', tone: 'good' }];
     case 'apocalypse': {
       const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
       if (e.start) out.push({ text: 'Déclenche la fin du monde', tone: 'bad' });
-      if (e.darkness) out.push({ text: `Ténèbres ${e.darkness > 0 ? '+' : ''}${e.darkness}`, tone: e.darkness < 0 ? 'good' : 'bad' });
-      if (e.resistance) out.push({ text: `Résistance ${e.resistance > 0 ? '+' : ''}${e.resistance}`, tone: e.resistance > 0 ? 'good' : 'bad' });
-      if (e.cult) out.push({ text: `Emprise de la secte ${e.cult > 0 ? '+' : ''}${e.cult}`, tone: e.cult < 0 ? 'good' : 'bad' });
+      if (e.darkness) out.push({ text: `Ténèbres ${frSigned(e.darkness)}`, tone: e.darkness < 0 ? 'good' : 'bad' });
+      if (e.resistance) out.push({ text: `Résistance ${frSigned(e.resistance)}`, tone: e.resistance > 0 ? 'good' : 'bad' });
+      if (e.cult) out.push({ text: `Emprise de la secte ${frSigned(e.cult)}`, tone: e.cult < 0 ? 'good' : 'bad' });
       if (e.raid) out.push({ text: 'Raid contre la secte (avant le rituel)', tone: 'neutral' });
       if (e.pact) out.push({ text: 'Pacte avec le Diable', tone: 'neutral' });
       return out;
@@ -72,8 +73,8 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'crisis': {
       const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
       if (e.start) out.push({ text: 'Déclenche une crise', tone: 'bad' });
-      if (e.gauge) out.push({ text: `Avancée ${e.gauge > 0 ? '+' : ''}${e.gauge}`, tone: e.gauge > 0 ? 'good' : 'bad' });
-      if (e.risk) out.push({ text: `Risque ${e.risk > 0 ? '+' : ''}${e.risk}`, tone: e.risk > 0 ? 'bad' : 'good' });
+      if (e.gauge) out.push({ text: `Avancée ${frSigned(e.gauge)}`, tone: e.gauge > 0 ? 'good' : 'bad' });
+      if (e.risk) out.push({ text: `Risque ${frSigned(e.risk)}`, tone: e.risk > 0 ? 'bad' : 'good' });
       return out;
     }
     case 'zombie': {
@@ -89,7 +90,7 @@ export function describeEffect(e: Effect): EffectChip[] {
     }
     case 'phoneBook': return [{ text: e.npcId === '$any' ? 'Un numéro de personnalité' : 'Son numéro de portable', tone: 'good' }];
     case 'scheme': return e.ally ? [{ text: 'Recrute un complice (s’il accepte)', tone: 'neutral' }] : e.type ? [{ text: 'Lance un complot (risque d’être découvert)', tone: 'neutral' }]
-      : [...(e.progress ? [{ text: `Complots : progression +${e.progress}`, tone: 'good' as const }] : []), ...(e.secrecy ? [{ text: `Complots : discrétion ${e.secrecy > 0 ? '+' : ''}${e.secrecy}`, tone: e.secrecy > 0 ? 'good' as const : 'bad' as const }] : [])];
+      : [...(e.progress ? [{ text: `Complots : progression +${e.progress}`, tone: 'good' as const }] : []), ...(e.secrecy ? [{ text: `Complots : discrétion ${frSigned(e.secrecy)}`, tone: e.secrecy > 0 ? 'good' as const : 'bad' as const }] : [])];
     case 'flagAdd': return e.key === 'illegal' ? [{ text: 'Illégal : risque d’enquête', tone: 'bad' }]
       : e.key === 'hygiene' ? [{ text: `${n(e.delta)} hygiène de vie`, tone: tone(e.delta) }]
       : e.key === 'protection' ? [{ text: `${n(e.delta)} protection`, tone: tone(e.delta) }]

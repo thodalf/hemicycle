@@ -20,12 +20,17 @@ import { canPush, dropPledge as dropPledgeFn, pledges, pushCost, pushPledge as p
     @if (game.s().presidency; as pr) {
       <section class="card elysee">
         <div class="card-title">
-          <span class="seal-title"><span class="seal" aria-hidden="true"></span>Palais de l’Élysée</span>
-          <span class="chip accent">{{ pr.mandates > 1 ? 'Second mandat' : 'Premier mandat' }}</span>
+          @if (game.s().kingdom; as k) {
+            <span class="seal-title"><span class="crown-ico" aria-hidden="true">👑</span>Le Palais · {{ k.title }}</span>
+            <span class="chip accent">Règne</span>
+          } @else {
+            <span class="seal-title"><span class="seal" aria-hidden="true"></span>Palais de l’Élysée</span>
+            <span class="chip accent">{{ pr.mandates > 1 ? 'Second mandat' : 'Premier mandat' }}</span>
+          }
         </div>
         <p class="muted small">Premier ministre : <strong><app-person [name]="pr.primeMinister" /></strong>
           @if (pr.cohabitation) { · <span class="chip bad">Cohabitation</span> }
-          · {{ pr.reforms }} réforme(s) adoptée(s) · fin du mandat en {{ dateLabel(cal().nextWeek) }}</p>
+          · {{ pr.reforms }} réforme(s) adoptée(s)@if (!game.s().kingdom) { · fin du mandat en {{ dateLabel(cal().nextWeek) }} }</p>
         @if (cabinet().length) {
           <details class="cabinet">
             <summary>Votre gouvernement ({{ cabinetStyle(pr.cabinetStyle) }})</summary>
@@ -80,7 +85,9 @@ import { canPush, dropPledge as dropPledgeFn, pledges, pushCost, pushPledge as p
           </div>
         </div>
         <div class="foot">
-          @if (cal().declared) {
+          @if (game.s().kingdom) {
+            <small class="muted">Pas d’élection pour le trône. Cote, majorité et sécurité restent les leviers de votre règne.</small>
+          } @else if (cal().declared) {
             <span class="chip good">Candidat·e à sa succession · {{ parrainages() }}/{{ required }} parrainages</span>
           } @else if (pr.mandates < 2) {
             <button class="btn small" [disabled]="!turn.declaration().ok" [title]="turn.declaration().reason ?? ''" (click)="declare($event)">Briguer un second mandat</button>
@@ -89,11 +96,11 @@ import { canPush, dropPledge as dropPledgeFn, pledges, pushCost, pushPledge as p
             <small class="muted">Deux mandats : vous ne pouvez pas vous représenter.</small>
           }
           @if (confirmResign()) {
-            <span class="confirm">Quitter l’Élysée ?
-              <button class="btn small danger" (click)="resign()">Oui, démissionner</button>
+            <span class="confirm">{{ game.s().kingdom ? 'Abdiquer et rétablir la République ?' : 'Quitter l’Élysée ?' }}
+              <button class="btn small danger" (click)="resign()">{{ game.s().kingdom ? 'Oui, abdiquer' : 'Oui, démissionner' }}</button>
               <button class="btn small" (click)="confirmResign.set(false)">Non</button></span>
           } @else {
-            <button class="btn small ghost" (click)="confirmResign.set(true)">Démissionner</button>
+            <button class="btn small ghost" (click)="confirmResign.set(true)">{{ game.s().kingdom ? 'Abdiquer' : 'Démissionner' }}</button>
           }
         </div>
       </section>
@@ -124,6 +131,9 @@ import { canPush, dropPledge as dropPledgeFn, pledges, pushCost, pushPledge as p
     }
   `,
   styles: `
+    .crown-ico { display: inline-block; margin-right: 6px; animation: crown-bob 3s ease-in-out infinite; }
+    @keyframes crown-bob { 50% { transform: translateY(-2px) rotate(-6deg); } }
+    @media (prefers-reduced-motion: reduce) { .crown-ico { animation: none; } }
     .pledges { font-size: 12.5px; margin: 4px 0 8px; summary { cursor: pointer; font-weight: 600; } ul { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 8px; }
       li { display: grid; gap: 3px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
       li.st-tenue { border-color: var(--good); } li.st-trahie, li.st-abandonnee { opacity: .7; }

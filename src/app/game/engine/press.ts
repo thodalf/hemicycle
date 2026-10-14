@@ -2,7 +2,7 @@ import { Decision, GameState } from '../models/game.models';
 import { OUTLETS, PRESS_GRADES, PRESS_REQUIREMENTS, PRESS_SALARIES } from '../data/press';
 import { rankOrder } from '../data/ranks';
 import { pushNews } from './effects';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, frSigned, nextId } from './rng';
 
 /* ============================================================
  *  Carrière dans les médias : audience, réputation, pression
@@ -30,16 +30,16 @@ export function adjustPress(d: GameState, e: { audience?: number; reputation?: n
   if (e.audience) {
     const v = e.audience > 0 ? e.audience * o.audienceMult * Math.max(0.15, 1 - p.audience / 100) : e.audience;
     p.audience = clamp(p.audience + v);
-    out.push(`Audience ${v > 0 ? '+' : ''}${Math.round(v * 10) / 10}`);
+    out.push(`Audience ${frSigned(v)}`);
   }
   if (e.reputation) {
     const v = e.reputation > 0 ? e.reputation * o.reputationMult * Math.max(0.2, 1 - p.reputation / 110) : e.reputation;
     p.reputation = clamp(p.reputation + v);
-    out.push(`Réputation ${v > 0 ? '+' : ''}${Math.round(v * 10) / 10}`);
+    out.push(`Réputation ${frSigned(v)}`);
   }
   if (e.independance) {
     p.independance = clamp(p.independance + e.independance);
-    out.push(`Indépendance ${e.independance > 0 ? '+' : ''}${e.independance}`);
+    out.push(`Indépendance ${frSigned(e.independance)}`);
   }
   if (e.scoops) {
     p.scoops += e.scoops;

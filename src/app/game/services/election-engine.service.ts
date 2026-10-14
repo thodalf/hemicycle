@@ -10,7 +10,7 @@ import { entreDeuxToursDecision } from '../engine/entre-deux-tours';
 import { applyEffects, pushNews } from '../engine/effects';
 import { circoResult, recordMap } from '../engine/country';
 import { yearOf } from '../engine/calendar';
-import { Rng, clamp, nextId } from '../engine/rng';
+import { Rng, clamp, fr, nextId } from '../engine/rng';
 import { GameStateService } from './game-state.service';
 
 export interface Candidate {
@@ -230,7 +230,7 @@ export class ElectionEngineService {
         { kind: 'rank', rankId: rule.to }, { kind: 'stat', stat: 'influence', delta: 10 },
         { kind: 'stat', stat: 'popularity', delta: 5 }, { kind: 'stat', stat: 'politicalCapital', delta: 20 },
       ], {}, rng);
-      pushNews(d, 'election', 'positive', `Victoire aux ${cfg.label.toLowerCase()} (${score} %)`,
+      pushNews(d, 'election', 'positive', `Victoire aux ${cfg.label.toLowerCase()} (${fr(score)} %)`,
         `Vous devenez ${RANKS[rule.to].label}.`);
       // Investi·e par la primaire : candidature présidentielle déclarée d'office
       if (e.type === 'primaire' && canDeclare(d).ok) declareCandidacy(d);
@@ -241,7 +241,7 @@ export class ElectionEngineService {
       ], {}, rng);
       d.player.flags['nextElectionWeek'] = d.week + cfg.interval;
       pushNews(d, 'election', 'negative',
-        invalidated ? 'Élection annulée par le juge électoral' : `Défaite aux ${cfg.label.toLowerCase()} (${firstRound['player']} %)`,
+        invalidated ? 'Élection annulée par le juge électoral' : `Défaite aux ${cfg.label.toLowerCase()} (${fr(firstRound['player'] ?? 0)} %)`,
         invalidated ? 'Vos comptes de campagne ont été rejetés. Victoire attribuée à votre adversaire.' : `Prochaine tentative possible ${inMonth(d.week + cfg.interval)}.`);
     }
   }

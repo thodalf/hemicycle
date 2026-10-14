@@ -245,6 +245,7 @@ export class WeekPlannerComponent {
       const icon = CATEGORY_ICONS[action.category];
       if (icon) this.anim.floatAt(event.currentTarget as Element, icon, 'neutral', 120);
       if (action.category === 'argent') this.anim.coins(event.currentTarget as Element, true, 5);
+      if (action.category === 'couronne') this.anim.crown(event.currentTarget as Element);
     }
   }
 

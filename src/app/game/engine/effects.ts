@@ -8,7 +8,7 @@ import { createDecision } from '../data/decisions';
 import { createDebate } from './debate';
 import { createProtest } from './protest';
 import { createScene } from './scene';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, nextId, frSigned } from './rng';
 import { grantAsset, pickAsset, sellAsset } from './patrimoine';
 import { adjustPress } from './press';
 import { adjustMole } from './mole';
@@ -211,7 +211,7 @@ export function wearFactor(d: GameState, actionId: string): number {
 /** Applique une liste d'effets ; renvoie un résumé lisible (« Popularité +3 ») */
 export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext, rng: Rng): string[] {
   const summary: string[] = [];
-  const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const signed = (n: number) => frSigned(n);
   const target = (ref: string) => (ref === '$target' ? ctx.targetId ?? '' : ref);
 
   for (const e of effects) {
@@ -283,7 +283,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         if (!c) break;
         if (e.trust) c.trust = clamp(c.trust + e.trust);
         if (e.balance) c.balance += e.balance;
-        summary.push(`${c.name.split(' (')[0]} : confiance ${c.trust}, crédit ${c.balance}`);
+        summary.push(`${c.name.split(' (')[0]} : confiance ${Math.round(c.trust)}, crédit ${Math.round(c.balance)}`);
         break;
       }
       case 'favor': {
@@ -390,7 +390,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       case 'partyTreasury':
         if (d.partyFinance) {
           d.partyFinance.treasury += e.delta;
-          summary.push(`Trésorerie du parti ${e.delta > 0 ? '+' : ''}${e.delta} k€`);
+          summary.push(`Trésorerie du parti ${frSigned(e.delta)} k€`);
         }
         break;
       case 'partyAllocation':
@@ -443,7 +443,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       }
       case 'localProject':
         if (e.boost) summary.push(...boostLocal(d, e.boost));
-        else if (e.attachment) { const t = territory(d); t.attachment = clamp(t.attachment + e.attachment); summary.push(`Attachement du territoire ${e.attachment > 0 ? '+' : ''}${e.attachment}`); }
+        else if (e.attachment) { const t = territory(d); t.attachment = clamp(t.attachment + e.attachment); summary.push(`Attachement du territoire ${frSigned(e.attachment)}`); }
         else summary.push(...startLocalProject(d, rng, e.id));
         break;
       case 'rivalPlot':
@@ -487,7 +487,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       }
       case 'flagAdd':
         d.player.flags[e.key] = Number(d.player.flags[e.key] ?? 0) + e.delta;
-        if (e.key === 'e2t') summary.push(`Second tour ${e.delta > 0 ? '+' : ''}${e.delta}`);
+        if (e.key === 'e2t') summary.push(`Second tour ${frSigned(e.delta)}`);
         break;
       case 'dossierScale': {
         const domain = e.domain === '$domain' ? ctx.domain : e.domain;

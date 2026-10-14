@@ -16,7 +16,7 @@ export interface FxParticle { dx: number; dy: number; rot: number; color: string
 export interface FxItem {
   id: number;
   kind: 'float' | 'burst' | 'fly' | 'stamp' | 'week' | 'month' | 'ticker' | 'coin' | 'note' | 'banner' | 'flash' | 'front' | 'rocket'
-    | 'tomato' | 'paper' | 'plane' | 'heart' | 'spot' | 'ballot' | 'mic' | 'rain' | 'ufo';
+    | 'tomato' | 'paper' | 'plane' | 'heart' | 'spot' | 'ballot' | 'mic' | 'rain' | 'ufo' | 'scen' | 'crown';
   /** Mois précédent (page de calendrier) */
   old?: string;
   icon?: string;
@@ -138,6 +138,32 @@ export class FxService {
       setTimeout(() => this.burst(w * x, h * (0.45 - (i % 2) * 0.12), 'good', 26), delay + 820);
     });
     this.add({ kind: 'banner', text: `Bonne année ${year}`, sub: 'Vœux à la presse, galettes et bonnes résolutions', x: w / 2, y: h * 0.3, delay: 500 }, 2600);
+  }
+
+  /** Feu d'artifice avec bandeau (scénario remporté, jubilé, Coupe du monde) */
+  fireworks(text: string, sub = ''): void {
+    if (this.reduced || typeof window === 'undefined') return;
+    const w = window.innerWidth, h = window.innerHeight;
+    [0.15, 0.45, 0.8, 0.3, 0.6, 0.9, 0.5].forEach((x, i) => {
+      const delay = i * 220;
+      const top = 0.22 + ((i * 37) % 20) / 100;
+      this.add({ kind: 'rocket', x: w * x, y: h, dy: -h * (1 - top), delay }, 900);
+      setTimeout(() => this.burst(w * x, h * top, i % 3 === 2 ? 'neutral' : 'good', 24), delay + 820);
+    });
+    this.add({ kind: 'banner', text, sub, x: w / 2, y: h * 0.3, delay: 400 }, 2600);
+  }
+
+  /** Un nouveau scénario s'ouvre : grande icône rayonnante et titre */
+  scenario(icon: string, text: string, sub = 'Nouveau scénario'): void {
+    if (typeof window === 'undefined') return;
+    this.add({ kind: 'scen', icon, text, sub, x: window.innerWidth / 2, y: window.innerHeight * 0.38 }, 2600);
+  }
+
+  /** Une couronne se pose sur un élément, en scintillant (action royale) */
+  crown(el: Element | null): void {
+    const c = this.center(el);
+    if (!c) return;
+    this.add({ kind: 'crown', x: c.x, y: c.y }, 1400);
   }
 
   /** Éclair plein écran (déclaration de guerre, défaite) */

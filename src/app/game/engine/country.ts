@@ -4,7 +4,7 @@ import { BASE_SEATS } from '../data/bills';
 import { governingIds } from './assembly';
 import { pushNews } from './effects';
 import { addMilestone } from './life';
-import { Rng, clamp } from './rng';
+import { Rng, clamp, frSigned } from './rng';
 
 /* ============================================================
  *  Le pays : une économie qui vit (chômage, croissance, déficit,
@@ -46,7 +46,7 @@ export function accountability(d: GameState): number {
 /** Freins à la croissance : les crises en cours */
 function crisisDrag(d: GameState): number {
   const c = d.crises ?? {};
-  const drag: Partial<Record<string, number>> = { krach: 2, blackout: 0.8, crue: 0.5, secheresse: 0.5, megafeux: 0.2, agriculteurs: 0.2, cyber: 0.3, frelons: 0.1, ia: 0.3, autonomie: 0.2, grand_hiver: 1.2, mars: -0.1, greve_generale: 1, eurovision: -0.1, templiers: -0.05, comete: 0.6, referendum: 0.1, seisme: 0.4, tempete_solaire: 0.8, expo_universelle: -0.15, penurie_medicaments: 0.2, train_futur: -0.1 };
+  const drag: Partial<Record<string, number>> = { krach: 2, blackout: 0.8, crue: 0.5, secheresse: 0.5, megafeux: 0.2, agriculteurs: 0.2, cyber: 0.3, frelons: 0.1, ia: 0.3, autonomie: 0.2, grand_hiver: 1.2, mars: -0.1, greve_generale: 1, eurovision: -0.1, templiers: -0.05, comete: 0.6, referendum: 0.1, seisme: 0.4, tempete_solaire: 0.8, expo_universelle: -0.15, penurie_medicaments: 0.2, train_futur: -0.1, pandas: -0.05, coupe_monde: -0.2, jubile: 0.05 };
   let total = Object.keys(c).filter(k => c[k as keyof typeof c]).reduce((t, k) => t + (drag[k] ?? 0), 0);
   if (d.zombie) total += 3;
   if (d.war) total += d.war.total ? 2 : 1;
@@ -145,7 +145,7 @@ export function adjustEconomy(d: GameState, x: Extract<Effect, { kind: 'economy'
   if (x.unemployment) { e.unemployment = clamp(e.unemployment + x.unemployment, 4, 16); pt('Chômage', x.unemployment); }
   if (x.deficit) { e.deficit = clamp(e.deficit + x.deficit, -1, 15); pt('Déficit', x.deficit); }
   if (x.inflation) { e.inflation = clamp(e.inflation + x.inflation, -1, 12); pt('Inflation', x.inflation); }
-  if (x.confidence) { e.confidence = clamp(e.confidence + x.confidence); out.push(`Confiance ${x.confidence > 0 ? '+' : ''}${x.confidence}`); }
+  if (x.confidence) { e.confidence = clamp(e.confidence + x.confidence); out.push(`Confiance ${frSigned(x.confidence)}`); }
   return out;
 }
 
@@ -173,7 +173,7 @@ export function adjustSegment(d: GameState, x: Extract<Effect, { kind: 'segment'
   const ids = x.segment === '*' ? SEGMENTS.map(s => s.id) : [x.segment];
   for (const id of ids) off[id] = clamp(off[id] + x.delta, -30, 30);
   const label = x.segment === '*' ? 'Tous les électorats' : SEGMENTS.find(s => s.id === x.segment)!.label;
-  return [`${label} ${x.delta > 0 ? '+' : ''}${x.delta}`];
+  return [`${label} ${frSigned(x.delta)}`];
 }
 
 /** Chaque mois : les écarts s'estompent doucement */

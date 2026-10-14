@@ -3,7 +3,7 @@ import { DOMAINS, Decision, DecisionChoice, Domain, Effect, GameState } from '..
 import { RANKS } from '../data/ranks';
 import { pushNews } from './effects';
 import { addMilestone, dateOfWeek } from './life';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, nextId, frSigned } from './rng';
 
 /* ============================================================
  *  Le gouvernement : portefeuille ministériel, Matignon
@@ -66,7 +66,7 @@ export function adjustGovernment(d: GameState, e: Extract<Effect, { kind: 'gover
   const g = d.government;
   if (!g) return [];
   const out: string[] = [];
-  const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const sign = (n: number) => frSigned(n);
   if (e.form) { g.composition = e.form; out.push(`Gouvernement ${e.form}`); }
   if (e.majority) { g.majority = clamp(g.majority + e.majority); out.push(`Majorité ${sign(e.majority)}`); }
   if (e.cohesion) { g.cohesion = clamp(g.cohesion + e.cohesion); out.push(`Solidarité gouvernementale ${sign(e.cohesion)}`); }

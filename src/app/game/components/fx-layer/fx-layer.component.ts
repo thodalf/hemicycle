@@ -86,6 +86,15 @@ import { FxService } from '../../services/fx.service';
         @case ('note') {
           <span class="note" [style.left.px]="i.x" [style.top.px]="i.y" [style.--dx.px]="i.dx" [style.--dy.px]="i.dy" [style.animation-delay.ms]="i.delay">€</span>
         }
+        @case ('scen') {
+          <span class="scen" [style.left.px]="i.x" [style.top.px]="i.y">
+            <i class="rays"></i><b class="ico">{{ i.icon }}</b>
+            <small>{{ i.sub }}</small><strong>{{ i.text }}</strong>
+          </span>
+        }
+        @case ('crown') {
+          <span class="crown" [style.left.px]="i.x" [style.top.px]="i.y"><b>👑</b><i></i><i></i><i></i><i></i></span>
+        }
         @case ('rocket') {
           <span class="rocket" [style.left.px]="i.x" [style.top.px]="i.y" [style.--dy.px]="i.dy" [style.animation-delay.ms]="i.delay"></span>
         }
@@ -254,6 +263,22 @@ import { FxService } from '../../services/fx.service';
     @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.25); } 30% { transform: scale(.95); } 45% { transform: scale(1.15); } }
     @keyframes ecg { to { stroke-dashoffset: 0; } }
     @keyframes heart-life { 0% { opacity: 0; } 10%, 80% { opacity: 1; } 100% { opacity: 0; } }
+    .scen { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 2px; text-align: center; animation: scen-life 2.6s ease forwards;
+      .rays { position: absolute; left: 50%; top: 46px; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%; z-index: -1;
+        background: repeating-conic-gradient(rgba(230,180,92,.35) 0 10deg, rgba(230,180,92,0) 10deg 24deg); mask: radial-gradient(circle, #000 20%, transparent 70%);
+        animation: rays 2.6s linear forwards; }
+      .ico { font-size: 76px; line-height: 92px; filter: drop-shadow(0 8px 18px rgba(0,0,0,.3)); animation: scen-ico 2.6s cubic-bezier(.2,1.4,.4,1) forwards; }
+      small { font: 700 12px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); background: var(--surface); padding: 3px 10px; border-radius: 999px; box-shadow: var(--shadow); }
+      strong { font: 800 26px var(--font-display); color: var(--ink); background: var(--surface); padding: 4px 14px; border-radius: 10px; box-shadow: var(--shadow); max-width: 86vw; } }
+    @keyframes scen-life { 0% { opacity: 0; } 10%, 82% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%); } }
+    @keyframes scen-ico { 0% { transform: scale(.2) rotate(-25deg); } 30% { transform: scale(1.15) rotate(6deg); } 45%, 100% { transform: scale(1) rotate(0); } }
+    @keyframes rays { from { transform: rotate(0) scale(.6); } to { transform: rotate(80deg) scale(1.1); } }
+    .crown { position: absolute; width: 0; height: 0;
+      b { position: absolute; left: -16px; top: -60px; font-size: 30px; animation: crown-drop 1.4s cubic-bezier(.3,1.5,.5,1) forwards; }
+      i { position: absolute; left: -3px; top: -30px; width: 6px; height: 6px; border-radius: 50%; background: #f5d27a; box-shadow: 0 0 8px #f5d27a; opacity: 0; animation: sparkle .9s .45s ease-out forwards; }
+      i:nth-of-type(1) { --sx: -26px; --sy: -14px; } i:nth-of-type(2) { --sx: 26px; --sy: -14px; } i:nth-of-type(3) { --sx: -18px; --sy: 16px; } i:nth-of-type(4) { --sx: 18px; --sy: 16px; } }
+    @keyframes crown-drop { 0% { opacity: 0; transform: translateY(-40px) rotate(-20deg); } 35% { opacity: 1; transform: translateY(14px) rotate(4deg); } 55% { transform: translateY(8px) rotate(0); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(-6px); } }
+    @keyframes sparkle { 0% { opacity: 1; transform: translate(0, 0) scale(.4); } 100% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(1.3); } }
     .spot { position: absolute; inset: 0; background: rgba(10,10,20,.35); animation: spot-life 2.3s ease forwards; }
     .beam { position: absolute; top: -10%; width: 34vw; height: 120%; background: linear-gradient(rgba(255,240,200,.55), rgba(255,240,200,0) 80%);
       clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%); mix-blend-mode: screen; }

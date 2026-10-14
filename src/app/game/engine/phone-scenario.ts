@@ -269,6 +269,37 @@ const CONTACTS: ScenContact[] = [
           : { answer: 'Panne de lévitation devant les caméras. Le train s’est posé. Doucement.', effects: [{ kind: 'crisis', arc: 'train_futur', risk: 5 }] } },
     ],
   },
+  // ── Les pandas ──
+  {
+    key: 'sc:pandas', icon: '🐼', when: d => !!d.crises?.pandas,
+    name: () => 'Dr Mei Lin Dubois', role: () => 'Soigneuse en chef des pandas',
+    options: () => [
+      { id: 'sc_pandas_nouvelles', label: 'Prendre des nouvelles des pandas', hint: 'Elle dort à côté de l’enclos.', ask: 'Comment vont nos pandas ?', cooldown: 1,
+        run: () => ({ answer: 'Ils ont mangé 30 kilos de bambou et fait une sieste de six heures. Tout va bien.', effects: [{ kind: 'crisis', arc: 'pandas', gauge: 4, risk: -1 }] }) },
+      { id: 'sc_pandas_live', label: 'Proposer un direct depuis l’enclos', hint: 'Mignon, mais imprévisible.', ask: 'Et si on faisait un direct avec les pandas ?', cooldown: 3,
+        run: (_d, rng) => rng.chance(0.7)
+          ? { answer: 'Le petit a fait une roulade devant la caméra. Dix millions de vues !', effects: [{ kind: 'crisis', arc: 'pandas', gauge: 5 }, st('popularity', 2)] }
+          : { answer: 'Ils ont dormi pendant tout le direct. Quarante minutes de dos poilu.', effects: [{ kind: 'crisis', arc: 'pandas', risk: 2 }] } },
+    ],
+  },
+  // ── La Coupe du monde ──
+  {
+    key: 'sc:coupe', icon: '⚽', when: d => !!d.crises?.coupe_monde,
+    name: () => 'Didier Lacombe', role: () => 'Président du comité d’organisation du Mondial',
+    options: () => [
+      { id: 'sc_coupe_point', label: 'Faire le point sur l’organisation', hint: 'Il a trois téléphones et zéro heure de sommeil.', ask: 'Tout est prêt pour le Mondial ?', cooldown: 1,
+        run: () => ({ answer: 'Les stades oui. Les navettes… on y travaille. Les frites dans les fan-zones : prêtes.', effects: [{ kind: 'crisis', arc: 'coupe_monde', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── Le jubilé ──
+  {
+    key: 'sc:jubile', icon: '🎆', when: d => !!d.crises?.jubile,
+    name: () => 'Comte Aymeric de Valfleury', role: () => 'Grand chambellan du Palais',
+    options: () => [
+      { id: 'sc_jubile_point', label: 'Faire le point sur les préparatifs', hint: 'Il a un plan de table pour chaque bal.', ask: 'Où en est le jubilé, mon cher comte ?', cooldown: 1,
+        run: () => ({ answer: 'Les feux d’artifice sont commandés, le carrosse est verni. Seuls les républicains me donnent des migraines.', effects: [{ kind: 'crisis', arc: 'jubile', gauge: 4, risk: -2 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -352,7 +383,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

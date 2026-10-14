@@ -56,7 +56,8 @@ import { ArcadePanelComponent } from '../arcade-panel/arcade-panel.component';
 import { ARCADE, arcadeRewardOpen } from '../../engine/arcade';
 import { BankService } from '../../services/bank.service';
 import { DEATH_LABELS, lifeSummary } from '../../engine/life';
-import { Milestone } from '../../models/game.models';
+import { CrisisArcId, Milestone } from '../../models/game.models';
+import { CRISES } from '../../engine/crises';
 
 type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
 
@@ -94,7 +95,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
         @if (game.s().presidency) { <app-presidency-panel /> }
         <app-government-panel />
         <app-contact-panel />
-        @if (game.s().crown || game.s().lodge || game.s().press || game.s().mole) {
+        @if (game.s().crown || game.s().kingdom || game.s().lodge || game.s().press || game.s().mole) {
           <app-scenario-panel />
         }
         <app-life-panel />
@@ -430,6 +431,7 @@ export class DashboardComponent {
   private lastMilestones = this.game.s().milestones.length;
   private lastAlien = this.game.s().alien?.phase ?? -1;
   private lastKing = !!this.game.s().kingdom;
+  private lastCrises = new Set(Object.keys(this.game.s().crises ?? {}));
   /** Dernier chapitre ouvert, affiché en grand */
   protected readonly chapter = signal<Milestone | null>(null);
   /** Un écran interactif est ouvert : les cartes « nouveau chapitre » attendent */
@@ -445,7 +447,14 @@ export class DashboardComponent {
     const milestones = this.game.s().milestones;
     const alien = this.game.s().alien?.phase ?? -1;
     const king = !!this.game.s().kingdom;
+    const arcs = Object.keys(this.game.s().crises ?? {});
     untracked(() => {
+      // Un scénario s'ouvre : grande icône ; un scénario se dénoue sur une victoire : feu d'artifice
+      const fresh = arcs.filter(k => !this.lastCrises.has(k));
+      const ended = [...this.lastCrises].filter(k => !arcs.includes(k));
+      for (const k of fresh.slice(0, 1)) { const c = CRISES[k as CrisisArcId]; if (c) this.whenFree(() => this.fx.scenario(c.icon, c.label), 600); }
+      this.lastCrises = new Set(arcs);
+      const scenarioWin = ended.length > 0;
       if (king !== this.lastKing) {
         this.whenFree(() => {
           if (king) { this.fx.spotlight(this.game.s().player.gender === 'femme' ? 'Vive la Reine !' : 'Vive le Roi !', 'Sacre à Reims'); this.burstAround(); }
@@ -459,7 +468,8 @@ export class DashboardComponent {
         const m = milestones.at(-1)!;
         this.whenFree(() => {
           if (m.kind !== 'carriere') this.chapter.set(m);
-          if (m.kind === 'victoire') { this.fx.stamp('Nouveau chapitre', 'good', m.title); this.burstAround(); }
+          if (m.kind === 'victoire' && scenarioWin) this.fx.fireworks(m.title, 'Scénario remporté');
+          else if (m.kind === 'victoire') { this.fx.stamp('Nouveau chapitre', 'good', m.title); this.burstAround(); }
           else if (m.kind === 'revers') { this.fx.stamp('Revers', 'bad', m.title); this.fx.shake(); this.fx.rain(); }
           else this.fx.stamp('Chapitre', 'neutral', m.title);
         }, 700);

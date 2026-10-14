@@ -187,7 +187,14 @@ import { MOLE_GOAL } from '../../engine/mole';
       .chip { margin-left: auto; } }
     .crown { border-left: 4px solid #8a6a1f; }
     .kingdom { background: linear-gradient(135deg, color-mix(in srgb, #c9a227 10%, var(--surface)), var(--surface)); animation: royal-in .6s ease;
-      .confirm { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; } }
+      .confirm { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; }
+      .fill { transition: width .9s cubic-bezier(.3,1.3,.5,1); overflow: hidden; }
+      .fill.ok::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,240,190,.75) 50%, transparent 70%);
+        transform: translateX(-100%); animation: royal-shine 3.2s ease-in-out infinite; }
+      .fill.low { animation: danger-pulse 1.2s ease-in-out infinite; }
+      .card-title span:first-child { display: inline-block; animation: crown-sway 4s ease-in-out infinite; transform-origin: 20% 80%; } }
+    @keyframes royal-shine { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    @keyframes crown-sway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-3deg); } }
     @keyframes royal-in { from { box-shadow: 0 0 0 6px color-mix(in srgb, #c9a227 50%, transparent); } }
     .lodge { border-left: 4px solid var(--accent); }
     .press { border-left: 4px solid #b0452f; }

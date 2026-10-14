@@ -2,7 +2,7 @@ import { Effect, FamilyState, GameState, HeirState } from '../models/game.models
 import { RANKS, rankOrder } from '../data/ranks';
 import { addMilestone } from './life';
 import { pushNews } from './effects';
-import { Rng, clamp } from './rng';
+import { Rng, clamp, frSigned } from './rng';
 
 /* ============================================================
  *  Vie privée : un·e conjoint·e, des enfants qui grandissent,
@@ -64,7 +64,7 @@ export function adjustFamily(d: GameState, e: Extract<Effect, { kind: 'family' }
     const parent = f.parents.find(x => x.alive);
     if (parent) {
       parent.health = clamp((parent.health ?? 60) + e.parentHealth);
-      out.push(`Santé de ${parent.name === 'Maman' ? 'votre mère' : 'votre père'} ${e.parentHealth > 0 ? '+' : ''}${e.parentHealth}`);
+      out.push(`Santé de ${parent.name === 'Maman' ? 'votre mère' : 'votre père'} ${frSigned(e.parentHealth)}`);
     }
   }
   if (e.childPath) {

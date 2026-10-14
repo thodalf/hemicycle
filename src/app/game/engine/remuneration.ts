@@ -5,6 +5,7 @@ import { CORPS_BY_ID, civilActive, civilPay, civilTitle } from './civil';
 import { loanPayments } from './loans';
 import { weeklyCharges } from './patrimoine';
 import { placementEstimate, sideNote, sidePayable } from './side-income';
+import { frSigned } from './rng';
 
 /* ============================================================
  *  Rémunération : ce que rapportent chaque mois le mandat ou
@@ -119,7 +120,7 @@ export function setLeaderPay(d: GameState, which: 'party' | 'president', pct: nu
   if (which === 'party') {
     for (const f of d.party.factions) f.supportForPlayer = c(f.supportForPlayer + (delta > 0 ? -delta / 10 : -delta / 15));
     if (delta > 0) { d.party.cohesion = c(d.party.cohesion - delta / 20); p.scandalExposure = c(p.scandalExposure + delta / 20); }
-    out.push(`Salaire de chef·fe de parti ${value > 0 ? '+' : ''}${value} %`);
+    out.push(`Salaire de chef·fe de parti ${frSigned(value)} %`);
     pushNews(d, 'parti', delta > 0 ? 'negative' : 'positive', delta > 0 ? 'Le chef du parti s’augmente' : 'Le chef du parti baisse son salaire',
       delta > 0 ? 'Les militants qui collent les affiches bénévolement apprécient moyennement.' : 'Un geste salué jusque dans les fédérations les plus frondeuses.');
   } else {
@@ -127,7 +128,7 @@ export function setLeaderPay(d: GameState, which: 'party' | 'president', pct: nu
     pr.approval = c(pr.approval + (delta > 0 ? -delta / 8 : -delta / 12));
     p.stats.popularity = c(p.stats.popularity + (delta > 0 ? -delta / 20 : -delta / 30));
     if (delta > 0) p.scandalExposure = c(p.scandalExposure + delta / 15);
-    out.push(`Traitement présidentiel ${value > 0 ? '+' : ''}${value} %`);
+    out.push(`Traitement présidentiel ${frSigned(value)} %`);
     pushNews(d, 'actu', delta > 0 ? 'negative' : 'positive', delta > 0 ? `Le président augmente son traitement de ${delta} %` : `Le président baisse son traitement de ${-delta} %`,
       delta > 0 ? '« En pleine crise du pouvoir d’achat ! » L’opposition s’étrangle, les éditorialistes aussi.' : 'Un geste d’exemplarité, salué même par l’opposition.');
   }
@@ -148,10 +149,10 @@ export function remuneration(d: GameState): Remuneration {
   const lines: PayLine[] = [];
   const active = civilActive(d);
   const job = active ? JOB_PART[p.rankId] ?? 0 : 0;
-  const presPct = d.presidency && p.rankId === 'president' ? Number(p.flags['presPayPct'] ?? 0) : 0;
+  const presPct = d.presidency && (p.rankId === 'president' || p.rankId === 'roi') ? Number(p.flags['presPayPct'] ?? 0) : 0;
   const base = Math.round((rank.monthlyIncome * (1 + presPct / 100)) / 50) * 50 - job;
   if (base > 0) lines.push({ label: active && p.rankId === 'conseiller_municipal' ? 'Indemnité municipale' : BASE_LABEL[p.rankId], amount: base,
-    ...(MINISTERIAL.has(p.rankId) ? { note: 'Traitement brut et indemnité de fonction, versés par l’État' } : presPct ? { note: `${presPct > 0 ? '+' : ''}${presPct} % fixé par vous`, edit: 'president' as const } : d.presidency ? { edit: 'president' as const } : {}) });
+    ...(MINISTERIAL.has(p.rankId) ? { note: 'Traitement brut et indemnité de fonction, versés par l’État' } : presPct ? { note: `${frSigned(presPct)} % fixé par vous`, edit: 'president' as const } : d.presidency ? { edit: 'president' as const } : {}) });
   if (MINISTERIAL.has(p.rankId)) lines.push({ label: 'Indemnité de député·e', amount: 0, note: 'Suspendue : votre suppléant·e siège à l’Assemblée' });
   const end = Number(p.flags['finFonctionsUntil'] ?? 0);
   if (end > d.week && !MINISTERIAL.has(p.rankId)) {
@@ -166,7 +167,7 @@ export function remuneration(d: GameState): Remuneration {
   const lead = partyLeaderPay(d);
   if (lead) {
     const pct = Number(p.flags['partyPayPct'] ?? 0);
-    lines.push({ label: 'Salaire de chef·fe de parti', amount: lead, note: `Versé par le parti, selon votre soutien interne${pct ? ` · ${pct > 0 ? '+' : ''}${pct} % fixé par vous` : ''}`, edit: 'party' });
+    lines.push({ label: 'Salaire de chef·fe de parti', amount: lead, note: `Versé par le parti, selon votre soutien interne${pct ? ` · ${frSigned(pct)} % fixé par vous` : ''}`, edit: 'party' });
   }
   if (d.press) lines.push({ label: 'Salaire de journaliste', amount: d.press.salary, direct: true });
   for (const s of p.sideIncomes ?? []) {

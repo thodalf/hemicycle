@@ -1,7 +1,7 @@
 import { Decision, Effect, GameState, PlotState } from '../models/game.models';
 import { addMilestone, assassinationRisk, die } from './life';
 import { pushNews } from './effects';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, nextId, frSigned } from './rng';
 import { canStartArc } from './arcs';
 
 /* ============================================================
@@ -88,8 +88,8 @@ export function adjustPlot(d: GameState, e: Extract<Effect, { kind: 'plot' }>, r
   const p = d.plot;
   if (!p) return [];
   const out: string[] = [];
-  if (e.danger) { p.danger = clamp(p.danger + e.danger); out.push(`Imminence ${e.danger > 0 ? '+' : ''}${e.danger}`); }
-  if (e.intel) { p.intel = clamp(p.intel + e.intel); out.push(`Enquête ${e.intel > 0 ? '+' : ''}${e.intel}`); }
+  if (e.danger) { p.danger = clamp(p.danger + e.danger); out.push(`Imminence ${frSigned(e.danger)}`); }
+  if (e.intel) { p.intel = clamp(p.intel + e.intel); out.push(`Enquête ${frSigned(e.intel)}`); }
   if (e.vest) { p.vest = true; out.push('Gilet pare-balles en public'); }
   if (p.intel >= 100) out.push(...foil(d));
   return out;

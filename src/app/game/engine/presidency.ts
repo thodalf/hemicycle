@@ -2,6 +2,7 @@ import { yearOf } from './calendar';
 import { recordLaw } from './legacy';
 import { DOMAIN_LABELS } from '../models/game.models';
 import { applyAppointment, pmDecision } from './cabinet';
+import { restoreRepublic } from './kingdom';
 import { makePledges } from './pledges';
 import { Decision, DecisionChoice, Effect, GameState, PresidentialCalendar, ScheduledElection } from '../models/game.models';
 import { inMonth, monthLabel } from './calendar';
@@ -10,7 +11,7 @@ import { ofParty } from '../data/world';
 import { applyEffects, partySupport, pushNews } from './effects';
 import { addMilestone } from './life';
 import { fallFromMatignon } from './government';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, nextId, fr, frSigned } from './rng';
 
 /* ============================================================
  *  Élection présidentielle et présidence.
@@ -256,25 +257,25 @@ export function presidentialResult(d: GameState, e: ScheduledElection, winnerId:
     c.incumbentPartyId = d.party.id;
     c.prevRank = undefined;
     addMilestone(d, 'victoire', reelected ? 'Réélu·e président·e de la République' : 'Élu·e président·e de la République',
-      `${score} % des voix au second tour. ${reelected ? 'Cinq ans de plus à l’Élysée.' : 'Passation de pouvoirs dans les jours qui viennent.'}`);
-    pushNews(d, 'election', 'positive', reelected ? `${p.name} réélu·e avec ${score} %` : `${p.name} élu·e président·e de la République avec ${score} %`,
+      `${fr(score)} % des voix au second tour. ${reelected ? 'Cinq ans de plus à l’Élysée.' : 'Passation de pouvoirs dans les jours qui viennent.'}`);
+    pushNews(d, 'election', 'positive', reelected ? `${p.name} réélu·e avec ${fr(score)} %` : `${p.name} élu·e président·e de la République avec ${fr(score)} %`,
       `Premier ministre : ${d.presidency!.primeMinister}. ${d.presidency!.cohabitation ? 'Les législatives vous privent de majorité : cohabitation.' : `Majorité à l’Assemblée : ${Math.round(d.presidency!.majority)} %.`}`);
   } else {
     const winner = d.npcs.find(n => n.id === winnerId);
     const formerParty = c.incumbentPartyId;
     if (d.presidency) {
-      addMilestone(d, 'revers', 'Battu·e en président·e sortant·e', `${score} % des voix : les Français tournent la page.`);
+      addMilestone(d, 'revers', 'Battu·e en président·e sortant·e', `${fr(score)} % des voix : les Français tournent la page.`);
       endPresidency(d, 'defaite');
     } else {
       const back = c.prevRank ?? 'chef_parti';
       p.rankId = back;
       p.actionPoints.max = RANKS[back].monthlyActionPoints;
-      addMilestone(d, 'revers', 'Battu·e à la présidentielle', `${score} % des voix face à ${winner?.name ?? 'votre adversaire'}. Prochaine chance dans cinq ans.`);
+      addMilestone(d, 'revers', 'Battu·e à la présidentielle', `${fr(score)} % des voix face à ${winner?.name ?? 'votre adversaire'}. Prochaine chance dans cinq ans.`);
     }
     p.stats.popularity = clamp(p.stats.popularity - 6);
     p.stats.influence = clamp(p.stats.influence - 4);
     p.stats.stress = clamp(p.stats.stress + 15);
-    pushNews(d, 'election', 'negative', `Défaite à l’élection présidentielle (${score} %)`, `${winner?.name ?? 'Votre adversaire'} s’installe à l’Élysée. Prochain scrutin ${inMonth(c.nextWeek)}.`);
+    pushNews(d, 'election', 'negative', `Défaite à l’élection présidentielle (${fr(score)} %)`, `${winner?.name ?? 'Votre adversaire'} s’installe à l’Élysée. Prochain scrutin ${inMonth(c.nextWeek)}.`);
     c.prevRank = undefined;
     if (winner) {
       c.incumbentMandates = c.incumbentId === winner.id ? c.incumbentMandates + 1 : 1;
@@ -309,6 +310,11 @@ export function startPresidency(d: GameState, score: number, rng: Rng): void {
 export function endPresidency(d: GameState, why: 'fin' | 'defaite' | 'demission' | 'destitution'): void {
   const pr = d.presidency;
   if (!pr) return;
+  // Sur le trône : démissionner, c'est abdiquer ; être destitué, c'est la révolution
+  if (d.kingdom) {
+    if (why === 'demission' || why === 'destitution') restoreRepublic(d, why === 'destitution');
+    return;
+  }
   const p = d.player;
   d.presidency = null;
   p.rankId = 'ancien_president';
@@ -338,7 +344,7 @@ export function adjustPresidency(d: GameState, e: Extract<Effect, { kind: 'presi
   const pr = d.presidency;
   if (!pr) return [];
   const out: string[] = [];
-  const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const sign = (n: number) => frSigned(n);
   if (e.approval) { pr.approval = clamp(pr.approval + e.approval); out.push(`Cote de confiance ${sign(e.approval)}`); }
   if (e.majority) { pr.majority = clamp(pr.majority + e.majority); out.push(`Majorité ${sign(e.majority)}`); }
   if (e.security) { pr.security = clamp(pr.security + e.security); out.push(`Sécurité ${sign(e.security)}`); }

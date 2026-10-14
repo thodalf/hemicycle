@@ -1,5 +1,6 @@
 import { Effect, GameState } from '../models/game.models';
 import { RANKS } from '../data/ranks';
+import { pmDecision } from './cabinet';
 import { addMilestone } from './life';
 import { pushNews } from './effects';
 import { Rng, clamp } from './rng';
@@ -34,7 +35,14 @@ export function crownPlayer(d: GameState): void {
   if (d.kingdom) return;
   const p = d.player;
   d.kingdom = { since: d.week, prestige: 55, stabilite: 50, opposition: 45, title: sovereignTitle(d) };
-  d.presidency = null;
+  // Le souverain garde les leviers de l'exécutif : Matignon, gouvernement, armée, diplomatie
+  if (d.presidency) {
+    d.presidency.cohabitation = false;
+    d.presidency.approval = Math.max(d.presidency.approval, 50);
+  } else {
+    d.presidency = { since: d.week, mandates: 1, approval: 55, majority: 50, security: 60, threat: 25, primeMinister: 'Claire Montel', reforms: 0, cohabitation: false, lastCrisisWeek: d.week };
+    d.pendingDecisions.push(pmDecision(d));
+  }
   p.rankId = 'roi';
   p.actionPoints.max = RANKS.roi.monthlyActionPoints;
   p.flags['monarchie'] = true;
@@ -42,6 +50,12 @@ export function crownPlayer(d: GameState): void {
   // Tous les autres partis se dressent contre la Couronne
   for (const n of d.npcs) if (n.partyId !== d.party.id) n.relationToPlayer = Math.min(n.relationToPlayer, -25);
   pushNews(d, 'actu', 'neutral', `Vive ${d.player.gender === 'femme' ? 'la Reine' : 'le Roi'} !`, `Le prétendant renonce en votre faveur : ${p.name} est sacré·e à Reims, ${d.kingdom.title}. Tous les partis, sauf le vôtre, forment un « front républicain ».`);
+}
+
+/** Anciennes parties : le souverain sans exécutif en reçoit un */
+export function ensureRoyalExecutive(d: GameState): void {
+  if (!d.kingdom || d.presidency) return;
+  d.presidency = { since: d.week, mandates: 1, approval: 55, majority: 50, security: 60, threat: 25, primeMinister: 'Claire Montel', reforms: 0, cohabitation: false, lastCrisisWeek: d.week };
 }
 
 /** Rétablir la République (abdication volontaire, ou forcée) */
@@ -52,6 +66,7 @@ export function restoreRepublic(d: GameState, forced: boolean): void {
   const months = d.week - k.since;
   d.kingdom = null;
   d.crown = null;
+  d.presidency = null;
   p.flags['monarchie'] = false;
   p.flags['closed_crown'] = true;
   p.rankId = 'ancien_president';

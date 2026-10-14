@@ -1,7 +1,7 @@
 import { AlienState, Effect, GameState } from '../models/game.models';
 import { addMilestone } from './life';
 import { pushNews } from './effects';
-import { Rng, clamp } from './rng';
+import { Rng, clamp, frSigned } from './rng';
 
 /* ============================================================
  *  Scénario « Premier contact » : un signal venu de Proxima,
@@ -57,7 +57,7 @@ export function adjustAlien(d: GameState, e: Extract<Effect, { kind: 'alien' }>)
   const a = d.alien;
   if (!a) return [];
   const out: string[] = [];
-  const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const sign = (n: number) => frSigned(n);
   const ease = (n: number) => (n > 0 ? Math.max(1, Math.round(n * (PHASE_EASE[a.phase] ?? 1))) : n);
   if (e.comprehension) { const v = ease(e.comprehension); a.comprehension = clamp(a.comprehension + v); out.push(`Compréhension ${sign(v)}`); }
   if (e.confiance) { const v = ease(e.confiance); a.confiance = clamp(a.confiance + v); out.push(`Confiance des Vélari ${sign(v)}`); }

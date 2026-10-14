@@ -1,7 +1,7 @@
 import { Decision, Effect, GameState } from '../models/game.models';
 import { partySupport, pushNews } from './effects';
 import { ofParty } from '../data/world';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, nextId, frSigned } from './rng';
 
 /* ============================================================
  *  Scénario « Infiltré·e » : couverture, renseignements,
@@ -19,12 +19,12 @@ export function adjustMole(d: GameState, e: Extract<Effect, { kind: 'mole' }>): 
   const m = d.mole;
   if (!m) return [];
   const out: string[] = [];
-  if (e.cover) { m.cover = clamp(m.cover + e.cover); out.push(`Couverture ${e.cover > 0 ? '+' : ''}${e.cover}`); }
+  if (e.cover) { m.cover = clamp(m.cover + e.cover); out.push(`Couverture ${frSigned(e.cover)}`); }
   if (e.intel) {
     const before = m.intel;
     m.intel = Math.max(0, m.intel + e.intel);
     const real = m.intel - before;
-    if (real) out.push(`Renseignements ${real > 0 ? '+' : ''}${real}`);
+    if (real) out.push(`Renseignements ${frSigned(real)}`);
   }
   if (e.deliver && m.intel > 0) {
     const n = m.intel;
@@ -46,10 +46,10 @@ export function adjustMole(d: GameState, e: Extract<Effect, { kind: 'mole' }>): 
     const leader = d.npcs.find(n => n.id === d.party.leaderNpcId);
     if (leader) {
       leader.popularity = clamp(leader.popularity + e.leaderPop);
-      out.push(`${leader.name} ${e.leaderPop > 0 ? '+' : ''}${e.leaderPop} popularité`);
+      out.push(`${leader.name} ${frSigned(e.leaderPop)} popularité`);
     }
   }
-  if (e.handler) { m.handlerTrust = clamp(m.handlerTrust + e.handler); out.push(`Confiance de l’officier ${e.handler > 0 ? '+' : ''}${e.handler}`); }
+  if (e.handler) { m.handlerTrust = clamp(m.handlerTrust + e.handler); out.push(`Confiance de l’officier ${frSigned(e.handler)}`); }
   return out;
 }
 

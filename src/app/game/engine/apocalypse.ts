@@ -1,7 +1,7 @@
 import { ApocalypseState, Effect, GameState } from '../models/game.models';
 import { addMilestone } from './life';
 import { pushNews } from './effects';
-import { Rng, clamp } from './rng';
+import { Rng, clamp, frSigned } from './rng';
 
 /* ============================================================
  *  La fin du monde : des présages, une secte (l'Ordre de l'Aube
@@ -39,7 +39,7 @@ export function adjustApocalypse(d: GameState, e: Extract<Effect, { kind: 'apoca
   const a = d.apocalypse;
   if (!a || a.phase >= 4) return [];
   const out: string[] = [];
-  const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const sign = (n: number) => frSigned(n);
   if (e.darkness) { a.darkness = clamp(a.darkness + e.darkness); out.push(`Ténèbres ${sign(e.darkness)}`); }
   if (e.resistance) { a.resistance = clamp(a.resistance + e.resistance); out.push(`Résistance ${sign(e.resistance)}`); }
   if (e.cult) { a.cult = clamp(a.cult + e.cult); out.push(`Emprise de la secte ${sign(e.cult)}`); }

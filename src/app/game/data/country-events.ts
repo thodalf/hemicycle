@@ -793,6 +793,84 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'roy_portrait', weight: 1, eligible: d => !!d.kingdom,
+    build: () => ({
+      title: 'Le portrait officiel',
+      context: 'Un peintre célèbre doit réaliser votre portrait officiel, qui sera accroché dans toutes les mairies. Il vous propose deux styles.',
+      choices: [
+        c('hermine', 'En manteau d’hermine, sceptre en main', [kg({ prestige: 4, opposition: 3 })], 'Majestueux. Les caricaturistes s’en donnent à cœur joie.'),
+        c('simple', 'En costume, à votre bureau', [kg({ opposition: -3, prestige: 1 }), s('credibility', 1)], 'Un souverain qui travaille : le portrait plaît aux mairies républicaines.'),
+      ],
+    }),
+  },
+  {
+    tag: 'roy_sondage', weight: 1, eligible: d => !!d.kingdom,
+    build: d => ({
+      title: 'Faut-il garder la monarchie ?',
+      context: `Un grand sondage demande aux Français s’ils veulent garder la monarchie. Prestige du trône : ${Math.round(d.kingdom!.prestige)}/100.`,
+      choices: [
+        c('commenter', 'Commenter : « Je sers tous les Français »', d.kingdom!.prestige >= 50 ? [kg({ prestige: 3, opposition: -2 })] : [kg({ opposition: 3 })],
+          d.kingdom!.prestige >= 50 ? '54 % pour la Couronne. Votre réponse sobre est saluée.' : '41 % seulement. Le front républicain jubile.'),
+        c('silence', 'Ne pas commenter les sondages', [kg({ stabilite: 2 })], 'Le silence royal : une vieille tradition.'),
+      ],
+    }),
+  },
+  {
+    tag: 'roy_heritier_scandale', weight: 0.8, eligible: d => !!d.kingdom,
+    build: () => ({
+      title: 'L’héritier·e en boîte de nuit',
+      context: 'Des photos montrent votre héritier·e dansant sur une table à Saint-Tropez, une bouteille de champagne à la main.',
+      choices: [
+        c('excuses', 'Présenter des excuses publiques', [kg({ prestige: -2, opposition: -2 }), s('credibility', 1)], '« La jeunesse a ses excès. » Les Français pardonnent vite.'),
+        c('defendre', 'Défendre son droit à une vie privée', [kg({ prestige: -1, opposition: 2 }), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Les jeunes approuvent. Les tabloïds redoublent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'roy_visite_etat', weight: 1, eligible: d => !!d.kingdom,
+    build: () => ({
+      title: 'Une visite d’État au Royaume-Uni',
+      context: 'Le roi d’Angleterre vous reçoit à Windsor. Il vous propose une promenade en calèche… et une partie de croquet.',
+      choices: [
+        c('croquet', 'Accepter le croquet (et perdre poliment)', [kg({ prestige: 4 }), { kind: 'intl', prestige: 3 }, s('popularity', 1)], 'Défaite élégante 3-2. La presse britannique vous adore.'),
+        c('gagner', 'Jouer pour gagner', [kg({ prestige: 2 }), s('popularity', 3), { kind: 'intl', prestige: -1 }], 'Victoire 5-0. La France exulte ; Londres moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_canicule_classes', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Canicule dans les écoles',
+      context: '38 °C dans les salles de classe en juin. Des parents réclament la fermeture des écoles ; les enseignants demandent des ventilateurs.',
+      choices: [
+        c('vegetaliser', 'Lancer un plan de végétalisation des cours', [{ kind: 'dossier', domain: 'ecologie', delta: 2 }, { kind: 'dossier', domain: 'education', delta: 2 }, s('politicalCapital', -4)], 'Arbres, ombrières, fontaines : un plan sur cinq ans, salué.'),
+        c('horaires', 'Autoriser des horaires aménagés', [seg('populaires', -1), seg('retraites', 1), s('credibility', 1)], 'Cours de 7 h à 13 h : les familles s’organisent tant bien que mal.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_boulanger_record', weight: 0.6,
+    build: () => ({
+      title: 'Le boulanger champion du monde',
+      context: 'Un boulanger de votre secteur vient d’être sacré meilleure baguette du monde. Il vous invite à goûter devant les caméras.',
+      choices: [
+        c('gouter', 'Y aller, croquer la baguette', [s('popularity', 2), seg('ruraux', 1), seg('retraites', 1)], 'Le crouton craque au micro. Le son devient un mème.'),
+        c('apprendre', 'Demander à pétrir une fournée avec lui', [s('popularity', 3), s('energy', -4)], '4 h du matin, farine partout : le reportage fait un carton.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_trottinettes', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'La guerre des trottinettes',
+      context: 'Trottinettes électriques abandonnées partout, accidents en hausse : les riverains exigent une interdiction.',
+      choices: [
+        c('interdire', 'Les interdire en ville', [seg('retraites', 2), seg('jeunes', -2), s('credibility', 1)], 'Les trottoirs respirent. Les jeunes râlent.'),
+        c('encadrer', 'Encadrer : parkings dédiés et vitesse limitée', [seg('jeunes', 1), seg('cadres', 1), { kind: 'dossier', domain: 'territoires', delta: 1 }], 'Un compromis qui fâche un peu tout le monde, donc juste.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

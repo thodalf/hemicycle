@@ -1,7 +1,7 @@
 import { Effect, GameState, ZombieState } from '../models/game.models';
 import { addMilestone, die } from './life';
 import { pushNews } from './effects';
-import { Rng, clamp } from './rng';
+import { Rng, clamp, frSigned } from './rng';
 
 /* ============================================================
  *  Épidémie Z : un virus inconnu transforme les malades en
@@ -50,7 +50,7 @@ export function adjustZombie(d: GameState, e: Extract<Effect, { kind: 'zombie' }
   const z = d.zombie;
   if (!z) return [];
   const out: string[] = [];
-  const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const sign = (n: number) => frSigned(n);
   if (e.infection) { z.infection = clamp(z.infection + e.infection); out.push(`Infection ${sign(e.infection)}`); }
   if (e.containment) { z.containment = clamp(z.containment + e.containment); out.push(`Confinement ${sign(e.containment)}`); }
   if (e.panic) { z.panic = clamp(z.panic + e.panic); out.push(`Panique ${sign(e.panic)}`); }

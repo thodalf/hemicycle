@@ -69,6 +69,12 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Amoxicilline, insuline, antidouleurs : les pharmacies affichent « rupture » sur des centaines de produits.', 'Les patients chroniques s’inquiètent ; les médecins rationnent les ordonnances.', 'Les premières lignes de production relocalisées démarrent.'] },
   train_futur: { id: 'train_futur', icon: '🚄', label: 'Le train du futur', gaugeLabel: 'Avancement du projet', riskLabel: 'Oppositions locales', months: 10, drift: { gauge: 3, risk: 3 },
     stages: ['Un consortium propose un train à sustentation magnétique : Paris–Marseille en 1 h 10.', 'Tracé contesté, enquêtes publiques, zadistes sur le parcours.', 'Premier essai à 600 km/h sur la voie test de la Beauce.'] },
+  pandas: { id: 'pandas', icon: '🐼', label: 'Les pandas de l’amitié', gaugeLabel: 'Lune de miel diplomatique', riskLabel: 'Incident diplomatique', months: 6, drift: { gauge: 3, risk: 4 },
+    stages: ['Pékin offre deux pandas géants à la France, « gage d’une amitié éternelle ». Il faut leur trouver un zoo… et un nom.', 'Les pandas refusent de manger, les caméras du monde entier filment l’enclos, et Pékin surveille chaque détail.', 'Rumeur : la femelle serait enceinte. Toute la planète retient son souffle.'] },
+  coupe_monde: { id: 'coupe_monde', icon: '⚽', label: 'La Coupe du monde à domicile', gaugeLabel: 'Fête populaire', riskLabel: 'Fiasco d’organisation', months: 6, drift: { gauge: 3, risk: 4 },
+    stages: ['La France accueille la Coupe du monde : douze stades, deux millions de supporters attendus.', 'Billetterie saturée, grèves des transports annoncées, fan-zones à sécuriser : le compte à rebours est lancé.', 'Les Bleus passent les poules. Le pays entier se met à y croire.'] },
+  jubile: { id: 'jubile', icon: '🎆', label: 'Le jubilé royal', gaugeLabel: 'Ferveur populaire', riskLabel: 'Contre-jubilé républicain', months: 4, drift: { gauge: 3, risk: 4 },
+    stages: ['Le Palais annonce un grand jubilé pour célébrer votre règne : défilés, feux d’artifice, bals populaires.', 'Le front républicain organise un « contre-jubilé » et appelle au boycott des festivités.', 'Le grand jour approche : carrosse, Champs-Élysées et feu d’artifice sur la tour Eiffel.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -354,6 +360,38 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.credibility = clamp(s.credibility - 4);
         economy(d).deficit += 0.1;
         lose('Le train qui ne partit jamais', 'Recours, tracé abandonné, consortium en faillite : il reste quinze kilomètres de voie test dans la Beauce.');
+      }
+      break;
+    case 'pandas':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); d.intl.prestige = clamp(d.intl.prestige + 4);
+        economy(d).confidence += 2;
+        win('Un bébé panda français', 'La femelle donne naissance à un petit, baptisé par un vote national. Pékin est ravi ; le zoo bat tous ses records.');
+      } else {
+        s.credibility = clamp(s.credibility - 4); d.intl.prestige = clamp(d.intl.prestige - 4);
+        lose('Les pandas rappelés à Pékin', 'Un incident protocolaire de trop : la Chine rapatrie ses pandas. Les enfants de France pleurent devant l’enclos vide.');
+      }
+      break;
+    case 'coupe_monde':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 6); s.influence = clamp(s.influence + 2);
+        economy(d).growth += 0.2; economy(d).confidence += 4; d.intl.prestige = clamp(d.intl.prestige + 3);
+        win('Champions du monde à la maison !', 'Un million de personnes sur les Champs-Élysées, des inconnus qui s’embrassent : la Coupe du monde est une fête inoubliable.');
+      } else {
+        s.popularity = clamp(s.popularity - 5);
+        economy(d).deficit += 0.1;
+        lose('Le fiasco du Mondial', 'Stades à moitié vides, supporters bloqués sur les quais, fan-zone évacuée : le monde se moque de l’organisation française.');
+      }
+      break;
+    case 'jubile':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4);
+        if (d.kingdom) { d.kingdom.prestige = clamp(d.kingdom.prestige + 12); d.kingdom.opposition = clamp(d.kingdom.opposition - 8); d.kingdom.stabilite = clamp(d.kingdom.stabilite + 5); }
+        win('Le jubilé triomphal', 'Un million de personnes acclament le carrosse sur les Champs-Élysées. Même certains républicains avouent avoir été émus.');
+      } else {
+        s.popularity = clamp(s.popularity - 3);
+        if (d.kingdom) { d.kingdom.prestige = clamp(d.kingdom.prestige - 8); d.kingdom.opposition = clamp(d.kingdom.opposition + 10); }
+        lose('Le contre-jubilé l’emporte', 'Tribunes clairsemées, sifflets sur le parcours : le contre-jubilé républicain a éclipsé les festivités royales.');
       }
       break;
     case 'tempete_solaire':

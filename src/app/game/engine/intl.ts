@@ -1,7 +1,7 @@
 import { Effect, GameState, IntlState } from '../models/game.models';
 import { rankOrder } from '../data/ranks';
 import { pushNews } from './effects';
-import { Rng, clamp } from './rng';
+import { Rng, clamp, frSigned } from './rng';
 
 /* ============================================================
  *  Politique internationale : relations avec les grands
@@ -65,7 +65,7 @@ export function relationLabel(v: number): string {
 export function adjustIntl(d: GameState, e: Extract<Effect, { kind: 'intl' }>, partnerRef: string | undefined, rng: Rng): string[] {
   const w = d.intl;
   const out: string[] = [];
-  const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const sign = (n: number) => frSigned(n);
   const partner = e.partner === '$target' ? partnerRef : e.partner;
   if (e.relation && partner && w.relations[partner] !== undefined) {
     w.relations[partner] = clamp(w.relations[partner] + e.relation, -100, 100);

@@ -6,7 +6,7 @@ import { PARTNERS_BY_ID } from './intl';
 import { addMilestone } from './life';
 import { applyEffects, pushNews } from './effects';
 import { scheduleWarVote } from './assembly';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, nextId, frSigned } from './rng';
 
 /* ============================================================
  *  La guerre : déclarée par le président, le Premier ministre
@@ -89,9 +89,9 @@ export function adjustHostile(d: GameState, e: Extract<Effect, { kind: 'hostile'
   for (const id of ids) {
     if (h[id] === undefined) continue;
     h[id] = clamp(h[id] + e.delta, -100, 100);
-    if (e.enemy !== 'all') out.push(`Relations avec ${theEnemy(id)} ${e.delta > 0 ? '+' : ''}${e.delta}`);
+    if (e.enemy !== 'all') out.push(`Relations avec ${theEnemy(id)} ${frSigned(e.delta)}`);
   }
-  if (e.enemy === 'all') out.push(`Relations avec les États hostiles ${e.delta > 0 ? '+' : ''}${e.delta}`);
+  if (e.enemy === 'all') out.push(`Relations avec les États hostiles ${frSigned(e.delta)}`);
   return out;
 }
 
@@ -492,7 +492,7 @@ export function adjustWar(d: GameState, e: Extract<Effect, { kind: 'war' }>, tar
   }
   const w = d.war;
   if (!w) return out;
-  const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const sign = (n: number) => frSigned(n);
   if (e.total) out.push(...declareTotal(d));
   if (e.effort && w.effort !== undefined) { w.effort = clamp(w.effort + e.effort); out.push(`Effort de guerre ${sign(e.effort)}`); }
   if (e.morale && w.morale !== undefined) { w.morale = clamp(w.morale + e.morale); out.push(`Moral de l’arrière ${sign(e.morale)}`); }

@@ -3,7 +3,7 @@ import { STAFF_BY_ROLE } from '../data/staff';
 import { applyEffects, availableFunds, pushNews } from './effects';
 import { fireRecruit, hireRecruit } from './recruits';
 import { TEAM_TIPS } from './phone';
-import { Rng, clamp } from './rng';
+import { Rng, clamp, frSigned } from './rng';
 
 /* ============================================================
  *  Salaires de l'équipe : on négocie à l'embauche, on augmente
@@ -100,8 +100,8 @@ export function adjustTeam(d: GameState, e: Extract<Effect, { kind: 'team' }>): 
   }
   if (!list.length) return out;
   const who = e.all ? 'Équipe' : list[0].name;
-  if (e.salaryPct) out.push(`${who} : salaire ${e.salaryPct > 0 ? '+' : ''}${e.salaryPct} %`);
-  if (e.morale) out.push(`${who} : moral ${e.morale > 0 ? '+' : ''}${e.morale}`);
+  if (e.salaryPct) out.push(`${who} : salaire ${frSigned(e.salaryPct)} %`);
+  if (e.morale) out.push(`${who} : moral ${frSigned(e.morale)}`);
   return out;
 }
 

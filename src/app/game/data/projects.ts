@@ -1,3 +1,4 @@
+import { rankAllowed } from './ranks';
 import { Domain, Effect, GameState, RankId, RiskProfile } from '../models/game.models';
 import { rankOrder } from './ranks';
 
@@ -176,7 +177,7 @@ export const PROJECTS_BY_ID = new Map(PROJECTS.map(p => [p.id, p]));
 
 /** Le projet est-il proposé à ce rang ? */
 export function projectVisible(d: GameState, p: ProjectDef): boolean {
-  if (p.onlyRanks && !p.onlyRanks.includes(d.player.rankId)) return false;
+  if (p.onlyRanks && !rankAllowed(p.onlyRanks, d.player.rankId)) return false;
   if (p.minRank && rankOrder(d.player.rankId) < rankOrder(p.minRank)) return false;
   if (p.id === 'grande_enquete' && !d.press) return false;
   return true;

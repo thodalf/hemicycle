@@ -51,7 +51,7 @@ export function pmDecision(d: GameState): Decision {
   return {
     id: nextId(d, 'dec'), tag: 'nommer_pm', week: d.week, deadlineWeek: d.week + 1, source: 'carriere',
     title: 'Nommer le Premier ministre',
-    context: 'Le décret doit paraître au Journal officiel demain. Le choix de Matignon donnera le ton du quinquennat.',
+    context: `Le décret doit paraître au Journal officiel demain. Le choix de Matignon donnera le ton ${d.kingdom ? 'du règne' : 'du quinquennat'}.`,
     choices,
   };
 }

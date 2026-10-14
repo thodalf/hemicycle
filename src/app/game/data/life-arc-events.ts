@@ -462,6 +462,39 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'pandas_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.pandas && !d.player.flags['pandasDone'] && d.week > 16,
+    build: () => ({
+      title: 'Deux pandas pour la France',
+      context: 'L’ambassadeur de Chine annonce un cadeau exceptionnel : deux pandas géants. Il souhaite que vous parrainiez leur arrivée.',
+      choices: [
+        c('parrainer', 'Parrainer leur arrivée en personne', [cr('pandas', 6, 3, true), { kind: 'flag', key: 'pandasDone', value: true }, s('popularity', 2), { kind: 'intl', prestige: 1 }], 'Votre photo avec les pandas fait le tour de la planète.'),
+        c('prudent', 'Accepter, en parlant aussi des droits humains', [cr('pandas', 2, 5, true), { kind: 'flag', key: 'pandasDone', value: true }, s('credibility', 3)], 'Pékin fronce les sourcils. Les pandas arrivent quand même.'),
+      ],
+    }),
+  },
+  {
+    tag: 'coupe_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.coupe_monde && !d.player.flags['coupeDone'] && d.week > 24,
+    build: () => ({
+      title: 'La Coupe du monde en France',
+      context: 'La FIFA attribue la Coupe du monde à la France. Le comité d’organisation cherche un visage politique pour porter l’événement.',
+      choices: [
+        c('porter', 'Prendre la tête du comité', [cr('coupe_monde', 6, 3, true), { kind: 'flag', key: 'coupeDone', value: true }, s('popularity', 3), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Écharpe bleue, sourire aux lèvres : vous voilà « ministre du ballon rond ».'),
+        c('sobre', 'Exiger un Mondial sobre et sans gaspillage', [cr('coupe_monde', 3, 1, true), { kind: 'flag', key: 'coupeDone', value: true }, s('credibility', 2)], 'Pas de stade neuf, des fan-zones gratuites : on applaudit le sérieux.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jubile_gate', weight: 1.2, eligible: d => !!d.kingdom && !d.crises?.jubile && !d.player.flags['jubileDone'] && d.week - d.kingdom.since >= 6,
+    build: () => ({
+      title: 'Un jubilé pour le règne ?',
+      context: 'Le grand chambellan propose de célébrer votre règne par un jubilé national : défilés, bals, feux d’artifice. Le front républicain prépare déjà sa riposte.',
+      choices: [
+        c('grandiose', 'Un jubilé grandiose', [cr('jubile', 6, 5, true), { kind: 'flag', key: 'jubileDone', value: true }, { kind: 'kingdom', prestige: 3 }], 'Les ateliers de Versailles tournent à plein régime.'),
+        c('populaire', 'Un jubilé populaire, sans faste', [cr('jubile', 4, 1, true), { kind: 'flag', key: 'jubileDone', value: true }, { kind: 'kingdom', opposition: -2 }], 'Bals de quartier et pique-niques géants : la fête sera simple.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1140,6 +1173,72 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('monter', 'Monter à bord', [cr('train_futur', 6), s('popularity', 3), s('stress', 3)], '603 km/h. Votre sourire crispé fait le tour du monde.'),
         c('quai', 'Regarder depuis le quai', [cr('train_futur', 3), s('credibility', 1)], 'Prudent. Le record est battu, sans vous.'),
+      ],
+    }),
+  },
+  {
+    tag: 'pandas_greve_faim', weight: 1, eligible: d => !!d.crises?.pandas,
+    build: () => ({
+      title: 'Les pandas ne mangent plus',
+      context: 'Depuis quatre jours, les pandas boudent leur bambou. Les chaînes d’info installent des caméras devant l’enclos.',
+      choices: [
+        c('bambou', 'Faire venir du bambou de Chine par avion', [cr('pandas', 5, -2), { kind: 'funds', account: 'campaign', delta: -3000 }], 'Le bambou chinois arrive : les pandas mangent. Pékin apprécie l’attention.'),
+        c('experts', 'Confier l’affaire aux soigneurs du zoo', [cr('pandas', 2, 2), s('credibility', 1)], 'Les soigneurs trouvent la solution… mais la presse a parlé de « crise du bambou ».'),
+      ],
+    }),
+  },
+  {
+    tag: 'pandas_nom', weight: 0.9, eligible: d => !!d.crises?.pandas,
+    build: () => ({
+      title: 'Comment appeler les pandas ?',
+      context: 'Un vote en ligne pour nommer les pandas est submergé : « Pandy McPandaface » arrive largement en tête. L’ambassade de Chine s’inquiète.',
+      choices: [
+        c('respecter', 'Respecter le vote populaire', [cr('pandas', 1, 5), s('popularity', 3), { kind: 'segment', segment: 'jeunes', delta: 3 }], 'Internet exulte. Pékin, beaucoup moins.'),
+        c('diplomatie', 'Choisir des noms chinois traditionnels', [cr('pandas', 5, -3), s('popularity', -1)], 'Yuan et Mei. Élégant, diplomatique, un peu triste.'),
+      ],
+    }),
+  },
+  {
+    tag: 'coupe_billets', weight: 1, eligible: d => !!d.crises?.coupe_monde,
+    build: () => ({
+      title: 'Le scandale des billets',
+      context: 'Les billets du Mondial se revendent dix fois leur prix sur des sites étrangers. Les supporters populaires crient au scandale.',
+      choices: [
+        c('nominatif', 'Imposer des billets nominatifs', [cr('coupe_monde', 4, -4), { kind: 'segment', segment: 'populaires', delta: 2 }], 'La revente s’effondre. Les vrais supporters remplissent les tribunes.'),
+        c('laisser', 'Laisser faire le marché', [cr('coupe_monde', 1, 4), { kind: 'segment', segment: 'cadres', delta: 1 }], 'Tribunes VIP pleines, virages vides : l’ambiance s’en ressent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'coupe_quart', weight: 0.8, eligible: d => !!d.crises?.coupe_monde,
+    build: () => ({
+      title: 'Les Bleus en quart de finale',
+      context: 'Match décisif ce soir. Le sélectionneur vous invite dans le vestiaire avant le coup d’envoi.',
+      choices: [
+        c('vestiaire', 'Aller encourager les joueurs', [cr('coupe_monde', 5), s('popularity', 2), s('stress', 2)], 'Une poignée de mains, un « allez les Bleus » : on gagne 2-1. Vous êtes un porte-bonheur.'),
+        c('tribune', 'Rester en tribune avec le public', [cr('coupe_monde', 3, -2), { kind: 'segment', segment: 'populaires', delta: 2 }], 'L’écharpe au cou, au milieu des supporters : la photo est parfaite.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jubile_carrosse', weight: 1, eligible: d => !!d.crises?.jubile,
+    build: () => ({
+      title: 'Le carrosse du jubilé',
+      context: 'Le carrosse doré du sacre doit traverser Paris. Un collectif menace de bloquer le parcours avec des vélos.',
+      choices: [
+        c('velo', 'Remplacer le carrosse par un vélo', [cr('jubile', 4, -5), s('popularity', 3)], 'Le souverain à vélo : l’image désarme même les opposants.'),
+        c('carrosse', 'Maintenir le carrosse et sécuriser le parcours', [cr('jubile', 6, 3), { kind: 'kingdom', prestige: 2 }], 'Un défilé splendide, sous haute protection.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jubile_boycott', weight: 0.9, eligible: d => !!d.crises?.jubile,
+    build: () => ({
+      title: 'Des maires boycottent le jubilé',
+      context: 'Deux cents maires républicains refusent d’accrocher les guirlandes du jubilé sur leur mairie.',
+      choices: [
+        c('liberte', 'Leur laisser cette liberté', [cr('jubile', 2, -3), { kind: 'kingdom', stabilite: 2 }], '« Le royaume respecte ceux qui ne l’aiment pas. » La phrase fait mouche.'),
+        c('pression', 'Faire pression par les préfets', [cr('jubile', 3, 6), { kind: 'kingdom', opposition: 3 }], 'Les guirlandes sont posées. Les rancœurs aussi.'),
       ],
     }),
   },

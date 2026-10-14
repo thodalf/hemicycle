@@ -2,7 +2,7 @@ import { Decision, DecisionChoice, Effect, GameState, PartyInfo } from '../model
 import { BASE_SEATS, SEATS } from '../data/bills';
 import { pushNews } from './effects';
 import { addMilestone } from './life';
-import { Rng, clamp, nextId } from './rng';
+import { Rng, clamp, nextId, frSigned } from './rng';
 
 /* ============================================================
  *  Coalitions : à Matignon ou à l'Élysée, avec une majorité
@@ -97,7 +97,7 @@ export function adjustCoalition(d: GameState, e: Extract<Effect, { kind: 'coalit
   }
   if (e.mood && d.coalition) {
     d.coalition.mood = clamp(d.coalition.mood + e.mood);
-    return [`Humeur de ${d.coalition.name} ${e.mood > 0 ? '+' : ''}${e.mood}`];
+    return [`Humeur de ${d.coalition.name} ${frSigned(e.mood)}`];
   }
   return [];
 }

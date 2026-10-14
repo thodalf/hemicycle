@@ -1,3 +1,4 @@
+import { rankAllowed } from '../data/ranks';
 import { actionSegments } from '../engine/country';
 import { actionImage } from '../engine/legacy';
 import { canAppoint } from '../engine/cabinet';
@@ -105,7 +106,7 @@ export class ActionPlannerService {
       if (a.category === 'administration') return civilActive(s);
       if (a.category === 'international' && !intlRelevant(s)) return false;
       if (a.category === 'international' && rankOrder(a.minRank) >= rankOrder('ministre') && rankOrder(s.player.rankId) >= rankOrder('ministre') && !intlPower(s)) return false;
-      if (a.onlyRanks && !a.onlyRanks.includes(s.player.rankId)) return false;
+      if (a.onlyRanks && !rankAllowed(a.onlyRanks, s.player.rankId)) return false;
       // Actions propres à un ministère : seulement pour le ou la titulaire du portefeuille
       if (a.requires?.portfolio && (s.player.rankId !== 'ministre' || s.portfolio !== a.requires.portfolio)) return false;
       return true;

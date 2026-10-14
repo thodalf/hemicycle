@@ -38,3 +38,8 @@ export function nextId(d: GameState, prefix: string): string {
   d.idCounter += 1;
   return `${prefix}-${d.idCounter}`;
 }
+
+/** Nombre à la française : virgule décimale, au plus `digits` décimales (54,3 ; 1 372,9) */
+export const fr = (v: number, digits = 1): string => (Math.round(v * 10 ** digits) / 10 ** digits).toLocaleString('fr-FR', { maximumFractionDigits: digits });
+/** Variation signée à la française : +2,3 / -1 */
+export const frSigned = (n: number, digits = 1): string => (n > 0 ? `+${fr(n, digits)}` : fr(n, digits));
