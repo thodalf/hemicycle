@@ -883,13 +883,13 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
-    tag: 'ev_marathon_paris', weight: 0.7, eligible: d => Number(d.player.flags['marathon'] ?? 0) >= 2 && !(d.player.traits ?? []).includes('marathonien'),
+    tag: 'ev_marathon_paris', weight: 0.7, eligible: d => Number(d.player.flags['marathon'] ?? 0) >= 5 && !(d.player.traits ?? []).includes('marathonien'),
     build: d => ({
       title: 'Le marathon de Paris',
-      context: `Vous êtes inscrit·e au marathon de Paris. ${Number(d.player.flags['marathon']) >= 4 ? 'Votre préparation a été sérieuse.' : 'Votre préparation a été… légère.'}`,
+      context: `Vous êtes inscrit·e au marathon de Paris. ${Number(d.player.flags['marathon']) >= 8 ? 'Votre préparation a été sérieuse.' : 'Votre préparation a été… légère.'}`,
       choices: [
         c('courir', 'Courir les 42,195 km', [s('energy', -15), s('popularity', 3), { kind: 'trait', trait: 'marathonien' }], 'Ligne d’arrivée franchie en 4 h 12. Les photos sont superbes.',
-          { risk: { baseChance: Number(d.player.flags['marathon']) >= 4 ? 0.1 : 0.5, onFailure: [s('energy', -10), s('popularity', -1)], failureNews: 'Abandon au 30ᵉ kilomètre : le mur, le vrai.' } }),
+          { risk: { baseChance: Number(d.player.flags['marathon']) >= 8 ? 0.15 : 0.55, onFailure: [s('energy', -10), s('popularity', -1)], failureNews: 'Abandon au 30ᵉ kilomètre : le mur, le vrai.' } }),
         c('semi', 'Se contenter du semi-marathon', [s('energy', -6), s('popularity', 1)], 'Raisonnable. Personne ne vous en veut.'),
       ],
     }),

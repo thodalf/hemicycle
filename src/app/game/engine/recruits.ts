@@ -1,6 +1,7 @@
 import { GameState, Rarity, Recruit, StaffRole, TraitId } from '../models/game.models';
 import { STAFF, STAFF_BY_ROLE } from '../data/staff';
-import { BACKGROUNDS, BAD_TRAITS, FIRST_NAMES, GOOD_TRAITS, LAST_NAMES, RARITY_SALARY } from '../data/recruits';
+import { BACKGROUNDS, BAD_TRAITS, GOOD_TRAITS, RARITY_SALARY } from '../data/recruits';
+import { uniqueName } from '../data/names';
 import { RANKS, rankOrder } from '../data/ranks';
 import { availableFunds, pushNews } from './effects';
 import { Rng, clamp, nextId } from './rng';
@@ -48,7 +49,7 @@ export function generateRecruit(d: GameState, rng: Rng, forced?: { role?: StaffR
   const salary = Math.round((base * RARITY_SALARY[rarity] * (traits.includes('dispendieux') ? 1.5 : 1)) / 50) * 50;
   return {
     id: nextId(d, 'recrue'),
-    name: `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`,
+    name: uniqueName(() => rng.next(), [...d.player.team, ...d.player.pool].map(r => r.name)),
     role, rarity, salary, traits,
     bio: rng.pick(BACKGROUNDS),
   };

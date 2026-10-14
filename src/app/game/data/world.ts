@@ -1,4 +1,5 @@
 import { MISSIONS, TAXES } from './budget';
+import { nameRng, uniqueName } from './names';
 import { createPress } from './press';
 import { setupFoundedPartyAtStart } from '../engine/founding';
 import { initialHealth, startAge } from '../engine/life';
@@ -56,14 +57,6 @@ export function factionPositions(partyPosition: number): Record<FactionId, numbe
   };
 }
 
-const OPPOSITION_FIGURES: Record<string, [string, string]> = {
-  rr: ['Bertrand Achour', 'Claire Montagnac'],
-  ase: ['Nadia Ferhat', 'Yves Le Goff'],
-  mp: ['Paul-Henri Gaillard', 'Inès Moreau'],
-  ut: ['Gilles Marchetti', 'Anaïs Roussel'],
-  gc: ['Rosa Delcourt', 'Malik Benali'],
-};
-
 export function makeFactions(partyPosition: number): Faction[] {
   const pos = factionPositions(partyPosition);
   return [
@@ -73,40 +66,43 @@ export function makeFactions(partyPosition: number): Faction[] {
   ];
 }
 
-function makeNpcs(partyId: string): Npc[] {
+function makeNpcs(partyId: string, seed: number): Npc[] {
+  // Chaque partie a son propre casting : les noms sont tirés de la graine
+  const next = nameRng(seed, 'npcs');
+  const taken: string[] = [];
+  const nm = (g: 'f' | 'm') => { const n = uniqueName(next, taken, g); taken.push(n); return n; };
   const internal: Npc[] = [
     {
-      id: 'npc-vasseur', name: 'Hélène Vasseur', partyId, rankId: 'chef_parti', factionId: 'moderes',
+      id: 'npc-vasseur', name: nm('f'), partyId, rankId: 'chef_parti', factionId: 'moderes',
       traits: ['integre', 'manoeuvrier'], ambition: 60, loyalty: 65, aggressiveness: 30,
       popularity: 55, influence: 75, relationToPlayer: 10, isRival: false,
     },
     {
-      id: 'npc-delorme', name: 'Marc-Antoine Delorme', partyId, rankId: 'depute', factionId: 'ligne_dure',
+      id: 'npc-delorme', name: nm('m'), partyId, rankId: 'depute', factionId: 'ligne_dure',
       traits: ['carrieriste', 'sulfureux'], ambition: 85, loyalty: 30, aggressiveness: 70,
       popularity: 32, influence: 45, relationToPlayer: -5, isRival: true,
     },
     {
-      id: 'npc-lemaire', name: 'Sophie Lemaire-Kahn', partyId, rankId: 'ministre', factionId: 'reformistes',
+      id: 'npc-lemaire', name: nm('f'), partyId, rankId: 'ministre', factionId: 'reformistes',
       traits: ['mediatique', 'carrieriste'], ambition: 78, loyalty: 45, aggressiveness: 45,
       popularity: 50, influence: 60, relationToPlayer: 0, isRival: true,
     },
     {
-      id: 'npc-pradel', name: 'Julien Pradel', partyId, rankId: 'conseiller_municipal', factionId: 'moderes',
+      id: 'npc-pradel', name: nm('m'), partyId, rankId: 'conseiller_municipal', factionId: 'moderes',
       traits: ['ideologue'], ambition: 55, loyalty: 55, aggressiveness: 40,
       popularity: 16, influence: 14, relationToPlayer: 0, isRival: true,
     },
   ];
   const opposition: Npc[] = PARTIES.filter(p => p.id !== partyId).flatMap(p => {
-    const [leader, local] = OPPOSITION_FIGURES[p.id];
-    const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[^a-z]+/g, '-');
+    const [leader, local] = [nm(next() < 0.5 ? 'f' : 'm'), nm(next() < 0.5 ? 'f' : 'm')];
     return [
       {
-        id: `npc-${slug(leader)}`, name: leader, partyId: p.id, rankId: 'chef_parti', factionId: null,
+        id: `npc-${p.id}-chef`, name: leader, partyId: p.id, rankId: 'chef_parti', factionId: null,
         traits: ['mediatique'], ambition: 80, loyalty: 50, aggressiveness: 50,
         popularity: 45 + p.name.length % 10, influence: 70, relationToPlayer: -10, isRival: false,
       } as Npc,
       {
-        id: `npc-${slug(local)}`, name: local, partyId: p.id, rankId: 'conseiller_municipal', factionId: null,
+        id: `npc-${p.id}-local`, name: local, partyId: p.id, rankId: 'conseiller_municipal', factionId: null,
         traits: ['ideologue'], ambition: 55, loyalty: 60, aggressiveness: 35,
         popularity: 14 + local.length % 8, influence: 12, relationToPlayer: -5, isRival: false,
       } as Npc,
@@ -115,10 +111,12 @@ function makeNpcs(partyId: string): Npc[] {
   return [...internal, ...opposition];
 }
 
-function makeContacts(): NetworkContact[] {
+function makeContacts(seed: number): NetworkContact[] {
+  const next = nameRng(seed, 'contacts');
+  const j1 = uniqueName(next, []), j2 = uniqueName(next, [j1]);
   return [
-    { id: 'ct-hamon', name: 'Lucie Hamon (L’Éclaireur)', type: 'journaliste', domain: 'social', trust: 20, balance: 0, power: 50 },
-    { id: 'ct-castaing', name: 'Rémi Castaing (Éco Hebdo)', type: 'journaliste', domain: 'economie', trust: 10, balance: 0, power: 60 },
+    { id: 'ct-hamon', name: `${j1} (L’Éclaireur)`, type: 'journaliste', domain: 'social', trust: 20, balance: 0, power: 50 },
+    { id: 'ct-castaing', name: `${j2} (Éco Hebdo)`, type: 'journaliste', domain: 'economie', trust: 10, balance: 0, power: 60 },
     { id: 'ct-btp', name: 'Fédération du Bâtiment', type: 'lobby', domain: 'economie', trust: 15, balance: 0, power: 65 },
     { id: 'ct-vernier', name: 'Groupe Vernier Énergie', type: 'industriel', domain: 'ecologie', trust: 5, balance: 0, power: 80 },
     { id: 'ct-ust', name: 'Union Syndicale des Travailleurs', type: 'syndicat', domain: 'social', trust: 15, balance: 0, power: 60 },
@@ -244,8 +242,8 @@ export function createInitialState(opts: NewGameOptions): GameState {
     },
     party: { ...party, factions: makeFactions(party.position), leaderNpcId: 'npc-vasseur', cohesion: 60 },
     otherParties: PARTIES.filter(p => p.id !== party.id),
-    npcs: makeNpcs(party.id),
-    contacts: makeContacts(),
+    npcs: makeNpcs(party.id, seed),
+    contacts: makeContacts(seed),
     news: [],
     pendingDecisions: [],
     polls: [],

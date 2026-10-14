@@ -2,6 +2,7 @@ import { DOMAINS, DOMAIN_LABELS, Decision, DecisionChoice, Domain, Effect, GameS
 import { MINISTRIES } from './government';
 import { pushNews } from './effects';
 import { Rng, clamp, nextId } from './rng';
+import { namePool } from '../data/names';
 
 /* ============================================================
  *  L'Élysée nomme son gouvernement : d'abord un·e Premier·e
@@ -10,7 +11,8 @@ import { Rng, clamp, nextId } from './rng';
  *  Les ministres nommés figurent ensuite dans le téléphone.
  * ============================================================ */
 
-const TECHNOCRATS = ['Claire Montel', 'Antoine Delacroix', 'Sylvie Brunel-Haas', 'Jean-Baptiste Royer', 'Élodie Marchetti', 'Philippe Garnier'];
+/** Les hauts fonctionnaires « matignonables » : un vivier propre à chaque partie */
+export const technocrats = (d: GameState) => namePool(d.seed, 'technocrates', 6);
 const EXPERTS = ['Hélène Carrez', 'Marc Vidal-Lenoir', 'Aïcha Benamar', 'Laurent Pichon', 'Sophie Delattre', 'Yves Kermarrec', 'Inès Lacoste', 'Paul-Henri Duval', 'Nadia Ferrière', 'Olivier Grandjean', 'Mathilde Roche', 'Karim Saïdi'];
 
 const st = (stat: 'popularity' | 'influence' | 'credibility' | 'politicalCapital' | 'stress' | 'energy', delta: number): Effect => ({ kind: 'stat', stat, delta });
@@ -33,7 +35,8 @@ export function pmDecision(d: GameState): Decision {
   const heavy = [...mine].filter(n => n !== loyal).sort((a, b) => b.influence - a.influence)[0];
   const allyId = d.coalition?.partyId ?? [...d.otherParties].sort((a, b) => Math.abs(a.position - d.party.position) - Math.abs(b.position - d.party.position))[0]?.id;
   const other = d.npcs.filter(n => n.partyId === allyId).sort((a, b) => b.popularity - a.popularity)[0];
-  const tech = TECHNOCRATS.find(n => n !== d.presidency?.primeMinister) ?? TECHNOCRATS[0];
+  const pool = technocrats(d);
+  const tech = pool.find(n => n !== d.presidency?.primeMinister) ?? pool[0];
   const next: Effect = { kind: 'decision', templateId: 'casting_gouvernement' };
   const choices: DecisionChoice[] = [];
   if (loyal) choices.push({ id: 'fidele', label: `${loyal.name}, un·e fidèle`, hint: 'Loyauté totale, autorité discutée',

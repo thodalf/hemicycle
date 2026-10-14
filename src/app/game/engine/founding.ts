@@ -4,6 +4,7 @@ import { factionPositions, ofParty } from '../data/world';
 import { rankOrder } from '../data/ranks';
 import { pushNews } from './effects';
 import { clamp } from './rng';
+import { nameRng, uniqueName } from '../data/names';
 
 /* ============================================================
  *  Fonder son propre parti : au lancement de la partie ou en
@@ -33,15 +34,18 @@ export function partyInitials(name: string): string {
   return name.split(/[\s’']+/).filter(w => w && !stop.has(w.toLowerCase())).map(w => w[0].toUpperCase()).join('').slice(0, 4);
 }
 
-function cofounders(partyId: string): Npc[] {
+function cofounders(d: GameState, partyId: string): Npc[] {
+  const next = nameRng(d.seed, 'cofondateurs');
+  const taken = d.npcs.map(n => n.name);
+  const a = uniqueName(next, taken, 'f'), b = uniqueName(next, [...taken, a], 'm');
   return [
     {
-      id: 'npc-fontaine', name: 'Léa Fontaine', partyId, rankId: 'conseiller_municipal', factionId: 'moderes',
+      id: 'npc-fontaine', name: a, partyId, rankId: 'conseiller_municipal', factionId: 'moderes',
       traits: ['integre'], ambition: 45, loyalty: 80, aggressiveness: 25,
       popularity: 18, influence: 20, relationToPlayer: 45, isRival: false,
     },
     {
-      id: 'npc-damremont', name: 'Victor Damrémont', partyId, rankId: 'depute', factionId: 'ligne_dure',
+      id: 'npc-damremont', name: b, partyId, rankId: 'depute', factionId: 'ligne_dure',
       traits: ['carrieriste', 'mediatique'], ambition: 80, loyalty: 35, aggressiveness: 55,
       popularity: 26, influence: 30, relationToPlayer: 5, isRival: true,
     },
@@ -130,7 +134,7 @@ export function foundPartyInGame(d: GameState, draft: PartyDraft): void {
     ],
     leaderNpcId: 'player', cohesion: 75, founder: true, foundedWeek: d.week,
   };
-  d.npcs.push(...cofounders(id).filter(n => !d.npcs.some(x => x.id === n.id)));
+  d.npcs.push(...cofounders(d, id).filter(n => !d.npcs.some(x => x.id === n.id)));
   d.partyFinance = smallFinance(d);
 
   const s = d.player.stats;

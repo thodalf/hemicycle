@@ -2,6 +2,7 @@ import { Effect, GameState, PhoneMessage, PhoneReply } from '../models/game.mode
 import { RANKS } from '../data/ranks';
 import { applyEffects, pushNews } from './effects';
 import { Rng } from './rng';
+import { nameRng, personName, lastName } from '../data/names';
 
 /* ============================================================
  *  Les appels entrants : chaque mois, le téléphone peut sonner
@@ -77,6 +78,15 @@ const CALLS: Incoming[] = [
     missed: [] },
 ];
 
+/** Les personnes qui appellent changent d'une partie à l'autre (mais restent les mêmes au fil d'une partie) */
+const NAMED: Record<string, 'f' | 'm' | 'mme'> = { exclu: 'f', mecene: 'm', prof: 'mme' };
+function callerName(d: GameState, c: Incoming): string {
+  const kind = NAMED[c.id];
+  if (!kind) return c.from;
+  const next = nameRng(d.seed, `appel:${c.id}`);
+  return kind === 'mme' ? `Mme ${lastName(next)}` : personName(next, kind);
+}
+
 /** Chaque mois : peut-être un appel entrant ; les appels non pris sont manqués */
 export function monthlyIncomingCall(d: GameState, rng: Rng, add: (m: Omit<PhoneMessage, 'id' | 'week'>) => void): void {
   const msgs = d.phone?.messages ?? [];
@@ -97,5 +107,5 @@ export function monthlyIncomingCall(d: GameState, rng: Rng, add: (m: Omit<PhoneM
   const pool = CALLS.filter(c => (c.minOrder ?? 0) <= order && !recent.has(`call:${c.id}`) && (!c.when || c.when(d)));
   if (!pool.length) return;
   const c = rng.pick(pool);
-  add({ kind: 'appel', who: `call:${c.id}`, from: c.from, role: c.role, text: `📞 ${c.text}`, replies: c.replies(d), urgent: true, missed: c.missed });
+  add({ kind: 'appel', who: `call:${c.id}`, from: callerName(d, c), role: c.role, text: `📞 ${c.text}`, replies: c.replies(d), urgent: true, missed: c.missed });
 }

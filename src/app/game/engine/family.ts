@@ -1,3 +1,4 @@
+import { firstName, personName } from '../data/names';
 import { Effect, FamilyState, GameState, HeirState } from '../models/game.models';
 import { RANKS, rankOrder } from '../data/ranks';
 import { addMilestone } from './life';
@@ -10,9 +11,6 @@ import { Rng, clamp, frSigned } from './rng';
  *  dauphin·e dont l'ascension rejaillit sur vous.
  * ============================================================ */
 
-const FIRST_F = ['Claire', 'Inès', 'Julie', 'Léa', 'Manon', 'Sarah', 'Camille', 'Nora', 'Élise', 'Chloé'];
-const FIRST_M = ['Thomas', 'Hugo', 'Karim', 'Louis', 'Nathan', 'Paul', 'Yanis', 'Antoine', 'Malik', 'Jules'];
-const LAST = ['Martel', 'Rousseau', 'Benali', 'Lefèvre', 'Garnier', 'Moreau', 'Dubois', 'Faure'];
 
 export function initFamily(d: GameState): FamilyState {
   const age = d.player.age;
@@ -40,7 +38,7 @@ export function adjustFamily(d: GameState, e: Extract<Effect, { kind: 'family' }
   const out: string[] = [];
   if (e.partner === 'meet' && !f.partner) {
     const female = rng.chance(0.5);
-    f.partner = { name: `${rng.pick(female ? FIRST_F : FIRST_M)} ${rng.pick(LAST)}`, gender: female ? 'f' : 'm', alive: true, since: d.week };
+    f.partner = { name: personName(() => rng.next(), female ? 'f' : 'm'), gender: female ? 'f' : 'm', alive: true, since: d.week };
     out.push(`En couple avec ${f.partner.name}`);
   }
   if (e.partner === 'marry' && f.partner && !f.partner.married) {
@@ -55,7 +53,7 @@ export function adjustFamily(d: GameState, e: Extract<Effect, { kind: 'family' }
   }
   if (e.child) {
     const female = rng.chance(0.5);
-    const kid = { name: rng.pick(female ? FIRST_F : FIRST_M), born: d.week, gender: female ? 'f' as const : 'm' as const, alive: true };
+    const kid = { name: firstName(() => rng.next(), female ? 'f' : 'm'), born: d.week, gender: female ? 'f' as const : 'm' as const, alive: true };
     f.children.push(kid);
     addMilestone(d, 'carriere', `Naissance de ${kid.name}`, 'Les nuits seront courtes, l’agenda aussi.');
     out.push(`Naissance de ${kid.name}`);

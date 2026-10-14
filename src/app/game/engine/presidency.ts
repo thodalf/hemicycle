@@ -4,6 +4,7 @@ import { DOMAIN_LABELS } from '../models/game.models';
 import { applyAppointment, pmDecision } from './cabinet';
 import { restoreRepublic } from './kingdom';
 import { polarize } from './custom-bill';
+import { namePool } from '../data/names';
 import { makePledges } from './pledges';
 import { Decision, DecisionChoice, Effect, GameState, PresidentialCalendar, ScheduledElection } from '../models/game.models';
 import { inMonth, monthLabel } from './calendar';
@@ -24,10 +25,8 @@ import { Rng, clamp, nextId, fr, frSigned } from './rng';
  *     crises, réformes, 49.3, dissolution… deux mandats au plus.
  * ============================================================ */
 
-const PRIME_MINISTERS = [
-  'Bertrand Lacombe', 'Isabelle Ferrand', 'Thomas Aubriot', 'Nadia Belkacem-Roux', 'Philippe Garnier',
-  'Claire Montel', 'Jean-Baptiste Royer', 'Élodie Marchetti', 'Antoine Delacroix', 'Sylvie Brunel-Haas',
-];
+/** Premiers ministres possibles : un vivier propre à chaque partie */
+const primeMinisters = (d: GameState) => namePool(d.seed, 'premiers-ministres', 10);
 
 export function initPresidential(d: GameState): PresidentialCalendar {
   if (d.scenario === 'presidentielle') {
@@ -296,7 +295,7 @@ export function startPresidency(d: GameState, score: number, rng: Rng): void {
   d.presidency = {
     since: d.week, mandates: 1,
     approval: clamp(52 + (score - 50) * 0.6), majority,
-    security: 60, threat: 30, primeMinister: rng.pick(PRIME_MINISTERS), reforms: 0,
+    security: 60, threat: 30, primeMinister: rng.pick(primeMinisters(d)), reforms: 0,
     cohabitation: majority < 40, lastCrisisWeek: d.week,
   };
   d.party.leaderNpcId = d.party.founder ? 'player' : d.party.leaderNpcId;
@@ -369,7 +368,7 @@ export function adjustPresidency(d: GameState, e: Extract<Effect, { kind: 'presi
   if (e.pmName || e.cabinet) out.push(...applyAppointment(d, e, rng));
   if (e.pm) {
     const before = pr.primeMinister;
-    pr.primeMinister = rng.pick(PRIME_MINISTERS.filter(n => n !== before));
+    pr.primeMinister = rng.pick(primeMinisters(d).filter(n => n !== before));
     out.push(`Nouveau Premier ministre : ${pr.primeMinister}`);
   }
   if (e.dissolve) {
@@ -377,7 +376,7 @@ export function adjustPresidency(d: GameState, e: Extract<Effect, { kind: 'presi
     pr.majority = result;
     const was = pr.cohabitation;
     pr.cohabitation = result < 40;
-    if (pr.cohabitation) pr.primeMinister = rng.pick(PRIME_MINISTERS.filter(n => n !== pr.primeMinister));
+    if (pr.cohabitation) pr.primeMinister = rng.pick(primeMinisters(d).filter(n => n !== pr.primeMinister));
     out.push(`Législatives anticipées : ${Math.round(result)} % pour votre camp${pr.cohabitation ? ' — cohabitation' : was ? ' — fin de la cohabitation' : ''}`);
     pushNews(d, 'election', pr.cohabitation ? 'negative' : 'positive', 'Résultat des législatives anticipées',
       pr.cohabitation ? `Le pays vous désavoue. ${pr.primeMinister}, issu·e de l’opposition, s’installe à Matignon.` : 'Le pays vous donne une majorité pour gouverner.');

@@ -1,3 +1,4 @@
+import { namePool } from '../data/names';
 import { Effect, GameState } from '../models/game.models';
 import { RANKS } from '../data/ranks';
 import { pmDecision } from './cabinet';
@@ -40,7 +41,7 @@ export function crownPlayer(d: GameState): void {
     d.presidency.cohabitation = false;
     d.presidency.approval = Math.max(d.presidency.approval, 50);
   } else {
-    d.presidency = { since: d.week, mandates: 1, approval: 55, majority: 50, security: 60, threat: 25, primeMinister: 'Claire Montel', reforms: 0, cohabitation: false, lastCrisisWeek: d.week };
+    d.presidency = { since: d.week, mandates: 1, approval: 55, majority: 50, security: 60, threat: 25, primeMinister: namePool(d.seed, 'premiers-ministres', 1)[0], reforms: 0, cohabitation: false, lastCrisisWeek: d.week };
     d.pendingDecisions.push(pmDecision(d));
   }
   p.rankId = 'roi';
@@ -56,7 +57,7 @@ export function crownPlayer(d: GameState): void {
 /** Anciennes parties : le souverain sans exécutif en reçoit un */
 export function ensureRoyalExecutive(d: GameState): void {
   if (!d.kingdom || d.presidency) return;
-  d.presidency = { since: d.week, mandates: 1, approval: 55, majority: 50, security: 60, threat: 25, primeMinister: 'Claire Montel', reforms: 0, cohabitation: false, lastCrisisWeek: d.week };
+  d.presidency = { since: d.week, mandates: 1, approval: 55, majority: 50, security: 60, threat: 25, primeMinister: namePool(d.seed, 'premiers-ministres', 1)[0], reforms: 0, cohabitation: false, lastCrisisWeek: d.week };
 }
 
 /** Rétablir la République (abdication volontaire, ou forcée) */

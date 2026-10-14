@@ -1,3 +1,4 @@
+import { namePool } from '../data/names';
 import { normalizeDraft } from '../engine/budget';
 import { crownPlayer, ensureRoyalExecutive } from '../engine/kingdom';
 import { ensureTraits } from '../engine/traits';
@@ -167,7 +168,7 @@ export function migrate(s: GameState): GameState {
     if (s.player.rankId === 'president' && s.status === 'victoire') {
       s.endTitle ??= 'Élu·e président·e de la République';
       s.player.flags['presMandates'] = 1;
-      s.presidency = { since: s.week, mandates: 1, approval: 55, majority: 52, security: 60, threat: 30, primeMinister: 'Claire Montel', reforms: 0, cohabitation: false, lastCrisisWeek: s.week };
+      s.presidency = { since: s.week, mandates: 1, approval: 55, majority: 52, security: 60, threat: 30, primeMinister: namePool(s.seed, 'premiers-ministres', 1)[0], reforms: 0, cohabitation: false, lastCrisisWeek: s.week };
       s.presidential.incumbentId = 'player';
       s.presidential.incumbentName = s.player.name;
       s.presidential.incumbentMandates = 1;

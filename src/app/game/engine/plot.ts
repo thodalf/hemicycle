@@ -137,7 +137,7 @@ function attempt(d: GameState, rng: Rng): void {
     s.energy = clamp(s.energy - 30);
     s.popularity = clamp(s.popularity + 10);
     addMilestone(d, 'revers', 'Survivant·e d’un attentat', `Blessé·e lors d’une tentative d’assassinat. ${p.motive} Le pays entier vous souhaite un prompt rétablissement.`);
-    gainTrait(d, 'survivant'); if (rng.chance(0.6)) gainTrait(d, 'balafre');
+    gainTrait(d, 'survivant'); if (rng.chance(0.3)) gainTrait(d, 'balafre');
     pushNews(d, 'actu', 'negative', 'Attentat : vous êtes blessé·e', 'Évacuation d’urgence, bloc opératoire, pronostic vital engagé quelques heures. Vous vous en sortez.');
   } else {
     s.popularity = clamp(s.popularity + 6);
@@ -195,6 +195,6 @@ export function reviveFromAssassination(d: GameState): void {
   p.flags['menace'] = 0;
   if (d.presidency) d.presidency.security = clamp(Math.max(d.presidency.security, 70));
   addMilestone(d, 'revers', 'Survivant·e d’un attentat', `${what} Laissé·e pour mort·e, vous vous réveillez à l’hôpital, trois jours plus tard.`);
-  gainTrait(d, 'survivant'); gainTrait(d, 'balafre');
+  gainTrait(d, 'survivant'); if (d.week % 2 === 0) gainTrait(d, 'balafre');
   pushNews(d, 'actu', 'positive', 'Miraculé·e', 'Les chirurgiens ont fait un miracle : vous survivez à l’attentat. Votre protection est renforcée. Désormais, les menaces se verront venir : un complot se prépare, il se découvre.');
 }

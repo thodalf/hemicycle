@@ -1,5 +1,5 @@
 import { GameState, Npc, NpcTrait } from '../models/game.models';
-import { FIRST_NAMES, LAST_NAMES } from '../data/recruits';
+import { uniqueName } from '../data/names';
 import { pushNews } from './effects';
 import { Rng } from './rng';
 import { npcLifeBonus } from './traits';
@@ -68,8 +68,7 @@ const TRAITS: NpcTrait[] = ['carrieriste', 'ideologue', 'mediatique', 'manoeuvri
 /** Remplace une personnalité par sa ou son successeur, sans casser les références */
 export function succeed(d: GameState, n: Npc, rng: Rng): string {
   const old = n.name;
-  let name = `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`;
-  for (let k = 0; k < 6 && d.npcs.some(x => x.name === name); k++) name = `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`;
+  const name = uniqueName(() => rng.next(), d.npcs.map(x => x.name));
   n.name = name;
   n.age = 31 + rng.int(0, 17);
   n.popularity = Math.round(n.popularity * 0.5);

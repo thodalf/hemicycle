@@ -1,5 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { TraitsComponent } from '../traits/traits.component';
+import { traitProgress } from '../../engine/traits';
+import { TRAITS, traitLabel } from '../../data/traits';
 import { Component, computed, inject, signal } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
@@ -29,6 +31,15 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
       <div class="rank"><span class="dot" [style.background]="game.s().party.color"></span>{{ game.roleLabel() }}</div>
       @if (game.player().traits?.length) {
         <app-traits class="my-traits" [ids]="game.player().traits ?? []" [gender]="game.player().gender" [grouped]="true" [fresh]="freshTrait()" />
+        @if (traitPath().length) {
+          <details class="trait-path">
+            <summary>Traits à conquérir · une vie se construit lentement</summary>
+            @for (t of traitPath(); track t.id) {
+              <div class="tp"><span>{{ t.icon }} {{ t.label }}</span><span class="bar"><i [style.width.%]="t.pct"></i></span><small class="muted">{{ t.hint }}</small></div>
+            }
+            <small class="muted">Même les conditions réunies, un trait ne vient qu’avec le temps : au plus un tous les deux ans.</small>
+          </details>
+        }
       }
 
       <ul class="gauges">
@@ -200,6 +211,9 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
     .via { font-size: 12.5px; margin-bottom: 10px; }
     .pay { display: grid; gap: 8px; .card-title { margin-bottom: 0; } }
     .my-traits { margin: 10px 0 4px; }
+    .trait-path { margin: 0 0 8px; font-size: 12px; summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }
+      .tp { display: grid; grid-template-columns: 1fr 70px; gap: 2px 8px; align-items: center; margin-top: 6px; small { grid-column: 1 / -1; } }
+      .bar { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; i { display: block; height: 100%; background: var(--accent); } } }
     .pay-lines { gap: 5px; font-size: 13px;
       li { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
       .lbl { display: grid; } small { font-size: 11px; } .mono { white-space: nowrap; }
@@ -243,6 +257,8 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
 })
 export class ProfilePanelComponent {
   protected readonly game = inject(GameStateService);
+  /** Les traits acquis qui se rapprochent */
+  protected readonly traitPath = computed(() => traitProgress(this.game.s()).map(r => ({ ...r, icon: TRAITS[r.id].icon, label: traitLabel(r.id, this.game.player().gender) })));
   /** Un trait acquis ce mois-ci arrive en tournoyant */
   protected readonly freshTrait = computed(() => {
     const s = this.game.s();
