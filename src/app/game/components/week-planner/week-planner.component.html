@@ -61,6 +61,8 @@
         }
       </nav>
 
+      @if (billVisible() && ['elysee', 'fonction', 'couronne', 'parti', 'projets'].includes(category())) { <app-bill-composer /> }
+
       @if (category() === 'projets') {
         <ul class="actions">
           @for (p of projects(); track p.def.id) {

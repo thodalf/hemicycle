@@ -75,6 +75,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['La France accueille la Coupe du monde : douze stades, deux millions de supporters attendus.', 'Billetterie saturée, grèves des transports annoncées, fan-zones à sécuriser : le compte à rebours est lancé.', 'Les Bleus passent les poules. Le pays entier se met à y croire.'] },
   jubile: { id: 'jubile', icon: '🎆', label: 'Le jubilé royal', gaugeLabel: 'Ferveur populaire', riskLabel: 'Contre-jubilé républicain', months: 4, drift: { gauge: 3, risk: 4 },
     stages: ['Le Palais annonce un grand jubilé pour célébrer votre règne : défilés, feux d’artifice, bals populaires.', 'Le front républicain organise un « contre-jubilé » et appelle au boycott des festivités.', 'Le grand jour approche : carrosse, Champs-Élysées et feu d’artifice sur la tour Eiffel.'] },
+  diamants: { id: 'diamants', icon: '💎', label: 'L’affaire des diamants', gaugeLabel: 'Vérité établie', riskLabel: 'Soupçons', months: 5, drift: { gauge: 3, risk: 5 },
+    stages: ['Un hebdomadaire affirme que le président du Zanbar vous a offert un écrin de diamants lors d’une visite officielle.', 'Les photos de l’écrin circulent ; la justice ouvre une enquête préliminaire.', 'L’enquête touche à sa fin : innocence prouvée ou carrière brisée.'] },
+  ours: { id: 'ours', icon: '🐻', label: 'Le retour des ours', gaugeLabel: 'Cohabitation', riskLabel: 'Colère des bergers', months: 7, drift: { gauge: 3, risk: 4 },
+    stages: ['Une dizaine d’ours sont réintroduits dans les Pyrénées. Les écologistes jubilent, les bergers fulminent.', 'Brebis tuées, estives désertées, manifestations à Foix : la montagne se divise.', 'Avant l’hiver, il faut trouver un modèle de cohabitation qui tienne.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -392,6 +396,28 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.popularity = clamp(s.popularity - 3);
         if (d.kingdom) { d.kingdom.prestige = clamp(d.kingdom.prestige - 8); d.kingdom.opposition = clamp(d.kingdom.opposition + 10); }
         lose('Le contre-jubilé l’emporte', 'Tribunes clairsemées, sifflets sur le parcours : le contre-jubilé républicain a éclipsé les festivités royales.');
+      }
+      break;
+    case 'diamants':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 6); s.popularity = clamp(s.popularity + 2);
+        p.scandalExposure = clamp(p.scandalExposure - 12);
+        win('Blanchi·e dans l’affaire des diamants', 'L’enquête établit que l’écrin a été remis au musée des Cadeaux d’État le jour même. L’hebdomadaire publie un rectificatif.');
+      } else {
+        s.credibility = clamp(s.credibility - 8); s.popularity = clamp(s.popularity - 5);
+        p.scandalExposure = clamp(p.scandalExposure + 15);
+        lose('Les diamants vous collent à la peau', 'Faute de preuves, l’enquête est classée… mais le doute s’installe pour toujours. Les caricaturistes vous dessinent couvert·e de bijoux.');
+      }
+      break;
+    case 'ours':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 3); s.credibility = clamp(s.credibility + 3);
+        electorate(d).offsets.ruraux = clamp(electorate(d).offsets.ruraux + 2, -30, 30);
+        win('La paix des estives', 'Patous, bergers aidés, indemnisations rapides : ours et brebis cohabitent. Le modèle pyrénéen fait école en Europe.');
+      } else {
+        s.popularity = clamp(s.popularity - 4);
+        electorate(d).offsets.ruraux = clamp(electorate(d).offsets.ruraux - 3, -30, 30);
+        lose('La guerre des estives', 'Bergers en colère, ours braconnés, procès en cascade : la montagne vous en veut.');
       }
       break;
     case 'tempete_solaire':

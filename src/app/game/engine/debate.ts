@@ -5,6 +5,7 @@ import {
 import { rankOrder } from '../data/ranks';
 import { Rng, clamp, nextId } from './rng';
 import { programCards } from './programme';
+import { composureTraitBonus, debateTraitMult } from './traits';
 
 /* ============================================================
  *  Débat au tour par tour : moteur pur, sans Angular.
@@ -138,7 +139,7 @@ function buildDeck(d: GameState, rng: Rng, topics: Domain[]): DebateCard[] {
   const s = p.stats;
   const has = (role: StaffRole) => p.staff.includes(role);
   let n = 0;
-  const card = (c: Omit<DebateCard, 'id'>): DebateCard => ({ ...c, id: `c${++n}`, power: Math.round(c.power) });
+  const card = (c: Omit<DebateCard, 'id'>): DebateCard => ({ ...c, id: `c${++n}`, power: Math.round(c.power * debateTraitMult(d, c.move)) });
   const deck: DebateCard[] = [];
 
   for (const domain of inPlay) {
@@ -226,7 +227,7 @@ export function createDebate(
     stanceShift: 0,
     partyImpact: { ligne_dure: 0, moderes: 0, reformistes: 0 },
     flipflops: 0,
-    composure: clamp(55 + d.player.stats.credibility / 4 + (hasCoach ? 20 : 0) - d.player.stats.stress / 5 + prep * 12),
+    composure: clamp(55 + d.player.stats.credibility / 4 + (hasCoach ? 20 : 0) - d.player.stats.stress / 5 + prep * 12 + composureTraitBonus(d)),
     oppComposure: clamp(60 + npc.influence / 4),
     oppPower: clamp(28 + (npc.popularity + npc.influence) * 0.22 + info.bonus, 25, 72),
     oppStyle: style,
@@ -275,20 +276,57 @@ export function ideology(debate: DebateState, card: DebateCard): { mult: number;
 
 /** Choisit l'intention de l'adversaire. Il apprend : si vous répétez un coup, il le contre. */
 function prepareRound(debate: DebateState, d: GameState, rng: Rng): void {
-  const last = debate.log.slice(-2).map(e => e.playerMove);
-  const repeated = last.length === 2 && last[0] === last[1] ? last[0] : null;
-  if (repeated && rng.chance(0.55)) {
-    const counter = repeated === 'parade' ? 'faits'
-      : (Object.keys(BEATS) as Exclude<DebateMove, 'parade'>[]).find(m => BEATS[m] === repeated)!;
-    debate.oppIntent = repeated === 'attaque' ? (rng.chance(0.5) ? 'parade' : counter) : counter;
-  } else {
-    const entries = Object.entries(debate.oppStyle) as [DebateMove, number][];
-    const total = entries.reduce((s, [, w]) => s + w, 0);
-    let roll = rng.next() * total;
-    debate.oppIntent = entries.find(([, w]) => (roll -= w) < 0)?.[0] ?? 'attaque';
-  }
+  const odds = baseOdds(debate);
+  debate.oppOdds = odds;
+  let roll = rng.next();
+  debate.oppIntent = MOVES.find(m => (roll -= odds[m]) < 0) ?? 'attaque';
   const reveal = 0.3 + d.player.stats.credibility / 300 + (d.player.staff.includes('plume') ? 0.15 : 0);
   debate.intentRevealed = rng.chance(Math.min(0.9, reveal));
+}
+
+const MOVES: DebateMove[] = ['faits', 'attaque', 'emotion', 'parade'];
+
+/** Distribution du prochain coup : son style, et le contre s'il vous voit répéter le même coup */
+function baseOdds(debate: DebateState): Record<DebateMove, number> {
+  const total = MOVES.reduce((s, m) => s + debate.oppStyle[m], 0);
+  const odds = Object.fromEntries(MOVES.map(m => [m, debate.oppStyle[m] / total])) as Record<DebateMove, number>;
+  const last = debate.log.slice(-2).map(e => e.playerMove);
+  const repeated = last.length === 2 && last[0] === last[1] ? last[0] : null;
+  if (!repeated) return odds;
+  const counter = repeated === 'parade' ? 'faits'
+    : (Object.keys(BEATS) as Exclude<DebateMove, 'parade'>[]).find(m => BEATS[m] === repeated)!;
+  for (const m of MOVES) odds[m] *= 0.45;
+  if (repeated === 'attaque') { odds.parade += 0.275; odds[counter] += 0.275; } else odds[counter] += 0.55;
+  return odds;
+}
+
+/** Risque qu'il change de pied quand vos notes ont deviné son coup */
+export function feintChance(debate: DebateState): number {
+  return debate.oppStyle.parade > 1 ? 0.3 : 0.18;
+}
+
+/** Ce que le joueur sait du prochain coup adverse, en probabilités */
+export function oppOdds(debate: DebateState): Record<DebateMove, number> {
+  if (debate.intentRevealed) {
+    const f = feintChance(debate);
+    return Object.fromEntries(MOVES.map(m => [m, m === debate.oppIntent ? 1 - f : f / 3])) as Record<DebateMove, number>;
+  }
+  return debate.oppOdds ?? baseOdds(debate);
+}
+
+/** Chances d'une carte face aux coups possibles de l'adversaire (en %) */
+export function cardChances(debate: DebateState, card: DebateCard): { win: number; draw: number; lose: number; beats: DebateMove[]; losesTo: DebateMove[] } {
+  const odds = oppOdds(debate);
+  const pEff = effectivePower(debate, card).power;
+  let win = 0, draw = 0, lose = 0;
+  const beats: DebateMove[] = [], losesTo: DebateMove[] = [];
+  for (const m of MOVES) {
+    const o = outcomeOf(card, m);
+    if (o === 'gagne' || o === 'renvoi' || o === 'gagne_doux') { win += odds[m]; if (o !== 'gagne_doux') beats.push(m); }
+    else if (o === 'egal') { if (pEff > debate.oppPower * 1.05) win += odds[m]; else if (pEff < debate.oppPower * 0.95) lose += odds[m]; else draw += odds[m]; }
+    else { lose += odds[m]; if (o === 'perdu') losesTo.push(m); }
+  }
+  return { win: Math.round(win * 100), draw: Math.round(draw * 100), lose: Math.round(lose * 100), beats, losesTo };
 }
 
 // ── Résolution d'une manche ─────────────────────────────────

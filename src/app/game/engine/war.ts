@@ -4,6 +4,7 @@ import { canStartArc } from './arcs';
 import { RANKS } from '../data/ranks';
 import { PARTNERS_BY_ID } from './intl';
 import { addMilestone } from './life';
+import { gainTrait } from './traits';
 import { applyEffects, pushNews } from './effects';
 import { scheduleWarVote } from './assembly';
 import { Rng, clamp, nextId, frSigned } from './rng';
@@ -455,6 +456,7 @@ export function endWar(d: GameState, how: WarEnd, rng: Rng): string[] {
   p.flags['warLosses'] = Number(p.flags['warLosses'] ?? 0) + w.losses;
   if (d.nationalBudget) d.nationalBudget.debtPenalty = Math.round((d.nationalBudget.debtPenalty + w.cost * 0.2) * 10) / 10;
   const summary = applyEffects(d, effects, {}, rng);
+  if (how === 'victoire') summary.push(...gainTrait(d, 'chef_guerre', 'Vous avez conduit la France à la victoire.'));
   addMilestone(d, kind, title, text);
   pushNews(d, 'actu', how === 'defaite' ? 'negative' : 'positive', title, text);
   // Le vainqueur dicte la paix : annexion, protectorat, réparations ou magnanimité

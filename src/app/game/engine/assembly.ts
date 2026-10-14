@@ -1,4 +1,5 @@
 import { recordLaw } from './legacy';
+import { applyCustomBill } from './custom-bill';
 import { AssemblyGroup, AssemblyVote, Ballot, Effect, GameState, VoteTally } from '../models/game.models';
 import { BASE_SEATS, BILLS, BILLS_BY_ID, BillDef, NON_INSCRITS, SEATS } from '../data/bills';
 import { DOMAIN_LABELS } from '../models/game.models';
@@ -163,7 +164,7 @@ export function scheduleVote(d: GameState, rng: Rng, billId?: string, forcedOrig
   const origin: AssemblyVote['origin'] = forcedOrigin
     ?? (role0 === 'gouvernement' ? (rng.chance(0.65) ? 'gouvernement' : 'opposition') : rng.pick(['gouvernement', 'gouvernement', 'opposition', 'majorite']));
   const own = !!forcedOrigin;
-  const bill = billId ? BILLS_BY_ID.get(billId) : pickBill(d, rng, origin, own);
+  const bill: BillDef | undefined = billId ? BILLS_BY_ID.get(billId) ?? (d.customBills ?? []).find(b => b.id === billId) : pickBill(d, rng, origin, own);
   if (!bill) return [];
   let role = role0;
   const mine = (origin !== 'opposition') === governingIds(d).includes(d.party.id);
@@ -416,6 +417,12 @@ function consequences(d: GameState, v: AssemblyVote, ballot: Ballot, adopted: bo
   if (v.warEnemy && v.role === 'chef' && adopted) startWar(d, v.warEnemy, true);
 
   if (adopted && (v.own || (v.origin === 'gouvernement' && v.role === 'gouvernement')) && !v.warEnemy) recordLaw(d, v.title, v.domain);
+  // Un texte rédigé sur mesure : son coût et ses effets s'appliquent
+  const custom = adopted ? (d.customBills ?? []).find(b => b.id === v.billId) : undefined;
+  if (custom) {
+    out.push(...applyCustomBill(d, custom, rng));
+    d.player.flags['customLaws'] = Number(d.player.flags['customLaws'] ?? 0) + 1;
+  }
   record(d, v, ballot, adopted, rebel);
   const close = margin <= 6 ? ` à ${margin} voix près` : '';
   pushNews(d, 'actu', adopted ? 'positive' : 'negative', `${v.title} : ${adopted ? 'adopté' : 'rejeté'}${close}`,

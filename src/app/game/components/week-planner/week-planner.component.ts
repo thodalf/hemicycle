@@ -51,9 +51,12 @@ const CATEGORY_ICONS: Partial<Record<string, string>> = {
   sante: '💪', repos: '😴', guerre: '🎖️', international: '🌍', elysee: '🇫🇷', fonction: '🏛️', intrigue: '🕯️', zombie: '🧟', apocalypse: '🔥', contact: '👽',
 };
 
+import { BillComposerComponent } from '../bill-composer/bill-composer.component';
+import { voteRole } from '../../engine/assembly';
+
 @Component({
   selector: 'app-week-planner',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, BillComposerComponent],
   templateUrl: './week-planner.component.html',
   styleUrl: './week-planner.component.scss',
 })
@@ -62,6 +65,8 @@ export class WeekPlannerComponent {
   protected readonly planner = inject(ActionPlannerService);
   protected readonly turn = inject(TurnService);
   private readonly anim = inject(FxService);
+  /** Le projet de loi sur mesure : pour qui siège, gouverne ou dirige le parti */
+  protected readonly billVisible = computed(() => !!voteRole(this.game.s()));
   /** Barre du bas : masquée quand le vrai bouton est visible ; repliable */
   protected readonly endVisible = signal(false);
   protected readonly mini = signal(false);

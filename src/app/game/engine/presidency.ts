@@ -312,7 +312,7 @@ export function endPresidency(d: GameState, why: 'fin' | 'defaite' | 'demission'
   if (!pr) return;
   // Sur le trône : démissionner, c'est abdiquer ; être destitué, c'est la révolution
   if (d.kingdom) {
-    if (why === 'demission' || why === 'destitution') restoreRepublic(d, why === 'destitution');
+    if (why === 'demission' || why === 'destitution') restoreRepublic(d, why === 'destitution', why === 'destitution' ? 'decheance' : 'abdication');
     return;
   }
   const p = d.player;
@@ -541,6 +541,22 @@ export function weeklyPresidency(d: GameState, rng: Rng): void {
 
   if (pres.majority < 30 && !pending(d, 'pres_censure') && rng.chance(0.2)) {
     d.pendingDecisions.push(CRISES.find(c => c.tag === 'pres_censure')!.build(d, rng));
+    return;
+  }
+  // Le souverain : la déchéance menace dès que le front républicain prend de l'ampleur
+  const k = d.kingdom;
+  if (k && (k.opposition >= 58 || k.stabilite < 25) && !pending(d, 'roy_decheance') && d.week - Number(p.flags['ev_roy_decheance'] ?? -99) >= 6
+    && rng.chance(0.14 + Math.max(0, k.opposition - 58) / 110 + Math.max(0, 25 - k.stabilite) / 100 + (pres.approval < 30 ? 0.08 : 0))) {
+    p.flags['ev_roy_decheance'] = d.week;
+    const fail = clamp(0.3 + (k.opposition - 60) / 90 + (50 - k.stabilite) / 200, 0.12, 0.85);
+    d.pendingDecisions.push(decision(d, 'roy_decheance', 'Motion de déchéance',
+      `Les députés du front républicain réunissent le Congrès à Versailles pour voter la déchéance de la Couronne. Front républicain : ${Math.round(k.opposition)}/100, stabilité : ${Math.round(k.stabilite)}/100.`, [
+        { id: 'plaider', label: 'Plaider devant le Congrès', hint: 'Votre influence peut faire basculer des voix.', effects: [{ kind: 'kingdom', opposition: -12, prestige: 4 }, st('stress', 12)], outcome: 'La majorité des trois cinquièmes n’est pas atteinte. Le trône tient, de justesse.',
+          risk: { baseChance: fail, scaleWith: 'influence', scaleWeight: 0.45, onFailure: [{ kind: 'kingdom', restore: true, fall: 'decheance' }], failureNews: 'Le Congrès vote la déchéance de la Couronne.' } },
+        { id: 'reforme', label: 'Promettre une monarchie plus parlementaire', hint: 'Moins de prestige, plus de chances de sauver le trône.', effects: [{ kind: 'kingdom', opposition: -8, prestige: -6, stabilite: 5 }, st('credibility', 2)], outcome: 'Votre promesse retourne une centaine de députés. La motion échoue.',
+          risk: { baseChance: Math.max(0.08, fail - 0.22), scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [{ kind: 'kingdom', restore: true, fall: 'decheance' }], failureNews: 'Trop peu, trop tard : la déchéance est votée.' } },
+        { id: 'abdiquer', label: 'Abdiquer avant le vote', effects: [{ kind: 'kingdom', restore: true }, st('credibility', 3)], outcome: 'Vous rendez la couronne avant qu’on ne vous l’arrache.' },
+      ]));
     return;
   }
   if (pres.approval < 12 && pres.majority < 30 && !pending(d, 'pres_destitution') && rng.chance(0.12)) {

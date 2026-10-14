@@ -1,4 +1,6 @@
 import { adjustKingdom } from './kingdom';
+import { exposureTraitMult, gainTrait, masteryTraitMult, npcRelationMult, relationTraitMult, statTraitMult } from './traits';
+import { TraitId } from '../data/traits';
 import {
   ChoiceRequirement, ContactType, Domain, Effect, EffectContext, GameState, NewsKind, RiskProfile,
   STAT_LABELS, StatKey, Tone,
@@ -223,7 +225,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         const softCap = SOFT_CAPPED.includes(e.stat) && e.delta > 0 ? Math.max(0.15, 1 - before / 110) : 1;
         // … et plus dure est la chute : les pertes pèsent davantage quand on est haut
         const fall = SOFT_CAPPED.includes(e.stat) && e.delta < 0 ? 1 + before / 150 : 1;
-        s[e.stat] = clamp(before + e.delta * softCap * fall);
+        s[e.stat] = clamp(before + e.delta * softCap * fall * statTraitMult(d, e.stat, e.delta));
         const real = Math.round(s[e.stat] - before);
         if (real) summary.push(`${STAT_LABELS[e.stat]} ${signed(real)}`);
         break;
@@ -237,7 +239,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
           * (1 + 0.15 * d.player.team.filter(r => r.traits.includes('technocrate')).length);
         // Rendements décroissants : plus on maîtrise, plus chaque point coûte
         const diminishing = Math.max(0.3, 1 - dossier.mastery / 130);
-        const gain = e.delta > 0 ? Math.round(e.delta * (1 + 0.2 * d.player.skills[domain]) * staffBoost * diminishing) : e.delta;
+        const gain = e.delta > 0 ? Math.round(e.delta * (1 + 0.2 * d.player.skills[domain]) * staffBoost * diminishing * masteryTraitMult(d)) : e.delta;
         dossier.mastery = clamp(dossier.mastery + gain);
         if (e.delta > 0) dossier.lastStudiedWeek = d.week;
         summary.push(`Dossier ${signed(gain)}`);
@@ -268,8 +270,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       case 'npcRelation': {
         const npc = d.npcs.find(n => n.id === target(e.npcId));
         if (npc) {
-          npc.relationToPlayer = clamp(npc.relationToPlayer + e.delta, -100, 100);
-          summary.push(`Relation ${npc.name.split(' ')[0]} ${signed(e.delta)}`);
+          const delta = Math.round(e.delta * relationTraitMult(d, e.delta) * npcRelationMult(npc, e.delta) * 10) / 10;
+          npc.relationToPlayer = clamp(npc.relationToPlayer + delta, -100, 100);
+          summary.push(`Relation ${npc.name.split(' ')[0]} ${signed(delta)}`);
         }
         break;
       }
@@ -299,7 +302,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       }
       case 'exposure': {
         // Une avocate dans l'équipe amortit chaque affaire
-        const delta = e.delta > 0 ? Math.round(e.delta * lawyerFactor(d) * 10) / 10 : e.delta;
+        const delta = e.delta > 0 ? Math.round(e.delta * lawyerFactor(d) * exposureTraitMult(d) * 10) / 10 : e.delta;
         d.player.scandalExposure = clamp(d.player.scandalExposure + delta);
         if (delta > 0) summary.push(`Exposition ${signed(delta)}`);
         break;
@@ -420,6 +423,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       }
       case 'flag':
         d.player.flags[e.key] = e.value;
+        break;
+      case 'trait':
+        summary.push(...gainTrait(d, e.trait as TraitId));
         break;
       case 'phoneBook': {
         const id = e.npcId === '$target' ? ctx.targetId : e.npcId;

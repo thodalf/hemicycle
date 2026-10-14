@@ -871,6 +871,52 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'ev_video_virale', weight: 0.6,
+    build: () => ({
+      title: 'Votre chute en direct',
+      context: 'En descendant de l’estrade, vous trébuchez et finissez dans une plante verte. La vidéo cumule 9 millions de vues en une nuit.',
+      choices: [
+        c('assumer', 'En rire et reposter la vidéo', [s('popularity', 3), seg('jeunes', 3), { kind: 'trait', trait: 'meme' }], 'Vous devenez un mème. Pour toujours.'),
+        c('ignorer', 'Ne rien dire et attendre que ça passe', [s('credibility', -1)], 'Ça passe. Lentement.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_marathon_paris', weight: 0.7, eligible: d => Number(d.player.flags['marathon'] ?? 0) >= 2 && !(d.player.traits ?? []).includes('marathonien'),
+    build: d => ({
+      title: 'Le marathon de Paris',
+      context: `Vous êtes inscrit·e au marathon de Paris. ${Number(d.player.flags['marathon']) >= 4 ? 'Votre préparation a été sérieuse.' : 'Votre préparation a été… légère.'}`,
+      choices: [
+        c('courir', 'Courir les 42,195 km', [s('energy', -15), s('popularity', 3), { kind: 'trait', trait: 'marathonien' }], 'Ligne d’arrivée franchie en 4 h 12. Les photos sont superbes.',
+          { risk: { baseChance: Number(d.player.flags['marathon']) >= 4 ? 0.1 : 0.5, onFailure: [s('energy', -10), s('popularity', -1)], failureNews: 'Abandon au 30ᵉ kilomètre : le mur, le vrai.' } }),
+        c('semi', 'Se contenter du semi-marathon', [s('energy', -6), s('popularity', 1)], 'Raisonnable. Personne ne vous en veut.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_accident_ski', weight: 0.4,
+    build: () => ({
+      title: 'Le hors-piste de trop',
+      context: 'En vacances à la montagne, des amis vous proposent une descente hors-piste « sans danger ».',
+      choices: [
+        c('y_aller', 'Y aller', [s('stress', -6), s('energy', 4)], 'Poudreuse parfaite, souvenirs magnifiques.',
+          { risk: { baseChance: 0.35, onFailure: [s('energy', -20), { kind: 'trait', trait: 'balafre' }, s('popularity', 2)], failureNews: 'Chute dans un couloir : douze points de suture au front. La cicatrice restera.' } }),
+        c('piste', 'Rester sur les pistes balisées', [s('stress', -3)], 'Prudence. Le vin chaud est très bon aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_lettres_mentor', weight: 0.4, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Les lettres de votre mentor',
+      context: 'Votre premier mentor politique s’est éteint. Sa fille vous remet une boîte de lettres qu’il vous écrivait sans jamais les envoyer.',
+      choices: [
+        c('lire', 'Les lire une à une, seul·e', [s('stress', -4), s('credibility', 2)], '« Ne deviens jamais ce que tu combats. » Vous relisez cette phrase souvent.'),
+        c('publier', 'Les faire publier', [s('popularity', 2), { kind: 'income', base: 3000 }, { kind: 'exposure', delta: 1 }], 'Le recueil devient un succès de librairie. Certains trouvent le geste déplacé.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

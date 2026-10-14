@@ -300,6 +300,24 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Les feux d’artifice sont commandés, le carrosse est verni. Seuls les républicains me donnent des migraines.', effects: [{ kind: 'crisis', arc: 'jubile', gauge: 4, risk: -2 }] }) },
     ],
   },
+  // ── Les diamants ──
+  {
+    key: 'sc:diamants', icon: '💎', when: d => !!d.crises?.diamants,
+    name: () => 'Maître Hélène Sarrazin', role: () => 'Votre avocate dans l’affaire des diamants',
+    options: () => [
+      { id: 'sc_diamants_point', label: 'Faire le point sur l’enquête', hint: 'Elle lit chaque procès-verbal.', ask: 'Où en est le dossier ?', cooldown: 1,
+        run: () => ({ answer: 'La juge cherche le registre du protocole. Si on le retrouve avant elle, c’est gagné.', effects: [{ kind: 'crisis', arc: 'diamants', gauge: 4, risk: -1 }] }) },
+    ],
+  },
+  // ── Les ours ──
+  {
+    key: 'sc:ours', icon: '🐻', when: d => !!d.crises?.ours,
+    name: () => 'Jeanne Laborde', role: () => 'Bergère et présidente des éleveurs de l’Ariège',
+    options: () => [
+      { id: 'sc_ours_point', label: 'Prendre des nouvelles des estives', hint: 'Elle répond depuis la montagne, quand il y a du réseau.', ask: 'Comment ça se passe là-haut ?', cooldown: 1,
+        run: () => ({ answer: 'Les patous font du bon travail. Mais il en faut deux fois plus.', effects: [{ kind: 'crisis', arc: 'ours', gauge: 3, risk: -3 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -383,7 +401,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

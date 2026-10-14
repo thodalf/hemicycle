@@ -58,6 +58,7 @@ import { BankService } from '../../services/bank.service';
 import { DEATH_LABELS, lifeSummary } from '../../engine/life';
 import { CrisisArcId, Milestone } from '../../models/game.models';
 import { CRISES } from '../../engine/crises';
+import { TRAITS, TraitId, traitLabel } from '../../data/traits';
 
 type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
 
@@ -431,6 +432,8 @@ export class DashboardComponent {
   private lastMilestones = this.game.s().milestones.length;
   private lastAlien = this.game.s().alien?.phase ?? -1;
   private lastKing = !!this.game.s().kingdom;
+  private lastTraits = (this.game.s().player.traits ?? []).length;
+  private lastCustomLaws = Number(this.game.s().player.flags['customLaws'] ?? 0);
   private lastCrises = new Set(Object.keys(this.game.s().crises ?? {}));
   /** Dernier chapitre ouvert, affiché en grand */
   protected readonly chapter = signal<Milestone | null>(null);
@@ -448,7 +451,23 @@ export class DashboardComponent {
     const alien = this.game.s().alien?.phase ?? -1;
     const king = !!this.game.s().kingdom;
     const arcs = Object.keys(this.game.s().crises ?? {});
+    const traits = this.game.s().player.traits ?? [];
+    const customLaws = Number(this.game.s().player.flags['customLaws'] ?? 0);
     untracked(() => {
+      // Votre loi sur mesure est adoptée : feu d'artifice
+      if (customLaws > this.lastCustomLaws) {
+        const bill = (this.game.s().customBills ?? []).at(-1);
+        this.whenFree(() => this.fx.fireworks(bill?.title ?? 'Votre loi', 'Adoptée par l’Assemblée nationale'), 500);
+      }
+      this.lastCustomLaws = customLaws;
+      // Un trait acquis : il arrive en grand, définitivement
+      if (traits.length > this.lastTraits) {
+        for (const id of traits.slice(this.lastTraits).slice(0, 2)) {
+          const t = TRAITS[id as TraitId];
+          if (t) this.whenFree(() => this.fx.scenario(t.icon, traitLabel(t.id, this.game.s().player.gender), 'Nouveau trait · définitif'), 900);
+        }
+      }
+      this.lastTraits = traits.length;
       // Un scénario s'ouvre : grande icône ; un scénario se dénoue sur une victoire : feu d'artifice
       const fresh = arcs.filter(k => !this.lastCrises.has(k));
       const ended = [...this.lastCrises].filter(k => !arcs.includes(k));
@@ -458,7 +477,12 @@ export class DashboardComponent {
       if (king !== this.lastKing) {
         this.whenFree(() => {
           if (king) { this.fx.spotlight(this.game.s().player.gender === 'femme' ? 'Vive la Reine !' : 'Vive le Roi !', 'Sacre à Reims'); this.burstAround(); }
-          else this.fx.stamp('République', 'good', 'rétablie');
+          else {
+            const last = this.game.s().milestones.at(-1)?.title ?? '';
+            if (last === 'La déchéance') { this.fx.newspaper('DÉCHÉANCE !', 'Le Congrès renverse la Couronne'); this.fx.shake(); }
+            else if (last === 'La révolution de velours' || /Varennes/.test(this.game.s().news[0]?.body ?? '')) { this.fx.tomatoes(12); this.fx.newspaper('LA RÉPUBLIQUE PROCLAMÉE', 'La rue a renversé le trône'); }
+            else this.fx.stamp('République', 'good', 'rétablie');
+          }
         }, 500);
         this.lastKing = king;
       }

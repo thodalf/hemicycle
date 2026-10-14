@@ -1,4 +1,5 @@
 import { FxService } from '../../services/fx.service';
+import { TraitsComponent } from '../traits/traits.component';
 import { MILESTONES, PostResult, fmtFollowers } from '../../engine/social';
 import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
@@ -21,6 +22,7 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
 /** Le téléphone : SMS, appels, répertoire */
 @Component({
   selector: 'app-phone',
+  imports: [TraitsComponent],
   template: `
     @if (phone.open()) {
       <div class="phone-wrap" role="dialog" aria-modal="true" aria-label="Téléphone" (click)="phone.close()">
@@ -31,7 +33,7 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
             <header class="th-head">
               <button type="button" class="back" (click)="phone.thread.set(null); calling.set(false)" aria-label="Retour">‹</button>
               <span class="avatar" aria-hidden="true">{{ t.icon }}</span>
-              <div class="who"><strong>{{ t.name }}@if (phone.romance()?.key === t.key) { <span class="heart" title="Une histoire en cours"> 💗</span> }</strong><small>{{ t.role || roleOf(t.key) }}{{ t.bond !== undefined ? ' · relation ' + (t.bond > 0 ? '+' : '') + t.bond : '' }}</small></div>
+              <div class="who"><strong>{{ t.name }}@if (phone.romance()?.key === t.key) { <span class="heart" title="Une histoire en cours"> 💗</span> }</strong><small>{{ t.role || roleOf(t.key) }}{{ t.bond !== undefined ? ' · relation ' + (t.bond > 0 ? '+' : '') + t.bond : '' }}</small>@if (persona(t.key, t.name); as ps) { @if (ps.length) { <app-traits class="persona" [ids]="ps" [compact]="true" /> } }</div>
               @if (t.callable) { <button type="button" class="call-btn" (click)="calling.set(!calling())" aria-label="Appeler">📞</button> }
             </header>
             <div class="bubbles" role="log" #log>
@@ -275,6 +277,14 @@ export class PhoneComponent {
   private readonly all = computed<PhoneMessage[]>(() => this.game.s().phone?.messages ?? []);
 
   /** Rôle d'une personne hors répertoire (personnalité sans numéro…) */
+  /** Traits de caractère d'une personnalité (pastilles cliquables) */
+  protected persona(key: string, name: string): string[] {
+    const s = this.game.s();
+    const id = key.split(':')[1];
+    const n = (id && s.npcs.find(x => x.id === id)) || s.npcs.find(x => x.name === name);
+    return n?.persona ?? [];
+  }
+
   protected roleOf(key: string): string {
     const s = this.game.s();
     if (key.startsWith('perso:')) { const n = s.npcs.find(x => x.id === key.slice(6)); const party = n ? [s.party, ...s.otherParties].find(p => p.id === n.partyId) : null; return n ? `${party?.name ?? 'Personnalité'} · numéro inconnu` : ''; }

@@ -15,6 +15,7 @@ import { canStartArc } from '../engine/arcs';
 import { CRISIS_EVENTS, CRISIS_GATES, FAMILY_EVENTS, MISC_ARC_EVENTS } from './life-arc-events';
 import { PHONE_EVENTS } from './phone-events';
 import { CALENDAR_EVENTS, COUNTRY_EVENTS, PHRASE_EVENT } from './country-events';
+import { REVOLUTION_EVENTS } from './royal-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
 import { RANK_EVENTS } from './rank-events';
@@ -1414,6 +1415,11 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     if (crownGates.length && rng.chance(0.04)) ev = pick(crownGates);
     else if (lodgeGates.length && rng.chance(0.04)) ev = pick(lodgeGates);
     else if (pressGates.length && rng.chance(0.045)) ev = pick(pressGates);
+  }
+  // Le règne : la rue et l'Assemblée mettent la Couronne à l'épreuve presque chaque mois
+  if (!ev && d.kingdom && rng.chance(0.5 + d.kingdom.opposition / 300)) {
+    const pool = [...REVOLUTION_EVENTS, ...COUNTRY_EVENTS.filter(e => e.tag.startsWith('roy_'))].filter(e => canFire(e, 8));
+    if (pool.length) ev = pick(pool);
   }
   // Premier contact : la porte d'entrée (rare), puis les rebondissements du dossier
   if (!ev && room && d.week >= 4 && canFire(ALIEN_GATE, 12) && rng.chance(d.scenario === 'carriere' ? 0.012 : 0.006)) ev = ALIEN_GATE;

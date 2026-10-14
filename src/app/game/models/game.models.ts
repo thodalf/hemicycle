@@ -166,6 +166,8 @@ export interface Player {
   civil?: CivilState | null;
   /** Revenus annexes récurrents (enseignement, conseil, chronique, droits d'auteur…) */
   sideIncomes?: SideIncome[];
+  /** Traits de personnage (naissance et acquis) : définitifs */
+  traits?: string[];
   flags: Record<string, boolean | number>;
 }
 
@@ -228,6 +230,7 @@ export type TargetRef = string;
 
 export type Effect =
   | { kind: 'stat'; stat: StatKey; delta: number }
+  | { kind: 'trait'; trait: string }
   | { kind: 'dossier'; domain: DomainRef; delta: number }
   | { kind: 'funds'; account: 'personal' | 'campaign'; delta: number }
   | { kind: 'faction'; factionId: FactionId | '*' | '$target'; delta: number }
@@ -260,7 +263,7 @@ export type Effect =
   | { kind: 'dossierScale'; domain: DomainRef; factor: number }
   | { kind: 'booster'; count: number; reason: string }
   | { kind: 'crown'; soutien?: number; legitimite?: number; armee?: number }
-  | { kind: 'kingdom'; prestige?: number; stabilite?: number; opposition?: number; restore?: boolean }
+  | { kind: 'kingdom'; prestige?: number; stabilite?: number; opposition?: number; restore?: boolean; fall?: 'decheance' | 'revolution' }
   | { kind: 'lodge'; fraternite?: number; discretion?: number; planches?: number }
   | { kind: 'end'; status: 'victoire' | 'defaite'; reason: string; title: string }
   | { kind: 'grade'; delta: number }
@@ -418,6 +421,8 @@ export interface Npc {
   isRival: boolean;
   /** Âge (années, fractionnaire) : les personnalités vieillissent */
   age?: number;
+  /** Traits de caractère (naissance, tempérament) */
+  persona?: string[];
 }
 
 export interface NetworkContact {
@@ -565,6 +570,8 @@ export interface DebateState {
   oppStyle: Record<DebateMove, number>;
   oppIntent: DebateMove;
   intentRevealed: boolean;
+  /** Probabilités réelles du prochain coup adverse (affichées au joueur) */
+  oppOdds?: Record<DebateMove, number>;
   hand: DebateCard[];
   deck: DebateCard[];
   combo: number;
@@ -1038,6 +1045,8 @@ export interface GameState {
   war: WarState | null;
   /** Scrutin public en cours à l'Assemblée */
   vote: AssemblyVote | null;
+  /** Projets de loi rédigés par le joueur (nom, domaine, orientation, ampleur) */
+  customBills?: CustomBill[];
   /** Derniers votes du joueur à l'Assemblée */
   voteHistory: VoteRecord[];
   /** Mini-jeux à jouer (file d'attente) */
@@ -1271,6 +1280,21 @@ export interface VoteTally {
   abstention: number;
 }
 
+export interface CustomBill {
+  id: string;
+  title: string;
+  summary: string;
+  domain: Domain;
+  /** -100 (gauche) … +100 (droite) */
+  lean: number;
+  opinion: number;
+  /** 1 : modeste · 2 : ambitieuse · 3 : historique */
+  scale: 1 | 2 | 3;
+  /** Coût budgétaire annuel, en milliards (négatif : économies) */
+  budget: number;
+  week: number;
+}
+
 export interface AssemblyVote {
   id: string;
   week: number;
@@ -1461,7 +1485,7 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
-  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile';
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

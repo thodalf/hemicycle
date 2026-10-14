@@ -22,6 +22,7 @@ import { monthlyNpcLife } from '../engine/npc-life';
 import { monthlyPledges } from '../engine/pledges';
 import { monthlySocial } from '../engine/social';
 import { monthlyKingdom } from '../engine/kingdom';
+import { monthlyTraits } from '../engine/traits';
 import { checkAchievements } from '../data/achievements';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
@@ -133,6 +134,7 @@ export class TurnService {
     monthlyPhone(d, rng);
     monthlySocial(d, rng);
     monthlyKingdom(d, rng);
+    monthlyTraits(d, rng);
     monthlyPlot(d, rng);
     monthlySchemes(d, rng);
     monthlyFamily(d, rng);

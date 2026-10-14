@@ -495,6 +495,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'diamants_gate', weight: 0.4, minRank: 'depute', eligible: d => !d.crises?.diamants && !d.player.flags['diamantsDone'] && d.week > 24,
+    build: () => ({
+      title: 'Un écrin de diamants',
+      context: 'Un hebdomadaire satirique s’apprête à publier une enquête : lors d’un voyage officiel, le président du Zanbar vous aurait offert un écrin de diamants. Le journaliste vous demande une réaction.',
+      choices: [
+        c('transparence', 'Tout expliquer et ouvrir vos archives', [cr('diamants', 6, 3, true), { kind: 'flag', key: 'diamantsDone', value: true }, s('credibility', 2)], 'Vous fournissez dates, notes, témoins. L’enquête démarre sur de bonnes bases.'),
+        c('dementi', 'Démentir sèchement', [cr('diamants', 2, 6, true), { kind: 'flag', key: 'diamantsDone', value: true }, s('stress', 4)], '« Calomnies ! » Le démenti fait plus de bruit que l’article.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ours_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.ours && !d.player.flags['oursDone'] && d.week > 14,
+    build: () => ({
+      title: 'Des ours dans les Pyrénées',
+      context: 'Le ministère veut réintroduire dix ours slovènes dans les Pyrénées. Bergers et écologistes vous demandent de prendre position.',
+      choices: [
+        c('porter', 'Porter le plan, avec des aides aux bergers', [cr('ours', 6, 3, true), { kind: 'flag', key: 'oursDone', value: true }, { kind: 'dossier', domain: 'ecologie', delta: 3 }], 'Les ours arrivent en hélicoptère. Les bergers attendent de voir.'),
+        c('bergers', 'Défendre d’abord les bergers', [cr('ours', 3, 1, true), { kind: 'flag', key: 'oursDone', value: true }, { kind: 'segment', segment: 'ruraux', delta: 3 }], 'Moins d’ours, plus de patous : le compromis passe, de justesse.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1239,6 +1261,50 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('liberte', 'Leur laisser cette liberté', [cr('jubile', 2, -3), { kind: 'kingdom', stabilite: 2 }], '« Le royaume respecte ceux qui ne l’aiment pas. » La phrase fait mouche.'),
         c('pression', 'Faire pression par les préfets', [cr('jubile', 3, 6), { kind: 'kingdom', opposition: 3 }], 'Les guirlandes sont posées. Les rancœurs aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'diamants_photo', weight: 1, eligible: d => !!d.crises?.diamants,
+    build: () => ({
+      title: 'La photo de l’écrin',
+      context: 'Une photo floue montre un écrin ouvert sur une table de l’ambassade. L’hebdomadaire en fait sa une : « Les diamants de l’Élu·e ».',
+      choices: [
+        c('musee', 'Prouver que l’écrin a été déposé au musée des Cadeaux d’État', [cr('diamants', 7, -3)], 'Le conservateur retrouve le registre : l’écrin y dort depuis deux ans.'),
+        c('plainte', 'Porter plainte pour diffamation', [cr('diamants', 2, 4), s('stress', 3)], 'La plainte prendra des mois. Le soupçon, lui, est déjà là.'),
+      ],
+    }),
+  },
+  {
+    tag: 'diamants_juge', weight: 0.8, eligible: d => !!d.crises?.diamants,
+    build: () => ({
+      title: 'Convocation chez la juge',
+      context: 'La juge d’instruction vous convoque comme témoin assisté. Les caméras attendent devant le palais de justice.',
+      choices: [
+        c('repondre', 'Répondre à toutes les questions, sans avocat médiatique', [cr('diamants', 6, -2), s('credibility', 2)], 'Quatre heures d’audition. Vous ressortez sans un mot pour les caméras.'),
+        c('silence', 'Garder le silence, sur conseil de vos avocats', [cr('diamants', 1, 5)], 'Juridiquement prudent. Politiquement désastreux.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ours_brebis', weight: 1, eligible: d => !!d.crises?.ours,
+    build: () => ({
+      title: 'Trente brebis tuées en une nuit',
+      context: 'Un troupeau a été attaqué sur une estive ariégeoise. Les bergers bloquent la route nationale avec des carcasses.',
+      choices: [
+        c('indemniser', 'Indemniser en 48 heures et envoyer des patous', [cr('ours', 5, -5), { kind: 'funds', account: 'campaign', delta: -2000 }], 'Les chèques arrivent vite : la colère retombe.'),
+        c('effarouchement', 'Autoriser l’effarouchement des ours', [cr('ours', -2, -3), { kind: 'segment', segment: 'jeunes', delta: -2 }], 'Pétards et chiens : les bergers respirent, les écologistes hurlent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ours_ourson', weight: 0.8, eligible: d => !!d.crises?.ours,
+    build: () => ({
+      title: 'Naissance d’un ourson',
+      context: 'Une ourse réintroduite a donné naissance à deux oursons, filmés par une caméra automatique. La vidéo bat des records.',
+      choices: [
+        c('concours', 'Lancer un concours pour les nommer dans les écoles', [cr('ours', 5), s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Pic et Pyrène : les noms gagnants sont votés par 40 000 élèves.'),
+        c('discret', 'Rester discret pour ne pas froisser les bergers', [cr('ours', 2, -2)], 'Sage. Les bergers apprécient votre retenue.'),
       ],
     }),
   },

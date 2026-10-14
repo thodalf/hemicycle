@@ -1,4 +1,5 @@
 import { DecimalPipe } from '@angular/common';
+import { TraitsComponent } from '../traits/traits.component';
 import { Component, computed, inject, signal } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
@@ -20,12 +21,15 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
 /** Profil, jauges, finances, prochain palier, dossiers & arbre de compétences */
 @Component({
   selector: 'app-profile-panel',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, TraitsComponent],
   template: `
     <section class="card">
       <div class="eyebrow">{{ game.s().party.name }}</div>
       <h2 class="name">{{ game.player().name }}</h2>
       <div class="rank"><span class="dot" [style.background]="game.s().party.color"></span>{{ game.roleLabel() }}</div>
+      @if (game.player().traits?.length) {
+        <app-traits class="my-traits" [ids]="game.player().traits ?? []" [gender]="game.player().gender" [grouped]="true" [fresh]="freshTrait()" />
+      }
 
       <ul class="gauges">
         @for (g of gauges; track g.key) {
@@ -195,6 +199,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
       div { display: flex; justify-content: space-between; } dt { color: var(--ink-3); font-family: var(--font-body); } dd { margin: 0; } }
     .via { font-size: 12.5px; margin-bottom: 10px; }
     .pay { display: grid; gap: 8px; .card-title { margin-bottom: 0; } }
+    .my-traits { margin: 10px 0 4px; }
     .pay-lines { gap: 5px; font-size: 13px;
       li { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
       .lbl { display: grid; } small { font-size: 11px; } .mono { white-space: nowrap; }
@@ -238,6 +243,12 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
 })
 export class ProfilePanelComponent {
   protected readonly game = inject(GameStateService);
+  /** Un trait acquis ce mois-ci arrive en tournoyant */
+  protected readonly freshTrait = computed(() => {
+    const s = this.game.s();
+    const fresh = s.news.some(n => n.week === s.week && n.title.startsWith('Nouveau trait'));
+    return fresh ? (s.player.traits ?? []).at(-1) ?? null : null;
+  });
   protected readonly progression = inject(ProgressionService);
   protected readonly gauges = GAUGES;
   protected readonly domains = DOMAINS;

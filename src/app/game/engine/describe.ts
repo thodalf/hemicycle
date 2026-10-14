@@ -1,5 +1,6 @@
 import { DOMAIN_LABELS, Effect, STAT_LABELS } from '../models/game.models';
 import { frSigned } from './rng';
+import { TRAITS, TraitId } from '../data/traits';
 
 /* ============================================================
  *  Traduction lisible des effets, pour afficher sur chaque
@@ -20,6 +21,7 @@ export function describeEffect(e: Effect): EffectChip[] {
       const inverse = e.stat === 'stress';
       return [{ text: `${n(e.delta)} ${STAT_LABELS[e.stat].toLowerCase()}`, tone: tone(e.delta, inverse) }];
     }
+    case 'trait': { const t = TRAITS[e.trait as TraitId]; return t ? [{ text: `trait ${t.icon} ${t.label.toLowerCase()}`, tone: t.tone === 'bad' ? 'bad' : 'good' }] : []; }
     case 'momentum': return [{ text: `${n(e.delta)} dynamique`, tone: tone(e.delta) }];
     case 'dossier': return [{ text: `${n(e.delta)} dossier ${e.domain === '$domain' ? 'ciblé' : DOMAIN_LABELS[e.domain].toLowerCase()}`, tone: tone(e.delta) }];
     case 'faction': {

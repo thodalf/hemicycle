@@ -1,5 +1,6 @@
 import { normalizeDraft } from '../engine/budget';
 import { crownPlayer, ensureRoyalExecutive } from '../engine/kingdom';
+import { ensureTraits } from '../engine/traits';
 import { PARTY_LINES } from '../data/budget';
 import { initHostile, startInvasion, startWar } from '../engine/war';
 import { initTerritory } from '../engine/territory';
@@ -106,6 +107,7 @@ export function migrate(s: GameState): GameState {
   // Anciennes parties : la monarchie proclamée met désormais le joueur sur le trône
   if (s.player.flags['monarchie'] && !s.kingdom && s.status === 'en_cours') crownPlayer(s);
   ensureRoyalExecutive(s);
+  ensureTraits(s, new Rng(s));
   if (s.nationalBudget?.draft) normalizeDraft(s.nationalBudget.draft);
   if (s.partyFinance?.allocations) for (const l of PARTY_LINES) s.partyFinance.allocations[l.id] ??= l.base;
   s.agendaLockedUntil ??= 0;
@@ -225,6 +227,7 @@ export class GameStateService {
   newGame(opts: NewGameOptions): void {
     const state = createInitialState(opts);
     weeklyObjectives(state, new Rng(state));
+    ensureTraits(state, new Rng(state));
     ensurePartyFinance(state);
     welcomePhone(state);
     state.family = initFamily(state);

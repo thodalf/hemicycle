@@ -59,7 +59,7 @@ export function ensureRoyalExecutive(d: GameState): void {
 }
 
 /** Rétablir la République (abdication volontaire, ou forcée) */
-export function restoreRepublic(d: GameState, forced: boolean): void {
+export function restoreRepublic(d: GameState, forced: boolean, how: 'abdication' | 'decheance' | 'revolution' = forced ? 'revolution' : 'abdication'): void {
   const k = d.kingdom;
   if (!k) return;
   const p = d.player;
@@ -69,6 +69,7 @@ export function restoreRepublic(d: GameState, forced: boolean): void {
   d.presidency = null;
   p.flags['monarchie'] = false;
   p.flags['closed_crown'] = true;
+  if (!(p.traits ?? []).includes('ancien_souverain')) p.traits = [...(p.traits ?? []), 'ancien_souverain'];
   p.rankId = 'ancien_president';
   p.actionPoints.max = RANKS.ancien_president.monthlyActionPoints;
   p.actionPoints.current = Math.min(p.actionPoints.current, p.actionPoints.max);
@@ -77,7 +78,13 @@ export function restoreRepublic(d: GameState, forced: boolean): void {
   d.presidential.incumbentId = null;
   d.presidential.incumbentName = 'le gouvernement provisoire';
   for (const n of d.npcs) if (n.partyId !== d.party.id) n.relationToPlayer = clamp(n.relationToPlayer + (forced ? 5 : 25), -100, 100);
-  if (forced) {
+  if (forced && how === 'decheance') {
+    p.stats.popularity = clamp(p.stats.popularity - 6);
+    p.stats.influence = clamp(p.stats.influence - 10);
+    p.stats.credibility = clamp(p.stats.credibility - 6);
+    addMilestone(d, 'revers', 'La déchéance', `Après ${months} mois de règne, l’Assemblée vote votre déchéance. Vous quittez le Palais par la grande porte, mais vous le quittez.`);
+    pushNews(d, 'actu', 'negative', 'Le souverain déchu', 'Par 389 voix, l’Assemblée nationale prononce la déchéance de la Couronne. La République est rétablie ; une présidentielle aura lieu dans un an.');
+  } else if (forced) {
     p.stats.popularity = clamp(p.stats.popularity - 10);
     p.stats.influence = clamp(p.stats.influence - 8);
     addMilestone(d, 'revers', 'La révolution de velours', `Après ${months} mois de règne, le front républicain l’emporte : vous abdiquez sous la pression de la rue. La République est rétablie.`);
@@ -93,7 +100,7 @@ export function restoreRepublic(d: GameState, forced: boolean): void {
 /** Les effets « kingdom » */
 export function adjustKingdom(d: GameState, e: Extract<Effect, { kind: 'kingdom' }>): string[] {
   const k = d.kingdom;
-  if (e.restore) { restoreRepublic(d, false); return ['République rétablie']; }
+  if (e.restore) { restoreRepublic(d, !!e.fall, e.fall ?? 'abdication'); return [e.fall === 'decheance' ? 'Déchéance prononcée' : e.fall === 'revolution' ? 'Renversé·e par la rue' : 'République rétablie']; }
   if (!k) return [];
   const out: string[] = [];
   const sg = (v: number) => (v > 0 ? `+${v}` : `${v}`);
@@ -107,18 +114,40 @@ export function adjustKingdom(d: GameState, e: Extract<Effect, { kind: 'kingdom'
 export function monthlyKingdom(d: GameState, rng: Rng): void {
   const k = d.kingdom;
   if (!k || d.status !== 'en_cours') return;
-  k.prestige = clamp(k.prestige + (50 - k.prestige) * 0.03 - 0.6 + d.player.stats.popularity / 200);
-  k.opposition = clamp(k.opposition + 1.2 - k.prestige / 100 - k.stabilite / 150);
-  k.stabilite = clamp(k.stabilite - (k.opposition - 50) / 40 + (k.prestige - 50) / 60);
+  // Un trône est un paratonnerre : le front républicain grossit vite, la rue gronde souvent
+  k.prestige = clamp(k.prestige + (50 - k.prestige) * 0.03 - 0.8 + d.player.stats.popularity / 200);
+  k.opposition = clamp(k.opposition + 2.4 - k.prestige / 100 - k.stabilite / 150);
+  k.stabilite = clamp(k.stabilite - (k.opposition - 45) / 30 + (k.prestige - 50) / 60);
+  // Des flambées révolutionnaires presque chaque mois
+  if (rng.chance(0.3 + k.opposition / 250)) {
+    const [title, text] = rng.pick(UNREST);
+    k.stabilite = clamp(k.stabilite - 2);
+    k.opposition = clamp(k.opposition + 1);
+    pushNews(d, 'actu', 'negative', title, text);
+  }
   // Les autres partis restent hostiles
   for (const n of d.npcs) if (n.partyId !== d.party.id && n.relationToPlayer > -15) n.relationToPlayer -= 2;
   if (k.opposition >= 70 && rng.chance(0.25)) {
     pushNews(d, 'actu', 'negative', 'Le front républicain dans la rue', `${Math.round(k.opposition * 8000).toLocaleString('fr-FR')} manifestants de la Bastille à la Nation : « Rendez-nous la République ! »`);
     k.stabilite = clamp(k.stabilite - 4);
   }
-  // Révolution de velours : opposition écrasante, trône discrédité
+  // Révolution : opposition écrasante et trône fragilisé, la rue peut l'emporter à tout moment
   if (k.opposition >= 92 && k.prestige < 35 && k.stabilite < 30) restoreRepublic(d, true);
+  else if (k.opposition >= 82 && (k.prestige < 45 || k.stabilite < 35) && rng.chance(0.18)) restoreRepublic(d, true);
 }
+
+const UNREST: [string, string][] = [
+  ['Des barricades rue Saint-Antoine', 'Pavés, palettes et drapeaux tricolores : le faubourg rejoue 1830 toute la nuit.'],
+  ['« À bas la Couronne » sur l’Arc de triomphe', 'Un tag géant, nettoyé à l’aube. Les photos, elles, ont fait le tour du monde.'],
+  ['Les cahiers de doléances reviennent', 'Dans 3 000 mairies, des cahiers réclament « le retour de la République ».'],
+  ['Un club des Jacobins renaît', 'Rue Saint-Honoré, trois cents personnes refondent le club. Les réseaux s’enflamment.'],
+  ['Grève des gardes du Palais', 'Les gardes républicains refusent de défiler en livrée royale.'],
+  ['Le bonnet phrygien en rupture de stock', 'Les magasins de déguisements sont dévalisés : le bonnet rouge s’affiche partout.'],
+  ['Une pétition pour la République dépasse les deux millions', 'Record absolu pour une pétition citoyenne. L’opposition exige un débat.'],
+  ['La Marseillaise sifflée… puis chantée', 'Au stade, l’hymne royal est couvert par une Marseillaise de 80 000 voix.'],
+  ['Des préfets démissionnent', 'Quatre préfets refusent de prêter serment à la Couronne et rendent leur casquette.'],
+  ['Occupation de la place de la Concorde', 'Tentes, assemblées générales, fanfares : la place est devenue un forum permanent.'],
+];
 
 export function kingdomGauges(k: KingdomState) {
   return [

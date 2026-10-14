@@ -2,6 +2,7 @@ import { GameState, Npc, NpcTrait } from '../models/game.models';
 import { FIRST_NAMES, LAST_NAMES } from '../data/recruits';
 import { pushNews } from './effects';
 import { Rng } from './rng';
+import { npcLifeBonus } from './traits';
 
 /* ============================================================
  *  La vie des personnalités : elles vieillissent, partent à la
@@ -43,7 +44,8 @@ export function npcAge(n: Npc): number {
 
 /** Probabilités mensuelles de chaque sort, selon l'âge et le profil */
 function fateOdds(n: Npc): [NpcFate, number][] {
-  const a = ensureAge(n);
+  // Une constitution robuste repousse l'échéance ; une santé fragile la rapproche
+  const a = ensureAge(n) - npcLifeBonus(n);
   const death = a < 50 ? 0.0002 : a < 65 ? 0.0008 : a < 75 ? 0.003 : a < 85 ? 0.009 : 0.025;
   const retire = a >= 66 ? 0.025 + (a - 66) * 0.004 : 0;
   return [
@@ -74,6 +76,7 @@ export function succeed(d: GameState, n: Npc, rng: Rng): string {
   n.influence = Math.round(n.influence * 0.6);
   n.relationToPlayer = 0;
   n.traits = [rng.pick(TRAITS)];
+  n.persona = undefined; // nouveaux traits de naissance au prochain passage
   n.ambition = 50 + rng.int(0, 35);
   // Les noms recopiés ailleurs
   const pr = d.presidency;

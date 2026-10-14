@@ -10,14 +10,16 @@
 </ng-template>
 
 <div class="overlay" role="dialog" aria-modal="true" [attr.aria-label]="d().title">
-  <section class="arena">
+  <section class="arena" [class.shake]="shakeOn()">
     <header class="stage">
       <div class="stage-top">
         <span class="eyebrow on-stage">{{ d().title }}</span>
         <span class="stage-meta">
-          <span class="crowd">Public : {{ crowd() }}</span>
+          <span class="crowd" title="Le bord politique du public">Public {{ crowd() }}</span>
           @if (d().status === 'en_cours') {
-            <span class="round mono">Manche {{ d().round }} / {{ d().maxRounds }}</span>
+            <span class="rounds" [attr.aria-label]="'Manche ' + d().round + ' sur ' + d().maxRounds">
+              @for (r of roundDots(); track $index) { <i [class]="r"></i> }
+            </span>
           }
         </span>
       </div>
@@ -33,8 +35,11 @@
         </div>
 
         <div class="topic">
-          @if (d().status === 'en_cours') {
-            <span class="eyebrow on-stage">Sujet</span>
+          @if (svc.reveal(); as rv) {
+            <span class="eyebrow on-stage">Manche {{ rv.ex.round }}</span>
+            <strong>{{ domainName(rv.ex.topic) }}</strong>
+          } @else if (d().status === 'en_cours') {
+            <span class="eyebrow on-stage">Sujet de la manche {{ d().round }}</span>
             <strong>{{ topicLabel() }}</strong>
           } @else {
             <span class="eyebrow on-stage">Verdict</span>
@@ -52,107 +57,163 @@
         </div>
       </div>
 
-      <div class="audience" [attr.aria-label]="'Audience : ' + (d().audience | number: '1.0-0')">
-        <div class="meter">
+      <div class="audience" [attr.aria-label]="score().text">
+        <div class="meter" [class.pulse]="!!svc.reveal()">
           <span class="fill" [class.left]="meter().side === 'left'" [class.right]="meter().side === 'right'"
                 [style.width.%]="meter().width"
                 [style.background]="meter().side === 'left' ? game.s().party.color : d().opponentColor"></span>
+          <span class="goal l"></span><span class="goal r"></span>
           <span class="center"></span>
         </div>
-        <div class="meter-legend mono">
-          <span>Pour vous</span>
-          <span>Audience {{ d().audience > 0 ? '+' : '' }}{{ d().audience | number: '1.0-0' }}</span>
-          <span>Pour lui</span>
+        <div class="meter-legend">
+          <span>◀ Pour vous</span>
+          <strong [class]="'sc-' + score().tone">{{ score().text }}</strong>
+          <span>Pour lui ▶</span>
         </div>
       </div>
     </header>
 
-    @if (d().status === 'en_cours') {
+    @if (svc.reveal(); as rv) {
+      <!-- ── Résolution de la manche, en grand ── -->
+      <div class="reveal" [class]="'rv-' + rv.ex.outcome">
+        <span class="eyebrow">Manche {{ rv.ex.round }} · {{ domainName(rv.ex.topic) }}</span>
+        <div class="vs-row">
+          <div class="vs-card mine" [class]="'m-' + rv.ex.playerMove">
+            <span class="vs-band"><ng-container *ngTemplateOutlet="icon; context: { $implicit: rv.ex.playerMove }" /> {{ moveLabels[rv.ex.playerMove] }}</span>
+            <span class="vs-label">{{ rv.ex.playerLabel }}</span>
+          </div>
+          <span class="vs">VS</span>
+          <div class="vs-card theirs" [class]="'m-' + rv.ex.oppMove">
+            <span class="vs-band"><ng-container *ngTemplateOutlet="icon; context: { $implicit: rv.ex.oppMove }" /> {{ moveLabels[rv.ex.oppMove] }}</span>
+            <span class="vs-label">{{ rv.ex.oppLabel }}</span>
+          </div>
+        </div>
+        @if (rv.feint) { <p class="feint">Il a bluffé : ce n’était pas le coup prévu !</p> }
+        <p class="rv-title">
+          {{ abs(rv.ex.swing) < 4 ? 'Manche serrée' : rv.ex.outcome === 'gagne' ? 'Manche gagnée' : 'Manche perdue' }}
+          <span class="rv-swing mono">{{ signed(rv.ex.swing) }} public</span>
+        </p>
+        <p class="rv-why">{{ why(rv.ex) }}</p>
+        <p class="rv-text">{{ rv.ex.text }}</p>
+        <button class="btn primary" (click)="svc.next()" autofocus>
+          {{ rv.status === 'en_cours' ? 'Manche suivante →' : 'Voir le verdict →' }}
+        </button>
+      </div>
+    } @else if (d().status === 'en_cours') {
       <div class="board">
-        <div class="intel">
-          <div class="intent" [class.hidden-intent]="!d().intentRevealed">
-            <span class="eyebrow">Son prochain coup</span>
+        @if (showHelp()) {
+          <div class="help">
+            <strong>Comment gagner ?</strong>
+            <ol>
+              <li>Chaque manche, choisissez <b>un argument</b>. Votre adversaire en joue un en même temps.</li>
+              <li>Comme à pierre-feuille-ciseaux : <b class="t-faits">Faits</b> bat <b class="t-emotion">Émotion</b>, qui bat <b class="t-attaque">Attaque</b>, qui bat <b class="t-faits">Faits</b>. La <b class="t-parade">Parade</b> renvoie une Attaque.</li>
+              <li>Le pourcentage sur chaque carte est votre <b>chance de gagner la manche</b>, selon ce qu’il risque de jouer.</li>
+              <li>À la fin, le public doit pencher de votre côté (au moins +6). Ou faites-lui perdre son sang-froid.</li>
+            </ol>
+            <button class="btn small" (click)="hideHelp()">Compris</button>
+          </div>
+        }
+
+        <div class="read">
+          <div class="read-head">
+            <span class="eyebrow">Ce qu’il va jouer</span>
             @if (d().intentRevealed) {
-              <span class="move-tag" [class]="'m-' + d().oppIntent">
-                <ng-container *ngTemplateOutlet="icon; context: { $implicit: d().oppIntent }" />
-                {{ moveLabels[d().oppIntent] }}
-              </span>
-              <small class="muted">Vos notes l’avaient prévu… sauf s’il bluffe.</small>
+              <span class="chip accent">Vos notes l’ont deviné · bluff {{ bluff() }} %</span>
             } @else {
-              <span class="move-tag unknown">?</span>
-              <small class="muted">{{ profile() }}</small>
+              <span class="muted small">{{ profile() }}</span>
             }
           </div>
-          <ul class="rules">
-            <li><b class="t-faits">Faits</b> battent <b class="t-emotion">Émotion</b></li>
-            <li><b class="t-emotion">Émotion</b> bat <b class="t-attaque">Attaque</b></li>
-            <li><b class="t-attaque">Attaque</b> bat <b class="t-faits">Faits</b></li>
-            <li><b class="t-parade">Parade</b> renvoie l’<b class="t-attaque">Attaque</b></li>
-            <li class="muted">Les Faits ne valent que sur le sujet de la manche.</li>
-            <li class="muted">Une idée <b class="t-gauche">de gauche</b> ou <b class="t-droite">de droite</b> séduit le public du même bord, déplace votre ligne et fait réagir les courants du parti.</li>
-          </ul>
-        </div>
-
-        <div class="ideo">
-          <div class="ideo-axis">
-            <span class="eyebrow">Clivage</span>
-            <app-stance-axis [markers]="axis()" />
+          <div class="odds">
+            @for (o of oddsRows(); track o.move) {
+              <div class="odd" [class]="'m-' + o.move" [class.top]="o.top">
+                <span class="odd-name"><ng-container *ngTemplateOutlet="icon; context: { $implicit: o.move }" /> {{ moveLabels[o.move] }}</span>
+                <span class="odd-bar"><i [style.width.%]="o.pct"></i></span>
+                <span class="mono odd-pct">{{ o.pct }} %</span>
+              </div>
+            }
           </div>
-          <div class="ideo-party">
-            <span class="eyebrow">Réaction du parti</span>
-            <ul>
-              @for (f of impact(); track f.id) {
-                <li>
-                  <span>{{ f.name }} <small class="muted">· {{ f.position }}</small></span>
-                  <span class="mono delta" [class.up]="f.delta > 0" [class.down]="f.delta < 0">
-                    {{ f.delta > 0 ? '▲ +' + f.delta : f.delta < 0 ? '▼ ' + f.delta : '=' }}
-                  </span>
-                </li>
-              }
-            </ul>
-            @if (d().flipflops) { <small class="flip">Volte-face : {{ d().flipflops }} (crédibilité −{{ d().flipflops * 2 }})</small> }
+          <div class="cycle" aria-label="Qui bat qui">
+            <span class="t-faits">📊 Faits</span><span class="arr">bat</span><span class="t-emotion">❤️ Émotion</span><span class="arr">bat</span>
+            <span class="t-attaque">⚡ Attaque</span><span class="arr">bat</span><span class="t-faits">📊 Faits</span>
+            <span class="sep">·</span><span class="t-parade">🛡️ Parade</span><span class="arr">renvoie</span><span class="t-attaque">⚡ Attaque</span>
           </div>
         </div>
 
         <div class="hand" role="list" aria-label="Vos arguments">
-          @for (card of d().hand; track card.id) {
+          @for (card of d().hand; track card.id; let i = $index) {
             @let p = power(card);
-            @let pv = preview(card);
-            <button class="card-arg" role="listitem" [class]="'m-' + card.move" (click)="svc.play(card.id)"
-                    [class.off]="p.note?.startsWith('Hors')">
+            @let ch = chances(card);
+            <button class="card-arg" role="listitem" [class]="'m-' + card.move" (click)="play(card.id, $event)"
+                    [class.off]="p.note?.startsWith('Hors')" [class.best]="card.id === bestId()" [style.animation-delay.ms]="i * 60">
               <span class="card-band">
                 <ng-container *ngTemplateOutlet="icon; context: { $implicit: card.move }" />
                 {{ moveLabels[card.move] }}
                 <span class="band-end">
                   @if (card.lean) { <span class="lean">{{ card.lean < 0 ? 'Gauche' : 'Droite' }}</span> }
-                  @if (card.special) { <span>★</span> }
+                  @if (card.special) { <span title="Carte spéciale">★</span> }
                 </span>
               </span>
               <span class="card-label">{{ card.label }}</span>
-              <span class="card-power mono">{{ p.power }}</span>
-              <span class="card-foot">
-                @if (p.note) { <small>{{ p.note }}</small> }
-                @if (pv) {
-                  <span class="chip" [class.good]="pv === 'gagne'" [class.bad]="pv === 'perdu'">
-                    {{ pv === 'gagne' ? 'L’emporte' : pv === 'perdu' ? 'Perdant' : 'Égalité' }}
-                  </span>
+              <span class="card-topic">
+                @if (card.domain && card.special !== 'bilan') {
+                  @if (card.domain === svc.topic()) { <span class="ok">✓ Sur le sujet</span> } @else { <span class="ko">✗ Hors sujet</span> }
                 }
+                @if (p.note) { <small>{{ cleanNote(p.note) }}</small> }
+              </span>
+              <span class="card-chance">
+                <strong class="mono" [class]="ch.win >= 60 ? 'hi' : ch.win >= 35 ? 'mid' : 'lo'">{{ ch.win }} %</strong>
+                <small>de chances de gagner la manche</small>
+              </span>
+              <span class="chance-bar" aria-hidden="true">
+                <i class="w" [style.width.%]="ch.win"></i><i class="d" [style.width.%]="ch.draw"></i><i class="l" [style.width.%]="ch.lose"></i>
+              </span>
+              <span class="card-foot">
+                @if (ch.beats.length) { <small class="beats">Bat : {{ names(ch.beats) }}</small> }
+                @if (ch.losesTo.length) { <small class="fears">Craint : {{ names(ch.losesTo) }}</small> }
+                <small class="force mono" title="La force décide de l’ampleur du gain, ou d’une égalité">Force {{ p.power }}</small>
               </span>
             </button>
           }
         </div>
 
         <div class="actions-row">
-          @if (d().combo > 1) { <span class="chip accent">Série ×{{ d().combo }}</span> }
+          @if (d().combo > 1) { <span class="chip accent combo">🔥 Série ×{{ d().combo }} : bonus d’audience</span> }
           <span class="spacer"></span>
           <button class="btn" [disabled]="d().breathsLeft < 1" (click)="svc.breathe()"
-                  title="Sacrifie la manche, +25 de sang-froid">
-            Reprendre son souffle ({{ d().breathsLeft }})
+                  title="Vous perdez la manche, mais regagnez 25 de sang-froid">
+            💧 Reprendre son souffle ({{ d().breathsLeft }})
           </button>
         </div>
+
+        <details class="more">
+          <summary>Clivage gauche-droite et réaction du parti</summary>
+          <div class="ideo">
+            <div class="ideo-axis">
+              <span class="eyebrow">Clivage</span>
+              <app-stance-axis [markers]="axis()" />
+              <small class="muted">Une idée <b class="t-gauche">de gauche</b> ou <b class="t-droite">de droite</b> séduit le public du même bord (+20 %), déplace votre ligne et fait réagir les courants du parti. Contredire sa propre ligne coûte de la crédibilité.</small>
+            </div>
+            <div class="ideo-party">
+              <span class="eyebrow">Réaction du parti</span>
+              <ul>
+                @for (f of impact(); track f.id) {
+                  <li>
+                    <span>{{ f.name }} <small class="muted">· {{ f.position }}</small></span>
+                    <span class="mono delta" [class.up]="f.delta > 0" [class.down]="f.delta < 0">
+                      {{ f.delta > 0 ? '▲ +' + f.delta : f.delta < 0 ? '▼ ' + f.delta : '=' }}
+                    </span>
+                  </li>
+                }
+              </ul>
+              @if (d().flipflops) { <small class="flip">Volte-face : {{ d().flipflops }} (crédibilité −{{ d().flipflops * 2 }})</small> }
+            </div>
+          </div>
+          @if (!showHelp()) { <button class="link" (click)="helpOn.set(true)">Revoir les règles</button> }
+        </details>
       </div>
     } @else {
       <div class="result" [class]="'r-' + verdict().tone">
+        <span class="result-icon" aria-hidden="true">{{ d().status === 'gagne' ? '🏆' : d().status === 'perdu' ? '😓' : '🤝' }}</span>
         <p class="result-line">
           @switch (d().status) {
             @case ('gagne') { Le public est avec vous. Les extraits tournent déjà en boucle. }
@@ -161,27 +222,30 @@
           }
         </p>
         <div class="rewards">
-          @for (r of d().rewardSummary; track $index) { <span class="chip">{{ r }}</span> }
+          @for (r of d().rewardSummary; track $index) { <span class="chip" [class.good]="tone(r) === 'good'" [class.bad]="tone(r) === 'bad'" [style.animation-delay.ms]="$index * 90">{{ r }}</span> }
         </div>
         <button class="btn primary" (click)="svc.leave()">Quitter le plateau</button>
       </div>
     }
 
-    @if (recentLog().length) {
-      <ol class="log">
-        @for (e of recentLog(); track e.round + e.playerLabel) {
-          <li [class]="e.outcome">
-            <span class="log-head">
-              <span class="mono">M{{ e.round }}</span>
-              <span class="vs"><span [class]="'t-' + e.playerMove">{{ e.playerLabel }}</span>
-                @if (e.playerLean) { <small class="lean-log" [class]="e.playerLean < 0 ? 't-gauche' : 't-droite'">{{ e.playerLean < 0 ? 'gauche' : 'droite' }}</small> }
-                contre <span [class]="'t-' + e.oppMove">{{ e.oppLabel }}</span></span>
-              <span class="swing mono">{{ signed(e.swing) }}</span>
-            </span>
-            <span class="log-text">{{ e.text }}</span>
-          </li>
-        }
-      </ol>
+    @if (recentLog().length && !svc.reveal()) {
+      <details class="log-wrap" [open]="d().status !== 'en_cours'">
+        <summary>Déroulé du débat ({{ recentLog().length }} manche{{ recentLog().length > 1 ? 's' : '' }})</summary>
+        <ol class="log">
+          @for (e of recentLog(); track e.round + e.playerLabel) {
+            <li [class]="e.outcome">
+              <span class="log-head">
+                <span class="mono">M{{ e.round }}</span>
+                <span class="vs-l"><span [class]="'t-' + e.playerMove">{{ e.playerLabel }}</span>
+                  @if (e.playerLean) { <small class="lean-log" [class]="e.playerLean < 0 ? 't-gauche' : 't-droite'">{{ e.playerLean < 0 ? 'gauche' : 'droite' }}</small> }
+                  contre <span [class]="'t-' + e.oppMove">{{ e.oppLabel }}</span></span>
+                <span class="swing mono">{{ signed(e.swing) }}</span>
+              </span>
+              <span class="log-text">{{ e.text }}</span>
+            </li>
+          }
+        </ol>
+      </details>
     }
   </section>
 </div>
