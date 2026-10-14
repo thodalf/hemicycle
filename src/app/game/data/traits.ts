@@ -11,13 +11,16 @@ import { DebateMove, StatKey } from '../models/game.models';
 export type TraitId =
   // Naissance : aptitudes
   | 'genie' | 'vif' | 'lent' | 'charismatique' | 'empote' | 'robuste' | 'fragile' | 'photogenique' | 'stentor' | 'memoire'
+  | 'leve_tot' | 'nerfs_acier' | 'anxieux' | 'artiste' | 'chiffres'
   // Naissance : tempérament
   | 'ambitieux' | 'modeste' | 'honnete' | 'menteur' | 'colerique' | 'calme' | 'travailleur' | 'paresseux'
   | 'genereux' | 'avare' | 'timide' | 'audacieux' | 'rancunier' | 'indulgent' | 'cynique' | 'idealiste'
+  | 'curieux' | 'tetu' | 'loyal' | 'opportuniste' | 'franc' | 'diplomate' | 'bon_vivant' | 'ascete'
   // Acquis en cours de vie
   | 'tribun' | 'survivant' | 'balafre' | 'chanceux' | 'entache' | 'sage' | 'insomniaque' | 'homme_etat'
   | 'chef_guerre' | 'ancien_souverain' | 'erudit' | 'polyglotte' | 'marathonien' | 'mondain' | 'pilier'
-  | 'increvable' | 'revolutionnaire' | 'legislateur' | 'meme';
+  | 'increvable' | 'revolutionnaire' | 'legislateur' | 'meme'
+  | 'globe_trotteur' | 'ponctuel' | 'reformateur' | 'briscard' | 'mal_aime' | 'idole';
 
 export type TraitKind = 'naissance' | 'temperament' | 'acquis';
 
@@ -73,6 +76,11 @@ export const TRAITS: Record<TraitId, TraitDef> = {
   photogenique: T('photogenique', 'Photogénique', '📸', 'naissance', 'good', 'Les caméras vous aiment, les unes de magazine aussi.', { gain: { popularity: 1.1, influence: 1.05 } }),
   stentor: T('stentor', 'Voix de stentor', '📢', 'naissance', 'good', 'Une voix qui porte jusqu’au fond des meetings.', { debate: { emotion: 1.12, attaque: 1.1 }, composure: 5 }),
   memoire: T('memoire', 'Mémoire d’éléphant', '🐘', 'naissance', 'good', 'Vous n’oubliez ni un chiffre, ni un visage, ni une trahison.', { mastery: 1.1, debate: { faits: 1.1 }, relationDown: 1.2 }),
+  leve_tot: T('leve_tot', 'Lève-tôt', '🌅', 'naissance', 'good', 'Debout à 5 h, les dossiers lus avant le café.', { monthly: { energy: 1 }, mastery: 1.05 }),
+  nerfs_acier: T('nerfs_acier', 'Nerfs d’acier', '🧊', 'naissance', 'good', 'Les crises glissent sur vous.', { composure: 12, gain: { stress: 0.85 } }, { opposite: 'anxieux' }),
+  anxieux: T('anxieux', 'Anxieux', '😰', 'naissance', 'bad', 'Vous vous inquiétez de tout, et souvent à raison.', { composure: -8, gain: { stress: 1.2 }, mastery: 1.05 }, { labelF: 'Anxieuse', opposite: 'nerfs_acier' }),
+  artiste: T('artiste', 'Âme d’artiste', '🎨', 'naissance', 'mixed', 'Des formules qui marquent, des chiffres qui vous ennuient.', { debate: { emotion: 1.15, faits: 0.92 }, gain: { popularity: 1.06 } }, { opposite: 'chiffres' }),
+  chiffres: T('chiffres', 'Tête à chiffres', '🧮', 'naissance', 'mixed', 'Les tableaux vous parlent ; les foules, un peu moins.', { debate: { faits: 1.15, emotion: 0.92 }, mastery: 1.08 }, { opposite: 'artiste' }),
   // ── Tempérament de naissance ──
   ambitieux: T('ambitieux', 'Ambitieux', '🎯', 'temperament', 'mixed', 'Toujours un étage plus haut. Influence chaque mois, stress aussi.', { monthly: { influence: 0.4, stress: 0.5 }, gain: { influence: 1.1 } }, { labelF: 'Ambitieuse', opposite: 'modeste' }),
   modeste: T('modeste', 'Modeste', '🌱', 'temperament', 'mixed', 'On vous fait confiance, on vous oublie un peu.', { gain: { credibility: 1.1, influence: 0.9 }, monthly: { stress: -0.3 } }, { opposite: 'ambitieux' }),
@@ -90,6 +98,14 @@ export const TRAITS: Record<TraitId, TraitDef> = {
   indulgent: T('indulgent', 'Indulgent', '🕊️', 'temperament', 'good', 'Vous pardonnez vite : les rancunes s’effacent.', { relationDown: 0.7 }, { labelF: 'Indulgente', opposite: 'rancunier' }),
   cynique: T('cynique', 'Cynique', '🎭', 'temperament', 'mixed', 'La politique est un jeu, et vous le jouez froidement.', { gain: { influence: 1.1, credibility: 0.9 }, debate: { parade: 1.1 } }, { opposite: 'idealiste' }),
   idealiste: T('idealiste', 'Idéaliste', '🌈', 'temperament', 'mixed', 'Vous croyez encore pouvoir changer le monde.', { gain: { credibility: 1.1, influence: 0.92 }, debate: { emotion: 1.1 } }, { opposite: 'cynique' }),
+  curieux: T('curieux', 'Curieux', '🔎', 'temperament', 'good', 'Vous voulez tout comprendre, tout lire, tout voir.', { mastery: 1.12 }, { labelF: 'Curieuse' }),
+  tetu: T('tetu', 'Têtu', '🐐', 'temperament', 'mixed', 'Une fois décidé·e, rien ne vous fait changer d’avis.', { gain: { credibility: 1.05 }, relationUp: 0.9, debate: { parade: 1.12 } }, { labelF: 'Têtue' }),
+  loyal: T('loyal', 'Loyal', '🤝', 'temperament', 'good', 'Vous ne lâchez jamais les vôtres, et ils le savent.', { relationUp: 1.15, monthly: { politicalCapital: 0.2 } }, { labelF: 'Loyale', opposite: 'opportuniste' }),
+  opportuniste: T('opportuniste', 'Opportuniste', '🦊', 'temperament', 'mixed', 'Le vent tourne ? Vous tournez avec lui.', { gain: { influence: 1.1 }, relationDown: 1.1 }, { opposite: 'loyal' }),
+  franc: T('franc', 'Franc-parler', '🗯️', 'temperament', 'mixed', 'Vous dites ce que vous pensez. Tout ce que vous pensez.', { debate: { attaque: 1.12 }, gain: { credibility: 1.05 }, exposure: 1.08 }, { opposite: 'diplomate' }),
+  diplomate: T('diplomate', 'Diplomate', '🕴️', 'temperament', 'good', 'L’art de dire non en donnant l’impression de dire oui.', { relationDown: 0.8, debate: { parade: 1.12 } }, { opposite: 'franc' }),
+  bon_vivant: T('bon_vivant', 'Bon vivant', '🍷', 'temperament', 'mixed', 'Les bonnes tables vous apaisent… et vous alourdissent.', { monthly: { stress: -0.5, health: -0.1 }, relationUp: 1.08 }, { labelF: 'Bonne vivante', opposite: 'ascete' }),
+  ascete: T('ascete', 'Ascète', '🥗', 'temperament', 'mixed', 'Eau, légumes, huit heures de sommeil : une discipline de moine.', { monthly: { health: 0.15 }, relationUp: 0.92 }, { opposite: 'bon_vivant' }),
   // ── Acquis ──
   tribun: T('tribun', 'Tribun', '🎙️', 'acquis', 'good', 'Cinq débats gagnés : les plateaux vous redoutent.', { debate: { emotion: 1.1, attaque: 1.1, faits: 1.05 }, composure: 10 }),
   survivant: T('survivant', 'Survivant', '🛡️', 'acquis', 'good', 'Vous avez échappé au pire. Plus rien ne vous impressionne.', { composure: 8, gain: { stress: 0.9 } }, { labelF: 'Survivante' }),
@@ -110,10 +126,16 @@ export const TRAITS: Record<TraitId, TraitDef> = {
   revolutionnaire: T('revolutionnaire', 'Figure de la révolution', '🔥', 'acquis', 'mixed', 'Vous avez renversé un régime. Les uns vous admirent, les autres vous craignent.', { gain: { popularity: 1.08 }, debate: { emotion: 1.1 }, exposure: 1.05 }),
   legislateur: T('legislateur', 'Grand législateur', '📜', 'acquis', 'good', 'Cinq lois portent votre nom : on vous consulte sur chaque texte.', { gain: { credibility: 1.08 }, mastery: 1.05 }, { labelF: 'Grande législatrice' }),
   meme: T('meme', 'Mème vivant', '🤳', 'acquis', 'mixed', 'Une séquence de vous tourne sur tous les réseaux. Pour toujours.', { gain: { popularity: 1.06 }, loss: { credibility: 1.05 } }),
+  globe_trotteur: T('globe_trotteur', 'Globe-trotteur', '🧭', 'acquis', 'good', 'Des centaines de trains, d’avions et de valises : vous êtes chez vous partout.', { loss: { energy: 0.9 }, gain: { popularity: 1.04 } }, { labelF: 'Globe-trotteuse' }),
+  ponctuel: T('ponctuel', 'Toujours à l’heure', '⏰', 'acquis', 'good', 'Trois trajets parfaits : votre ponctualité est devenue légendaire.', { gain: { credibility: 1.06 } }),
+  reformateur: T('reformateur', 'Réformateur', '🛠️', 'acquis', 'good', 'Trois lois de votre plume adoptées : vous savez faire passer un texte.', { gain: { influence: 1.06 }, mastery: 1.05 }, { labelF: 'Réformatrice' }),
+  briscard: T('briscard', 'Vieux briscard', '🗳️', 'acquis', 'good', 'Cinq campagnes électorales : plus rien ne vous surprend un soir de résultats.', { composure: 6, gain: { stress: 0.9 } }),
+  mal_aime: T('mal_aime', 'Mal-aimé', '🌧️', 'acquis', 'bad', 'Six mois tout en bas des sondages : l’étiquette vous colle.', { gain: { popularity: 0.9 } }, { labelF: 'Mal-aimée' }),
+  idole: T('idole', 'Idole des foules', '🌟', 'acquis', 'good', 'Six mois au sommet des sondages : on vous arrête dans la rue pour un selfie.', { gain: { popularity: 1.06 }, exposure: 1.05 }),
 };
 
-export const BIRTH_APTITUDES: TraitId[] = ['genie', 'vif', 'lent', 'charismatique', 'empote', 'robuste', 'fragile', 'photogenique', 'stentor', 'memoire'];
-export const TEMPERAMENTS: TraitId[] = ['ambitieux', 'modeste', 'honnete', 'menteur', 'colerique', 'calme', 'travailleur', 'paresseux', 'genereux', 'avare', 'timide', 'audacieux', 'rancunier', 'indulgent', 'cynique', 'idealiste'];
+export const BIRTH_APTITUDES: TraitId[] = ['genie', 'vif', 'lent', 'charismatique', 'empote', 'robuste', 'fragile', 'photogenique', 'stentor', 'memoire', 'leve_tot', 'nerfs_acier', 'anxieux', 'artiste', 'chiffres'];
+export const TEMPERAMENTS: TraitId[] = ['ambitieux', 'modeste', 'honnete', 'menteur', 'colerique', 'calme', 'travailleur', 'paresseux', 'genereux', 'avare', 'timide', 'audacieux', 'rancunier', 'indulgent', 'cynique', 'idealiste', 'curieux', 'tetu', 'loyal', 'opportuniste', 'franc', 'diplomate', 'bon_vivant', 'ascete'];
 
 /** Rareté des aptitudes de naissance (poids) */
 export const APTITUDE_WEIGHT: Partial<Record<TraitId, number>> = { genie: 0.4, vif: 1, lent: 0.7, charismatique: 0.8, empote: 0.7, robuste: 1, fragile: 0.7, photogenique: 0.9, stentor: 0.8, memoire: 0.8 };

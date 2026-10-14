@@ -133,6 +133,12 @@ export function monthlyTraits(d: GameState, rng: Rng): void {
   if (d.crises?.loto) gainTrait(d, 'chanceux', '28 millions au Loto : on dit que la chance vous suit.');
   if (d.kingdom) gainTrait(d, 'ancien_souverain', 'Vous avez porté la couronne de France.');
   if (Number(f['langues'] ?? 0) >= 3) gainTrait(d, 'polyglotte', 'Trois langues de plus : vous parlez aux dirigeants étrangers sans interprète.');
+  if (Number(f['deplacements'] ?? 0) >= 6) gainTrait(d, 'globe_trotteur', 'Six grands déplacements : votre valise ne se défait plus.');
+  if (Number(f['perfectTrips'] ?? 0) >= 3) gainTrait(d, 'ponctuel', 'Trois trajets parfaits : on règle sa montre sur vous.');
+  if (Number(f['customLaws'] ?? 0) >= 3) gainTrait(d, 'reformateur', 'Trois lois de votre plume adoptées.');
+  if (d.elections.filter(e => e.result).length >= 5) gainTrait(d, 'briscard', 'Cinq campagnes : vous avez tout vu.');
+  if (bump('trait_lowPop', p.stats.popularity < 10) >= 6) gainTrait(d, 'mal_aime', 'Six mois sous les 10 de popularité : l’étiquette vous colle.');
+  if (bump('trait_highPop', p.stats.popularity >= 80) >= 6) gainTrait(d, 'idole', 'Six mois au sommet : vous êtes devenu·e une idole.');
   if (Number(f['galas'] ?? 0) >= 5) gainTrait(d, 'mondain', 'Cinq galas, cent dîners : le Tout-Paris vous reçoit.');
   if (d.milestones.some(m => m.week === d.week && /Survivant·e d’un attentat/.test(m.title))) {
     gainTrait(d, 'survivant', 'Vous avez survécu à une tentative d’assassinat.');

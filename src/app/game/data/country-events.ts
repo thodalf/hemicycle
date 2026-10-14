@@ -22,6 +22,7 @@ const eco = (x: Omit<Extract<Effect, { kind: 'economy' }>, 'kind'>): Effect => (
 const mood = (delta: number): Effect => ({ kind: 'coalition', mood: delta });
 const kg = (x: Omit<Extract<Effect, { kind: 'kingdom' }>, 'kind'>): Effect => ({ kind: 'kingdom', ...x });
 const atLeastCouncil = 'conseiller_municipal' as const;
+const st2 = (stat: 'popularity' | 'influence' | 'credibility' | 'politicalCapital' | 'stress' | 'energy', delta: number): Effect => ({ kind: 'stat', stat, delta });
 
 /** Les années paires : l'Euro (2028, 2032…) ou la Coupe du monde (2030, 2034…) */
 function footName(year: number): string | null {
@@ -913,6 +914,50 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
       choices: [
         c('lire', 'Les lire une à une, seul·e', [s('stress', -4), s('credibility', 2)], '« Ne deviens jamais ce que tu combats. » Vous relisez cette phrase souvent.'),
         c('publier', 'Les faire publier', [s('popularity', 2), { kind: 'income', base: 3000 }, { kind: 'exposure', delta: 1 }], 'Le recueil devient un succès de librairie. Certains trouvent le geste déplacé.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_greve_sncf_tournee', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Grève SNCF le jour de votre tournée',
+      context: 'Trois rendez-vous en province sont prévus aujourd’hui, et un train sur deux est supprimé. Votre équipe propose d’annuler.',
+      choices: [
+        c('maintenir', 'Maintenir la tournée et trouver des trains', [{ kind: 'minigame', gameId: 'correspondances', title: 'La tournée malgré la grève', reward: [s('popularity', 3), seg('ruraux', 2)], penalty: [s('stress', 4), s('popularity', -1)] }], 'Vous voilà devant le tableau des départs, café à la main.'),
+        c('annuler', 'Annuler et faire les rendez-vous en visio', [s('popularity', -1), s('energy', 3)], 'Les élus locaux sont déçus. La connexion, elle, a coupé deux fois.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_cortege_bloque', weight: 0.6, minRank: 'depute',
+    build: () => ({
+      title: 'Coincé·e dans les embouteillages',
+      context: 'Votre rendez-vous avec un grand patron qui veut investir dans votre circonscription commence dans quinze minutes. Paris est bloqué par une manifestation.',
+      choices: [
+        c('foncer', 'Prendre le volant et foncer', [{ kind: 'minigame', gameId: 'cortege_paris', title: 'Quinze minutes pour traverser Paris', reward: [st2('influence', 3), { kind: 'economy', unemployment: -0.02 }], penalty: [st2('influence', -2)] }], 'Ceinture bouclée, GPS éteint : vous connaissez Paris.'),
+        c('excuser', 'Appeler pour décaler', [s('influence', -1)], 'Il accepte de décaler… à dans trois semaines.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_depart_precipite', weight: 0.5, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Départ dans une heure',
+      context: 'On vous demande de partir immédiatement pour un déplacement imprévu de plusieurs jours. Votre valise n’est pas faite.',
+      choices: [
+        c('valise', 'Faire sa valise soi-même, vite', [{ kind: 'minigame', gameId: 'valise_voyage', title: 'La valise en une heure', reward: [s('credibility', 2), s('popularity', 1)], penalty: [s('stress', 3)] }], 'Vous ouvrez l’armoire. Le chauffeur klaxonne déjà.'),
+        c('assistant', 'Laisser votre assistant·e s’en charger', [s('stress', -1)], 'Il ou elle a pris trois cravates et aucune chaussette.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_avion_retarde', weight: 0.5, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Bloqué·e à l’aéroport',
+      context: 'Votre vol est retardé de six heures. Dans le hall, des voyageurs vous reconnaissent et commencent à vous interpeller sur le pouvoir d’achat.',
+      choices: [
+        c('discuter', 'S’asseoir avec eux et discuter', [s('popularity', 3), seg('populaires', 2), s('energy', -4)], 'Six heures de débat improvisé : une vidéo de vous sur une valise en guise de tribune devient virale.'),
+        c('salon', 'Se réfugier au salon VIP', [s('stress', -3), s('popularity', -2)], 'Un passager vous photographie derrière la vitre du salon. La légende est cruelle.'),
       ],
     }),
   },

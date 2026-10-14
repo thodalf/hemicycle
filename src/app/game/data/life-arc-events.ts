@@ -517,6 +517,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'essence_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.penurie_essence && !d.player.flags['essenceDone'] && d.week > 12,
+    build: () => ({
+      title: 'Les stations à sec',
+      context: 'Les raffineries sont en grève, les dépôts bloqués. En une semaine, un tiers des stations n’ont plus une goutte. On vous demande de prendre les choses en main.',
+      choices: [
+        c('reagir', 'Prendre la tête de la cellule de crise', [cr('penurie_essence', 6, 3, true), { kind: 'flag', key: 'essenceDone', value: true }, s('credibility', 2)], 'Tableaux de bord, appels aux pétroliers : vous voilà « ministre de la pompe ».'),
+        c('dialogue', 'Recevoir d’abord les grévistes', [cr('penurie_essence', 3, 1, true), { kind: 'flag', key: 'essenceDone', value: true }, { kind: 'segment', segment: 'populaires', delta: 2 }], 'Le dialogue s’ouvre. Les files d’attente, elles, s’allongent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'culture_gate', weight: 0.45, minRank: 'conseiller_municipal', eligible: d => !d.crises?.capitale_culture && !d.player.flags['cultureDone'] && d.week > 18,
+    build: () => ({
+      title: 'Capitale européenne de la culture',
+      context: 'Votre ville est retenue parmi les finalistes pour devenir capitale européenne de la culture. Le jury attend un dernier oral.',
+      choices: [
+        c('oral', 'Défendre la candidature en personne', [cr('capitale_culture', 6, 3, true), { kind: 'flag', key: 'cultureDone', value: true }, s('popularity', 2)], 'Un discours vibrant, des artistes en larmes : le titre est à vous.'),
+        c('equipe', 'Laisser l’équipe culturelle porter le projet', [cr('capitale_culture', 3, 1, true), { kind: 'flag', key: 'cultureDone', value: true }], 'Le jury apprécie le collectif. Vous l’emportez, discrètement.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1305,6 +1327,50 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('concours', 'Lancer un concours pour les nommer dans les écoles', [cr('ours', 5), s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Pic et Pyrène : les noms gagnants sont votés par 40 000 élèves.'),
         c('discret', 'Rester discret pour ne pas froisser les bergers', [cr('ours', 2, -2)], 'Sage. Les bergers apprécient votre retenue.'),
+      ],
+    }),
+  },
+  {
+    tag: 'essence_files', weight: 1, eligible: d => !!d.crises?.penurie_essence,
+    build: () => ({
+      title: 'Les files d’attente',
+      context: 'Deux kilomètres de voitures devant une station de la périphérie. Un automobiliste filme et vous interpelle : « Vous, vous avez de l’essence ? »',
+      choices: [
+        c('rationner', 'Instaurer un rationnement : 30 litres par plein', [cr('penurie_essence', 5, -2), s('popularity', -1)], 'Les files raccourcissent. Les automobilistes râlent, mais tout le monde passe.'),
+        c('velo', 'Venir à vélo et annoncer la gratuité des transports', [cr('penurie_essence', 2, -5), s('popularity', 3), { kind: 'economy', deficit: 0.02 }], 'L’image du vélo devant la file fait le tour des réseaux.'),
+      ],
+    }),
+  },
+  {
+    tag: 'essence_requisition', weight: 0.8, eligible: d => !!d.crises?.penurie_essence,
+    build: () => ({
+      title: 'Réquisitionner les dépôts ?',
+      context: 'Les préfets proposent de réquisitionner les dépôts bloqués. Les syndicats menacent d’étendre la grève.',
+      choices: [
+        c('requisition', 'Réquisitionner', [cr('penurie_essence', 8, 3), { kind: 'segment', segment: 'populaires', delta: -2 }], 'Les camions-citernes repartent sous escorte.'),
+        c('accord', 'Négocier un accord salarial', [cr('penurie_essence', 4, -4), { kind: 'economy', deficit: 0.03 }], 'Un accord à 4 h du matin : la grève est levée, la facture aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'culture_artiste', weight: 1, eligible: d => !!d.crises?.capitale_culture,
+    build: () => ({
+      title: 'Une œuvre qui choque',
+      context: 'Une sculpture géante sur la place centrale fait scandale : une pétition de 30 000 riverains exige son retrait.',
+      choices: [
+        c('defendre', 'Défendre la liberté de création', [cr('capitale_culture', 5, 2), s('credibility', 1)], 'La polémique fait venir les curieux par milliers.'),
+        c('deplacer', 'La déplacer au musée', [cr('capitale_culture', 1, -3), { kind: 'segment', segment: 'retraites', delta: 2 }], 'Les riverains respirent ; les artistes signent une tribune contre vous.'),
+      ],
+    }),
+  },
+  {
+    tag: 'culture_mecene', weight: 0.8, eligible: d => !!d.crises?.capitale_culture,
+    build: () => ({
+      title: 'Le mécène encombrant',
+      context: 'Un milliardaire propose de financer la moitié de l’année culturelle… à condition que son nom figure partout.',
+      choices: [
+        c('accepter', 'Accepter l’argent', [cr('capitale_culture', 7, 2), { kind: 'exposure', delta: 2 }], 'Les festivals se multiplient. Son logo aussi.'),
+        c('refuser', 'Refuser et lancer un financement participatif', [cr('capitale_culture', 3, -2), s('popularity', 2)], '200 000 donateurs : la culture appartient à tout le monde.'),
       ],
     }),
   },

@@ -1,4 +1,4 @@
-import { AssemblyVote, CustomBill, DOMAIN_LABELS, Domain, Effect, GameState } from '../models/game.models';
+import { AssemblyVote, CustomBill, DOMAIN_LABELS, Decision, Domain, Effect, GameState, Segment } from '../models/game.models';
 import { assemblyGroups, forecast, governingIds, ownOrigin, scheduleVote, voteRole } from './assembly';
 import { applyEffects, pushNews } from './effects';
 import { economy } from './country';
@@ -45,6 +45,83 @@ export function leanLabel(lean: number): string {
   return lean <= -60 ? 'très à gauche' : lean <= -20 ? 'à gauche' : lean < 20 ? 'au centre' : lean < 60 ? 'à droite' : 'très à droite';
 }
 
+/* ── Le clivage : une réforme divise ─────────────────────── */
+
+/** Sujets qui enflamment plus ou moins le pays */
+const DOMAIN_HEAT: Record<Domain, number> = { social: 18, securite: 15, justice: 12, economie: 12, education: 10, ecologie: 10, sante: 6, diplomatie: 5, territoires: 4, numerique: 3 };
+const SEG_LABEL: Record<Segment, string> = { jeunes: 'jeunes', retraites: 'retraités', populaires: 'classes populaires', cadres: 'cadres', ruraux: 'ruraux' };
+
+/** Indice de clivage (0-100) : orientation marquée, ampleur, sujet brûlant, économies */
+export function cleavage(lean: number, scale: number, domain: Domain, budget = 0): number {
+  return Math.round(clamp(Math.abs(lean) * 0.55 + (scale - 1) * 15 + DOMAIN_HEAT[domain] + (budget < 0 ? 10 : 0), 5, 100));
+}
+
+export function cleavageLabel(c: number): string {
+  return c >= 75 ? 'explosif' : c >= 55 ? 'fort' : c >= 35 ? 'marqué' : 'faible';
+}
+
+/** Qui gagne, qui perd : la gauche parle aux classes populaires et aux jeunes, la droite aux cadres et aux retraités */
+export function winnersLosers(lean: number, domain: Domain): { winners: Segment[]; losers: Segment[] } {
+  const left: Segment[] = ['populaires', 'jeunes'];
+  const right: Segment[] = ['cadres', 'retraites'];
+  if (domain === 'territoires' || domain === 'ecologie') (lean < 0 ? left : right).push('ruraux');
+  if (Math.abs(lean) < 15) return { winners: [], losers: [] };
+  return lean < 0 ? { winners: left, losers: right } : { winners: right, losers: left };
+}
+
+/** Une réforme adoptée divise : gagnants et perdants, adversaires furieux, la rue parfois */
+export function polarize(d: GameState, title: string, lean: number, scale: number, domain: Domain, budget: number, rng: Rng): string[] {
+  const c = cleavage(lean, scale, domain, budget);
+  const { winners, losers } = winnersLosers(lean, domain);
+  const m = c / 35;
+  const effects: Effect[] = [
+    ...winners.map(segment => ({ kind: 'segment', segment, delta: Math.round(2 * m) } as Effect)),
+    ...losers.map(segment => ({ kind: 'segment', segment, delta: -Math.round(2.2 * m) } as Effect)),
+    { kind: 'stat', stat: 'stress', delta: Math.round(c / 20) },
+  ];
+  // Les courants du parti éloignés du texte grincent
+  for (const f of d.party.factions) {
+    const gap = Math.abs(f.position - lean);
+    if (gap > 40) effects.push({ kind: 'faction', factionId: f.id, delta: -Math.round(gap / 25 * (c / 50)) });
+  }
+  const out = applyEffects(d, effects.filter(x => !('delta' in x) || x.delta !== 0), { domain }, rng);
+  // Le camp d'en face se braque
+  let angry = 0;
+  for (const n of d.npcs) {
+    const party = [d.party, ...d.otherParties].find(p => p.id === n.partyId);
+    if (party && n.partyId !== d.party.id && Math.abs(party.position - lean) > 60) { n.relationToPlayer = clamp(n.relationToPlayer - Math.round(c / 12), -100, 100); angry++; }
+  }
+  if (angry) out.push(`${angry} adversaires se braquent`);
+  if (d.presidency && c >= 55) d.presidency.approval = clamp(d.presidency.approval - Math.round((c - 50) / 10));
+  d.player.flags['clivage'] = Math.max(Number(d.player.flags['clivage'] ?? 0) * 0.5, c);
+  // Au-delà d'un certain seuil, la rue s'en mêle
+  if (c >= 55 && rng.chance(c / 130) && !d.pendingDecisions.some(x => x.tag === 'reform_backlash')) {
+    d.pendingDecisions.push(backlash(d, title, c, losers));
+    out.push('La rue se mobilise');
+  }
+  pushNews(d, 'actu', c >= 55 ? 'negative' : 'neutral', `${title} : un texte ${c >= 75 ? 'qui déchire' : c >= 55 ? 'qui divise' : 'qui fait débat'}`,
+    `Clivage ${c}/100.${winners.length ? ` Satisfaits : ${winners.map(s => SEG_LABEL[s]).join(', ')}.` : ''}${losers.length ? ` En colère : ${losers.map(s => SEG_LABEL[s]).join(', ')}.` : ''}`);
+  return out;
+}
+
+function backlash(d: GameState, title: string, c: number, losers: Segment[]): Decision {
+  const who = losers.length ? losers.map(s => SEG_LABEL[s]).join(' et ') : 'opposants';
+  const crowd = Math.round(c * 9000 / 1000) * 1000;
+  return {
+    id: nextId(d, 'dec'), tag: 'reform_backlash', week: d.week, deadlineWeek: d.week + 1, source: 'evenement',
+    title: 'La rue contre votre réforme',
+    context: `« ${title} » met ${crowd.toLocaleString('fr-FR')} manifestants dans la rue. Les ${who} réclament le retrait du texte ; les syndicats menacent d’une grève reconductible.`,
+    choices: [
+      { id: 'tenir', label: 'Tenir bon : « La loi a été votée »', effects: [{ kind: 'stat', stat: 'credibility', delta: 3 }, { kind: 'stat', stat: 'popularity', delta: -Math.round(c / 15) }, { kind: 'stat', stat: 'stress', delta: 6 }],
+        outcome: 'Les cortèges s’essoufflent après trois semaines. On salue votre fermeté, on n’oublie pas votre dureté.' },
+      { id: 'amender', label: 'Ouvrir une concertation et amender le texte', effects: [{ kind: 'stat', stat: 'credibility', delta: -1 }, { kind: 'stat', stat: 'popularity', delta: 2 }, ...losers.map(segment => ({ kind: 'segment', segment, delta: 2 } as Effect))],
+        outcome: 'Quelques mesures adoucies, un calendrier étalé : la colère retombe, vos partisans grognent.' },
+      { id: 'retirer', label: 'Suspendre la réforme', effects: [{ kind: 'stat', stat: 'credibility', delta: -Math.round(c / 12) }, { kind: 'stat', stat: 'influence', delta: -3 }, ...losers.map(segment => ({ kind: 'segment', segment, delta: 3 } as Effect))],
+        outcome: 'La rue a gagné. Vos adversaires parlent de reculade, vos alliés de trahison.' },
+    ],
+  };
+}
+
 export interface BillQuote {
   ap: number;
   energy: number;
@@ -56,6 +133,10 @@ export interface BillQuote {
   opinion: number;
   adoptedChance: number;
   role: AssemblyVote['role'] | null;
+  /** Indice de clivage, gagnants et perdants */
+  cleavage: number;
+  winners: string[];
+  losers: string[];
   /** Écart avec la ligne du parti */
   partyGap: number;
   notes: string[];
@@ -85,10 +166,14 @@ export function quoteBill(d: GameState, b: BillDraft): BillQuote {
     adoptedChance = Math.round(forecast(d, temp).adoptedChance * 100);
   }
   if (budget > 6) notes.push('Gros chèque : Bercy et les agences de notation tiqueront.');
+  const cl = cleavage(b.lean, b.scale, b.domain, budget);
+  const wl = winnersLosers(b.lean, b.domain);
+  if (cl >= 55) notes.push(`Texte ${cleavageLabel(cl)} : risque de mobilisation dans la rue après l’adoption.`);
   if (budget < 0) notes.push(`Des économies : ${fr(-budget)} Md€ par an, au prix de quelques mécontents.`);
   return {
     ap: b.scale, energy: 4 + 4 * b.scale, politicalCapital: Math.round(Math.max(6, pc)),
     budget, deficit: Math.round((budget / 28) * 100) / 100, opinion, adoptedChance, role, partyGap: Math.round(partyGap), notes,
+    cleavage: cl, winners: wl.winners.map(s => SEG_LABEL[s]), losers: wl.losers.map(s => SEG_LABEL[s]),
   };
 }
 
@@ -148,18 +233,16 @@ export function customBill(d: GameState, id: string): CustomBill | undefined {
 export function applyCustomBill(d: GameState, b: CustomBill, rng: Rng): string[] {
   const e = economy(d);
   e.deficit = Math.round((e.deficit + b.budget / 28) * 100) / 100;
-  const m = b.scale * Math.min(1, Math.abs(b.lean) / 50 + 0.3);
   const effects: Effect[] = [
     { kind: 'dossier', domain: b.domain, delta: 3 + b.scale * 2 },
     { kind: 'stat', stat: 'credibility', delta: 1 + b.scale },
     { kind: 'stance', delta: Math.round((b.lean - d.player.stance) * 0.06) },
   ];
-  if (b.lean < -15) effects.push({ kind: 'segment', segment: 'populaires', delta: Math.round(2 * m) }, { kind: 'segment', segment: 'jeunes', delta: Math.round(1.5 * m) }, { kind: 'segment', segment: 'cadres', delta: -Math.round(1.5 * m) });
-  else if (b.lean > 15) effects.push({ kind: 'segment', segment: 'cadres', delta: Math.round(2 * m) }, { kind: 'segment', segment: 'retraites', delta: Math.round(1.5 * m) }, { kind: 'segment', segment: 'populaires', delta: -Math.round(1.5 * m) });
-  else effects.push({ kind: 'segment', segment: '*', delta: 1 });
+  if (Math.abs(b.lean) < 15) effects.push({ kind: 'segment', segment: '*', delta: 1 });
   if (b.scale === 3) effects.push({ kind: 'stat', stat: 'influence', delta: 4 });
   const out = applyEffects(d, effects.filter(x => !('delta' in x) || x.delta !== 0), { domain: b.domain }, rng);
   out.push(b.budget >= 0 ? `Déficit +${fr(b.budget / 28, 2)} pt` : `Déficit −${fr(-b.budget / 28, 2)} pt`);
+  out.push(...polarize(d, b.title, b.lean, b.scale, b.domain, b.budget, rng));
   return out;
 }
 

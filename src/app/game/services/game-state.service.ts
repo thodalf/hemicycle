@@ -107,6 +107,12 @@ export function migrate(s: GameState): GameState {
   // Anciennes parties : la monarchie proclamée met désormais le joueur sur le trône
   if (s.player.flags['monarchie'] && !s.kingdom && s.status === 'en_cours') crownPlayer(s);
   ensureRoyalExecutive(s);
+  // Le prétendant ne prend plus le nom du souverain : on rend au prince le sien, jusque dans le téléphone
+  if (s.crown?.pretendant.includes('(le prince a renoncé')) {
+    s.crown.pretendant = 'le prince Louis-Amaury de Valmont';
+    s.crown.renounced = true;
+  }
+  for (const m of s.phone?.messages ?? []) if (m.who === 'sc:prince' && (m.from.includes('(le prince a renoncé') || m.from === s.player.name)) m.from = 'Le prince Louis-Amaury de Valmont';
   ensureTraits(s, new Rng(s));
   if (s.nationalBudget?.draft) normalizeDraft(s.nationalBudget.draft);
   if (s.partyFinance?.allocations) for (const l of PARTY_LINES) s.partyFinance.allocations[l.id] ??= l.base;

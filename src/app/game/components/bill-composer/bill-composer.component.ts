@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { FxService } from '../../services/fx.service';
-import { BillDraft, SCALE_LABELS, SUGGESTED_TITLES, canAfford, canDraft, leanLabel, proposeBill, quoteBill } from '../../engine/custom-bill';
+import { BillDraft, SCALE_LABELS, SUGGESTED_TITLES, canAfford, canDraft, cleavageLabel, leanLabel, proposeBill, quoteBill } from '../../engine/custom-bill';
 import { fr } from '../../engine/rng';
 
 /**
@@ -84,6 +84,13 @@ import { fr } from '../../engine/rng';
                 <span class="bar"><i [style.width.%]="q.adoptedChance"></i></span>
               </div>
             </div>
+            <div class="cleave" [class]="'cl-' + cleaveLabel(q.cleavage)">
+              <span class="cl-head"><small>Clivage</small><strong class="mono">{{ q.cleavage }}/100 · {{ cleaveLabel(q.cleavage) }}</strong></span>
+              <span class="cl-bar"><i [style.width.%]="100 - q.cleavage"></i></span>
+              @if (q.winners.length) {
+                <span class="cl-sides"><span class="win">👍 {{ q.winners.join(', ') }}</span><span class="lose">👎 {{ q.losers.join(', ') }}</span></span>
+              } @else { <small class="muted">Un texte de consensus : peu de gagnants, peu de perdants.</small> }
+            </div>
             @if (q.notes.length) { <ul class="notes">@for (n of q.notes; track n) { <li>{{ n }}</li> }</ul> }
           </div>
 
@@ -126,6 +133,13 @@ import { fr } from '../../engine/rng';
       small { font-size: 10.5px; color: var(--ink-3); } strong { font-size: 16px; }
       &.good strong { color: var(--good); } &.bad strong { color: var(--bad); }
       .bar { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 3px; i { display: block; height: 100%; background: var(--accent); transition: width .4s ease; } } }
+    .cleave { display: grid; gap: 4px; padding: 6px 8px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line);
+      .cl-head { display: flex; justify-content: space-between; align-items: baseline; small { font-size: 10.5px; color: var(--ink-3); } strong { font-size: 13px; } }
+      .cl-bar { height: 7px; border-radius: 4px; background: linear-gradient(90deg, #c8e6c9, #ffe0a3, #f5a48f, #c62828); overflow: hidden; position: relative;
+        i { position: absolute; right: 0; top: 0; bottom: 0; left: auto; display: block; background: var(--line); transition: width .4s ease; width: 0; } }
+      .cl-sides { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; .win { color: var(--good); } .lose { color: var(--bad); } } }
+    .cleave.cl-explosif { animation: smoulder 1.6s ease-in-out infinite; }
+    @keyframes smoulder { 50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent); } }
     .notes { margin: 0; padding-left: 16px; font-size: 12px; color: var(--ink-2); }
     .cta { display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; .reason { font-size: 12px; color: var(--bad); } }
     @media (max-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -154,6 +168,7 @@ export class BillComposerComponent {
   protected mastery(d: Domain) { return Math.round(this.game.player().dossiers[d]?.mastery ?? 0); }
   protected scaleLabel(s: 1 | 2 | 3) { return SCALE_LABELS[s]; }
   protected abs(n: number) { return Math.abs(n); }
+  protected cleaveLabel(c: number) { return cleavageLabel(c); }
   protected num(n: number, digits = 1) { return fr(n, digits); }
 
   protected setDomain(d: Domain): void {

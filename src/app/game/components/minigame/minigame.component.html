@@ -161,6 +161,9 @@
               @case ('interview') { <app-interview-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('sommet') { <app-sommet-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('visite') { <app-visite-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('train') { <app-train-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('cortege') { <app-cortege-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('valise') { <app-valise-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('cmp') { <app-cmp-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('deminage') { <app-deminage-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('pointage') {

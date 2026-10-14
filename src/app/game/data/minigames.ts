@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise';
 
 export interface TriItem {
   text: string;
@@ -496,6 +496,22 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'sommet_climat', kind: 'sommet', icon: '🌡️', title: 'Conférence sur le climat', summit: 'climat',
     rule: 'Un accord mondial sur le climat : ambition pour la planète et pour la France, mais un seul pays fâché suffit à tout bloquer.',
+  },
+  {
+    id: 'correspondances', kind: 'train', icon: '🚄', title: 'La journée en train',
+    rule: 'Trois rendez-vous, trois trajets : choisissez vos trains entre vitesse, prix et fiabilité. Un retard peut faire sauter une correspondance.',
+  },
+  {
+    id: 'cortege_paris', kind: 'cortege', icon: '🚗', title: 'Le cortège dans Paris',
+    rule: 'Rejoignez l’Élysée à travers les rues : contournez travaux et manifestations, qui se déplacent à chaque carrefour.',
+  },
+  {
+    id: 'cortege_province', kind: 'cortege', icon: '🚙', title: 'Course contre la montre en préfecture',
+    rule: 'La réunion de crise commence sans vous : traversez la ville jusqu’à la préfecture avant la fin du compte à rebours.',
+  },
+  {
+    id: 'valise_voyage', kind: 'valise', icon: '🧳', title: 'La valise du déplacement',
+    rule: 'Lisez le programme, puis remplissez la valise : ce qui servira vraiment, dans la limite du poids.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',

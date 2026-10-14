@@ -93,6 +93,12 @@ export function resolveMinigame(d: GameState, id: string, rawScore: number, rng:
     default: effects = g.arcade ? [] : [...scaleGains(reward, 0.15), ...g.penalty];
   }
   const summary = applyEffects(d, effects, ctx, rng);
+  // Les déplacements forgent le caractère : globe-trotteur, toujours à l'heure
+  const kind = MINIGAMES_BY_ID.get(g.gameId)?.kind;
+  if (kind === 'train' || kind === 'cortege' || kind === 'valise') {
+    d.player.flags['deplacements'] = Number(d.player.flags['deplacements'] ?? 0) + 1;
+    if (tier === 'brillant') d.player.flags['perfectTrips'] = Number(d.player.flags['perfectTrips'] ?? 0) + 1;
+  }
   // Salle de jeux : une partie brillante rend un point d'action
   if (g.arcade && g.paid && tier === 'brillant') {
     d.player.actionPoints.current += 1;

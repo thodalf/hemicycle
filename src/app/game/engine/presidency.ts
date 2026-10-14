@@ -3,6 +3,7 @@ import { recordLaw } from './legacy';
 import { DOMAIN_LABELS } from '../models/game.models';
 import { applyAppointment, pmDecision } from './cabinet';
 import { restoreRepublic } from './kingdom';
+import { polarize } from './custom-bill';
 import { makePledges } from './pledges';
 import { Decision, DecisionChoice, Effect, GameState, PresidentialCalendar, ScheduledElection } from '../models/game.models';
 import { inMonth, monthLabel } from './calendar';
@@ -355,8 +356,10 @@ export function adjustPresidency(d: GameState, e: Extract<Effect, { kind: 'presi
     if (pass) {
       pr.reforms += 1;
       d.player.flags['reformsTotal'] = Number(d.player.flags['reformsTotal'] ?? 0) + 1;
-      recordLaw(d, `La réforme ${DOMAIN_LABELS[d.agendaDomain].toLowerCase()} de ${yearOf(d.week)}`, d.agendaDomain);
+      const title = `La réforme ${DOMAIN_LABELS[d.agendaDomain].toLowerCase()} de ${yearOf(d.week)}`;
+      recordLaw(d, title, d.agendaDomain);
       out.push(`Réforme adoptée (${pr.reforms})`);
+      out.push(...polarize(d, title, d.player.stance, e.force ? 3 : 2, d.agendaDomain, 0, rng));
     } else {
       pr.approval = clamp(pr.approval - 3);
       pr.majority = clamp(pr.majority - 3);

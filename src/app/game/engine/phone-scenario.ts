@@ -3,6 +3,13 @@ import type { CallOption, PhoneEntry } from './phone';
 import { grantNumber } from './phone';
 import { ENEMIES } from './war';
 import { DEVIL } from './apocalypse';
+
+/** Le prince, avec une majuscule ; les anciennes parties lui donnaient le nom du joueur */
+export function princeName(d: GameState): string {
+  const raw = d.crown?.pretendant ?? 'le prétendant';
+  const name = raw.includes('(le prince a renoncé') ? 'le prince Louis-Amaury de Valmont' : raw;
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
 import { Rng, clamp } from './rng';
 
 /* ============================================================
@@ -86,8 +93,17 @@ const CONTACTS: ScenContact[] = [
   // ── La Couronne ──
   {
     key: 'sc:prince', icon: '👑', when: d => !!d.crown,
-    name: d => d.crown!.pretendant, role: () => 'Prétendant au trône de France',
-    options: () => [
+    name: d => princeName(d), role: d => (d.kingdom || d.crown?.renounced ? 'Ancien prétendant · a renoncé au trône en votre faveur' : 'Prétendant au trône de France'),
+    options: d => d.kingdom ? [
+      { id: 'sc_prince_conseil', label: 'Lui demander conseil sur l’étiquette', hint: 'Il connaît chaque usage de cour depuis l’enfance.', ask: 'Monseigneur, comment recevoir un roi étranger sans faux pas ?', cooldown: 2,
+        run: () => ({ answer: 'Jamais de dos, jamais le premier assis, et le fromage avant le dessert. Toujours.', effects: [{ kind: 'kingdom', prestige: 3 }, st('influence', 1)] }) },
+      { id: 'sc_prince_ambassade', label: 'Lui confier une mission diplomatique', hint: 'Un prince à l’étranger : les cours européennes adorent.', ask: 'Accepteriez-vous de représenter la Couronne à Madrid ?', cooldown: 4,
+        run: () => ({ answer: 'Avec joie. Il est temps que je serve à quelque chose.', effects: [{ kind: 'intl', prestige: 2 }, { kind: 'kingdom', prestige: 2, opposition: -1 }] }) },
+      { id: 'sc_prince_republicains', label: 'L’envoyer parler aux républicains modérés', hint: 'Un prince qui a renoncé au trône : un médiateur inattendu.', ask: 'Ils vous écouteront peut-être, vous qui avez renoncé.', cooldown: 6,
+        run: (_d, rng) => rng.chance(0.6)
+          ? { answer: 'Trois députés acceptent de déjeuner avec lui. Ils ressortent… presque convaincus.', effects: [{ kind: 'kingdom', opposition: -6 }] }
+          : { answer: 'On l’a reçu poliment, puis éconduit. « Un prince reste un prince. »', effects: [{ kind: 'kingdom', opposition: 2 }] } },
+    ] : [
       { id: 'sc_prince_salon', label: 'Être reçu·e au salon du Prince', hint: 'Lustres, vieilles familles et un thé à la bergamote.', ask: 'Monseigneur, me ferez-vous l’honneur d’une audience ?', cooldown: 2,
         run: () => ({ answer: 'Monseigneur vous attend jeudi, à dix-sept heures. Tenue correcte exigée.', effects: [{ kind: 'crown', legitimite: 3 }, st('influence', 1), { kind: 'segment', segment: 'retraites', delta: 1 }] }) },
       { id: 'sc_prince_generaux', label: 'Organiser un déjeuner avec des généraux', hint: 'Des épaulettes acquises à la cause.', ask: 'Quelques officiers aimeraient vous rencontrer, Monseigneur.', cooldown: 3,
@@ -318,6 +334,24 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Les patous font du bon travail. Mais il en faut deux fois plus.', effects: [{ kind: 'crisis', arc: 'ours', gauge: 3, risk: -3 }] }) },
     ],
   },
+  // ── La pénurie d'essence ──
+  {
+    key: 'sc:essence', icon: '⛽', when: d => !!d.crises?.penurie_essence,
+    name: () => 'Karim Benali', role: () => 'Délégué syndical de la raffinerie de Donges',
+    options: () => [
+      { id: 'sc_essence_point', label: 'Prendre la température chez les grévistes', hint: 'Il répond depuis le piquet de grève.', ask: 'Où en êtes-vous, à Donges ?', cooldown: 1,
+        run: () => ({ answer: 'On ne lâchera pas sans les salaires. Mais on laisse passer les camions des hôpitaux.', effects: [{ kind: 'crisis', arc: 'penurie_essence', gauge: 3, risk: -3 }] }) },
+    ],
+  },
+  // ── La capitale de la culture ──
+  {
+    key: 'sc:culture', icon: '🎭', when: d => !!d.crises?.capitale_culture,
+    name: () => 'Inès Moreau-Lagarde', role: () => 'Directrice artistique de l’année capitale',
+    options: () => [
+      { id: 'sc_culture_point', label: 'Faire le point sur la programmation', hint: 'Elle dort quatre heures par nuit.', ask: 'Alors, cette programmation ?', cooldown: 1,
+        run: () => ({ answer: 'Le cirque chinois a confirmé ! Le chantier de l’opéra, beaucoup moins.', effects: [{ kind: 'crisis', arc: 'capitale_culture', gauge: 4 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -401,7 +435,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

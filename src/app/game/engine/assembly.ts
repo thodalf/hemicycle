@@ -1,5 +1,5 @@
 import { recordLaw } from './legacy';
-import { applyCustomBill } from './custom-bill';
+import { applyCustomBill, polarize } from './custom-bill';
 import { AssemblyGroup, AssemblyVote, Ballot, Effect, GameState, VoteTally } from '../models/game.models';
 import { BASE_SEATS, BILLS, BILLS_BY_ID, BillDef, NON_INSCRITS, SEATS } from '../data/bills';
 import { DOMAIN_LABELS } from '../models/game.models';
@@ -326,12 +326,16 @@ function adoptedEffects(d: GameState, v: AssemblyVote, rng: Rng): string[] {
     { kind: 'dossier', domain: v.domain, delta: 3 },
   ];
   if (d.government) effects.push({ kind: 'government', majority: 1 });
+  const divides = !(d.customBills ?? []).some(b => b.id === v.billId);
   if (d.presidency) {
     d.presidency.reforms += 1;
     d.player.flags['reformsTotal'] = Number(d.player.flags['reformsTotal'] ?? 0) + 1;
     effects.push({ kind: 'presidency', approval: Math.round((v.opinion - 50) / 12) });
   }
-  return applyEffects(d, effects, { domain: v.domain }, rng);
+  const out = applyEffects(d, effects, { domain: v.domain }, rng);
+  // Un texte du gouvernement divise aussi le pays (les textes sur mesure le font eux-mêmes)
+  if (divides) out.push(...polarize(d, v.title, v.lean, 2, v.domain, 0, rng));
+  return out;
 }
 
 /** Le scrutin : chaque député·e vote, le joueur aussi */

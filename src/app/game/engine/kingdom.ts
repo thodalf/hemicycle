@@ -46,7 +46,8 @@ export function crownPlayer(d: GameState): void {
   p.rankId = 'roi';
   p.actionPoints.max = RANKS.roi.monthlyActionPoints;
   p.flags['monarchie'] = true;
-  if (d.crown) d.crown.pretendant = `${p.name} (le prince a renoncé en votre faveur)`;
+  // Le prince garde son nom : il a seulement renoncé à ses droits en votre faveur
+  if (d.crown) d.crown.renounced = true;
   // Tous les autres partis se dressent contre la Couronne
   for (const n of d.npcs) if (n.partyId !== d.party.id) n.relationToPlayer = Math.min(n.relationToPlayer, -25);
   pushNews(d, 'actu', 'neutral', `Vive ${d.player.gender === 'femme' ? 'la Reine' : 'le Roi'} !`, `Le prétendant renonce en votre faveur : ${p.name} est sacré·e à Reims, ${d.kingdom.title}. Tous les partis, sauf le vôtre, forment un « front républicain ».`);

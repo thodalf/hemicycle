@@ -79,6 +79,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Un hebdomadaire affirme que le président du Zanbar vous a offert un écrin de diamants lors d’une visite officielle.', 'Les photos de l’écrin circulent ; la justice ouvre une enquête préliminaire.', 'L’enquête touche à sa fin : innocence prouvée ou carrière brisée.'] },
   ours: { id: 'ours', icon: '🐻', label: 'Le retour des ours', gaugeLabel: 'Cohabitation', riskLabel: 'Colère des bergers', months: 7, drift: { gauge: 3, risk: 4 },
     stages: ['Une dizaine d’ours sont réintroduits dans les Pyrénées. Les écologistes jubilent, les bergers fulminent.', 'Brebis tuées, estives désertées, manifestations à Foix : la montagne se divise.', 'Avant l’hiver, il faut trouver un modèle de cohabitation qui tienne.'] },
+  penurie_essence: { id: 'penurie_essence', icon: '⛽', label: 'La pénurie d’essence', gaugeLabel: 'Approvisionnement', riskLabel: 'Colère des automobilistes', months: 4, drift: { gauge: 3, risk: 6 },
+    stages: ['Raffineries en grève et dépôts bloqués : une station sur trois est à sec.', 'Files de deux kilomètres, jerricans, rationnement : le pays roule au ralenti.', 'Les camions-citernes reviennent. Il faut tenir jusqu’au bout.'] },
+  capitale_culture: { id: 'capitale_culture', icon: '🎭', label: 'Capitale européenne de la culture', gaugeLabel: 'Rayonnement', riskLabel: 'Fiasco artistique', months: 9, drift: { gauge: 3, risk: 3 },
+    stages: ['Votre ville candidate au titre de capitale européenne de la culture… et l’emporte.', 'Programmation, chantiers, mécènes : l’année se prépare dans la fièvre.', 'Le rideau se lève : douze mois de festivals sous les yeux de l’Europe.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -418,6 +422,26 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.popularity = clamp(s.popularity - 4);
         electorate(d).offsets.ruraux = clamp(electorate(d).offsets.ruraux - 3, -30, 30);
         lose('La guerre des estives', 'Bergers en colère, ours braconnés, procès en cascade : la montagne vous en veut.');
+      }
+      break;
+    case 'penurie_essence':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 5); s.popularity = clamp(s.popularity + 2);
+        win('Les pompes coulent à nouveau', 'Réquisitions, stocks stratégiques, accord salarial : la pénurie est vaincue en quelques semaines.');
+      } else {
+        s.popularity = clamp(s.popularity - 5);
+        economy(d).growth -= 0.2;
+        lose('La France à l’arrêt', 'Un mois de stations à sec : entreprises fermées, ambulances rationnées. On vous reproche d’avoir laissé pourrir.');
+      }
+      break;
+    case 'capitale_culture':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); s.influence = clamp(s.influence + 2);
+        d.intl.prestige = clamp(d.intl.prestige + 3); economy(d).growth += 0.05;
+        win('Une année inoubliable', 'Douze millions de visiteurs, des quartiers transformés : la capitale de la culture laisse un héritage durable.');
+      } else {
+        s.credibility = clamp(s.credibility - 4);
+        lose('Le rideau tombe trop tôt', 'Programmation annulée, budgets dépassés, salles vides : l’Europe retiendra surtout les polémiques.');
       }
       break;
     case 'tempete_solaire':
