@@ -2,7 +2,8 @@ import { DecimalPipe } from '@angular/common';
 import { TraitsComponent } from '../traits/traits.component';
 import { traitProgress } from '../../engine/traits';
 import { LIFESTYLES, LIFESTYLE_BY_ID, RENOWN_TIERS, XP_PER_PERK, renownTier } from '../../data/lifestyles';
-import { chooseLifestyle, perksIn, stressLevel } from '../../engine/character';
+import { perksIn, stressLevel } from '../../engine/character';
+import { LifestyleModalComponent } from '../lifestyle-modal/lifestyle-modal.component';
 import { TRAITS, traitLabel } from '../../data/traits';
 import { Component, computed, inject, signal } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
@@ -25,7 +26,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
 /** Profil, jauges, finances, prochain palier, dossiers & arbre de compétences */
 @Component({
   selector: 'app-profile-panel',
-  imports: [DecimalPipe, TraitsComponent],
+  imports: [DecimalPipe, TraitsComponent, LifestyleModalComponent],
   template: `
     <section class="card">
       <div class="eyebrow">{{ game.s().party.name }}</div>
@@ -59,24 +60,14 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
         </div>
         <div class="ch-row ls">
           <span class="ch-lbl">Style de vie</span>
-          <select [value]="lifestyle()?.id ?? ''" (change)="setLifestyle($any($event.target).value)">
-            <option value="" disabled>— choisir —</option>
-            @for (l of lifestyles; track l.id) { <option [value]="l.id">{{ l.icon }} {{ l.label }}</option> }
-          </select>
+          <button type="button" class="ls-btn" (click)="lsOpen.set(true)">
+            @if (lsDef(); as l) { {{ l.icon }} {{ l.label }} <small class="muted">· {{ perkCount() }}/{{ l.perks.length }}</small> } @else { Choisir un style… }
+          </button>
         </div>
-        @if (lsDef(); as l) {
-          <div class="ls-tree">
-            <small class="muted">{{ l.desc }} Actions « {{ l.categories.join(' », « ') }} » : expérience doublée.</small>
-            <div class="perks">
-              @for (p of l.perks; track p.id; let i = $index) {
-                <span class="perk" [class.got]="hasPerk(p.id)" [class.next]="!hasPerk(p.id) && i === perkCount()" [title]="p.desc">{{ hasPerk(p.id) ? '✓' : i + 1 }} {{ p.label }}</span>
-              }
-              <span class="perk final" [class.got]="perkCount() >= l.perks.length" title="Trait obtenu au bout de l’arbre">🏅</span>
-            </div>
-            @if (perkCount() < l.perks.length) { <span class="xp"><i [style.width.%]="xpPct()"></i></span> }
-          </div>
-        }
+        @if (lsDef(); as l) { @if (perkCount() < l.perks.length) { <span class="xp" title="Vers le prochain avantage"><i [style.width.%]="xpPct()"></i></span> } }
       </div>
+
+      @if (lsOpen()) { <app-lifestyle-modal (close)="lsOpen.set(false)" /> }
 
       <ul class="gauges">
         @for (g of gauges; track g.key) {
@@ -255,7 +246,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
     @keyframes throb { 50% { transform: scale(1.25); } }
     .dread, .xp { display: block; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; i { display: block; height: 100%; background: #6b3a8f; transition: width .4s ease; } }
     .xp i { background: var(--accent); }
-    .ls select { font: 12.5px var(--font-body); padding: 3px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+    .ls-btn { font: 12.5px var(--font-body); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; &:hover { border-color: var(--accent); } }
     .ls-tree { display: grid; gap: 4px; }
     .perks { display: flex; flex-wrap: wrap; gap: 4px; }
     .perk { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-3);
@@ -316,7 +307,7 @@ export class ProfilePanelComponent {
   protected readonly perkCount = computed(() => (this.lsDef() ? perksIn(this.game.s(), this.lsDef()!.id) : 0));
   protected readonly xpPct = computed(() => Math.min(100, ((this.lifestyle()?.xp ?? 0) / XP_PER_PERK) * 100));
   protected hasPerk(id: string) { return !!this.lifestyle()?.perks.includes(id); }
-  protected setLifestyle(id: string): void { this.game.mutate(d => chooseLifestyle(d, id)); }
+  protected readonly lsOpen = signal(false);
   /** Les traits acquis qui se rapprochent */
   protected readonly traitPath = computed(() => traitProgress(this.game.s()).map(r => ({ ...r, icon: TRAITS[r.id].icon, label: traitLabel(r.id, this.game.player().gender) })));
   /** Un trait acquis ce mois-ci arrive en tournoyant */

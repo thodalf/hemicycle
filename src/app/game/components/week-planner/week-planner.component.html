@@ -14,6 +14,17 @@
     </div>
   </header>
 
+  <details class="obj-fold" [open]="objOpen()" (toggle)="objToggle($event)">
+    <summary>
+      <span class="obj-t">🎯 Objectifs du moment</span>
+      <span class="obj-sum">
+        @for (o of game.s().objectives; track o.id) { <i [class.done]="o.progress >= o.target" [title]="o.label" [style.--p]="objPct(o) + '%'"></i> }
+        <small class="muted">{{ objDone() }}/{{ game.s().objectives.length }}</small>
+      </span>
+    </summary>
+    <app-objectives-panel [embedded]="true" />
+  </details>
+
   @if (turn.lastReport(); as report) {
     @if (reportOpen()) {
       <div class="report">

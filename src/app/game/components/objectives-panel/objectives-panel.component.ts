@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { Objective } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 
@@ -6,8 +6,8 @@ import { GameStateService } from '../../services/game-state.service';
 @Component({
   selector: 'app-objectives-panel',
   template: `
-    <section class="card">
-      <div class="card-title"><span>Objectifs</span><small class="muted">récompensés dès qu’ils sont atteints</small></div>
+    <section [class.card]="!embedded()">
+      @if (!embedded()) { <div class="card-title"><span>Objectifs</span><small class="muted">récompensés dès qu’ils sont atteints</small></div> }
       <ul class="objectives">
         @for (o of game.s().objectives; track o.id) {
           @let left = o.deadlineWeek - game.week();
@@ -41,6 +41,8 @@ import { GameStateService } from '../../services/game-state.service';
 })
 export class ObjectivesPanelComponent {
   protected readonly game = inject(GameStateService);
+  /** Dans l'agenda, sans carte autour */
+  readonly embedded = input(false);
   protected ratio(o: Objective) {
     return Math.max(0, Math.min(100, (100 * o.progress) / o.target));
   }

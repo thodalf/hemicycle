@@ -1,3 +1,4 @@
+import { ObjectivesPanelComponent } from '../objectives-panel/objectives-panel.component';
 import { DecimalPipe } from '@angular/common';
 import { Component, DestroyRef, ElementRef, afterNextRender, effect, computed, inject, signal } from '@angular/core';
 import {
@@ -56,7 +57,7 @@ import { voteRole } from '../../engine/assembly';
 
 @Component({
   selector: 'app-week-planner',
-  imports: [DecimalPipe, BillComposerComponent],
+  imports: [DecimalPipe, BillComposerComponent, ObjectivesPanelComponent],
   templateUrl: './week-planner.component.html',
   styleUrl: './week-planner.component.scss',
 })
@@ -113,7 +114,23 @@ export class WeekPlannerComponent {
     return withProjects(first ? [...all.filter(([c]) => c === first), ...all.filter(([c]) => c !== first)] : all);
   });
   protected readonly category = signal<ActionCategory | 'projets'>(this.categories()[0]?.[0] ?? 'terrain');
+  /** Un onglet qui disparaît (fin d'une lutte…) renvoie au premier onglet */
+  private readonly keepCategory = effect(() => {
+    const cats = this.categories();
+    const cur = this.category();
+    if (cur !== 'projets' && cats.length && !cats.some(([c]) => c === cur)) this.category.set(cats[0][0]);
+  });
   protected readonly confirmAbandon = signal(false);
+
+  /** Objectifs : un volet repliable, ouvert ou fermé selon votre dernier choix */
+  protected readonly objOpen = signal(((): boolean => { try { return localStorage.getItem('polsim.objOpen') !== '0'; } catch { return true; } })());
+  protected objToggle(ev: Event): void {
+    const open = (ev.target as HTMLDetailsElement).open;
+    this.objOpen.set(open);
+    try { localStorage.setItem('polsim.objOpen', open ? '1' : '0'); } catch { /* navigation privée */ }
+  }
+  protected readonly objDone = computed(() => this.game.s().objectives.filter(o => o.progress >= o.target).length);
+  protected objPct(o: { progress: number; target: number }) { return Math.max(0, Math.min(100, (100 * o.progress) / o.target)); }
 
   /** Projet en cours */
   protected readonly current = computed(() => {
@@ -371,7 +388,7 @@ export class WeekPlannerComponent {
       // Objectifs atteints : gerbe de confettis sur le panneau
       const done = freshNews.filter(n => n.title.startsWith('Objectif atteint'));
       done.forEach((n, i) => setTimeout(() => {
-        const panel = document.querySelector('app-objectives-panel');
+        const panel = document.querySelector('.obj-fold');
         this.anim.burstAt(panel, 'good');
         this.anim.floatAt(panel, n.title.replace('Objectif atteint : ', '✓ '), 'good');
       }, 1100 + i * 400));

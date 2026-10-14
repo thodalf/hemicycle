@@ -91,6 +91,12 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Les grands élus locaux du parti – maires de grandes villes, présidents de département – menacent de faire sécession.', 'Ils créent une « Ligue des territoires » et débauchent militants et financements.', 'Le congrès de la rupture approche : ils restent, ou ils partent avec la moitié du parti.'] },
   grand_debat: { id: 'grand_debat', icon: '🗣️', label: 'Le grand débat national', gaugeLabel: 'Participation', riskLabel: 'Défiance', months: 6, drift: { gauge: 3, risk: 4 },
     stages: ['Face à la colère, un grand débat national est lancé : réunions publiques, cahiers, plateforme en ligne.', 'Des milliers de réunions dans les mairies. Les Français parlent, beaucoup.', 'L’heure des conclusions : seront-elles à la hauteur de la parole donnée ?'] },
+  tour_eiffel: { id: 'tour_eiffel', icon: '🗼', label: 'La tour Eiffel en péril', gaugeLabel: 'Restauration', riskLabel: 'Effondrement', months: 7, drift: { gauge: 3, risk: 4 },
+    stages: ['Des ingénieurs découvrent une corrosion grave dans les piliers : la tour Eiffel est fermée au public.', 'Le chantier du siècle : échafaudages géants, mécènes du monde entier, et des rivets qui tombent.', 'Le verdict des experts approche : rouvrir la Dame de fer, ou la démonter étage par étage.'] },
+  baleine: { id: 'baleine', icon: '🐋', label: 'Une baleine dans la Seine', gaugeLabel: 'Sauvetage', riskLabel: 'Fiasco', months: 3, drift: { gauge: 4, risk: 4 },
+    stages: ['Une baleine à bosse remonte la Seine jusqu’à Rouen. Le pays entier la suit en direct.', 'Elle s’affaiblit. Vétérinaires, pompiers, militants : chacun a sa solution, et tout le monde vous regarde.', 'Dernière chance : un convoi de barges pour la ramener vers la mer.'] },
+  mariage_princier: { id: 'mariage_princier', icon: '💍', label: 'Un mariage princier à Paris', gaugeLabel: 'Éclat de la fête', riskLabel: 'Fiasco protocolaire', months: 5, drift: { gauge: 3, risk: 4 },
+    stages: ['Le prince héritier de Valmorie épouse une Française : la cérémonie aura lieu à Paris, et tout le gotha débarque.', 'Plan de table explosif, républicains dans la rue, journalistes du monde entier : le protocole sue à grosses gouttes.', 'Le grand jour approche : cortège, bal à l’Hôtel de Ville et feu d’artifice sur la Seine.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -491,6 +497,35 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         s.credibility = clamp(s.credibility - 6);
         lose('Un débat pour rien', 'Les conclusions finissent dans un tiroir. « Ils nous ont fait parler pour mieux ne rien faire. »');
+      }
+      break;
+    case 'tour_eiffel':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5); d.intl.prestige = clamp(d.intl.prestige + 3);
+        economy(d).confidence += 2; p.renown = (p.renown ?? 0) + 30;
+        win('La Dame de fer sauvée', 'Repeinte, renforcée, illuminée : la tour Eiffel rouvre sous un feu d’artifice, et la file d’attente fait trois fois le tour du Champ-de-Mars.');
+      } else {
+        s.credibility = clamp(s.credibility - 5); d.intl.prestige = clamp(d.intl.prestige - 3);
+        lose('La tour mutilée', 'Faute de solution, le troisième étage est démonté et stocké à Vincennes. La tour amputée devient le symbole d’un pays qui ne sait plus entretenir ses trésors.');
+      }
+      break;
+    case 'baleine':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5); p.renown = (p.renown ?? 0) + 20;
+        win('Elle a regagné la mer', 'Escortée par des barges et dix mille personnes sur les berges, la baleine retrouve la Manche. Le pays entier pleure de joie.');
+      } else {
+        s.popularity = clamp(s.popularity - 3); s.credibility = clamp(s.credibility - 3);
+        lose('La baleine n’a pas survécu', 'Après des jours d’agonie filmée en direct, la baleine s’échoue près de Vernon. On vous reproche d’avoir hésité.');
+      }
+      break;
+    case 'mariage_princier':
+      if (a.gauge >= a.risk) {
+        d.intl.prestige = clamp(d.intl.prestige + 4); s.popularity = clamp(s.popularity + 3);
+        economy(d).confidence += 2; p.renown = (p.renown ?? 0) + 25;
+        win('Le mariage de l’année', 'Deux milliards de téléspectateurs, une mariée radieuse et un bal populaire jusqu’à l’aube : Paris a ébloui le monde.');
+      } else {
+        d.intl.prestige = clamp(d.intl.prestige - 3); s.credibility = clamp(s.credibility - 3);
+        lose('Le fiasco du mariage', 'Un plan de table désastreux, des huées sur le cortège et une mariée en larmes : la Valmorie rappelle son ambassadeur.');
       }
       break;
     case 'tempete_solaire':

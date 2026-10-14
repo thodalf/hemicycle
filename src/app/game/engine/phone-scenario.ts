@@ -388,6 +388,33 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Trois cent mille de plus. Mais il faudra des réponses, et vite.', effects: [{ kind: 'crisis', arc: 'grand_debat', gauge: 4 }] }) },
     ],
   },
+  // ── La tour Eiffel ──
+  {
+    key: 'sc:tour', icon: '🗼', when: d => !!d.crises?.tour_eiffel,
+    name: () => 'Hélène Castagnède', role: () => 'Ingénieure en chef de la restauration de la tour Eiffel',
+    options: () => [
+      { id: 'sc_tour_point', label: 'Faire le point sur les piliers', hint: 'Elle grimpe dans la structure chaque matin.', ask: 'Hélène, la tour tient le coup ?', cooldown: 1,
+        run: () => ({ answer: 'Le pilier nord est sauvé. Le sud m’inquiète encore. Donnez-moi des métalliers, pas des discours.', effects: [{ kind: 'crisis', arc: 'tour_eiffel', gauge: 3, risk: -2 }] }) },
+    ],
+  },
+  // ── La baleine ──
+  {
+    key: 'sc:baleine', icon: '🐋', when: d => !!d.crises?.baleine,
+    name: () => 'Capitaine Yann Le Bihan', role: () => 'Commandant du sauvetage, marine nationale',
+    options: () => [
+      { id: 'sc_baleine_point', label: 'Prendre des nouvelles de la baleine', hint: 'Il est sur une vedette, au milieu du fleuve.', ask: 'Capitaine, comment va-t-elle ?', cooldown: 1,
+        run: () => ({ answer: 'Elle a soufflé trois fois ce matin et suivi la barge sur deux kilomètres. On y croit.', effects: [{ kind: 'crisis', arc: 'baleine', gauge: 4, risk: -1 }] }) },
+    ],
+  },
+  // ── Le mariage princier ──
+  {
+    key: 'sc:mariage', icon: '💍', when: d => !!d.crises?.mariage_princier,
+    name: () => 'Comtesse Isaure de Vallombreuse', role: () => 'Cheffe du protocole de la cour de Valmorie',
+    options: () => [
+      { id: 'sc_mariage_point', label: 'Revoir le plan de table avec elle', hint: 'Chaque chaise est une affaire d’État.', ask: 'Comtesse, où en sommes-nous du plan de table ?', cooldown: 1,
+        run: () => ({ answer: 'Deux ex-épouses, trois monarques brouillés et un dictateur : j’ai trouvé une solution. Ne me demandez pas laquelle.', effects: [{ kind: 'crisis', arc: 'mariage_princier', gauge: 3, risk: -3 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -471,7 +498,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

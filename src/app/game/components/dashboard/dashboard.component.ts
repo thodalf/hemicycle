@@ -33,7 +33,6 @@ import { RANKS } from '../../data/ranks';
 import { PatrimoineService } from '../../services/patrimoine.service';
 import { ProgramService } from '../../services/program.service';
 import { DecisionPanelComponent } from '../decision-panel/decision-panel.component';
-import { ObjectivesPanelComponent } from '../objectives-panel/objectives-panel.component';
 import { TeamPanelComponent } from '../team-panel/team-panel.component';
 import { ElectionPanelComponent } from '../election-panel/election-panel.component';
 import { NewsFeedComponent } from '../news-feed/news-feed.component';
@@ -70,7 +69,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
     DecimalPipe,
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
-    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ApocalypsePanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
+    DebateArenaComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ApocalypsePanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, CountryPanelComponent, WorldPanelComponent,
     WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent, ArcadePanelComponent, GrandPanelComponent, ActivityComponent,
   ],
@@ -170,7 +169,6 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
           </section>
         }
         <app-decision-panel />
-        <app-objectives-panel />
         <app-week-planner />
       </main>
       <div class="col-right">

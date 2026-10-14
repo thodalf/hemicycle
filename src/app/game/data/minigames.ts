@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures';
 
 export interface TriItem {
   text: string;
@@ -524,6 +524,14 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'plume_discours', kind: 'plume', icon: '✒️', title: 'La plume',
     rule: 'Remettez le discours dans l’ordre : accroche, constat, cause, proposition, appel final.',
+  },
+  {
+    id: 'factcheck_direct', kind: 'factcheck', icon: '🔎', title: 'Le fact-checking en direct',
+    rule: 'Huit affirmations entendues sur les plateaux : vraies, fausses, ou trompeuses ? Répondez avant la fin du chrono.',
+  },
+  {
+    id: 'commission_investitures', kind: 'investitures', icon: '🗳️', title: 'La commission d’investiture',
+    rule: 'Placez chaque candidat·e dans la circonscription qui lui ressemble : chaque étiquette commune fait gagner des voix.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',

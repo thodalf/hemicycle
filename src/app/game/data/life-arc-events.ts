@@ -583,6 +583,39 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'tour_eiffel_gate', weight: 0.4, minRank: 'conseiller_municipal', eligible: d => !d.crises?.tour_eiffel && !d.player.flags['tourEiffelDone'] && d.week > 24,
+    build: () => ({
+      title: 'La tour Eiffel rouille',
+      context: 'Un rapport confidentiel arrive sur votre bureau : la corrosion des piliers de la tour Eiffel est bien plus grave que prévu. La presse en aura vent demain.',
+      choices: [
+        c('fermer', 'Fermer la tour par précaution', [cr('tour_eiffel', 6, 3, true), { kind: 'flag', key: 'tourEiffelDone', value: true }, s('credibility', 2), s('popularity', -1)], 'Pour la première fois depuis la guerre, la tour ferme ses portes. Le monde entier en parle.'),
+        c('ouverte', 'La laisser ouverte pendant les expertises', [cr('tour_eiffel', 2, 7, true), { kind: 'flag', key: 'tourEiffelDone', value: true }], 'Les touristes montent toujours. Les ingénieurs, eux, ne dorment plus.'),
+      ],
+    }),
+  },
+  {
+    tag: 'baleine_gate', weight: 0.4, minRank: 'militant', eligible: d => !d.crises?.baleine && !d.player.flags['baleineDone'] && d.week > 12,
+    build: () => ({
+      title: 'Une baleine dans la Seine',
+      context: 'Une baleine à bosse a remonté la Seine jusqu’à Rouen. Les chaînes d’info sont en édition spéciale, et on vous demande ce que vous comptez faire.',
+      choices: [
+        c('mobiliser', 'Tout mobiliser pour la sauver', [cr('baleine', 6, 3, true), { kind: 'flag', key: 'baleineDone', value: true }, s('energy', -4)], 'Pompiers, marine, vétérinaires : la France entière se porte au chevet de la baleine.'),
+        c('experts', 'Laisser faire les experts, sans caméras', [cr('baleine', 3, 4, true), { kind: 'flag', key: 'baleineDone', value: true }, s('credibility', 1)], 'Sobre, sérieux… et un peu absent, disent les réseaux.'),
+      ],
+    }),
+  },
+  {
+    tag: 'mariage_gate', weight: 0.35, minRank: 'depute', eligible: d => !d.crises?.mariage_princier && !d.player.flags['mariageDone'] && d.week > 30,
+    build: () => ({
+      title: 'Un mariage princier à Paris',
+      context: 'Le prince héritier de Valmorie épouse une infirmière de Montreuil. Le palais souhaite une cérémonie à Paris et sollicite votre parrainage.',
+      choices: [
+        c('accueillir', 'Accueillir le mariage en grande pompe', [cr('mariage_princier', 6, 3, true), { kind: 'flag', key: 'mariageDone', value: true }, { kind: 'intl', prestige: 1 }], 'Le gotha réserve tous les palaces de la capitale.'),
+        c('sobre', 'Accepter, mais sans un euro d’argent public', [cr('mariage_princier', 3, 3, true), { kind: 'flag', key: 'mariageDone', value: true }, s('credibility', 1)], 'Le palais accepte de tout payer. Il le fera savoir.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1503,6 +1536,72 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('citoyens', 'Faire lire les cahiers par des citoyens tirés au sort', [cr('grand_debat', 6, -3), s('politicalCapital', -5)], 'Cent citoyens lisent, trient, débattent. La démarche est saluée.'),
         c('cabinet', 'Confier la synthèse au cabinet', [cr('grand_debat', 4, 4), { kind: 'funds', account: 'campaign', delta: -2000 }], '« Une machine pour résumer la colère du peuple » : la polémique enfle.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tour_rivet', weight: 1, eligible: d => !!d.crises?.tour_eiffel,
+    build: () => ({
+      title: 'Un rivet tombe du deuxième étage',
+      context: 'Un rivet de trente centimètres s’écrase à côté d’un groupe de touristes japonais. La vidéo fait le tour du monde.',
+      choices: [
+        c('securiser', 'Boucler le Champ-de-Mars et indemniser', [cr('tour_eiffel', 4, -3), { kind: 'funds', account: 'campaign', delta: -3000 }], 'Périmètre de sécurité, excuses officielles : la crise est contenue.'),
+        c('minimiser', 'Parler d’un « incident isolé »', [cr('tour_eiffel', 1, 5), s('credibility', -2)], 'Le lendemain, un deuxième rivet tombe.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tour_mecene', weight: 0.9, eligible: d => !!d.crises?.tour_eiffel,
+    build: () => ({
+      title: 'Un logo sur la tour Eiffel ?',
+      context: 'Un milliardaire de la tech propose de financer tout le chantier… à condition d’afficher son logo sur le deuxième étage pendant dix ans.',
+      choices: [
+        c('refuser', 'Refuser : la tour n’est pas un panneau publicitaire', [cr('tour_eiffel', 2, 2), s('popularity', 2)], 'Applaudissements. Le chantier, lui, manque toujours d’argent.'),
+        c('accepter', 'Accepter, mais avec un logo discret', [cr('tour_eiffel', 7, -2), s('credibility', -3), { kind: 'segment', segment: 'retraites', delta: -2 }], 'Les travaux s’accélèrent. « La tour à vendre », titre un quotidien.'),
+      ],
+    }),
+  },
+  {
+    tag: 'baleine_drones', weight: 1, eligible: d => !!d.crises?.baleine,
+    build: () => ({
+      title: 'Des drones au-dessus de la baleine',
+      context: 'Des dizaines de drones de curieux survolent la baleine, qui plonge, s’affole et se cogne aux berges.',
+      choices: [
+        c('interdire', 'Interdire tout survol, avec brouilleurs', [cr('baleine', 5, -3), s('popularity', -1)], 'Le ciel se vide. La baleine se calme.'),
+        c('laisser', 'Laisser filmer : le pays veut voir', [cr('baleine', 0, 6), { kind: 'segment', segment: 'jeunes', delta: 1 }], 'Les images sont magnifiques. La baleine, elle, s’épuise.'),
+      ],
+    }),
+  },
+  {
+    tag: 'baleine_nom', weight: 0.8, eligible: d => !!d.crises?.baleine,
+    build: () => ({
+      title: 'La France veut baptiser la baleine',
+      context: 'Une pétition d’enfants demande qu’on donne un nom à la baleine. « Valentine » arrive en tête.',
+      choices: [
+        c('valentine', 'Valentine, officiellement', [cr('baleine', 3, 0), s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Des peluches Valentine apparaissent dans toutes les vitrines.'),
+        c('serieux', 'Rappeler que c’est un animal sauvage, pas une mascotte', [cr('baleine', 2, 1), s('credibility', 1)], 'Juste, mais un peu froid.'),
+      ],
+    }),
+  },
+  {
+    tag: 'mariage_table', weight: 1, eligible: d => !!d.crises?.mariage_princier,
+    build: () => ({
+      title: 'Un invité qui fâche',
+      context: 'Le palais de Valmorie a invité un chef d’État accusé de réprimer son opposition. Il serait placé à côté de vous au dîner de gala.',
+      choices: [
+        c('refuser', 'Exiger qu’il soit placé loin de vous', [cr('mariage_princier', 2, -1), s('credibility', 2)], 'Le protocole refait le plan de table pour la sixième fois.'),
+        c('accepter', 'Ne pas faire d’histoire', [cr('mariage_princier', 4, 4), s('credibility', -2)], 'La photo de vous deux trinquant fait la une.'),
+      ],
+    }),
+  },
+  {
+    tag: 'mariage_manif', weight: 0.9, eligible: d => !!d.crises?.mariage_princier,
+    build: () => ({
+      title: 'Les républicains dans la rue',
+      context: 'Un collectif appelle à une « marche des sans-couronne » le jour du mariage, sur le parcours du cortège.',
+      choices: [
+        c('dialoguer', 'Leur proposer un autre parcours et une tribune', [cr('mariage_princier', 3, -3), s('politicalCapital', -3)], 'La marche aura lieu, mais loin du cortège.'),
+        c('interdire', 'Interdire la manifestation', [cr('mariage_princier', 4, 3), s('credibility', -2), { kind: 'segment', segment: 'jeunes', delta: -2 }], 'Interdite, la marche devient le sujet du jour.'),
       ],
     }),
   },

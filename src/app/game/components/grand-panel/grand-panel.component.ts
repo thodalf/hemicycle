@@ -8,7 +8,7 @@ import { RANKS } from '../../data/ranks';
 import { opinionBreakdown } from '../../engine/memories';
 import { HOOK_USES, HookUse, SECRET_BY_ID, blackmail, expose, hookOn, hookReady, knownSecretsOf, playerSecrets, useHook } from '../../engine/secrets';
 import { DEMANDS, frondes } from '../../engine/frondes';
-import { ACTIVITIES, ActivityDef, activityAvailability, guestPool, startActivity } from '../../engine/activities';
+import { ACTIVITIES, ActivityDef, activityAvailability, activityCost, guestPool, startActivity } from '../../engine/activities';
 import { PHASES, STRUGGLE_BY_ID, breakDecision, cooldownText, decisionCooldown, decisionsState, takeDecision } from '../../engine/grand';
 import { DECISION_INTERVAL, decisionActive } from '../../data/great-decisions';
 
@@ -25,7 +25,7 @@ type Tab = 'personnages' | 'parti' | 'activites' | 'decisions' | 'lutte';
         @if (s().struggle) { <span class="chip warn">Lutte en cours</span> }
       </div>
       <nav class="tabs" role="tablist">
-        @for (t of tabs; track t[0]) { <button role="tab" [class.active]="tab() === t[0]" (click)="tab.set(t[0])">{{ t[1] }}</button> }
+        @for (t of tabs(); track t[0]) { <button role="tab" [class.active]="tab() === t[0]" (click)="tab.set(t[0])">{{ t[1] }}</button> }
       </nav>
 
       @switch (tab()) {
@@ -105,7 +105,7 @@ type Tab = 'personnages' | 'parti' | 'activites' | 'decisions' | 'lutte';
             @for (a of activities(); track a.def.id) {
               <div class="act" [class.off]="a.block">
                 <span class="ic">{{ a.def.icon }}</span>
-                <span class="tx"><strong>{{ a.def.label }}</strong><small class="muted">{{ a.def.desc }} · {{ a.def.ap }} PA{{ a.def.money ? ' · ' + (a.def.money | number: '1.0-0') + ' €' : '' }} · {{ a.def.guests }} invité·e·s</small>
+                <span class="tx"><strong>{{ a.def.label }}</strong><small class="muted">{{ a.def.desc }} · {{ a.def.ap }} PA · {{ a.price | number: '1.0-0' }} € · {{ a.def.guests }} invité·e·s</small>
                   @if (a.block) { <small class="reason">{{ a.block }}</small> }</span>
                 <button class="btn small" [disabled]="!!a.block" (click)="picking.set(a.def); chosen.set([])">Organiser</button>
               </div>
@@ -229,8 +229,13 @@ type Tab = 'personnages' | 'parti' | 'activites' | 'decisions' | 'lutte';
 export class GrandPanelComponent {
   protected readonly game = inject(GameStateService);
   private readonly fx = inject(FxService);
-  protected readonly tabs: [Tab, string][] = [['personnages', 'Personnages'], ['parti', 'Frondes'], ['activites', 'Activités'], ['decisions', 'Décisions'], ['lutte', 'Lutte']];
-  protected readonly tab = signal<Tab>('personnages');
+  /** L'onglet Lutte n'existe que pendant une grande lutte */
+  protected readonly tabs = computed<[Tab, string][]>(() => {
+    const all: [Tab, string][] = [['personnages', 'Personnages'], ['parti', 'Frondes'], ['activites', 'Activités'], ['decisions', 'Décisions'], ['lutte', 'Lutte']];
+    return this.game.s().struggle ? all : all.filter(([t]) => t !== 'lutte');
+  });
+  private readonly tabState = signal<Tab>('personnages');
+  protected readonly tab = Object.assign(computed(() => (this.tabs().some(([t]) => t === this.tabState()) ? this.tabState() : 'personnages')), { set: (t: Tab) => this.tabState.set(t) });
   protected readonly open = signal<string | null>(null);
   protected readonly picking = signal<ActivityDef | null>(null);
   protected readonly chosen = signal<string[]>([]);
@@ -242,7 +247,7 @@ export class GrandPanelComponent {
   protected readonly frondeCount = computed(() => (this.s().frondes ?? []).length);
   protected readonly dread = computed(() => this.s().player.dread ?? 0);
   protected readonly mine = computed(() => playerSecrets(this.s()));
-  protected readonly activities = computed(() => ACTIVITIES.map(def => ({ def, block: activityAvailability(this.s(), def) })));
+  protected readonly activities = computed(() => ACTIVITIES.map(def => ({ def, price: activityCost(this.s(), def), block: activityAvailability(this.s(), def) })));
   protected readonly decisions = computed(() => decisionsState(this.s()));
   protected readonly engaged = computed(() => this.decisions().filter(x => x.done));
   protected readonly open_ = computed(() => this.decisions().filter(x => !x.done).sort((a, b) => Number(!!a.cond) - Number(!!b.cond)));

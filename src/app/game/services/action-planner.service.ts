@@ -97,6 +97,12 @@ export class ActionPlannerService {
     return ACTIONS.filter(a => {
       if (a.category === 'couronne') return s.kingdom ? !!a.requires?.kingdom : (!!s.crown && !a.requires?.kingdom);
       if (a.category === 'loge') return !!s.lodge;
+      // Lutte : seulement pendant une grande lutte, et les actions de cette lutte-là
+      if (a.category === 'lutte') return !!s.struggle && (!a.requires?.struggle || a.requires.struggle === s.struggle.id);
+      // Actions d'éclat : seulement quand la renommée les ouvre
+      if (a.category === 'eclat') return renownTier(s.player.renown ?? 0) >= (a.requires?.renownTier ?? 1);
+      // Actions nées d'une grande décision : seulement tant qu'elle tient
+      if (a.requires?.decision && !decisionActive(s, a.requires.decision)) return false;
       if (a.category === 'redaction') return !!s.press;
       if (a.category === 'infiltration') return !!s.mole;
       if (a.category === 'contact') return !!s.alien;

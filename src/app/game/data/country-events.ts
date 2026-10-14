@@ -1010,6 +1010,94 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     },
   },
   {
+    tag: 'ev_factcheck_epingle', weight: 0.5,
+    build: () => ({
+      title: 'Un fact-checker vous épingle',
+      context: 'Le chiffre que vous avez cité hier soir à la télévision était faux : une cellule de vérification le démontre, graphique à l’appui.',
+      choices: [
+        c('corriger', 'Corriger publiquement, avec le bon chiffre', [s('credibility', 2), s('popularity', -1)], 'Rare et apprécié : « Un politique qui reconnaît une erreur. »'),
+        c('maintenir', 'Maintenir : « C’est l’ordre de grandeur qui compte »', [s('credibility', -3), { kind: 'exposure', delta: 2 }], 'Le graphique tourne en boucle toute la semaine.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_perroquet', weight: 0.35,
+    build: () => ({
+      title: 'Le perroquet du marché',
+      context: 'Au marché, le perroquet d’un poissonnier répète votre slogan à tue-tête. La vidéo fait des millions de vues.',
+      choices: [
+        c('mascotte', 'En faire votre mascotte de campagne', [s('popularity', 2), seg('jeunes', 2), s('credibility', -1)], 'Le perroquet a désormais son compte sur les réseaux.'),
+        c('sourire', 'En rire, sans plus', [s('popularity', 1)], 'Un moment de légèreté bienvenu.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_village_sans_eau', weight: 0.45, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Un village sans eau potable',
+      context: 'Une canalisation a cédé : depuis trois jours, un village de 800 habitants n’a plus d’eau au robinet.',
+      choices: [
+        c('citernes', 'Faire venir des citernes, tout de suite', [seg('ruraux', 3), { kind: 'funds', account: 'campaign', delta: -1500 }, s('energy', -3)], 'Les citernes arrivent dans la nuit. On vous remercie à la boulangerie.'),
+        c('prefet', 'Saisir le préfet et le syndicat des eaux', [s('credibility', 1), seg('ruraux', -1)], 'La procédure suit son cours. Les habitants, eux, attendent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_cantine_greve', weight: 0.4,
+    build: () => ({
+      title: 'La cantine en grève',
+      context: 'Les agents de la cantine d’une école sont en grève : trois cents enfants sans repas chaud ce midi.',
+      choices: [
+        c('sandwichs', 'Aller distribuer vous-même des repas', [seg('populaires', 2), s('energy', -4), s('popularity', 1)], 'La photo de vous, tablier noué, fait sourire tout le monde.'),
+        c('mediation', 'Proposer une médiation aux grévistes', [s('credibility', 2), { kind: 'dossier', domain: 'education', delta: 2 }], 'Un accord est trouvé en deux jours.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_discours_ia', weight: 0.4,
+    build: () => ({
+      title: 'Votre discours écrit par une IA ?',
+      context: 'Un site affirme que votre dernier discours a été généré par une intelligence artificielle : « trop parfait pour être humain ».',
+      choices: [
+        c('brouillons', 'Publier vos brouillons raturés', [s('credibility', 2), s('energy', -3)], 'Vos pattes de mouche convainquent tout le monde.'),
+        c('assumer', 'Plaisanter : « Si seulement ! »', [seg('jeunes', 2), s('credibility', -1)], 'Les jeunes adorent. Les éditorialistes un peu moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_tracteurs_permanence', weight: 0.4, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Des tracteurs devant votre permanence',
+      context: 'Une trentaine d’agriculteurs bloquent votre permanence avec leurs tracteurs : prix du lait, normes, retraites agricoles.',
+      choices: [
+        c('cafe', 'Sortir leur servir le café et écouter', [seg('ruraux', 3), s('energy', -3)], 'Deux heures de discussion sur le trottoir. Ils repartent, pas convaincus, mais respectés.'),
+        c('police', 'Demander l’évacuation', [seg('ruraux', -3), s('credibility', 1)], 'Les tracteurs repartent, le lisier reste.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_podcast_fleuve', weight: 0.4,
+    build: () => ({
+      title: 'Trois heures de podcast',
+      context: 'Le podcast le plus écouté des moins de trente ans vous invite pour une interview de trois heures, sans montage.',
+      choices: [
+        c('accepter', 'Accepter, sans fiche ni conseiller', [seg('jeunes', 3), s('popularity', 1), s('stress', 3)], 'Trois heures à parler de tout, même de votre enfance. Un million d’écoutes.'),
+        c('refuser', 'Décliner poliment', [], 'Un autre candidat y va. Il en parle encore.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_selfie_rival', weight: 0.35,
+    build: () => ({
+      title: 'Un selfie avec votre rival',
+      context: 'Un militant vous a pris en photo en train de rire aux éclats avec votre pire adversaire, à la buvette de l’Assemblée.',
+      choices: [
+        c('humour', 'Assumer : « On peut s’opposer et se respecter »', [s('popularity', 2), s('credibility', 1)], 'La photo devient le symbole d’une politique apaisée.'),
+        c('expliquer', 'Expliquer que c’était un malentendu', [s('credibility', -1)], 'Personne n’y croit, et la photo circule encore plus.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

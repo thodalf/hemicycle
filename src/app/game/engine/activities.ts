@@ -1,6 +1,7 @@
 import { ActivityState, Effect, GameState, Npc, RankId } from '../models/game.models';
 import { rankOrder } from '../data/ranks';
-import { applyEffects, availableFunds, pushNews } from './effects';
+import { applyEffects, availableFunds, pushNews, spend } from './effects';
+import { netWorth } from './patrimoine';
 import { discoverSecret, grantHook } from './secrets';
 import { engrave } from './memories';
 import { Rng } from './rng';
@@ -19,7 +20,10 @@ export interface ActivityDef {
   desc: string;
   minRank: RankId;
   ap: number;
+  /** Prix plancher (10 000 € au moins) */
   money: number;
+  /** Part du patrimoine net engloutie : plus vous êtes riche, plus on attend du faste */
+  share: number;
   /** Nombre d'invités */
   guests: number;
   /** Seulement des invités de votre parti */
@@ -31,15 +35,15 @@ export interface ActivityDef {
 }
 
 export const ACTIVITIES: ActivityDef[] = [
-  { id: 'universite_ete', icon: '🏕️', label: 'L’université d’été du parti', desc: 'Trois jours à La Rochelle : ateliers, apéros, petites phrases.', minRank: 'conseiller_municipal', ap: 2, money: 2500, guests: 3, ownParty: true, cooldown: 12, renown: 10,
+  { id: 'universite_ete', icon: '🏕️', label: 'L’université d’été du parti', desc: 'Trois jours à La Rochelle : ateliers, apéros, petites phrases.', minRank: 'conseiller_municipal', ap: 2, money: 15000, share: 0.05, guests: 3, ownParty: true, cooldown: 12, renown: 10,
     intro: 'Les tentes sont montées face à la mer. Les militants affluent, les caméras aussi.' },
-  { id: 'diner_siecle', icon: '🍽️', label: 'Le dîner du Siècle', desc: 'Le dîner où tout le pouvoir se croise, une fois par mois, place de la Concorde.', minRank: 'depute', ap: 1, money: 1500, guests: 2, ownParty: false, cooldown: 6, renown: 6,
+  { id: 'diner_siecle', icon: '🍽️', label: 'Le dîner du Siècle', desc: 'Le dîner où tout le pouvoir se croise, une fois par mois, place de la Concorde.', minRank: 'depute', ap: 1, money: 12000, share: 0.04, guests: 2, ownParty: false, cooldown: 6, renown: 6,
     intro: 'Nappes blanches, argenterie, et des conversations qui valent des millions.' },
-  { id: 'congres', icon: '🎪', label: 'Le congrès du parti', desc: 'Motions, discours, nuits blanches : le parti se choisit une ligne.', minRank: 'depute', ap: 2, money: 4000, guests: 3, ownParty: true, cooldown: 18, renown: 15,
+  { id: 'congres', icon: '🎪', label: 'Le congrès du parti', desc: 'Motions, discours, nuits blanches : le parti se choisit une ligne.', minRank: 'depute', ap: 2, money: 20000, share: 0.07, guests: 3, ownParty: true, cooldown: 18, renown: 15,
     intro: 'Six mille délégués, une salle surchauffée, des tractations jusqu’à l’aube.' },
-  { id: 'voyage_officiel', icon: '✈️', label: 'Le voyage officiel', desc: 'Une délégation à l’étranger : dans l’avion, les langues se délient.', minRank: 'ministre', ap: 2, money: 0, guests: 2, ownParty: false, cooldown: 6, renown: 12,
+  { id: 'voyage_officiel', icon: '✈️', label: 'Le voyage officiel', desc: 'Une délégation à l’étranger : dans l’avion, les langues se délient.', minRank: 'ministre', ap: 2, money: 10000, share: 0.03, guests: 2, ownParty: false, cooldown: 6, renown: 12,
     intro: 'L’Airbus de la République décolle. Douze heures de vol, et vos invités sont assis près de vous.' },
-  { id: 'banquet', icon: '🥖', label: 'Le banquet républicain', desc: 'Une grande tablée dans une salle des fêtes, avec élus et notables du coin.', minRank: 'conseiller_municipal', ap: 1, money: 800, guests: 2, ownParty: false, cooldown: 4, renown: 5,
+  { id: 'banquet', icon: '🥖', label: 'Le banquet républicain', desc: 'Une grande tablée dans une salle des fêtes, avec élus et notables du coin.', minRank: 'conseiller_municipal', ap: 1, money: 10000, share: 0.025, guests: 2, ownParty: false, cooldown: 4, renown: 5,
     intro: 'Pâté en croûte, vin du pays, et l’accordéon qui démarre dès le fromage.' },
 ];
 /** « Le dîner » → « au dîner », « L’université » → « à l’université » */
@@ -98,11 +102,19 @@ const STEPS: Step[] = [
     ] },
 ];
 
+/** Le prix d'une activité : un plancher (10 000 € au moins), puis une part de votre fortune.
+ *  On n'invite pas le Tout-Paris avec un buffet de supermarché quand on a des millions. */
+export function activityCost(d: GameState, def: ActivityDef): number {
+  const byWealth = Math.max(0, netWorth(d)) * def.share;
+  return Math.round(Math.max(10000, def.money, byWealth) / 500) * 500;
+}
+
 export function activityAvailability(d: GameState, def: ActivityDef): string | null {
   if (d.activity) return 'Une activité est déjà en cours';
   if (rankOrder(d.player.rankId) < rankOrder(def.minRank)) return 'Rang insuffisant';
   if (d.player.actionPoints.current < def.ap) return `Il faut ${def.ap} PA`;
-  if (availableFunds(d) < def.money) return 'Fonds insuffisants';
+  const price = activityCost(d, def);
+  if (availableFunds(d) < price) return `Il faut ${price.toLocaleString('fr-FR')} €`;
   const last = Number(d.player.flags[`activity_${def.id}`] ?? -99);
   if (d.week - last < def.cooldown) return `De nouveau dans ${def.cooldown - (d.week - last)} mois`;
   return null;
@@ -118,7 +130,7 @@ export function startActivity(d: GameState, id: string, guestIds: string[], rng:
   const guests = guestIds.filter(g => d.npcs.some(n => n.id === g)).slice(0, def.guests);
   if (!guests.length) return false;
   d.player.actionPoints.current -= def.ap;
-  d.player.finances.personal -= def.money;
+  spend(d, activityCost(d, def));
   d.player.flags[`activity_${def.id}`] = d.week;
   const pool = STEPS.map((s, i) => ({ s, i })).filter(x => x.s.needs <= guests.length).sort(() => rng.next() - 0.5);
   d.activity = { type: id, guests, stage: 0, steps: pool.slice(0, 3).map(x => x.i), log: [def.intro], status: 'en_cours', summary: [], week: d.week };

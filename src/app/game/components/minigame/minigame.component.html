@@ -167,6 +167,8 @@
               @case ('majorite') { <app-majorite-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('standard') { <app-standard-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('plume') { <app-plume-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('factcheck') { <app-factcheck-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('investitures') { <app-investitures-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('cmp') { <app-cmp-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('deminage') { <app-deminage-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('pointage') {
