@@ -48,7 +48,7 @@ export const CHARTE_FORBIDDEN = new Set(['intimider', 'detective', 'effacer_trac
 
 const RULES: Record<string, GreatRule> = {
   charte: {
-    cost: { politicalCapital: 10 },
+    cost: { politicalCapital: 50 },
     block: d => (d.player.stats.credibility < 45 ? 'Il faut 45 de crédibilité' : null),
     run: (d, rng) => applyEffects(d, [st('credibility', 6), { kind: 'exposure', delta: -15 }, { kind: 'dread', delta: -10 }, { kind: 'renown', delta: 15 }], {}, rng),
     yearly: d => {
@@ -66,7 +66,7 @@ const RULES: Record<string, GreatRule> = {
     },
   },
   grand_oral: {
-    cost: { renown: 60 },
+    cost: { politicalCapital: 50, renown: 60 },
     block: d => (renownTier(d.player.renown ?? 0) < 2 ? 'Il faut être Célèbre' : null),
     run: (d, rng) => applyEffects(d, [st('popularity', 6), st('stress', 6)], {}, rng),
     monthly: d => { d.player.renown = (d.player.renown ?? 0) + 1; },
@@ -79,7 +79,7 @@ const RULES: Record<string, GreatRule> = {
     onBreak: () => [st('popularity', -4)],
   },
   reconciliation: {
-    cost: { politicalCapital: 15 },
+    cost: { politicalCapital: 60 },
     block: d => ((worstEnemy(d)?.relationToPlayer ?? 0) > -45 ? 'Personne ne vous déteste assez (il faut un ennemi sous −45)' : null),
     run: (d, rng) => {
       const e = worstEnemy(d)!;
@@ -105,7 +105,7 @@ const RULES: Record<string, GreatRule> = {
     onBreak: d => { const a = npcById(d, d.player.edictData?.['gd_allie']); return a ? [{ kind: 'npcRelation', npcId: a.id, delta: -50, reason: 'La paix rompue' }, { kind: 'secret', owner: 'player', reveal: true }, st('popularity', -3)] : []; },
   },
   purge: {
-    cost: { politicalCapital: 20 },
+    cost: { politicalCapital: 80 },
     block: d => (d.party.leaderNpcId !== 'player' ? 'Il faut diriger le parti' : (d.player.dread ?? 0) < 30 ? 'Il faut inspirer de la crainte (30)' : null),
     run: (d, rng) => {
       d.frondes = [];
@@ -127,7 +127,7 @@ const RULES: Record<string, GreatRule> = {
     onBreak: () => [{ kind: 'dread', delta: -15 }],
   },
   pacte_courants: {
-    cost: { politicalCapital: 18 },
+    cost: { politicalCapital: 70 },
     block: d => (d.player.stats.influence < 55 ? 'Il faut 55 d’influence' : null),
     run: (d, rng) => { d.frondes = []; return [...applyEffects(d, [{ kind: 'faction', factionId: '*', delta: 15 }, { kind: 'cohesion', delta: 8 }, { kind: 'renown', delta: 10 }], {}, rng), 'Les frondes s’éteignent']; },
     monthly: d => { for (const f of d.party.factions) f.supportForPlayer = clamp(f.supportForPlayer + 0.3); },
@@ -144,7 +144,7 @@ const RULES: Record<string, GreatRule> = {
     onBreak: () => [{ kind: 'faction', factionId: '*', delta: -15 }, { kind: 'cohesion', delta: -6 }],
   },
   livre_blanc: {
-    cost: { politicalCapital: 8 },
+    cost: { politicalCapital: 50 },
     block: d => (d.player.dossiers[bestDomain(d)].mastery < 75 ? 'Il faut maîtriser un dossier à 75' : null),
     run: (d, rng) => { const dom = bestDomain(d); (d.player.edictData ??= {})['gd_livre_domain'] = dom; return applyEffects(d, [st('credibility', 4), { kind: 'renown', delta: 30 }, { kind: 'flagAdd', key: 'livres', delta: 1 }, { kind: 'dossier', domain: dom, delta: 5 }], {}, rng); },
     monthly: d => {
@@ -164,9 +164,9 @@ const RULES: Record<string, GreatRule> = {
     },
   },
   mecene: {
-    cost: { money: 30000 },
-    block: d => (d.player.finances.personal < 30000 ? 'Il faut 30 000 € d’épargne' : null),
-    run: (d, rng) => applyEffects(d, [{ kind: 'funds', account: 'personal', delta: -30000 }, st('popularity', 4), { kind: 'renown', delta: 40 }], {}, rng),
+    cost: { politicalCapital: 50, money: 400000 },
+    block: () => null,
+    run: (d, rng) => applyEffects(d, [st('popularity', 4), { kind: 'renown', delta: 40 }], {}, rng),
     monthly: (d, rng) => {
       if (d.player.finances.personal < 1500) {
         breakDecision(d, 'mecene', rng);
@@ -185,7 +185,7 @@ const RULES: Record<string, GreatRule> = {
     onBreak: () => [st('popularity', -3)],
   },
   tour_france: {
-    cost: { politicalCapital: 12 },
+    cost: { politicalCapital: 60 },
     block: d => (rankOrder(d.player.rankId) < 2 ? 'Il faut être au moins député·e' : null),
     run: d => { d.player.flags['gd_tour_until'] = d.week + 6; return ['Six mois sur les routes de France commencent']; },
     monthly: d => {
@@ -202,9 +202,9 @@ const RULES: Record<string, GreatRule> = {
     },
   },
   think_tank: {
-    cost: { money: 20000 },
-    block: d => (d.player.stats.influence < 50 ? 'Il faut 50 d’influence' : d.player.finances.personal < 20000 ? 'Il faut 20 000 € d’épargne' : null),
-    run: (d, rng) => applyEffects(d, [{ kind: 'funds', account: 'personal', delta: -20000 }, st('credibility', 3), { kind: 'renown', delta: 20 }], {}, rng),
+    cost: { politicalCapital: 50, money: 400000 },
+    block: d => (d.player.stats.influence < 50 ? 'Il faut 50 d’influence' : null),
+    run: (d, rng) => applyEffects(d, [st('credibility', 3), { kind: 'renown', delta: 20 }], {}, rng),
     monthly: (d, rng) => {
       if (d.player.finances.personal < 1200) {
         breakDecision(d, 'think_tank', rng);
@@ -220,7 +220,7 @@ const RULES: Record<string, GreatRule> = {
     ]),
   },
   memoires: {
-    cost: { politicalCapital: 10 },
+    cost: { politicalCapital: 50 },
     block: d => (d.player.age < 50 ? 'Il faut avoir au moins 50 ans' : renownTier(d.player.renown ?? 0) < 2 ? 'Il faut être Célèbre' : null),
     run: (d, rng) => {
       const foes = [...d.npcs].sort((a, b) => a.relationToPlayer - b.relationToPlayer).slice(0, 3);
@@ -241,7 +241,7 @@ const RULES: Record<string, GreatRule> = {
     },
   },
   mouvement: {
-    cost: { politicalCapital: 15 },
+    cost: { politicalCapital: 60 },
     block: d => (d.party.leaderNpcId === 'player' ? 'Vous dirigez déjà le parti' : d.player.stats.popularity < 55 ? 'Il faut 55 de popularité' : null),
     run: (d, rng) => {
       const chef = npcById(d, d.party.leaderNpcId);
@@ -298,6 +298,7 @@ export function takeDecision(d: GameState, id: string, rng: Rng): string[] {
   d.player.flags[`gd_${g.id}_y`] = d.week;
   d.player.stats.politicalCapital -= g.cost.politicalCapital ?? 0;
   d.player.renown = (d.player.renown ?? 0) - (g.cost.renown ?? 0);
+  d.player.finances.personal -= g.cost.money ?? 0;
   const out = g.run(d, rng);
   addMilestone(d, 'carriere', g.label, g.desc);
   pushNews(d, 'actu', 'positive', `Grande décision : ${g.label}`, out.join(' · '));
