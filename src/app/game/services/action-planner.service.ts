@@ -90,7 +90,7 @@ export class ActionPlannerService {
   private readonly inScenario = computed(() => {
     const s = this.game.s();
     return ACTIONS.filter(a => {
-      if (a.category === 'couronne') return !!s.crown;
+      if (a.category === 'couronne') return s.kingdom ? !!a.requires?.kingdom : (!!s.crown && !a.requires?.kingdom);
       if (a.category === 'loge') return !!s.lodge;
       if (a.category === 'redaction') return !!s.press;
       if (a.category === 'infiltration') return !!s.mole;
@@ -155,6 +155,7 @@ export class ActionPlannerService {
       if (req.heir) { const why = canAnoint(s); if (why) return { ok: false, reason: why }; }
       if (req.appoint) { const why = canAppoint(s); if (why) return { ok: false, reason: why }; }
       if (req.coalition && !s.coalition) return { ok: false, reason: 'Aucune coalition en cours' };
+      if (req.kingdom && !s.kingdom) return { ok: false, reason: 'Réservé au souverain' };
       if (req.governing && !s.presidency && !['ministre', 'premier_ministre'].includes(s.player.rankId)) return { ok: false, reason: 'Réservé aux membres du gouvernement' };
       if (req.promises && !(s.promises ?? []).some(x => x.status === 'en_cours')) return { ok: false, reason: 'Aucune promesse en cours' };
       if (req.secondRound && !inSecondRound(s)) return { ok: false, reason: 'Seulement entre les deux tours de la présidentielle' };

@@ -1,3 +1,4 @@
+import { crownPlayer } from './kingdom';
 import { DeathCause, Decision, GameState, Milestone, RankId } from '../models/game.models';
 import { RANKS, START_AGE, rankOrder } from '../data/ranks';
 import { WEEKS_PER_MONTH, dateOfTurn, monthlyChance } from './calendar';
@@ -65,7 +66,7 @@ export function accidentRisk(d: GameState): number {
 /** Risque annuel d'attentat selon le rang (hors président·e, voir plus bas) */
 const ASSASSINATION_BY_RANK: Record<RankId, number> = {
   militant: 0, conseiller_municipal: 0.0001, depute: 0.0003, ministre: 0.001, premier_ministre: 0.002, chef_parti: 0.0008,
-  candidat_presidence: 0.002, president: 0.01, ancien_president: 0.0006,
+  candidat_presidence: 0.002, president: 0.01, ancien_president: 0.0006, roi: 0.004,
 };
 
 /** Probabilité mensuelle d'être assassiné·e */
@@ -275,7 +276,7 @@ export function settleEndings(d: GameState): void {
   if (!victory) aftermath(d, title);
   else if (title === 'Opération réussie') { rejoinHome(d); d.player.stats.influence = clamp(d.player.stats.influence + 6); }
   else if (title === 'Victoire à la Pyrrhus') rejoinHome(d);
-  else if (title === 'Vive le Roi !' || title === 'Un royaume né d’un coup de force') d.player.flags['monarchie'] = true;
+  else if (title === 'Vive le Roi !' || title === 'Un royaume né d’un coup de force') crownPlayer(d);
 }
 
 function demote(d: GameState, to: RankId = 'militant'): void {

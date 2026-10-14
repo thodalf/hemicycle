@@ -58,7 +58,7 @@ export function queueMinigame(d: GameState, gameId: string, origin: string, rewa
     return [];
   }
   d.minigames ??= [];
-  if (d.minigames.length >= 4) return [];
+  if (d.minigames.filter(x => x.status === 'pret').length >= 8) return [];
   const g: MinigameState = {
     id: nextId(d, 'jeu'), gameId, title: title ?? def.title, origin, reward, penalty: penalty ?? DEFAULT_PENALTY,
     ...(ctx.domain ? { domain: ctx.domain } : {}), ...(ctx.targetId ? { targetId: ctx.targetId } : {}),

@@ -43,7 +43,7 @@
                 @if (a.debt > 0) { <small class="muted">Crédit : {{ a.debt | number: '1.0-0' }} € restants · {{ a.payment | number: '1.0-0' }} €/mois</small> }
                 <small class="muted">{{ perks(def).join(' · ') }}</small>
               </div>
-              <button class="btn small" (click)="svc.sell(a.uid)">Vendre {{ svc.salePrice(a) | number: '1.0-0' }} €</button>
+              <button class="btn small" (click)="sell(a.uid, $event)">Vendre {{ svc.salePrice(a) | number: '1.0-0' }} €</button>
             </li>
           } @empty {
             <li class="muted empty">Rien à votre nom pour l’instant. Les biens donnent des bonus, mais votre train de vie se voit.</li>
@@ -89,9 +89,9 @@
                 @if (def.stackable && svc.count(def)) { <span class="chip">×{{ svc.count(def) }}</span> }
               </div>
               <div class="s-cta">
-                <button class="btn small primary" [disabled]="!av.ok" (click)="svc.buy(def.id, false)">Acheter comptant</button>
+                <button class="btn small primary" [disabled]="!av.ok" (click)="buy(def.id, false, $event)">Acheter comptant</button>
                 @if (def.mortgage) {
-                  <button class="btn small" [disabled]="!avLoan.ok" (click)="svc.buy(def.id, true)">
+                  <button class="btn small" [disabled]="!avLoan.ok" (click)="buy(def.id, true, $event)">
                     À crédit : apport {{ svc.downPayment(def) | number: '1.0-0' }} €, puis {{ svc.payment(def) | number: '1.0-0' }} €/mois
                   </button>
                 }

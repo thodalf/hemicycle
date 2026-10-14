@@ -20,9 +20,10 @@ import { monthlyApocalypse } from '../engine/apocalypse';
 import { monthlyImage, monthlyLaws, monthlyQuotes } from '../engine/legacy';
 import { monthlyNpcLife } from '../engine/npc-life';
 import { monthlyPledges } from '../engine/pledges';
+import { monthlySocial } from '../engine/social';
+import { monthlyKingdom } from '../engine/kingdom';
 import { checkAchievements } from '../data/achievements';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
-import { autoMinigames } from '../engine/minigame';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
 import { PROJECTS_BY_ID } from '../data/projects';
 import { canDeclare, declareCandidacy, endPresidency, weeklyPresidency, weeklyPresidential } from '../engine/presidency';
@@ -130,6 +131,8 @@ export class TurnService {
     weeklyIntl(d, rng);
     monthlyHostile(d, rng);
     monthlyPhone(d, rng);
+    monthlySocial(d, rng);
+    monthlyKingdom(d, rng);
     monthlyPlot(d, rng);
     monthlySchemes(d, rng);
     monthlyFamily(d, rng);
@@ -205,12 +208,15 @@ export class TurnService {
       // Garde-fou : jamais plus de mois que la durée restante du projet (+ marge)
       const limit = project.months - project.done + 2;
       while (d.project && d.project.id === project.id && report.months < limit) {
+        // Les mini-jeux que vous avez programmés (ou qu'un événement propose) vous attendent : on ne les joue pas à votre place
+        const waiting = (d.minigames ?? []).find(x => x.status === 'pret');
+        if (waiting) { report.reason = `Mini-jeu à jouer : ${waiting.title}`; break; }
         const stop = this.autoResolve(d, rng);
         if (stop) { report.reason = `Décision à prendre : ${stop}`; break; }
         this.advance(d, rng);
         report.months += 1;
         // Un projet qui aboutit peut ouvrir une scène (promotion du livre…) : on la laisse au joueur
-        if (d.project) { d.debate = null; d.protest = null; d.scene = null; autoMinigames(d, rng); }
+        if (d.project) { d.debate = null; d.protest = null; d.scene = null; }
         // Les scrutins ordinaires : vous suivez la consigne du groupe ; les autres vous rappellent
         if (d.vote && !autoVote(d, rng)) { report.reason = `Scrutin à l’Assemblée : ${d.vote.title}`; break; }
         if (d.status === 'mort') { report.reason = 'Décès'; break; }

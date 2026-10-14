@@ -46,7 +46,7 @@ import { canPush, dropPledge as dropPledgeFn, pledges, pushCost, pushPledge as p
                   <div class="track"><span class="fill" [class.ok]="r.p.progress >= 100" [style.width.%]="r.p.progress"></span></div>
                   @if (r.p.status === 'en_cours') {
                     <div class="pl-btns">
-                      <button type="button" class="btn small" [disabled]="!!r.block" [title]="r.block ?? ''" (click)="pushPledge(r.p.id)">Mettre en œuvre · −{{ r.cost }} capital</button>
+                      <button type="button" class="btn small" [disabled]="!!r.block" [title]="r.block ?? ''" (click)="pushPledge(r.p.id, $event)">Mettre en œuvre · −{{ r.cost }} capital</button>
                       <button type="button" class="btn small ghost" (click)="dropPledge(r.p.id)">Renoncer</button>
                     </div>
                   }
@@ -162,10 +162,12 @@ export class PresidencyPanelComponent {
   protected statusLabel(st: string): string {
     return ({ en_cours: 'En cours', tenue: 'Tenue ✓', abandonnee: 'Abandonnée', trahie: 'Non tenue' } as Record<string, string>)[st] ?? st;
   }
-  protected pushPledge(id: string): void {
-    let done = false;
-    this.game.mutate((d, rng) => { done = pushPledgeFn(d, id, rng).length > 0; });
-    if (done && pledges(this.game.s()).find(x => x.id === id)?.status === 'tenue') this.fx.stamp('Promesse tenue', 'good');
+  protected pushPledge(id: string, ev?: Event): void {
+    let out: string[] = [];
+    this.game.mutate((d, rng) => { out = pushPledgeFn(d, id, rng); });
+    const el = ev?.currentTarget as Element | undefined;
+    if (out.length && el) { this.fx.floatAt(el, out[0].split(' : ')[1] ?? '+', 'good'); this.fx.burstAt(el, 'good'); }
+    if (out.length && pledges(this.game.s()).find(x => x.id === id)?.status === 'tenue') this.fx.stamp('Promesse tenue', 'good');
   }
   protected dropPledge(id: string): void {
     this.game.mutate(d => { dropPledgeFn(d, id); });

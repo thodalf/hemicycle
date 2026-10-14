@@ -25,6 +25,10 @@ export const PARTY_LINES: PartyLineDef[] = [
   { id: 'federations', label: 'Fédérations locales', effect: 'Cohésion, adhésions et influence locale.', base: 80, min: 0, max: 250 },
   { id: 'evenements', label: 'Congrès et universités d’été', effect: 'Soutien des courants et influence.', base: 40, min: 0, max: 200 },
   { id: 'campagne', label: 'Réserve de campagne', effect: 'Versée chaque mois sur votre compte de campagne.', base: 50, min: 0, max: 400 },
+  { id: 'numerique', label: 'Campagne numérique', effect: 'Vidéos, publicités ciblées, influenceurs : les jeunes et la popularité.', base: 0, min: 0, max: 250 },
+  { id: 'etudes', label: 'Think tank et études', effect: 'Notes, sondages, experts : maîtrise du sujet à la une et crédibilité.', base: 0, min: 0, max: 200 },
+  { id: 'jeunes', label: 'Mouvement des jeunes', effect: 'Campus, colleurs d’affiches, relève : adhésions et électorat jeune.', base: 0, min: 0, max: 150 },
+  { id: 'galas', label: 'Dîners de donateurs et galas', effect: 'Ça coûte… et ça rapporte davantage en dons, selon votre influence. Un peu d’exposition.', base: 0, min: 0, max: 200 },
 ];
 
 /** Loyer et frais fixes du siège (k€/mois) */
@@ -56,12 +60,17 @@ export const MISSIONS: MissionDef[] = [
   { id: 'economie', label: 'Économie et emploi', domain: 'economie', base: 22, appeal: { cadres: 1, populaires: 1 }, lean: 0, cutProtest: 'Les organisations patronales et syndicales protestent ensemble' },
   { id: 'territoires', label: 'Collectivités et territoires', domain: 'territoires', base: 16, appeal: { ruraux: 3 }, lean: 0, cutProtest: 'Les maires rendent leur écharpe en signe de protestation' },
   { id: 'recherche', label: 'Recherche et numérique', domain: 'numerique', base: 32, appeal: { jeunes: 1, cadres: 1 }, lean: 0, cutProtest: 'Les chercheurs signent une tribune contre les coupes' },
+  { id: 'logement', label: 'Logement et hébergement', domain: 'social', base: 16, appeal: { populaires: 2, jeunes: 1 }, lean: -1, cutProtest: 'Les associations de mal-logés occupent un ministère' },
+  { id: 'transports', label: 'Transports et mobilités', domain: 'territoires', base: 14, appeal: { ruraux: 2, populaires: 1 }, lean: 0, cutProtest: 'Les élus locaux dénoncent la fermeture de petites lignes' },
+  { id: 'culture', label: 'Culture et sport', domain: 'education', base: 8, appeal: { jeunes: 1, cadres: 1 }, lean: -1, cutProtest: 'Artistes et clubs sportifs dénoncent un « désert culturel »' },
+  { id: 'agriculture', label: 'Agriculture et alimentation', domain: 'territoires', base: 4, appeal: { ruraux: 3 }, lean: 1, cutProtest: 'Les tracteurs bloquent le périphérique' },
 ];
 
 /** Dépenses non pilotables cette année (Md€) */
-export const FIXED_SPENDING = { dette: 55, autres: 96 };
+export const FIXED_SPENDING = { dette: 55, autres: 54 };
 export const PIB = 2900;
-export const MISSION_RANGE = 0.2;
+/** Marge de manœuvre sur chaque mission (± 30 %) */
+export const MISSION_RANGE = 0.3;
 
 export interface TaxDef {
   id: TaxId;
@@ -84,8 +93,14 @@ export interface TaxDef {
 
 export const TAXES: TaxDef[] = [
   { id: 'tva', label: 'TVA (taux normal)', unit: '%', base: 20, min: 18, max: 22, step: 0.5, revenue: 98, perUnit: 4.9, appeal: { populaires: -3, retraites: -1 }, lean: 0, help: 'La recette la plus massive, mais elle pèse sur tous les ménages.' },
-  { id: 'ir', label: 'Impôt sur le revenu (barème)', unit: '%', base: 0, min: -10, max: 10, step: 1, revenue: 92, perUnit: 0.92, appeal: { cadres: -0.6, populaires: 0.1 }, lean: -0.6, help: 'Hausse ou baisse générale du barème, en pourcentage.' },
+  { id: 'ir', label: 'Impôt sur le revenu (barème)', unit: '%', base: 0, min: -10, max: 10, step: 1, revenue: 61, perUnit: 0.92, appeal: { cadres: -0.6, populaires: 0.1 }, lean: -0.6, help: 'Hausse ou baisse générale du barème, en pourcentage.' },
   { id: 'is', label: 'Impôt sur les sociétés', unit: '%', base: 25, min: 20, max: 33, step: 1, revenue: 58, perUnit: 2.3, appeal: { cadres: -1 }, lean: -1, help: 'Chaque point rapporte environ 2,3 Md€.' },
   { id: 'energie', label: 'Fiscalité de l’énergie', unit: '%', base: 0, min: -20, max: 20, step: 5, revenue: 20, perUnit: 0.2, appeal: { ruraux: -0.3, jeunes: 0.1, populaires: -0.1 }, lean: -0.05, help: 'Carburants et chauffage : sensible hors des grandes villes.' },
+  { id: 'csg', label: 'CSG', unit: '%', base: 9.2, min: 8.2, max: 10.2, step: 0.2, revenue: 30, perUnit: 13, appeal: { retraites: -2, populaires: -1 }, lean: -1, help: 'Une assiette très large : 0,2 point rapporte 2,6 Md€, mais touche aussi les retraités.' },
+  { id: 'succession', label: 'Droits de succession', unit: 'niv.', base: 0, min: -2, max: 2, step: 1, revenue: 15, perUnit: 3, appeal: { cadres: -1, retraites: -1, populaires: 0.5 }, lean: -5, help: 'De −2 (large exonération) à +2 (taxation des gros héritages).' },
+  { id: 'niches', label: 'Rabot des niches fiscales', unit: '%', base: 0, min: 0, max: 30, step: 5, revenue: 0, perUnit: 0.25, appeal: { cadres: -0.08, ruraux: -0.03 }, lean: -0.1, help: 'Raboter les crédits et réductions d’impôt : 5 % rapportent 1,25 Md€.' },
+  { id: 'superprofits', label: 'Taxe sur les superprofits', unit: 'niv.', base: 0, min: 0, max: 3, step: 1, revenue: 0, perUnit: 2.5, appeal: { cadres: -1, populaires: 1 }, lean: -5, help: 'Énergéticiens, banques, armateurs : populaire, mais les investisseurs grincent.' },
+  { id: 'comportement', label: 'Taxes tabac, alcool et sucre', unit: '%', base: 0, min: -10, max: 30, step: 5, revenue: 16, perUnit: 0.12, appeal: { populaires: -0.06, jeunes: 0.02 }, lean: 0, help: 'Bon pour la santé publique, mais régressif.' },
+  { id: 'economies', label: 'Économies sur le train de vie de l’État', unit: 'Md€', base: 0, min: 0, max: 10, step: 1, revenue: 0, perUnit: 1, appeal: { populaires: -0.3, retraites: -0.2, cadres: 0.2 }, lean: 1.5, help: 'Non-remplacement de départs, immobilier vendu, voitures de fonction : chaque milliard compte.' },
   { id: 'patrimoine', label: 'Taxation du patrimoine', unit: 'niv.', base: 0, min: 0, max: 3, step: 1, revenue: 2, perUnit: 4, appeal: { cadres: -2, populaires: 1 }, lean: -8, help: 'De 0 (impôt actuel sur l’immobilier) à 3 (impôt sur la fortune élargi).' },
 ];

@@ -65,6 +65,9 @@ export class MinigameComponent {
   private timer: ReturnType<typeof setInterval> | null = null;
   private started = 0;
   private seq = 0;
+  /** Le mini-jeu affiché, et celui qui est en cours de partie */
+  private shownId: string | null = null;
+  private playingId: string | null = null;
 
   /** Difficulté : 0,7 (frais et dispos) … 1,4 (épuisé·e) */
   private readonly diff = computed(() => this.g()?.difficulty ?? 1);
@@ -76,9 +79,16 @@ export class MinigameComponent {
   constructor() {
     inject(DestroyRef).onDestroy(() => this.stop());
     // Nouveau mini-jeu dans la file : on revient à l'écran d'accueil
+    // (seulement quand l'identifiant change : une autre mise à jour de l'état ne doit pas interrompre la partie)
     effect(() => {
       const id = this.g()?.id;
-      untracked(() => { if (id) { this.stop(); this.phase.set('intro'); this.message.set(''); } });
+      untracked(() => {
+        if (!id || id === this.shownId) return;
+        this.shownId = id;
+        this.stop();
+        this.phase.set('intro');
+        this.message.set('');
+      });
     });
   }
 
@@ -102,6 +112,7 @@ export class MinigameComponent {
     const def = this.def();
     if (!def) return;
     this.phase.set('play');
+    this.playingId = this.g()?.id ?? null;
     this.liveScore.set(0);
     this.message.set('');
     switch (def.kind) {
@@ -133,6 +144,9 @@ export class MinigameComponent {
   }
 
   protected end(score: number): void {
+    // Un minuteur d'une partie précédente ne doit jamais conclure la suivante
+    const cur = this.g();
+    if (!cur || cur.status !== 'pret' || cur.id !== this.playingId || this.phase() !== 'play') return;
     this.stop();
     this.phase.set('over');
     const s = Math.max(0, Math.min(1, score));

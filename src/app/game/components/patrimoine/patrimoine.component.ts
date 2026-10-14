@@ -4,6 +4,7 @@ import { STAT_LABELS, StatKey } from '../../models/game.models';
 import { ASSET_CATEGORY_LABELS, AssetCategory, AssetDef } from '../../data/assets';
 import { GameStateService } from '../../services/game-state.service';
 import { PatrimoineService } from '../../services/patrimoine.service';
+import { FxService } from '../../services/fx.service';
 
 /** Écran du patrimoine : biens possédés, boutique, image publique */
 @Component({
@@ -15,6 +16,24 @@ import { PatrimoineService } from '../../services/patrimoine.service';
 export class PatrimoineComponent {
   protected readonly game = inject(GameStateService);
   protected readonly svc = inject(PatrimoineService);
+  private readonly fx = inject(FxService);
+  /** Achat : des billets qui s'envolent ; vente : des pièces qui tombent */
+  protected buy(id: string, loan: boolean, ev: Event): void {
+    const el = ev.currentTarget as Element;
+    const before = this.game.s().player.assets?.length ?? 0;
+    this.svc.buy(id, loan);
+    if ((this.game.s().player.assets?.length ?? 0) > before) {
+      this.fx.banknotes(el, 6);
+      this.fx.burstAt(el, 'good');
+      this.fx.floatAt(el, 'Acheté !', 'good');
+    }
+  }
+  protected sell(uid: string, ev: Event): void {
+    const el = ev.currentTarget as Element;
+    this.svc.sell(uid);
+    this.fx.coins(el, true, 8);
+    this.fx.floatAt(el, 'Vendu', 'neutral');
+  }
   readonly closed = output<void>();
 
   protected readonly categories = Object.entries(ASSET_CATEGORY_LABELS) as [AssetCategory, string][];

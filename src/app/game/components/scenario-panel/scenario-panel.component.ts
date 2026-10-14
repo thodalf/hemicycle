@@ -1,3 +1,5 @@
+import { kingdomGauges, restoreRepublic } from '../../engine/kingdom';
+import { durationLabel } from '../../engine/calendar';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FinishedArc, closeArc, finishedArcs } from '../../engine/arcs';
@@ -95,7 +97,28 @@ import { MOLE_GOAL } from '../../engine/mole';
         </p>
       </section>
     }
-    @if (game.s().crown; as c) {
+    @if (game.s().kingdom; as k) {
+      <section class="card crown kingdom">
+        <div class="card-title"><span>👑 Le Royaume</span><span class="chip warn">{{ k.title }}</span></div>
+        <p class="muted small">Sur le trône depuis {{ reign() }}. Plus d’élections pour vous ; votre parti vous soutient, tous les autres font front.</p>
+        <div class="gauges">
+          @for (g of kingdomGauges(); track g.label) {
+            <div class="g">
+              <div class="row"><span>{{ g.label }}</span><span class="mono">{{ g.value | number: '1.0-0' }}</span></div>
+              <div class="track"><span class="fill" [style.width.%]="g.value" [class.ok]="g.good" [class.low]="!g.good"></span></div>
+              <small class="muted">{{ g.hint }}</small>
+            </div>
+          }
+        </div>
+        @if (confirmRepublic()) {
+          <div class="confirm"><span>Abdiquer et rétablir la République ? Une présidentielle aura lieu dans un an.</span>
+            <button class="btn small primary" (click)="restore()">Oui, rendre le pouvoir</button>
+            <button class="btn small" (click)="confirmRepublic.set(false)">Non</button></div>
+        } @else {
+          <button class="btn small" (click)="confirmRepublic.set(true)">🇫🇷 Rétablir la République</button>
+        }
+      </section>
+    } @else if (game.s().crown; as c) {
       <section class="card crown">
         <div class="card-title"><span>La Couronne</span><span class="chip warn">Objectif : restaurer la monarchie</span></div>
         <p class="muted small">Prétendant : <strong>{{ c.pretendant }}</strong></p>
@@ -163,6 +186,9 @@ import { MOLE_GOAL } from '../../engine/mole';
       div { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 6px 10px; border-radius: 8px; background: var(--surface-2); }
       .chip { margin-left: auto; } }
     .crown { border-left: 4px solid #8a6a1f; }
+    .kingdom { background: linear-gradient(135deg, color-mix(in srgb, #c9a227 10%, var(--surface)), var(--surface)); animation: royal-in .6s ease;
+      .confirm { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; } }
+    @keyframes royal-in { from { box-shadow: 0 0 0 6px color-mix(in srgb, #c9a227 50%, transparent); } }
     .lodge { border-left: 4px solid var(--accent); }
     .press { border-left: 4px solid #b0452f; }
     .radar-title { display: inline-flex; align-items: center; gap: 8px; }
@@ -202,6 +228,13 @@ export class ScenarioPanelComponent {
   });
   protected stance(v: number) { return stanceLabel(v); }
 
+  protected readonly kingdomGauges = computed(() => { const k = this.game.s().kingdom; return k ? kingdomGauges(k) : []; });
+  protected readonly reign = computed(() => { const k = this.game.s().kingdom; return k ? durationLabel(Math.max(1, this.game.s().week - k.since)) : ''; });
+  protected readonly confirmRepublic = signal(false);
+  protected restore(): void {
+    this.confirmRepublic.set(false);
+    this.game.mutate(d => restoreRepublic(d, false));
+  }
   protected readonly crownGauges = computed(() => {
     const c = this.game.s().crown!;
     return [

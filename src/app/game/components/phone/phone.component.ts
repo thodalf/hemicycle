@@ -1,3 +1,5 @@
+import { FxService } from '../../services/fx.service';
+import { MILESTONES, PostResult, fmtFollowers } from '../../engine/social';
 import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { PhoneService } from '../../services/phone.service';
@@ -84,20 +86,46 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
             <nav class="tabs" role="tablist">
               <button type="button" role="tab" [class.on]="phone.tab() === 'messages'" (click)="phone.tab.set('messages')">Messages @if (phone.unread()) { <b class="badge">{{ phone.unread() }}</b> }</button>
               <button type="button" role="tab" [class.on]="phone.tab() === 'repertoire'" (click)="phone.tab.set('repertoire')">Répertoire</button>
-              <button type="button" role="tab" [class.on]="phone.tab() === 'reseaux'" (click)="phone.tab.set('reseaux')">Réseaux</button>
+              <button type="button" role="tab" [class.on]="phone.tab() === 'reseaux'" (click)="phone.tab.set('reseaux'); phone.ensureAudience()">Réseaux</button>
               <button type="button" class="x" (click)="phone.close()" aria-label="Fermer le téléphone">✕</button>
             </nav>
             <p class="calls mono">{{ callInfo() }}</p>
             @if (phone.tab() === 'reseaux') {
               <div class="feed">
-                <div class="compose">
-                  <span class="muted">Publier ({{ phone.socialLeft() }} / 3 ce mois)</span>
+                <div class="audience">
+                  @if (phone.audience(); as a) {
+                    <div class="aud-head">
+                      <div><strong class="mono count" [class.bump]="bump()">{{ fmt(a.followers) }}</strong><small class="muted"> abonnés</small></div>
+                      <button type="button" class="live" [disabled]="a.liveWeek === game.s().week || game.s().player.stats.energy < 8" (click)="goLive()">🔴 Live{{ a.liveWeek === game.s().week ? ' fait' : '' }}</button>
+                    </div>
+                    <div class="miles" aria-label="Paliers d’abonnés">
+                      @for (m of milestones; track m) { <span [class.on]="a.followers >= m">{{ fmt(m) }}</span> }
+                    </div>
+                    <span class="muted small">Tendances du mois ({{ phone.socialLeft() }} / 3 publications)</span>
+                    <div class="trends">
+                      @for (t of a.trends; track t.tag; let i = $index) {
+                        <button type="button" class="trend" [disabled]="phone.socialLeft() <= 0" (click)="post('tendance', i)" [style.--hot]="t.hot">{{ t.tag }} <small>{{ t.hot >= 1.5 ? '🔥' : '' }}</small></button>
+                      }
+                    </div>
+                  }
                   <div class="quick">
                     <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="post('terrain')">📸 Photo de terrain</button>
                     <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="post('coulisses')">🏛️ Coulisses</button>
-                    <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="post('vie')">☕ Un peu de vie perso</button>
+                    <button type="button" [disabled]="phone.socialLeft() <= 0" (click)="post('vie')">☕ Vie perso</button>
                   </div>
-                  @if (said().length) { <div class="chips">@for (x of said(); track $index) { <span>{{ x }}</span> }</div> }
+                  @if (said().length) { <div class="chips" [class.viral]="said()[0] === '🔥 Viral !'">@for (x of said(); track $index) { <span>{{ x }}</span> }</div> }
+                  @if (phone.audience(); as a) {
+                    @if (a.posts.length) {
+                      <details class="mine"><summary>Vos publications</summary>
+                        @for (mp of a.posts.slice(0, 6); track mp.id) {
+                          <article class="post own" [class.viral]="mp.viral">
+                            <p>{{ mp.text }}</p>
+                            <footer><small class="muted">♥ {{ fmt(mp.likes) }} · ↻ {{ fmt(mp.shares) }} · {{ game.month(mp.week) }}</small>@if (mp.viral) { <b class="vbadge">🔥 viral</b> }</footer>
+                          </article>
+                        }
+                      </details>
+                    }
+                  }
                 </div>
                 @for (po of phone.feed(); track po.id) {
                   <article class="post" [class.neg]="po.tone === 'negative'">
@@ -120,9 +148,9 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
             } @else if (phone.tab() === 'messages') {
               <ul class="threads">
                 @for (th of threads(); track th.who) {
-                  <li><button type="button" (click)="phone.openThread(th.who)">
+                  <li [class.ringing]="th.urgent"><button type="button" (click)="phone.openThread(th.who)">
                     <span class="avatar" aria-hidden="true">{{ th.icon }}</span>
-                    <span class="t-txt"><strong>{{ th.name }}</strong><small>{{ th.last }}</small></span>
+                    <span class="t-txt"><strong>{{ th.name }}@if (th.urgent) { <em class="ring-lbl">· appel entrant</em> }</strong><small>{{ th.last }}</small></span>
                     <span class="t-meta"><small class="mono">{{ game.month(th.week) }}</small>@if (th.unread) { <b class="badge">{{ th.unread }}</b> } @else if (th.waiting) { <b class="dot" title="En attente de réponse"></b> }</span>
                   </button></li>
                 } @empty { <li class="empty">Pas encore de messages. Ils arrivent au fil des mois.</li> }
@@ -196,6 +224,26 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
     .sent { margin: 0; padding: 8px 14px; font-size: 11.5px; border-top: 1px solid var(--line); }
     .feed { flex: 1; overflow-y: auto; display: grid; align-content: start; gap: 8px; padding: 8px 10px; }
     .compose { display: grid; gap: 4px; font-size: 12px; .quick { border: 0; padding: 4px 0; } }
+    .audience { display: grid; gap: 6px; font-size: 12px; padding: 8px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line);
+      .quick { border: 0; padding: 2px 0; } .small { font-size: 11px; } }
+    .aud-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; .count { font-size: 20px; display: inline-block; transition: transform .3s; } .count.bump { animation: count-bump .6s ease; color: var(--good); } }
+    @keyframes count-bump { 30% { transform: scale(1.35); } }
+    .live { border: 0; border-radius: 999px; padding: 5px 10px; background: #d6453d; color: #fff; font: 600 12px var(--font-body); cursor: pointer; animation: live-pulse 1.6s ease-in-out infinite; }
+    .live:disabled { opacity: .45; animation: none; cursor: default; }
+    @keyframes live-pulse { 50% { box-shadow: 0 0 0 6px rgba(214, 69, 61, .2); } }
+    .miles { display: flex; gap: 3px; span { flex: 1; text-align: center; font: 600 9.5px var(--font-mono); padding: 2px 0; border-radius: 4px; background: var(--surface-2); color: var(--ink-3); } span.on { background: var(--good-soft); color: var(--good); } }
+    .trends { display: flex; flex-wrap: wrap; gap: 5px; }
+    .trend { border: 1px solid #2f6cb0; color: #2f6cb0; background: none; border-radius: 999px; padding: 4px 9px; font: 600 12px var(--font-body); cursor: pointer; animation: trend-in .4s ease both; }
+    .trend:hover:not(:disabled) { background: #2f6cb0; color: #fff; }
+    .trend:disabled { opacity: .45; cursor: default; }
+    @keyframes trend-in { from { transform: translateY(6px); opacity: 0; } }
+    .chips.viral span:first-child { background: #d6453d; color: #fff; animation: count-bump .6s ease; }
+    .mine { summary { cursor: pointer; font-weight: 600; } .own { margin-top: 6px; } .own.viral { border-color: #d6453d; } }
+    .ringing button { background: color-mix(in srgb, #d6453d 10%, var(--surface)); }
+    .ringing .avatar { animation: ring .9s ease-in-out infinite; display: inline-block; }
+    .ring-lbl { font-style: normal; font-size: 11px; color: #d6453d; font-weight: 600; }
+    @keyframes ring { 0%, 50%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(-14deg); } 20%, 40% { transform: rotate(14deg); } }
+    .vbadge { margin-left: 6px; font-size: 11px; color: #d6453d; }
     .post { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; display: grid; gap: 4px; font-size: 13px;
       header { font-size: 12.5px; } p { margin: 0; line-height: 1.35; } footer { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; }
       .acts { display: flex; gap: 4px; button { border: 0; background: var(--surface-2); border-radius: 12px; padding: 3px 8px; font: 11.5px var(--font-body); cursor: pointer; color: var(--ink); } button:disabled { opacity: .4; } }
@@ -221,20 +269,23 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
 export class PhoneComponent {
   protected readonly game = inject(GameStateService);
   protected readonly phone = inject(PhoneService);
+  private readonly fx = inject(FxService);
   protected readonly calling = signal(false);
 
   private readonly all = computed<PhoneMessage[]>(() => this.game.s().phone?.messages ?? []);
 
   protected readonly threads = computed(() => {
     const dir = new Map(this.phone.directory().map(e => [e.key, e]));
-    const out = new Map<string, { who: string; name: string; icon: string; last: string; week: number; unread: number; waiting: boolean }>();
+    const out = new Map<string, { who: string; name: string; icon: string; last: string; week: number; unread: number; waiting: boolean; urgent: boolean }>();
     for (const m of this.all()) {
-      const t = out.get(m.who) ?? { who: m.who, name: dir.get(m.who)?.name ?? m.from, icon: dir.get(m.who)?.icon ?? '💬', last: m.text, week: m.week, unread: 0, waiting: false };
+      const t = out.get(m.who) ?? { who: m.who, name: dir.get(m.who)?.name ?? m.from, icon: dir.get(m.who)?.icon ?? (m.urgent ? '📞' : '💬'), last: m.text, week: m.week, unread: 0, waiting: false, urgent: false };
       if (!m.outgoing && !m.read) t.unread++;
       if (!m.outgoing && m.replies && !m.answered) t.waiting = true;
+      if (m.urgent && !m.answered) t.urgent = true;
       out.set(m.who, t);
     }
-    return [...out.values()];
+    // Les appels entrants qui sonnent passent en tête
+    return [...out.values()].sort((a, b) => Number(b.urgent) - Number(a.urgent));
   });
 
   protected readonly thread = computed(() => {
@@ -275,7 +326,21 @@ export class PhoneComponent {
   protected readonly said = signal<string[]>([]);
   /** Le dernier message reçu de la conversation : on peut y réagir */
   protected readonly lastIncoming = computed(() => this.messages().find(m => !m.outgoing)?.id ?? null);
-  protected post(kind: 'terrain' | 'coulisses' | 'vie'): void { this.said.set(this.phone.publish(kind)); }
+  protected readonly milestones = MILESTONES;
+  protected readonly bump = signal(false);
+  protected fmt(n: number): string { return fmtFollowers(n); }
+  protected post(kind: 'terrain' | 'coulisses' | 'vie' | 'tendance', i = 0): void { this.react(this.phone.publish(kind, i)); }
+  protected goLive(): void { this.react(this.phone.live()); }
+  private react(r: PostResult | null): void {
+    if (!r) return;
+    this.said.set(r.lines);
+    this.bump.set(true);
+    setTimeout(() => this.bump.set(false), 700);
+    const w = window.innerWidth, h = window.innerHeight;
+    this.fx.float(`+${fmtFollowers(r.gained)} abonnés`, 'good', w / 2, h * 0.45);
+    if (r.viral) { this.fx.newspaper('Votre publication fait le buzz', 'VIRAL'); [0.3, 0.5, 0.7].forEach((x, k) => setTimeout(() => this.fx.burst(w * x, h * 0.4, 'good', 18), k * 150)); }
+    if (r.milestone) setTimeout(() => this.fx.spotlight(`${fmtFollowers(r.milestone!)} abonnés !`, 'Un nouveau palier sur les réseaux'), r.viral ? 1800 : 300);
+  }
   protected comment(id: string, tone: 'soutien' | 'pique' | 'humour'): void { this.said.set(this.phone.comment(id, tone)); }
 
   protected callInfo(): string {

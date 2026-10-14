@@ -6,6 +6,7 @@ import { MINISTRIES } from './government';
 import { dateCall, romanceOptions } from './phone-extra';
 import { askCall, askOptions, isAsk, monthlyDebts } from './phone-asks';
 import { npcAge } from './npc-life';
+import { monthlyIncomingCall } from './phone-calls';
 import { appointCall, appointOptions, cabinetSalt, isAppoint, pickedMinister } from './phone-appoint';
 import { scenarioAsk, scenarioCall, scenarioEntries, scenarioOptions } from './phone-scenario';
 import { applyEffects, campaignOpen, partySupport } from './effects';
@@ -763,6 +764,8 @@ export function monthlyPhone(d: GameState, rng: Rng): void {
     return true;
   };
   monthlyDebts(d, sent, rng);
+  // Un appel entrant, peut-être : une vraie occasion, à prendre avant la fin du mois
+  monthlyIncomingCall(d, rng, m => { addMessage(d, m); });
   // Les numéros spéciaux écrivent aussi
   if ((d.apocalypse?.phase === 3 || Number(d.player.flags['devilDebt'] ?? 0) > 0) && rng.chance(0.4)) {
     send({ kind: 'sms', who: 'sc:diable', from: 'Monsieur Nicolas', role: 'Le Diable, en personne', text: rng.pick(['Je pense à vous. Souvent.', 'Belle intervention hier. J’ai presque cru que vous y croyiez.', 'Un petit service contre un grand ? Mon offre tient toujours.']),

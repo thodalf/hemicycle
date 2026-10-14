@@ -1,3 +1,4 @@
+import { PostResult, postWithReach } from './social';
 import { Effect, GameState, NewsItem } from '../models/game.models';
 import { addMilestone } from './life';
 import { applyEffects, pushNews } from './effects';
@@ -130,15 +131,12 @@ export function commentPost(d: GameState, postId: string, tone: 'soutien' | 'piq
   return applyEffects(d, effects, {}, rng);
 }
 
-/** Publier un post personnel */
-export function publishPost(d: GameState, kind: 'terrain' | 'coulisses' | 'vie', rng: Rng): string[] {
+/** Publier un post personnel (ou surfer sur une tendance) : audience, likes, buzz */
+export function publishPost(d: GameState, kind: 'terrain' | 'coulisses' | 'vie' | 'tendance', rng: Rng, tagIndex = 0): PostResult | null {
   const s = social(d);
-  if (s.posts >= SOCIAL_MAX) return [];
+  if (s.posts >= SOCIAL_MAX) return null;
   s.posts += 1;
-  const effects: Effect[] = kind === 'terrain' ? [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'credibility', delta: 1 }]
-    : kind === 'coulisses' ? [{ kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'exposure', delta: 1 }]
-    : [{ kind: 'stat', stat: 'popularity', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -2 }];
-  return applyEffects(d, effects, {}, rng);
+  return postWithReach(d, kind, rng, tagIndex);
 }
 
 // ── Histoires de cœur ────────────────────────────────────────

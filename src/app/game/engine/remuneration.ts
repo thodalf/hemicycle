@@ -50,6 +50,7 @@ const BASE_LABEL: Record<RankId, string> = {
   candidat_presidence: 'Indemnité d’élu·e',
   president: 'Traitement présidentiel',
   ancien_president: 'Dotation d’ancien·ne président·e',
+  roi: 'Liste civile du souverain',
 };
 
 export interface PayLine {

@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { GameStateService } from './game-state.service';
 import { CallOption, answerMessage, callOptions, callStatus, directory, markRead, placeCall, unreadCount } from '../engine/phone';
 import { QuickSms, commentPost, publishPost, react, sendQuickSms, smsReady, socialFeed, socialLeft } from '../engine/phone-extra';
+import { PostResult, goLive, socialStats } from '../engine/social';
 
 /** Le téléphone : ouverture, conversation affichée, appels et réponses */
 @Injectable({ providedIn: 'root' })
@@ -60,10 +61,32 @@ export class PhoneService {
     return out;
   }
 
-  publish(kind: 'terrain' | 'coulisses' | 'vie'): string[] {
-    let out: string[] = [];
-    this.game.mutate((d, rng) => { out = publishPost(d, kind, rng); });
+  publish(kind: 'terrain' | 'coulisses' | 'vie' | 'tendance', tagIndex = 0): PostResult | null {
+    let out: PostResult | null = null;
+    this.game.mutate((d, rng) => { out = publishPost(d, kind, rng, tagIndex); });
     return out;
+  }
+
+  live(): PostResult | null {
+    let out: PostResult | null = null;
+    this.game.mutate((d, rng) => { out = goLive(d, rng); });
+    return out;
+  }
+
+  /** Audience : abonnés, tendances, publications (lecture seule) */
+  readonly audience = computed(() => {
+    const s = this.game.s();
+    const a = s.phone?.audience;
+    return a && a.trendsWeek === s.week ? a : null;
+  });
+
+  /** Appels entrants urgents en attente */
+  readonly urgent = computed(() => (this.game.s().phone?.messages ?? []).filter(m => m.urgent && !m.answered));
+
+  /** Prépare l'audience du mois (tendances) à l'ouverture des réseaux */
+  ensureAudience(): void {
+    const s = this.game.s();
+    if (s.phone?.audience?.trendsWeek !== s.week) this.game.mutate(d => { socialStats(d); });
   }
 
   reply(msgId: string, replyId: string): void {

@@ -82,7 +82,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
       <span class="save" [class]="'s-' + game.saveStatus()" [title]="saveTip()">
         <span class="dot" aria-hidden="true"></span><span class="save-lbl">{{ saveLabel() }}</span>
       </span>
-      <button class="btn small phone-btn" (click)="phone.show()" [attr.aria-label]="'Téléphone' + (phone.unread() ? ', ' + phone.unread() + ' non lus' : '')">📱@if (phone.unread()) { <b class="badge">{{ phone.unread() }}</b> }</button>
+      <button class="btn small phone-btn" [class.ringing]="phone.urgent().length" (click)="phone.show()" [attr.aria-label]="'Téléphone' + (phone.unread() ? ', ' + phone.unread() + ' non lus' : '')">📱@if (phone.unread()) { <b class="badge">{{ phone.unread() }}</b> }</button>
       <button class="btn small help-btn" (click)="tuto.start()" aria-label="Revoir le tutoriel" title="Tutoriel">?</button>
       <button class="btn small quit" (click)="confirmQuit()" aria-label="Mes parties">Mes parties</button>
     </header>
@@ -323,6 +323,9 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
     .col-main > :empty, .col-left > :empty, .col-right > :empty,
     .col-main > :not(:has(*)), .col-left > :not(:has(*)), .col-right > :not(:has(*)) { display: none; }
     .help-btn { font-weight: 700; min-width: 30px; padding: 4px 8px; }
+    .phone-btn.ringing { animation: phone-ring 1.2s ease-in-out infinite; border-color: #d6453d; }
+    @keyframes phone-ring { 0%, 60%, 100% { transform: rotate(0); } 10%, 30%, 50% { transform: rotate(-12deg); } 20%, 40% { transform: rotate(12deg); } }
+    @media (prefers-reduced-motion: reduce) { .phone-btn.ringing { animation: none; } }
     .phone-btn { position: relative; font-size: 15px; padding: 4px 10px;
       .badge { position: absolute; top: -6px; right: -6px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--bad); color: #fff;
         font: 700 10.5px var(--font-body); display: grid; place-items: center; } }
@@ -424,6 +427,7 @@ export class DashboardComponent {
   private lastStatus = this.game.s().status;
   private lastMilestones = this.game.s().milestones.length;
   private lastAlien = this.game.s().alien?.phase ?? -1;
+  private lastKing = !!this.game.s().kingdom;
   /** Dernier chapitre ouvert, affiché en grand */
   protected readonly chapter = signal<Milestone | null>(null);
   /** Un écran interactif est ouvert : les cartes « nouveau chapitre » attendent */
@@ -438,7 +442,15 @@ export class DashboardComponent {
     const status = this.game.s().status;
     const milestones = this.game.s().milestones;
     const alien = this.game.s().alien?.phase ?? -1;
+    const king = !!this.game.s().kingdom;
     untracked(() => {
+      if (king !== this.lastKing) {
+        this.whenFree(() => {
+          if (king) { this.fx.spotlight(this.game.s().player.gender === 'femme' ? 'Vive la Reine !' : 'Vive le Roi !', 'Sacre à Reims'); this.burstAround(); }
+          else this.fx.stamp('République', 'good', 'rétablie');
+        }, 500);
+        this.lastKing = king;
+      }
       if (alien > this.lastAlien) this.whenFree(() => this.fx.ufo(alien === 0 ? 'Un signal venu des étoiles' : ALIEN_PHASES[alien]), 300);
       this.lastAlien = alien;
       if (milestones.length > this.lastMilestones && status !== 'mort') {

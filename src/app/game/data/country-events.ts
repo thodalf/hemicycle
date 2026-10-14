@@ -20,6 +20,7 @@ const c = (id: string, label: string, effects: Effect[], outcome: string, extra:
 const seg = (segment: Segment | '*', delta: number): Effect => ({ kind: 'segment', segment, delta });
 const eco = (x: Omit<Extract<Effect, { kind: 'economy' }>, 'kind'>): Effect => ({ kind: 'economy', ...x });
 const mood = (delta: number): Effect => ({ kind: 'coalition', mood: delta });
+const kg = (x: Omit<Extract<Effect, { kind: 'kingdom' }>, 'kind'>): Effect => ({ kind: 'kingdom', ...x });
 const atLeastCouncil = 'conseiller_municipal' as const;
 
 /** Les années paires : l'Euro (2028, 2032…) ou la Coupe du monde (2030, 2034…) */
@@ -730,6 +731,119 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
       choices: [
         c('relever', 'Relever le défi', [{ kind: 'minigame', gameId: 'metrodoku', title: 'Le défi de l’humoriste', reward: [s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], penalty: [s('popularity', -1)] }], 'Le chronomètre démarre. Le public retient son souffle.'),
         c('esquive', '« Je prends la ligne 14, elle est automatique »', [s('popularity', 1)], 'La blague fait sourire. Le défi, lui, reste ouvert.'),
+      ],
+    }),
+  },
+  {
+    tag: 'roy_bastille', weight: 2, eligible: d => !!d.kingdom,
+    build: () => ({
+      title: 'Le front républicain à la Bastille',
+      context: 'Tous les partis d’opposition défilent ensemble, pour la première fois depuis des décennies : « Rendez-nous la République ! »',
+      choices: [
+        c('recevoir', 'Recevoir une délégation des manifestants', [kg({ opposition: -6, prestige: 2 }), s('energy', -4)], 'Une heure d’échanges tendus mais respectueux. Les images apaisent.'),
+        c('ignorer', 'Ignorer : « La rue ne gouverne pas »', [kg({ opposition: 6, stabilite: -3 })], 'Le cortège suivant est deux fois plus grand.'),
+      ],
+    }),
+  },
+  {
+    tag: 'roy_tabloids', weight: 1.5, eligible: d => !!d.kingdom,
+    build: () => ({
+      title: 'La famille royale à la une des tabloïds',
+      context: 'Un magazine britannique publie des photos de vos vacances, avec un titre moqueur : « Le roi bronze, la France râle ».',
+      choices: [
+        c('humour', 'Répondre avec humour', [kg({ prestige: 3 }), s('popularity', 2)], '« Même les rois mettent de la crème solaire. » Le pays sourit.'),
+        c('proces', 'Attaquer le magazine en justice', [kg({ prestige: -2, opposition: 2 }), s('credibility', 1)], 'Vous gagnerez. Mais tout le monde a vu les photos.'),
+      ],
+    }),
+  },
+  {
+    tag: 'roy_motion', weight: 1.2, eligible: d => !!d.kingdom && d.kingdom.opposition >= 55,
+    build: d => ({
+      title: 'L’Assemblée réclame un référendum',
+      context: `Les députés de l’opposition déposent une motion pour un référendum sur le retour à la République. Front républicain : ${Math.round(d.kingdom!.opposition)}/100.`,
+      choices: [
+        c('accepter', 'Accepter le référendum et faire campagne', d.kingdom!.prestige >= 55
+          ? [kg({ opposition: -20, prestige: 6, stabilite: 6 }), s('credibility', 3)]
+          : [kg({ restore: true })],
+          d.kingdom!.prestige >= 55 ? 'Le « non » à la République l’emporte de justesse : votre trône sort renforcé.' : 'Le « oui » l’emporte. Vous vous inclinez : la République est rétablie.'),
+        c('refuser', 'Refuser : la Constitution ne le prévoit pas', [kg({ opposition: 8, stabilite: -6 }), s('credibility', -2)], 'Légal, mais la colère monte d’un cran.'),
+      ],
+    }),
+  },
+  {
+    tag: 'roy_mariage_prince', weight: 1, eligible: d => !!d.kingdom,
+    build: () => ({
+      title: 'Un mariage royal à l’étranger',
+      context: 'Une famille royale européenne vous invite au mariage de son héritier. Toutes les têtes couronnées seront là.',
+      choices: [
+        c('y_aller', 'Y aller en grande pompe', [kg({ prestige: 5 }), { kind: 'intl', prestige: 3 }, s('energy', -5)], 'Votre arrivée en calèche fait la une de toute l’Europe.'),
+        c('sobre', 'Envoyer un message et rester au travail', [kg({ stabilite: 2 }), s('credibility', 1)], '« Le souverain qui préfère ses dossiers aux bals. » Les Français apprécient.'),
+      ],
+    }),
+  },
+  {
+    tag: 'roy_liste_civile', weight: 1, eligible: d => !!d.kingdom,
+    build: () => ({
+      title: 'Le coût de la Couronne',
+      context: 'La Cour des comptes publie le coût de la monarchie : 98 millions d’euros par an. L’opposition s’en empare.',
+      choices: [
+        c('baisser', 'Réduire de moitié la liste civile', [kg({ opposition: -5, prestige: 3 }), { kind: 'funds', account: 'personal', delta: -5000 }], 'Un geste salué jusque dans les rangs républicains.'),
+        c('justifier', 'Défendre « le rayonnement de la France »', [kg({ opposition: 4 }), s('credibility', -1)], 'Les chiffres du tourisme ne convainquent personne.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Une lettre ouverte de cent maires',
+      context: 'Cent maires ruraux vous adressent une lettre ouverte : écoles qui ferment, médecins qui partent, bureaux de poste supprimés.',
+      choices: [
+        c('repondre', 'Leur répondre un par un, et les recevoir', [{ kind: 'segment', segment: 'ruraux', delta: 3 }, s('energy', -5), { kind: 'dossier', domain: 'territoires', delta: 2 }], 'Cent lettres signées à la main. Ils s’en souviendront.'),
+        c('tribune', 'Répondre par une tribune collective', [s('credibility', 1), { kind: 'segment', segment: 'ruraux', delta: 1 }], 'Une réponse générale, polie, un peu lointaine.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_robot_mairie', weight: 0.4,
+    build: () => ({
+      title: 'Un robot à l’accueil de la mairie',
+      context: 'Une start-up propose un robot d’accueil pour la mairie : il répond 24 h sur 24 dans douze langues. Les agents d’accueil s’inquiètent.',
+      choices: [
+        c('tester', 'Le tester six mois', [{ kind: 'dossier', domain: 'numerique', delta: 3 }, { kind: 'segment', segment: 'jeunes', delta: 1 }, { kind: 'segment', segment: 'retraites', delta: -1 }], 'Il s’appelle « Marianne 2.0 ». Les enfants l’adorent, les anciens l’évitent.'),
+        c('humains', 'Garder des humains à l’accueil', [{ kind: 'segment', segment: 'retraites', delta: 2 }, s('popularity', 1)], '« Un sourire ne se programme pas. » Applaudissements.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_tournoi_boules', weight: 0.5,
+    build: () => ({
+      title: 'Le tournoi de pétanque des élus',
+      context: 'Le club de pétanque organise son tournoi annuel « élus contre habitants ». Votre adversaire en finale : le doyen du club, 87 ans.',
+      choices: [
+        c('gagner', 'Jouer pour gagner', [s('popularity', -1), s('stress', -2)], 'Vous gagnez. Le doyen vous serre la main ; la salle, elle, boude un peu.'),
+        c('perdre', 'Le laisser gagner, discrètement', [s('popularity', 2), { kind: 'segment', segment: 'retraites', delta: 2 }], 'Il brandit la coupe sous les vivats. Vous offrez la tournée.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_neige_route', weight: 1.5, eligible: d => [0, 1, 11].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'Bloqué·e par la neige',
+      context: 'Une tempête de neige bloque l’autoroute. Des centaines d’automobilistes passent la nuit dans leur voiture, dont vous.',
+      choices: [
+        c('aider', 'Distribuer couvertures et café avec les secours', [s('popularity', 3), s('energy', -6), { kind: 'segment', segment: 'populaires', delta: 1 }], 'Au petit matin, une photo de vous, bonnet sur la tête, thermos à la main.'),
+        c('attendre', 'Attendre dans la voiture en travaillant vos dossiers', [{ kind: 'dossier', domain: 'territoires', delta: 2 }, s('stress', 2)], 'Une nuit productive, mais personne ne l’a vue.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_record_abonnes', weight: 0.4, eligible: d => (d.phone?.audience?.followers ?? 0) > 5000,
+    build: () => ({
+      title: 'Un youtubeur veut vous suivre une journée',
+      context: 'Un vidéaste aux deux millions d’abonnés propose de vous suivre toute une journée, caméra au poing, sans coupe.',
+      choices: [
+        c('oui', 'Accepter, sans filtre', [s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 4 }, { kind: 'exposure', delta: 1 }], 'La vidéo cumule quatre millions de vues. On y voit votre fou rire en réunion.'),
+        c('non', 'Décliner', [], 'Il suivra votre rival à la place.'),
       ],
     }),
   },

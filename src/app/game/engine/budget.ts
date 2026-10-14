@@ -59,12 +59,12 @@ export interface PartyReport {
 export function partyReport(d: GameState): PartyReport | null {
   const f = d.partyFinance;
   if (!f) return null;
-  const a = f.allocations;
+  const a = { ...Object.fromEntries(PARTY_LINES.map(l => [l.id, l.base])), ...f.allocations } as typeof f.allocations;
   const k = partyScale(d);
   const efficiency = clamp(a.permanents / (180 * k), 0.5, 1.15);
   const cotisations = (f.members * f.fee) / 12 / 1000;
   const publicFunding = (200 + d.player.stats.popularity * 2) * k;
-  const dons = (30 + d.player.stats.influence * 0.8) * Math.max(k, 0.35) + a.communication * 0.05;
+  const dons = (30 + d.player.stats.influence * 0.8) * Math.max(k, 0.35) + a.communication * 0.05 + a.galas * (0.8 + Math.min(1, d.player.stats.influence / 60) * 0.8);
   const income = cotisations + publicFunding + dons;
   const lines = PARTY_LINES.reduce((s, l) => s + a[l.id], 0);
   const fixed = round1(PARTY_FIXED_COSTS * k);
@@ -72,6 +72,7 @@ export function partyReport(d: GameState): PartyReport | null {
   const membersRate = (d.player.stats.popularity - 40) / 1500
     + (a.formation / k * efficiency) / 100 * 0.006
     + (a.federations / k * efficiency) / 100 * 0.004
+    + (a.jeunes / k * efficiency) / 100 * 0.005
     - Math.max(0, f.fee - 40) / 1000
     + (d.party.founder && k < 1 ? 0.025 : 0);
   return {
@@ -91,7 +92,8 @@ export function settlePartyMonth(d: GameState, rng: Rng): void {
   const r = partyReport(d)!;
   const k = partyScale(d);
   // Les effets des postes se mesurent à la taille du parti
-  const a = Object.fromEntries(Object.entries(f.allocations).map(([key, v]) => [key, v / k])) as typeof f.allocations;
+  const full = { ...Object.fromEntries(PARTY_LINES.map(l => [l.id, l.base])), ...f.allocations } as typeof f.allocations;
+  const a = Object.fromEntries(Object.entries(full).map(([key, v]) => [key, v / k])) as typeof f.allocations;
   const e = r.efficiency;
 
   const effects: Effect[] = [
@@ -100,7 +102,11 @@ export function settlePartyMonth(d: GameState, rng: Rng): void {
     { kind: 'cohesion', delta: round1((((a.federations - 80) / 100) * 2 + a.evenements / 100) * e) },
     { kind: 'stat', stat: 'influence', delta: round1(((a.evenements / 100) * 0.7 + a.federations / 200) * e) },
   ];
-  if (d.player.finances.legalCeiling !== null) effects.push({ kind: 'momentum', delta: round1((a.communication / 50) * e) });
+  if (a.numerique) effects.push({ kind: 'segment', segment: 'jeunes', delta: round1((a.numerique / 100) * 0.8 * e) }, { kind: 'stat', stat: 'popularity', delta: round1((a.numerique / 100) * 0.3 * e) });
+  if (a.etudes) effects.push({ kind: 'dossier', domain: d.agendaDomain, delta: round1((a.etudes / 100) * 1.5 * e) }, { kind: 'stat', stat: 'credibility', delta: round1((a.etudes / 100) * 0.4 * e) });
+  if (a.jeunes) effects.push({ kind: 'segment', segment: 'jeunes', delta: round1((a.jeunes / 100) * 0.4 * e) });
+  if (a.galas) effects.push({ kind: 'exposure', delta: round1((a.galas / 100) * 0.3) });
+  if (d.player.finances.legalCeiling !== null) effects.push({ kind: 'momentum', delta: round1(((a.communication + a.numerique) / 50) * e) });
   if (f.allocations.campagne) effects.push({ kind: 'funds', account: 'campaign', delta: f.allocations.campagne * 1000 });
   applyEffects(d, effects.filter(x => !('delta' in x) || x.delta !== 0), {}, rng);
 
@@ -127,7 +133,14 @@ export function settlePartyMonth(d: GameState, rng: Rng): void {
 
 // ── État ────────────────────────────────────────────────────
 
-export const OTHER_REVENUE = 30;
+export const OTHER_REVENUE = 0;
+
+/** Les anciennes sauvegardes n'ont pas les nouvelles lignes : valeurs de référence */
+export function normalizeDraft(draft: BudgetDraft): BudgetDraft {
+  for (const m of MISSIONS) if (typeof draft.missions[m.id] !== 'number') draft.missions[m.id] = m.base;
+  for (const t of TAXES) if (typeof draft.taxes[t.id] !== 'number') draft.taxes[t.id] = t.base;
+  return draft;
+}
 
 export function baseDraft(): BudgetDraft {
   return {
@@ -204,8 +217,9 @@ export interface NationalReport {
   warnings: string[];
 }
 
-export function nationalReport(d: GameState, draft: BudgetDraft = d.nationalBudget?.draft ?? baseDraft()): NationalReport {
+export function nationalReport(d: GameState, raw: BudgetDraft = d.nationalBudget?.draft ?? baseDraft()): NationalReport {
   const nb = d.nationalBudget;
+  const draft: BudgetDraft = { missions: { ...baseDraft().missions, ...raw.missions }, taxes: { ...baseDraft().taxes, ...raw.taxes } };
   const missions = MISSIONS.map(m => ({
     id: m.id, label: m.label, value: draft.missions[m.id], base: m.base,
     pct: round1(((draft.missions[m.id] - m.base) / m.base) * 100),

@@ -418,6 +418,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'tempete_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.tempete_solaire && !d.player.flags['tempeteDone'] && d.week > 26,
+    build: () => ({
+      title: 'Une éruption solaire géante',
+      context: 'L’Observatoire de Meudon donne l’alerte : une tempête solaire d’une intensité inédite frappera la Terre dans 36 heures. Satellites, GPS et réseaux électriques sont menacés.',
+      choices: [
+        c('plan', 'Déclencher le plan d’urgence national', [cr('tempete_solaire', 7, 2, true), { kind: 'flag', key: 'tempeteDone', value: true }, s('credibility', 2)], 'Groupes électrogènes, cartes papier distribuées, hôpitaux en alerte.'),
+        c('attendre', 'Attendre de voir l’ampleur', [cr('tempete_solaire', 1, 6, true), { kind: 'flag', key: 'tempeteDone', value: true }], 'Le lendemain, plus aucun GPS ne fonctionne.'),
+      ],
+    }),
+  },
+  {
+    tag: 'expo_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.expo_universelle && !d.player.flags['expoDone'] && d.week > 18,
+    build: () => ({
+      title: 'Paris, ville de l’Exposition universelle',
+      context: 'Le Bureau international des expositions désigne Paris. Douze mois pour bâtir 180 pavillons. On vous propose de piloter le comité d’organisation.',
+      choices: [
+        c('piloter', 'Prendre la tête du comité', [cr('expo_universelle', 6, 3, true), { kind: 'flag', key: 'expoDone', value: true }, s('influence', 3)], 'Bureau au Champ-de-Mars, réunion chaque matin à 7 h.'),
+        c('soutenir', 'Soutenir de loin', [cr('expo_universelle', 3, 2, true), { kind: 'flag', key: 'expoDone', value: true }], 'Vous suivrez le chantier depuis votre bureau.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1008,6 +1030,50 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('fondation', 'Annoncer la création d’une fondation', [cr('loto', 10, -4), s('popularity', 2)], 'Éducation, santé, patrimoine : la fondation portera votre nom… et vos engagements.'),
         c('plainte', 'Porter plainte pour atteinte à la vie privée', [cr('loto', 0, 2), s('credibility', 1)], 'Vous gagnerez le procès. Pas la bataille de l’image.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tempete_banques', weight: 1, eligible: d => !!d.crises?.tempete_solaire,
+    build: () => ({
+      title: 'Plus de paiement par carte',
+      context: 'Les terminaux bancaires sont muets depuis trois jours. Les distributeurs sont pris d’assaut ; les commerçants refusent les clients.',
+      choices: [
+        c('cheques', 'Imposer l’acceptation des chèques et des espèces', [cr('tempete_solaire', 5, -4), { kind: 'segment', segment: 'retraites', delta: 2 }], 'Les carnets de chèques ressortent des tiroirs.'),
+        c('banques', 'Exiger des banques un plan de secours', [cr('tempete_solaire', 3, -2), s('credibility', 1)], 'Les banques promettent des distributeurs mobiles.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tempete_aurores', weight: 0.8, eligible: d => !!d.crises?.tempete_solaire,
+    build: () => ({
+      title: 'Des aurores boréales sur Marseille',
+      context: 'Effet secondaire de la tempête : des aurores boréales illuminent le ciel jusqu’en Provence. Des millions de Français sortent les admirer.',
+      choices: [
+        c('nuit', 'Organiser une « nuit des aurores »', [cr('tempete_solaire', 2, -5), s('popularity', 2)], 'La peur laisse place à l’émerveillement.'),
+        c('prudence', 'Rappeler les consignes de sécurité', [cr('tempete_solaire', 3), s('credibility', 1)], 'Utile, un peu rabat-joie.'),
+      ],
+    }),
+  },
+  {
+    tag: 'expo_pavillon', weight: 1, eligible: d => !!d.crises?.expo_universelle,
+    build: () => ({
+      title: 'Le pavillon de la France',
+      context: 'Deux projets s’affrontent pour le pavillon français : une tour de verre spectaculaire ou un jardin bas carbone.',
+      choices: [
+        c('tour', 'La tour de verre', [cr('expo_universelle', 6, 4), { kind: 'intl', prestige: 2 }], 'Un futur symbole… si elle est finie à temps.'),
+        c('jardin', 'Le jardin bas carbone', [cr('expo_universelle', 5, -2), { kind: 'dossier', domain: 'ecologie', delta: 3 }], 'Moins spectaculaire, plus sûr, salué par les jeunes.'),
+      ],
+    }),
+  },
+  {
+    tag: 'expo_greve', weight: 0.8, eligible: d => !!d.crises?.expo_universelle,
+    build: () => ({
+      title: 'Grève sur les chantiers de l’Expo',
+      context: 'Les ouvriers des pavillons cessent le travail : cadences infernales, sous-traitance en cascade.',
+      choices: [
+        c('negocier', 'Négocier des primes et des contrôles', [cr('expo_universelle', 4, -4), { kind: 'segment', segment: 'populaires', delta: 2 }, { kind: 'economy', deficit: 0.05 }], 'Le travail reprend, dans de meilleures conditions.'),
+        c('tenir', 'Tenir bon sur les délais', [cr('expo_universelle', 2, 5), { kind: 'segment', segment: 'cadres', delta: 1 }], 'Le chantier prend trois semaines de retard.'),
       ],
     }),
   },

@@ -14,7 +14,8 @@ export type RankId =
   | 'chef_parti'
   | 'candidat_presidence'
   | 'president'
-  | 'ancien_president';
+  | 'ancien_president'
+  | 'roi';
 
 export type Domain =
   | 'economie' | 'ecologie' | 'securite' | 'diplomatie' | 'social'
@@ -259,6 +260,7 @@ export type Effect =
   | { kind: 'dossierScale'; domain: DomainRef; factor: number }
   | { kind: 'booster'; count: number; reason: string }
   | { kind: 'crown'; soutien?: number; legitimite?: number; armee?: number }
+  | { kind: 'kingdom'; prestige?: number; stabilite?: number; opposition?: number; restore?: boolean }
   | { kind: 'lodge'; fraternite?: number; discretion?: number; planches?: number }
   | { kind: 'end'; status: 'victoire' | 'defaite'; reason: string; title: string }
   | { kind: 'grade'; delta: number }
@@ -337,7 +339,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -956,7 +958,7 @@ export interface SceneState {
 
 // ── Budgets ─────────────────────────────────────────────────
 
-export type PartyLine = 'permanents' | 'communication' | 'formation' | 'federations' | 'evenements' | 'campagne';
+export type PartyLine = 'permanents' | 'communication' | 'formation' | 'federations' | 'evenements' | 'campagne' | 'numerique' | 'etudes' | 'jeunes' | 'galas';
 
 export interface PartyFinance {
   /** En milliers d'euros */
@@ -970,8 +972,8 @@ export interface PartyFinance {
   history: { week: number; treasury: number; members: number; balance: number }[];
 }
 
-export type MissionId = 'education' | 'defense' | 'securite' | 'justice' | 'sante' | 'ecologie' | 'economie' | 'territoires' | 'recherche';
-export type TaxId = 'tva' | 'ir' | 'is' | 'energie' | 'patrimoine';
+export type MissionId = 'education' | 'defense' | 'securite' | 'justice' | 'sante' | 'ecologie' | 'economie' | 'territoires' | 'recherche' | 'logement' | 'transports' | 'culture' | 'agriculture';
+export type TaxId = 'tva' | 'ir' | 'is' | 'energie' | 'patrimoine' | 'csg' | 'succession' | 'niches' | 'superprofits' | 'comportement' | 'economies';
 
 export interface BudgetDraft {
   /** Crédits par mission, en milliards d'euros */
@@ -1081,6 +1083,8 @@ export interface GameState {
   cabinetPicks?: { salt: string; picks: Partial<Record<Domain, string>> };
   /** Départs des personnalités : décès, retraites, reconversions… */
   npcLog?: import('../engine/npc-life').NpcLogEntry[];
+  /** Le royaume : vous êtes sur le trône d'une monarchie constitutionnelle */
+  kingdom?: import('../engine/kingdom').KingdomState | null;
 }
 
 // ── Emprunts ────────────────────────────────────────────────
@@ -1135,6 +1139,10 @@ export interface PhoneMessage {
   summary?: string[];
   /** Votre réaction (emoji) à un message reçu */
   reaction?: string;
+  /** Appel entrant urgent : à prendre avant la fin du mois */
+  urgent?: boolean;
+  /** Effets si l'appel est manqué */
+  missed?: Effect[];
 }
 
 /** Une histoire en cours avec quelqu'un de votre téléphone */
@@ -1185,6 +1193,8 @@ export interface PhoneState {
   sms?: Record<string, number>;
   /** Réseaux sociaux : réactions publiées ce mois-ci */
   social?: { week: number; posts: number; reacted: string[] };
+  /** Votre audience : abonnés, tendances, publications */
+  audience?: import('../engine/social').SocialStats;
 }
 
 // ── Complot ─────────────────────────────────────────────────
@@ -1451,7 +1461,7 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
-  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto';
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

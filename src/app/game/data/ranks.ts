@@ -33,6 +33,10 @@ export const RANKS: Record<RankId, RankDefinition> = {
     id: 'president', label: 'Président·e de la République', order: 6, monthlyActionPoints: 9, monthlyIncome: 15200,
     promotion: null,
   },
+  roi: {
+    id: 'roi', label: 'Souverain·e (monarchie constitutionnelle)', order: 6, monthlyActionPoints: 9, monthlyIncome: 18000,
+    promotion: null,
+  },
   ancien_president: {
     id: 'ancien_president', label: 'Ancien·ne président·e', order: 6, monthlyActionPoints: 6, monthlyIncome: 6200,
     promotion: null,

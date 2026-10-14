@@ -1,3 +1,4 @@
+import { adjustKingdom } from './kingdom';
 import {
   ChoiceRequirement, ContactType, Domain, Effect, EffectContext, GameState, NewsKind, RiskProfile,
   STAT_LABELS, StatKey, Tone,
@@ -328,9 +329,12 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         if (e.party !== undefined) summary.push(...setLeaderPay(d, 'party', e.party, true));
         if (e.president !== undefined && d.presidency) summary.push(...setLeaderPay(d, 'president', e.president, true));
         break;
-      case 'minigame':
-        summary.push(...queueMinigame(d, e.gameId, e.title ?? 'événement', e.reward, ctx, e.penalty, e.title));
+      case 'minigame': {
+        const queued = queueMinigame(d, e.gameId, e.title ?? 'événement', e.reward, ctx, e.penalty, e.title);
+        // File pleine : l'équipe s'en charge, la moitié des gains (rien n'est perdu)
+        summary.push(...(queued.length ? queued : applyEffects(d, scaleGains(e.reward, 0.5), ctx, rng)));
         break;
+      }
       case 'vote':
         summary.push(...scheduleVote(d, rng, e.billId, e.own ? ownOrigin(d) : undefined));
         break;
@@ -508,6 +512,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
           const parts = [e.soutien && `Soutien ${signed(e.soutien)}`, e.legitimite && `Légitimité ${signed(e.legitimite)}`, e.armee && `Armée ${signed(e.armee)}`].filter(Boolean);
           if (parts.length) summary.push(parts.join(' · '));
         }
+        break;
+      case 'kingdom':
+        summary.push(...adjustKingdom(d, e));
         break;
       case 'lodge':
         if (d.lodge) {

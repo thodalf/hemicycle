@@ -19,7 +19,7 @@ export class MinigameService {
 
   finish(score: number): void {
     const g = this.current();
-    if (!g) return;
+    if (!g || g.status !== 'pret') return;
     this.game.mutate((d, rng) => { resolveMinigame(d, g.id, score, rng); });
   }
 

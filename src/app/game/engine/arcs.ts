@@ -21,7 +21,7 @@ export function activeArcs(d: GameState): string[] {
   if (d.plot) out.push('Complot');
   if (d.zombie && !d.zombie.vaccine) out.push('Épidémie Z');
   if (d.apocalypse && d.apocalypse.phase < 4) out.push('Fin du monde');
-  const names = { cyber: 'Cyberattaque', proces: 'Procès', jo: 'Jeux olympiques', dissolution: 'Dissolution', krach: 'Krach financier', megafeux: 'Méga-feux', agriculteurs: 'Révolte des campagnes', taupe: 'Taupe', blackout: 'Black-out', crue: 'Crue de la Seine', secheresse: 'Guerre de l’eau', autonomie: 'Autonomie régionale', ia: 'IA de l’État', frelons: 'Frelons géants', mars: 'Mission martienne', napoleon: 'Retour de Napoléon', atlantide: 'Atlantide', ia_candidate: 'IA candidate', grand_hiver: 'Grand hiver', sosie: 'Le sosie', greve_generale: 'Grève générale', templiers: 'Trésor des Templiers', eurovision: 'Eurovision', comete: 'La comète', referendum: 'Référendum', seisme: 'Séisme', loto: 'Le gros lot' } as const;
+  const names = { cyber: 'Cyberattaque', proces: 'Procès', jo: 'Jeux olympiques', dissolution: 'Dissolution', krach: 'Krach financier', megafeux: 'Méga-feux', agriculteurs: 'Révolte des campagnes', taupe: 'Taupe', blackout: 'Black-out', crue: 'Crue de la Seine', secheresse: 'Guerre de l’eau', autonomie: 'Autonomie régionale', ia: 'IA de l’État', frelons: 'Frelons géants', mars: 'Mission martienne', napoleon: 'Retour de Napoléon', atlantide: 'Atlantide', ia_candidate: 'IA candidate', grand_hiver: 'Grand hiver', sosie: 'Le sosie', greve_generale: 'Grève générale', templiers: 'Trésor des Templiers', eurovision: 'Eurovision', comete: 'La comète', referendum: 'Référendum', seisme: 'Séisme', loto: 'Le gros lot', tempete_solaire: 'Tempête solaire', expo_universelle: 'Exposition universelle' } as const;
   for (const [id, a] of Object.entries(d.crises ?? {})) if (a) out.push(names[id as keyof typeof names]);
   return out;
 }
@@ -38,7 +38,7 @@ export interface FinishedArc { id: 'crown' | 'lodge' | 'alien' | 'press' | 'mole
 /** Les scénarios arrivés à leur terme, mais encore affichés */
 export function finishedArcs(d: GameState): FinishedArc[] {
   const out: FinishedArc[] = [];
-  if (d.crown && d.player.flags['monarchie']) out.push({ id: 'crown', label: 'Retour à la royauté', why: 'La monarchie est proclamée' });
+  // Le royaume se clôt en rétablissant la République (panneau du royaume)
   if (d.lodge && d.lodge.grade >= 4) out.push({ id: 'lodge', label: 'La loge', why: 'Grand Maître : plus rien à gravir' });
   if (d.alien && d.alien.phase >= 4) out.push({ id: 'alien', label: 'Premier contact', why: 'L’ambassade est ouverte' });
   if (d.press && d.press.grade >= 4) out.push({ id: 'press', label: 'La rédaction', why: 'Vous dirigez la rédaction' });

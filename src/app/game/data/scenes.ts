@@ -832,7 +832,7 @@ const REFERENDUM: SceneDef = {
     echec: 'Le « non » l’emporte nettement.',
   },
   rewards: (status, _g, d, vars) => status === 'succes'
-    ? [{ kind: 'end', status: 'victoire', title: 'Vive le Roi !', reason: `Le référendum est adopté. ${vars['pretendant']} est sacré à Reims ; vous devenez Chancelier·e du Royaume, ${d.player.name}.` }]
+    ? [{ kind: 'end', status: 'victoire', title: 'Vive le Roi !', reason: `Le référendum est adopté. ${vars['pretendant']} renonce à ses droits en votre faveur : c’est vous, ${d.player.name}, qui êtes sacré·e à Reims, souverain·e d’une monarchie constitutionnelle.` }]
     : d.scenario !== 'royaute'
       // Dans une partie normale, l'échec ruine le cercle royaliste mais pas la carrière
       ? [stat('popularity', -12), stat('credibility', -10), stat('influence', -8), { kind: 'crown', soutien: -30, legitimite: -30, armee: -20 }]
@@ -900,7 +900,7 @@ const COUP: SceneDef = {
     echec: 'Le coup échoue.',
   },
   rewards: (status, _g, d) => status === 'succes'
-    ? [{ kind: 'end', status: 'victoire', title: 'Un royaume né d’un coup de force', reason: `La monarchie est proclamée à l’aube. ${d.player.name} devient Régent·e du Royaume… et l’Europe condamne. Une victoire qui aura un prix.` }]
+    ? [{ kind: 'end', status: 'victoire', title: 'Un royaume né d’un coup de force', reason: `La monarchie est proclamée à l’aube. ${d.player.name} monte sur le trône… et l’Europe condamne. Une victoire qui aura un prix.` }]
     : [{ kind: 'end', status: 'defaite', title: 'Arrêté·e', reason: 'Le coup a échoué. Vous êtes jugé·e pour atteinte aux institutions de la République.' }],
 };
 

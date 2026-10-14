@@ -227,6 +227,26 @@ const CONTACTS: ScenContact[] = [
           : { answer: 'C’est fait… mais un journaliste a remonté la piste. Votre générosité fait la une.', effects: [{ kind: 'crisis', arc: 'loto', gauge: 6 }, st('popularity', 2)] } },
     ],
   },
+  // ── La tempête solaire ──
+  {
+    key: 'sc:tempete', icon: '🌞', when: d => !!d.crises?.tempete_solaire,
+    name: () => 'Dr Sami Haddad', role: () => 'Astrophysicien · Observatoire de Meudon',
+    options: () => [
+      { id: 'sc_tempete_point', label: 'Faire le point sur l’éruption', hint: 'Il suit le Soleil heure par heure.', ask: 'Docteur, le pire est-il passé ?', cooldown: 1,
+        run: () => ({ answer: 'La deuxième vague arrive mardi, plus faible. Préparez les hôpitaux.', effects: [{ kind: 'crisis', arc: 'tempete_solaire', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── L'Exposition universelle ──
+  {
+    key: 'sc:expo', icon: '🎡', when: d => !!d.crises?.expo_universelle,
+    name: () => 'Isabelle Kervella', role: () => 'Commissaire générale de l’Exposition',
+    options: () => [
+      { id: 'sc_expo_point', label: 'Faire le point sur le chantier', hint: 'Elle connaît chaque grue par son prénom.', ask: 'Où en sont les pavillons ?', cooldown: 1,
+        run: () => ({ answer: 'Cent douze pavillons sur cent quatre-vingts. On tiendra, si personne ne change d’avis sur la tour.', effects: [{ kind: 'crisis', arc: 'expo_universelle', gauge: 4 }] }) },
+      { id: 'sc_expo_rallonge', label: 'Lui accorder une rallonge budgétaire', hint: 'Plus de moyens, plus de dette.', ask: 'Combien vous manque-t-il ?', cooldown: 4,
+        run: () => ({ answer: 'Cent millions. Avec ça, j’ouvre à l’heure.', effects: [{ kind: 'crisis', arc: 'expo_universelle', gauge: 8, risk: -3 }, { kind: 'economy', deficit: 0.05 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -310,7 +330,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

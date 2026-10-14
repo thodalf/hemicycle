@@ -1,3 +1,6 @@
+import { normalizeDraft } from '../engine/budget';
+import { crownPlayer } from '../engine/kingdom';
+import { PARTY_LINES } from '../data/budget';
 import { initHostile, startInvasion, startWar } from '../engine/war';
 import { initTerritory } from '../engine/territory';
 import { ensureCirco, initEconomy, initElectorate } from '../engine/country';
@@ -100,6 +103,10 @@ export function migrate(s: GameState): GameState {
   s.scene ??= null;
   s.partyFinance ??= null;
   s.nationalBudget ??= null;
+  // Anciennes parties : la monarchie proclamée met désormais le joueur sur le trône
+  if (s.player.flags['monarchie'] && !s.kingdom && s.status === 'en_cours') crownPlayer(s);
+  if (s.nationalBudget?.draft) normalizeDraft(s.nationalBudget.draft);
+  if (s.partyFinance?.allocations) for (const l of PARTY_LINES) s.partyFinance.allocations[l.id] ??= l.base;
   s.agendaLockedUntil ??= 0;
   s.player.staff ??= [];
   s.player.assets ??= [];

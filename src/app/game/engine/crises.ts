@@ -65,6 +65,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Un volcan islandais a obscurci le ciel : l’été n’est pas venu.', 'Récoltes perdues, rationnement, files d’attente devant les boulangeries.', 'Les premiers rayons percent. Il faut tenir encore un peu.'] },
   sosie: { id: 'sosie', icon: '🎭', label: 'Votre sosie', gaugeLabel: 'Vérité rétablie', riskLabel: 'Dégâts du sosie', months: 6, drift: { gauge: 3, risk: 5 },
     stages: ['Un homme qui vous ressemble trait pour trait inaugure des ronds-points à votre place.', 'Le sosie donne des interviews, signe des pétitions et contredit vos discours.', 'Il annonce votre ralliement… au parti adverse. Il faut le démasquer.'] },
+  tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
+    stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
+  expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
+    stages: ['Paris est désignée pour accueillir l’Exposition universelle : 180 pays, 40 millions de visiteurs attendus.', 'Pavillons en chantier, grues sur la Seine, budgets qui dérapent.', 'Ouverture dans quelques semaines : le monde entier arrive.'] },
   seisme: { id: 'seisme', icon: '🏚️', label: 'Le séisme du Sud-Est', gaugeLabel: 'Reconstruction', riskLabel: 'Colère des sinistrés', months: 8, drift: { gauge: 3, risk: 5 },
     stages: ['Un séisme de magnitude 6,4 frappe l’arrière-pays niçois : villages coupés du monde, milliers de sinistrés.', 'Mobil-homes, gymnases, experts d’assurance : la reconstruction s’organise lentement.', 'Les premiers villages renaissent. Les sinistrés jugeront sur pièces.'] },
   loto: { id: 'loto', icon: '🍀', label: 'Le gros lot', gaugeLabel: 'Usage exemplaire', riskLabel: 'Soupçons et tentations', months: 6, drift: { gauge: 2, risk: 4 },
@@ -324,6 +328,27 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.popularity = clamp(s.popularity - 8);
         economy(d).growth -= 1;
         lose('L’exode', 'Des millions de Français partis vers le Sud, des villages vidés. Le pays mettra des années à se relever.');
+      }
+      break;
+    case 'tempete_solaire':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 5); s.popularity = clamp(s.popularity + 3);
+        win('Le pays a tenu', 'Groupes électrogènes, cartes papier, solidarité : la France traverse la tempête sans drame. Les plans d’urgence deviennent un modèle.');
+      } else {
+        s.popularity = clamp(s.popularity - 4);
+        economy(d).growth -= 0.3;
+        lose('Le grand black-out numérique', 'Trois semaines de chaos : commerces fermés, hôpitaux sous groupes électrogènes. On cherche des responsables.');
+      }
+      break;
+    case 'expo_universelle':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5); s.influence = clamp(s.influence + 3);
+        d.intl.prestige = clamp(d.intl.prestige + 6); economy(d).growth += 0.2;
+        win('Une Exposition triomphale', '45 millions de visiteurs, une tour de verre devenue symbole, et des contrats signés avec le monde entier.');
+      } else {
+        s.credibility = clamp(s.credibility - 5);
+        economy(d).deficit += 0.15;
+        lose('L’Exposition des retards', 'Pavillons inachevés, budget triplé, files d’attente géantes : l’« Expo des grues » fait rire l’Europe.');
       }
       break;
     case 'seisme':

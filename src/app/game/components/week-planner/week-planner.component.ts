@@ -45,6 +45,12 @@ export function blockingOverlay(st: { scene?: unknown; debate?: unknown; protest
   return !!(st.scene || st.debate || st.protest || st.vote || (st.minigames ?? []).length);
 }
 
+/** Un petit pictogramme qui s'envole quand on planifie */
+const CATEGORY_ICONS: Partial<Record<string, string>> = {
+  terrain: '🤝', dossiers: '📚', parti: '🌹', reseau: '☎️', crise: '🚨', couronne: '👑', loge: '🔺', territoire: '🏗️',
+  sante: '💪', repos: '😴', guerre: '🎖️', international: '🌍', elysee: '🇫🇷', fonction: '🏛️', intrigue: '🕯️', zombie: '🧟', apocalypse: '🔥', contact: '👽',
+};
+
 @Component({
   selector: 'app-week-planner',
   imports: [DecimalPipe],
@@ -224,6 +230,9 @@ export class WeekPlannerComponent {
     if (ok && event) {
       this.anim.fly(event.currentTarget as Element, document.querySelector('app-week-planner .plan-list'), `${action.cost.ap} PA`);
       if (action.category === 'medias') this.anim.mic(event.currentTarget as Element);
+      const icon = CATEGORY_ICONS[action.category];
+      if (icon) this.anim.floatAt(event.currentTarget as Element, icon, 'neutral', 120);
+      if (action.category === 'argent') this.anim.coins(event.currentTarget as Element, true, 5);
     }
   }
 
