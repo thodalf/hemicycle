@@ -2,7 +2,7 @@ import { Effect, GameState, Recruit } from '../models/game.models';
 import { STAFF_BY_ROLE } from '../data/staff';
 import { applyEffects, availableFunds, pushNews } from './effects';
 import { fireRecruit, hireRecruit } from './recruits';
-import { TEAM_TIPS } from './phone';
+import { TEAM_TIPS, addMessage } from './phone';
 import { Rng, clamp, frSigned } from './rng';
 
 /* ============================================================
@@ -113,9 +113,15 @@ export function monthlyTeam(d: GameState, rng: Rng): void {
     // Une fois par an, le marché augmente
     if (d.week > r.hiredWeek && (d.week - r.hiredWeek) % 12 === 0) r.ask = round50(r.ask * 1.03);
     r.morale = clamp(moraleOf(r) + (moraleTarget(r) - moraleOf(r)) * 0.15);
-    if (r.morale < 25 && rng.chance(0.12)) {
+    // Avant de partir, on prévient : un message au téléphone, et une dernière chance de le ou la retenir
+    const warned = r.warnedWeek !== undefined && d.week - r.warnedWeek <= 3;
+    if (r.morale < 35 && !warned && (r.warnedWeek === undefined || d.week - r.warnedWeek > 6)) {
+      warnLeaving(d, r);
+      continue;
+    }
+    if (r.morale < 25 && warned && d.week > r.warnedWeek! && rng.chance(0.35)) {
       fireRecruit(d, r.id);
-      pushNews(d, 'systeme', 'negative', `${r.name} démissionne`, `${STAFF_BY_ROLE.get(r.role)?.title ?? 'Votre collaborateur·rice'} trouve mieux payé ailleurs.`);
+      pushNews(d, 'systeme', 'negative', `${r.name} démissionne`, `${STAFF_BY_ROLE.get(r.role)?.title ?? 'Votre collaborateur·rice'} vous avait prévenu·e : il ou elle trouve mieux ailleurs.`);
       continue;
     }
     if (r.morale >= 80 && rng.chance(0.2)) {
@@ -126,6 +132,32 @@ export function monthlyTeam(d: GameState, rng: Rng): void {
       }
     }
   }
+}
+
+const LEAVING_LINES = [
+  'Je dois vous parler franchement : je réfléchis à partir. Un cabinet de conseil me fait une offre.',
+  'Je suis épuisé·e et sous-payé·e. Si rien ne change, je pars à la fin du mois.',
+  'Un autre élu m’a approché·e. Je n’ai pas encore dit oui… mais je n’ai pas dit non.',
+  'J’ai besoin de sentir que mon travail compte. Sinon, je m’en vais.',
+];
+
+/** Le message d'alerte : il ou elle songe à partir */
+function warnLeaving(d: GameState, r: Recruit): void {
+  r.warnedWeek = d.week;
+  const title = STAFF_BY_ROLE.get(r.role)?.title ?? 'Collaborateur·rice';
+  const bonus = Math.max(1000, round50(r.salary * 0.8));
+  addMessage(d, {
+    kind: 'sms', who: `equipe:${r.id}`, from: r.name, role: title, urgent: true,
+    text: `⚠️ ${LEAVING_LINES[d.week % LEAVING_LINES.length]}`,
+    replies: [
+      { id: 'augmenter', label: 'Augmenter son salaire de 15 %', effects: [{ kind: 'team', recruitId: r.id, salaryPct: 15, morale: 25 }], answer: 'Merci. Je reste, et je ne vous décevrai pas.' },
+      { id: 'prime', label: `Lui verser une prime (${bonus.toLocaleString('fr-FR')} €)`, effects: [{ kind: 'funds', account: 'personal', delta: -bonus }, { kind: 'team', recruitId: r.id, morale: 18 }], answer: 'C’est un geste qui compte. On continue.' },
+      { id: 'responsabilites', label: 'Lui confier plus de responsabilités', effects: [{ kind: 'team', recruitId: r.id, morale: 12 }, { kind: 'stat', stat: 'energy', delta: 3 }], answer: 'D’accord, je vous laisse une chance. Ne la gâchez pas.' },
+      { id: 'partir', label: 'Le ou la laisser partir', effects: [{ kind: 'team', recruitId: r.id, leave: true }], answer: 'Merci pour tout. Je vous souhaite bonne chance.' },
+    ],
+    missed: [{ kind: 'team', recruitId: r.id, morale: -8 }],
+  });
+  pushNews(d, 'systeme', 'negative', `${r.name} songe à partir`, 'Un message vous attend sur votre téléphone. Sans réponse, il ou elle partira.');
 }
 
 /** Les recrues d'avant cette mise à jour */

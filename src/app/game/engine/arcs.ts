@@ -5,23 +5,25 @@ import { pushNews } from './effects';
  *  Les grands arcs « scénario » qui surviennent en cours de
  *  partie : jamais plus de deux à la fois. Un arc terminé
  *  (grade maximal, ambassade ouverte, monarchie proclamée…)
- *  ne compte plus.
+ *  ne compte plus, même tant qu'il n'est pas clôturé.
  * ============================================================ */
 
 export const MAX_ARCS = 2;
 
 export function activeArcs(d: GameState): string[] {
   const out: string[] = [];
+  // Un scénario arrivé à son terme mais pas encore clôturé est inactif : il ne bloque plus les nouveaux
+  const done = new Set(finishedArcs(d).map(f => f.id));
   if (d.crown && !d.player.flags['monarchie']) out.push('Couronne');
-  if (d.lodge && d.lodge.grade < 4) out.push('Loge');
-  if (d.press) out.push('Rédaction');
-  if (d.mole) out.push('Infiltration');
-  if (d.alien && d.alien.phase < 4) out.push('Premier contact');
+  if (d.lodge && !done.has('lodge')) out.push('Loge');
+  if (d.press && !done.has('press')) out.push('Rédaction');
+  if (d.mole && !done.has('mole')) out.push('Infiltration');
+  if (d.alien && !done.has('alien')) out.push('Premier contact');
   if (d.war) out.push('Guerre');
   if (d.plot) out.push('Complot');
   if (d.zombie && !d.zombie.vaccine) out.push('Épidémie Z');
-  if (d.apocalypse && d.apocalypse.phase < 4) out.push('Fin du monde');
-  const names = { cyber: 'Cyberattaque', proces: 'Procès', jo: 'Jeux olympiques', dissolution: 'Dissolution', krach: 'Krach financier', megafeux: 'Méga-feux', agriculteurs: 'Révolte des campagnes', taupe: 'Taupe', blackout: 'Black-out', crue: 'Crue de la Seine', secheresse: 'Guerre de l’eau', autonomie: 'Autonomie régionale', ia: 'IA de l’État', frelons: 'Frelons géants', mars: 'Mission martienne', napoleon: 'Retour de Napoléon', atlantide: 'Atlantide', ia_candidate: 'IA candidate', grand_hiver: 'Grand hiver', sosie: 'Le sosie', greve_generale: 'Grève générale', templiers: 'Trésor des Templiers', eurovision: 'Eurovision', comete: 'La comète', referendum: 'Référendum', seisme: 'Séisme', loto: 'Le gros lot', tempete_solaire: 'Tempête solaire', expo_universelle: 'Exposition universelle', penurie_medicaments: 'Pénurie de médicaments', train_futur: 'Train du futur', pandas: 'Les pandas', coupe_monde: 'Coupe du monde', jubile: 'Jubilé royal', diamants: 'Les diamants', ours: 'Le retour des ours', penurie_essence: 'Pénurie d’essence', capitale_culture: 'Capitale de la culture' } as const;
+  if (d.apocalypse && !done.has('apocalypse')) out.push('Fin du monde');
+  const names = { cyber: 'Cyberattaque', proces: 'Procès', jo: 'Jeux olympiques', dissolution: 'Dissolution', krach: 'Krach financier', megafeux: 'Méga-feux', agriculteurs: 'Révolte des campagnes', taupe: 'Taupe', blackout: 'Black-out', crue: 'Crue de la Seine', secheresse: 'Guerre de l’eau', autonomie: 'Autonomie régionale', ia: 'IA de l’État', frelons: 'Frelons géants', mars: 'Mission martienne', napoleon: 'Retour de Napoléon', atlantide: 'Atlantide', ia_candidate: 'IA candidate', grand_hiver: 'Grand hiver', sosie: 'Le sosie', greve_generale: 'Grève générale', templiers: 'Trésor des Templiers', eurovision: 'Eurovision', comete: 'La comète', referendum: 'Référendum', seisme: 'Séisme', loto: 'Le gros lot', tempete_solaire: 'Tempête solaire', expo_universelle: 'Exposition universelle', penurie_medicaments: 'Pénurie de médicaments', train_futur: 'Train du futur', pandas: 'Les pandas', coupe_monde: 'Coupe du monde', jubile: 'Jubilé royal', diamants: 'Les diamants', ours: 'Le retour des ours', penurie_essence: 'Pénurie d’essence', capitale_culture: 'Capitale de la culture', canicule: 'Canicule', hacker: 'Le hacker' } as const;
   for (const [id, a] of Object.entries(d.crises ?? {})) if (a) out.push(names[id as keyof typeof names]);
   return out;
 }

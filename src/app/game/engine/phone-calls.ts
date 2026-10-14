@@ -93,12 +93,12 @@ export function monthlyIncomingCall(d: GameState, rng: Rng, add: (m: Omit<PhoneM
   // Les appels du mois passé sans réponse : manqués
   for (const m of msgs) {
     if (!m.urgent || m.answered || m.week >= d.week) continue;
-    m.answered = '📵 Appel manqué';
+    m.answered = m.kind === 'appel' ? '📵 Appel manqué' : '📵 Resté sans réponse';
     m.read = true;
     if (m.missed?.length) {
       const out = applyEffects(d, m.missed, {}, rng);
       m.summary = out;
-      pushNews(d, 'actu', 'negative', `Appel manqué : ${m.from}`, `Vous n’avez pas décroché. ${out.join(' · ')}`.trim());
+      pushNews(d, 'actu', 'negative', `${m.kind === 'appel' ? 'Appel manqué' : 'Message ignoré'} : ${m.from}`, `Vous n’avez pas décroché. ${out.join(' · ')}`.trim());
     }
   }
   const order = RANKS[d.player.rankId]?.order ?? 0;

@@ -539,6 +539,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'canicule_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.canicule && !d.player.flags['caniculeDone'] && d.week > 10,
+    build: () => ({
+      title: 'Alerte rouge canicule',
+      context: 'Météo-France annonce 46 °C dans le Sud et des nuits tropicales pendant trois semaines. Les préfets attendent des consignes.',
+      choices: [
+        c('plan', 'Déclencher le plan canicule au maximum', [cr('canicule', 7, 3, true), { kind: 'flag', key: 'caniculeDone', value: true }, s('credibility', 2)], 'Salles fraîches, horaires aménagés, bénévoles mobilisés : la machine se met en route.'),
+        c('attendre', 'Attendre de voir si les prévisions se confirment', [cr('canicule', 2, 6, true), { kind: 'flag', key: 'caniculeDone', value: true }], 'Les prévisions se confirment. Trois jours ont été perdus.'),
+      ],
+    }),
+  },
+  {
+    tag: 'hacker_gate', weight: 0.4, minRank: 'depute', eligible: d => !d.crises?.hacker && !d.player.flags['hackerDone'] && d.week > 24,
+    build: () => ({
+      title: '« Robespierre » frappe',
+      context: 'Un pirate publie les messages privés de trois ministres. Dans sa revendication, il cite votre nom parmi « les prochains ».',
+      choices: [
+        c('transparence', 'Publier vous-même vos agendas et vos frais', [cr('hacker', 6, 2, true), { kind: 'flag', key: 'hackerDone', value: true }, s('credibility', 3)], '« Je n’ai rien à cacher. » Le pirate perd une partie de son pouvoir sur vous.'),
+        c('plainte', 'Porter plainte et ne rien dire de plus', [cr('hacker', 3, 5, true), { kind: 'flag', key: 'hackerDone', value: true }], 'Les enquêteurs prennent l’affaire. Le pirate, lui, prépare la suite.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1374,9 +1396,55 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'canicule_ehpad', weight: 1, eligible: d => !!d.crises?.canicule,
+    build: () => ({
+      title: 'Un Ehpad sans climatisation',
+      context: 'Une aide-soignante filme un Ehpad à 38 °C dans les chambres. La vidéo fait le tour du pays.',
+      choices: [
+        c('climatiseurs', 'Faire livrer des climatiseurs mobiles dans la nuit', [cr('canicule', 6, -4), { kind: 'funds', account: 'campaign', delta: -2000 }], 'Les camions arrivent à 3 h du matin. La vidéo suivante montre des sourires.'),
+        c('enquete', 'Ouvrir une enquête sur la direction', [cr('canicule', 1, 2), s('credibility', 1)], 'Juste, mais lent : la chaleur, elle, n’attend pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'canicule_standard', weight: 0.8, eligible: d => !!d.crises?.canicule,
+    build: () => ({
+      title: 'La cellule de crise débordée',
+      context: 'Le numéro vert canicule reçoit 40 000 appels par jour. Il manque des bras au standard.',
+      choices: [
+        c('standard', 'Prendre vous-même des appels au standard', [{ kind: 'minigame', gameId: 'standard_ministere', title: 'Au standard de la cellule canicule', reward: [cr('canicule', 7, -3), s('popularity', 2)], penalty: [cr('canicule', 0, 3)] }], 'Casque sur les oreilles, vous décrochez.'),
+        c('benevoles', 'Mobiliser des étudiants volontaires', [cr('canicule', 4, -2), seg2('jeunes', 2)], 'Mille étudiants en une journée : le numéro vert répond à nouveau.'),
+      ],
+    }),
+  },
+  {
+    tag: 'hacker_fuite', weight: 1, eligible: d => !!d.crises?.hacker,
+    build: () => ({
+      title: 'Vos SMS en ligne',
+      context: '« Robespierre » publie dix de vos SMS. Dans l’un, vous traitez un collègue de « boulet ».',
+      choices: [
+        c('assumer', 'Assumer avec humour et s’excuser auprès du collègue', [cr('hacker', 4, -3), s('popularity', 1)], '« J’ai dit boulet ? Je voulais dire pilier. » La salle rit, le collègue moins.'),
+        c('nier', 'Dénoncer des faux', [cr('hacker', 1, 5), s('credibility', -2)], 'Les métadonnées prouvent que les messages sont authentiques. Aïe.'),
+      ],
+    }),
+  },
+  {
+    tag: 'hacker_contact', weight: 0.8, eligible: d => !!d.crises?.hacker,
+    build: () => ({
+      title: '« Robespierre » vous écrit',
+      context: 'Le pirate vous contacte directement : il vous épargnera si vous dénoncez publiquement « la corruption du système ».',
+      choices: [
+        c('enqueteurs', 'Transmettre le message aux enquêteurs', [cr('hacker', 7, 2)], 'Grâce à votre message, les enquêteurs remontent une adresse IP.'),
+        c('ignorer', 'Ne pas répondre', [cr('hacker', 2, 1)], 'Silence. Le pirate passe à quelqu’un d’autre… pour l’instant.'),
+      ],
+    }),
+  },
 ];
 
 // ── Fuite dans l'équipe, crise de culte ─────────────────────
+
+const seg2 = (segment: 'jeunes' | 'retraites' | 'populaires' | 'cadres' | 'ruraux', delta: number): Effect => ({ kind: 'segment', segment, delta });
 
 export const MISC_ARC_EVENTS: RandomEvent[] = [
   {

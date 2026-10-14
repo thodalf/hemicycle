@@ -83,6 +83,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Raffineries en grève et dépôts bloqués : une station sur trois est à sec.', 'Files de deux kilomètres, jerricans, rationnement : le pays roule au ralenti.', 'Les camions-citernes reviennent. Il faut tenir jusqu’au bout.'] },
   capitale_culture: { id: 'capitale_culture', icon: '🎭', label: 'Capitale européenne de la culture', gaugeLabel: 'Rayonnement', riskLabel: 'Fiasco artistique', months: 9, drift: { gauge: 3, risk: 3 },
     stages: ['Votre ville candidate au titre de capitale européenne de la culture… et l’emporte.', 'Programmation, chantiers, mécènes : l’année se prépare dans la fièvre.', 'Le rideau se lève : douze mois de festivals sous les yeux de l’Europe.'] },
+  canicule: { id: 'canicule', icon: '🌡️', label: 'La canicule de 46 °C', gaugeLabel: 'Protection des plus fragiles', riskLabel: 'Saturation des hôpitaux', months: 3, drift: { gauge: 4, risk: 7 },
+    stages: ['Un dôme de chaleur s’installe : 46 °C à Montpellier, 41 °C à Paris, des nuits à 30 °C.', 'Ehpad, hôpitaux, crèches : tout le pays cherche de la fraîcheur.', 'La chaleur reflue lentement. Le bilan approche.'] },
+  hacker: { id: 'hacker', icon: '💻', label: 'Le hacker justicier', gaugeLabel: 'Contre-enquête', riskLabel: 'Fuites', months: 6, drift: { gauge: 3, risk: 5 },
+    stages: ['Un pirate anonyme, « Robespierre », publie les messages privés de trois ministres et promet « tout le reste ».', 'Chaque semaine, une nouvelle fuite : notes de frais, SMS, rendez-vous discrets.', 'Les enquêteurs se rapprochent. « Robespierre » annonce sa dernière salve.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -442,6 +446,26 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         s.credibility = clamp(s.credibility - 4);
         lose('Le rideau tombe trop tôt', 'Programmation annulée, budgets dépassés, salles vides : l’Europe retiendra surtout les polémiques.');
+      }
+      break;
+    case 'canicule':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 5); s.popularity = clamp(s.popularity + 3);
+        electorate(d).offsets.retraites = clamp(electorate(d).offsets.retraites + 2, -30, 30);
+        win('L’été tenu', 'Salles rafraîchies, appels aux personnes isolées, renforts dans les hôpitaux : le plan canicule a tenu. Le pays respire.');
+      } else {
+        s.popularity = clamp(s.popularity - 5);
+        electorate(d).offsets.retraites = clamp(electorate(d).offsets.retraites - 3, -30, 30);
+        lose('L’été noir', 'Urgences débordées, Ehpad sans climatisation : on vous reproche d’avoir réagi trop tard.');
+      }
+      break;
+    case 'hacker':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 5); p.scandalExposure = clamp(p.scandalExposure - 10);
+        win('« Robespierre » arrêté', 'Un étudiant de 22 ans, interpellé dans une chambre de bonne. Vos messages, eux, ne contenaient rien de honteux.');
+      } else {
+        s.credibility = clamp(s.credibility - 5); p.scandalExposure = clamp(p.scandalExposure + 12);
+        lose('Les fuites continuent', '« Robespierre » court toujours, et vos SMS les plus maladroits font la une.');
       }
       break;
     case 'tempete_solaire':

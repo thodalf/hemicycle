@@ -352,6 +352,24 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Le cirque chinois a confirmé ! Le chantier de l’opéra, beaucoup moins.', effects: [{ kind: 'crisis', arc: 'capitale_culture', gauge: 4 }] }) },
     ],
   },
+  // ── La canicule ──
+  {
+    key: 'sc:canicule', icon: '🌡️', when: d => !!d.crises?.canicule,
+    name: () => 'Dr Sabine Ollier', role: () => 'Cheffe des urgences du CHU de Montpellier',
+    options: () => [
+      { id: 'sc_canicule_point', label: 'Faire le point sur les urgences', hint: 'Elle répond entre deux patients.', ask: 'Comment tiennent les urgences ?', cooldown: 1,
+        run: () => ({ answer: 'On tient. Mais il me faut des lits de plus avant le week-end.', effects: [{ kind: 'crisis', arc: 'canicule', gauge: 3, risk: -3 }] }) },
+    ],
+  },
+  // ── Le hacker ──
+  {
+    key: 'sc:hacker', icon: '💻', when: d => !!d.crises?.hacker,
+    name: () => 'Commandante Yasmine Arfaoui', role: () => 'Cheffe de la cellule cyber de la police judiciaire',
+    options: () => [
+      { id: 'sc_hacker_point', label: 'Demander où en est la traque', hint: 'Elle ne dit jamais tout.', ask: 'Vous approchez de « Robespierre » ?', cooldown: 1,
+        run: () => ({ answer: 'Il a fait une erreur hier : il s’est connecté depuis un café du 11ᵉ.', effects: [{ kind: 'crisis', arc: 'hacker', gauge: 4 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -435,7 +453,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

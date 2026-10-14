@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume';
 
 export interface TriItem {
   text: string;
@@ -512,6 +512,18 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'valise_voyage', kind: 'valise', icon: '🧳', title: 'La valise du déplacement',
     rule: 'Lisez le programme, puis remplissez la valise : ce qui servira vraiment, dans la limite du poids.',
+  },
+  {
+    id: 'arithmetique_majorite', kind: 'majorite', icon: '🧮', title: 'L’arithmétique de la majorité',
+    rule: 'Réunissez 289 sièges avec les groupes de l’hémicycle, en gardant la coalition la plus cohérente possible.',
+  },
+  {
+    id: 'standard_ministere', kind: 'standard', icon: '☎️', title: 'Le standard qui explose',
+    rule: 'Chaque appel au bon ministère, le plus vite possible : si la file d’attente déborde, le standard saute.',
+  },
+  {
+    id: 'plume_discours', kind: 'plume', icon: '✒️', title: 'La plume',
+    rule: 'Remettez le discours dans l’ordre : accroche, constat, cause, proposition, appel final.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',

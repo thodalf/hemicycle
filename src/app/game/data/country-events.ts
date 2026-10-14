@@ -962,6 +962,54 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'ev_plume_malade', weight: 0.5, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Votre plume a la grippe',
+      context: 'Le grand discours est demain matin. Votre plume est clouée au lit avec 40 de fièvre ; il ne reste qu’un brouillon en désordre.',
+      choices: [
+        c('ecrire', 'Remettre le discours en ordre soi-même', [{ kind: 'minigame', gameId: 'plume_discours', title: 'Le discours de la nuit', reward: [s('credibility', 3), s('popularity', 2)], penalty: [s('popularity', -2)] }], 'Café, lampe de bureau, brouillon étalé sur la table.'),
+        c('lire', 'Lire le texte d’un ancien discours', [s('credibility', -1)], 'Un journaliste reconnaît des phrases de l’an dernier. Gênant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_standard_sature', weight: 0.5, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Votre numéro dans le journal',
+      context: 'Une coquille du quotidien régional publie votre numéro de permanence en une. Le standard explose.',
+      choices: [
+        c('decrocher', 'Décrocher vous-même', [{ kind: 'minigame', gameId: 'standard_ministere', title: 'Le standard en folie', reward: [s('popularity', 3), seg('populaires', 2)], penalty: [s('stress', 4)] }], 'Le premier appel : un monsieur dont le chien aboie trop.'),
+        c('repondeur', 'Mettre un répondeur', [s('popularity', -1)], '« Votre appel est important pour nous. » Pas tant que ça, visiblement.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_nuit_tractations', weight: 0.5, minRank: 'depute',
+    build: () => ({
+      title: 'La nuit des tractations',
+      context: 'Le gouvernement vacille : une majorité de rechange est possible si quelqu’un sait compter les sièges cette nuit.',
+      choices: [
+        c('compter', 'Prendre la calculette et les téléphones', [{ kind: 'minigame', gameId: 'arithmetique_majorite', title: 'Trouver 289 sièges avant l’aube', reward: [s('influence', 5), s('politicalCapital', 8)], penalty: [s('influence', -2)] }], 'Tableau blanc, café froid, dix groupes à convaincre.'),
+        c('dormir', 'Laisser les autres négocier', [s('stress', -3)], 'Vous dormez. Au réveil, la majorité s’est faite sans vous.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_collaborateur_debauche', weight: 0.5, eligible: d => d.player.team.length > 0,
+    build: d => {
+      const r = d.player.team[d.week % d.player.team.length];
+      return {
+        title: 'Un rival débauche votre équipe',
+        context: `Un adversaire propose à ${r.name} un poste mieux payé dans son cabinet. Votre collaborateur·rice vous le dit franchement.`,
+        choices: [
+          c('surenchere', 'Surenchérir : +20 % de salaire', [{ kind: 'team', recruitId: r.id, salaryPct: 20, morale: 20 }], 'Il ou elle reste. Votre masse salariale grimpe.'),
+          c('loyaute', 'Faire appel à sa loyauté', [{ kind: 'team', recruitId: r.id, morale: -5 }, s('influence', 1)], 'Il ou elle reste… pour l’instant, et en garde un petit goût amer.'),
+          c('laisser', 'Le ou la laisser partir avec vos vœux', [{ kind: 'team', recruitId: r.id, leave: true }, s('credibility', 1)], 'Un départ élégant. Vous aurez peut-être un allié dans le camp d’en face.'),
+        ],
+      };
+    },
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',
