@@ -1,3 +1,4 @@
+import { reformPledge } from './pledges';
 import { ActionDefinition, DOMAINS, DOMAIN_LABELS, Domain, Effect, EffectContext, ElectionType, GameState, Law, Quote } from '../models/game.models';
 import { RANKS, rankOrder } from '../data/ranks';
 import { DOMAIN_SEGMENTS, accountability, electorate } from './country';
@@ -122,6 +123,7 @@ export function laws(d: GameState): Law[] {
 export function recordLaw(d: GameState, title: string, domain: Domain): void {
   laws(d).push({ id: nextId(d, 'loi'), title, domain, week: d.week, mastery: Math.round(d.player.dossiers[domain]?.mastery ?? 30), status: 'en_vigueur' });
   if (laws(d).length > 40) laws(d).splice(0, laws(d).length - 40);
+  reformPledge(d, domain);
 }
 
 /** Chaque mois : évaluation à trois ans, abrogation possible par vos successeurs */

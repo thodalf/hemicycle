@@ -19,6 +19,7 @@ import { monthlyCoalition } from '../engine/coalition';
 import { monthlyApocalypse } from '../engine/apocalypse';
 import { monthlyImage, monthlyLaws, monthlyQuotes } from '../engine/legacy';
 import { monthlyNpcLife } from '../engine/npc-life';
+import { monthlyPledges } from '../engine/pledges';
 import { checkAchievements } from '../data/achievements';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { autoMinigames } from '../engine/minigame';
@@ -147,6 +148,7 @@ export class TurnService {
     monthlyImage(d);
     monthlyQuotes(d, rng);
     monthlyLaws(d, rng);
+    monthlyPledges(d);
     monthlyWar(d, rng);
     monthlyAssembly(d, rng);
     weeklyObjectives(d, rng);

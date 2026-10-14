@@ -9,6 +9,7 @@ import { campaignOpensAt } from '../../engine/presidency';
 import { lifeRisks } from '../../engine/life';
 import { DOMAINS, DOMAIN_LABELS } from '../../models/game.models';
 import { pickedMinister } from '../../engine/phone-appoint';
+import { canPush, dropPledge as dropPledgeFn, pledges, pushCost, pushPledge as pushPledgeFn } from '../../engine/pledges';
 
 /** Calendrier présidentiel, candidature et tableau de bord de l'Élysée */
 @Component({
@@ -31,6 +32,28 @@ import { pickedMinister } from '../../engine/phone-appoint';
               @for (m of cabinet(); track m.dom) { <li><span class="muted">{{ m.label }}</span> <strong>{{ m.name }}</strong></li> }
             </ul>
             <small class="muted">Leurs numéros sont dans votre téléphone. Pour remanier, appelez n’importe quel contact : « Lui confier un ministère », « Lui proposer Matignon ».</small>
+          </details>
+        }
+        @if (pledgeRows().length) {
+          <details class="pledges" open>
+            <summary>Promesses de campagne · <span class="mono">{{ pledgeKept() }}/{{ pledgeRows().length }}</span> tenues</summary>
+            <ul>
+              @for (r of pledgeRows(); track r.p.id) {
+                <li [class]="'st-' + r.p.status">
+                  <div class="pl-head"><strong>{{ r.p.theme }}</strong>
+                    <span class="chip" [class.good]="r.p.status === 'tenue'" [class.bad]="r.p.status === 'trahie' || r.p.status === 'abandonnee'">{{ statusLabel(r.p.status) }}</span></div>
+                  <small class="muted">« {{ r.p.label }} » · {{ r.domain }}</small>
+                  <div class="track"><span class="fill" [class.ok]="r.p.progress >= 100" [style.width.%]="r.p.progress"></span></div>
+                  @if (r.p.status === 'en_cours') {
+                    <div class="pl-btns">
+                      <button type="button" class="btn small" [disabled]="!!r.block" [title]="r.block ?? ''" (click)="pushPledge(r.p.id)">Mettre en œuvre · −{{ r.cost }} capital</button>
+                      <button type="button" class="btn small ghost" (click)="dropPledge(r.p.id)">Renoncer</button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+            <small class="muted">Chaque réforme adoptée dans le domaine fait aussi avancer l’engagement. À la fin du mandat, les promesses non tenues coûtent cher ; les promesses tenues comptent à la réélection.</small>
           </details>
         }
         <div class="gauges">
@@ -100,6 +123,11 @@ import { pickedMinister } from '../../engine/phone-appoint';
     }
   `,
   styles: `
+    .pledges { font-size: 12.5px; margin: 4px 0 8px; summary { cursor: pointer; font-weight: 600; } ul { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 8px; }
+      li { display: grid; gap: 3px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+      li.st-tenue { border-color: var(--good); } li.st-trahie, li.st-abandonnee { opacity: .7; }
+      .pl-head { display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+      .pl-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; } .ghost { background: none; } }
     .cabinet { font-size: 12.5px; margin: 4px 0 8px; summary { cursor: pointer; font-weight: 600; } ul { list-style: none; margin: 6px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 3px 12px; } li { display: grid; } }
     .small { font-size: 12.5px; margin: 0 0 10px; }
     .gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
@@ -126,6 +154,22 @@ import { pickedMinister } from '../../engine/phone-appoint';
 })
 export class PresidencyPanelComponent {
   protected readonly game = inject(GameStateService);
+  protected readonly pledgeRows = computed(() => {
+    const s = this.game.s();
+    return pledges(s).map(p => ({ p, domain: DOMAIN_LABELS[p.domain], cost: pushCost(p), block: canPush(s, p) }));
+  });
+  protected readonly pledgeKept = computed(() => this.pledgeRows().filter(r => r.p.status === 'tenue').length);
+  protected statusLabel(st: string): string {
+    return ({ en_cours: 'En cours', tenue: 'Tenue ✓', abandonnee: 'Abandonnée', trahie: 'Non tenue' } as Record<string, string>)[st] ?? st;
+  }
+  protected pushPledge(id: string): void {
+    let done = false;
+    this.game.mutate((d, rng) => { done = pushPledgeFn(d, id, rng).length > 0; });
+    if (done && pledges(this.game.s()).find(x => x.id === id)?.status === 'tenue') this.fx.stamp('Promesse tenue', 'good');
+  }
+  protected dropPledge(id: string): void {
+    this.game.mutate(d => { dropPledgeFn(d, id); });
+  }
   protected readonly turn = inject(TurnService);
   private readonly fx = inject(FxService);
   protected readonly required = PARRAINAGES_REQUIRED;

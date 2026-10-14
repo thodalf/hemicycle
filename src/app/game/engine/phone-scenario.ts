@@ -203,6 +203,30 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Au coude à coude. Ce sont les retraités qui feront la différence.', effects: [{ kind: 'crisis', arc: 'referendum', gauge: 3, risk: -2 }, st('influence', 1)] }) },
     ],
   },
+  // ── Le séisme ──
+  {
+    key: 'sc:seisme', icon: '🏚️', when: d => !!d.crises?.seisme,
+    name: () => 'Colonel Yannick Ferrand', role: () => 'Commandant des secours · zone sinistrée',
+    options: () => [
+      { id: 'sc_seisme_point', label: 'Faire le point avec les secours', hint: 'Il dort deux heures par nuit, dans un camion.', ask: 'Colonel, où en êtes-vous ?', cooldown: 1,
+        run: () => ({ answer: 'Deux villages de plus raccordés à l’eau. Il me faudrait des modules d’hébergement.', effects: [{ kind: 'crisis', arc: 'seisme', gauge: 4 }, st('stress', -1)] }) },
+      { id: 'sc_seisme_renforts', label: 'Lui envoyer des renforts militaires', hint: 'Le génie, des hélicoptères, des bras.', ask: 'Je vous envoie le génie militaire. Ça vous aide ?', cooldown: 4,
+        run: () => ({ answer: 'Énormément. Les routes seront dégagées en une semaine.', effects: [{ kind: 'crisis', arc: 'seisme', gauge: 8, risk: -4 }, st('politicalCapital', -4)] }) },
+    ],
+  },
+  // ── Le gros lot ──
+  {
+    key: 'sc:loto', icon: '🍀', when: d => !!d.crises?.loto,
+    name: () => 'Maître Claire Dubreuil', role: () => 'Notaire · gestion de votre gain',
+    options: () => [
+      { id: 'sc_loto_conseil', label: 'Lui demander conseil', hint: 'Quarante ans de successions et de gros lots.', ask: 'Qu’est-ce que je dois faire de tout cet argent ?', cooldown: 2,
+        run: () => ({ answer: 'Ne rien acheter pendant six mois, et donner avant qu’on ne vous demande. Croyez-moi.', effects: [{ kind: 'crisis', arc: 'loto', gauge: 4, risk: -2 }] }) },
+      { id: 'sc_loto_don', label: 'Faire un don anonyme', hint: 'Un hôpital, une école, sans votre nom… pour l’instant.', ask: 'Je voudrais faire un don, sans que mon nom apparaisse.', cooldown: 4,
+        run: (_d, rng) => rng.chance(0.6)
+          ? { answer: 'C’est fait. Le directeur de l’hôpital pleure au téléphone. Il ne saura jamais que c’est vous.', effects: [{ kind: 'crisis', arc: 'loto', gauge: 8 }, st('stress', -3)] }
+          : { answer: 'C’est fait… mais un journaliste a remonté la piste. Votre générosité fait la une.', effects: [{ kind: 'crisis', arc: 'loto', gauge: 6 }, st('popularity', 2)] } },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -282,8 +306,21 @@ function allContacts(d: GameState): ScenContact[] {
   return [...CONTACTS, ...annexContacts(d)].filter(c => c.when(d));
 }
 
+/** L'âge des personnages des scénarios (il avance avec la partie) */
+const SCEN_AGES: Record<string, number | string> = {
+  'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
+  'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62,
+};
+
+export function scenarioAge(d: GameState, key: string): string {
+  const base = SCEN_AGES[key.startsWith('sc:anx_') ? 'sc:anx' : key] ?? (key.startsWith('sc:anx_') ? 57 : 50);
+  if (typeof base === 'string') return base === 'votre âge, à un jour près' ? `${Math.floor(d.player.age)} ans, comme vous` : base;
+  return `${base + Math.floor(d.week / 12)} ans`;
+}
+
 export function scenarioEntries(d: GameState): PhoneEntry[] {
-  return allContacts(d).map(c => ({ key: c.key, kind: 'scenario', name: c.name(d), role: c.role(d), icon: c.icon }));
+  return allContacts(d).map(c => ({ key: c.key, kind: 'scenario', name: c.name(d), role: `${c.role(d)} · ${scenarioAge(d, c.key)}`, icon: c.icon }));
 }
 
 export function scenarioOptions(d: GameState, e: PhoneEntry, block?: string): CallOption[] {

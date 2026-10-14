@@ -651,6 +651,8 @@ export interface PresidencyState {
   reforms: number;
   cohabitation: boolean;
   lastCrisisWeek: number;
+  /** Promesses de campagne devenues engagements */
+  pledges?: import('../engine/pledges').Pledge[];
 }
 
 /** Projet au long cours en cours */
@@ -1449,7 +1451,7 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
-  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum';
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

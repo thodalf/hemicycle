@@ -8,14 +8,17 @@ import { ArcadeResult } from './arcade-save';
 
 const frDate = (day: string) => day.split('-').reverse().join('/');
 
+/** Le site du jeu, ajouté à chaque partage */
+export const SHARE_URL = 'https://hemicycle.linereve.com/';
+
 export function shareText(r: ArcadeResult): string {
   if (r.kind === 'grille') {
     const lines = [0, 1, 2].map(i => [0, 1, 2].map(j => (r.cells[i * 3 + j] ? '🟩' : '🟥')).join(''));
     const tail = r.outcome === 'complete' ? (r.mistakes ? `${r.mistakes} erreur${r.mistakes > 1 ? 's' : ''}` : 'sans faute !') : r.outcome === 'perdu' ? 'plus d’essais' : 'grille rendue';
-    return [`${r.icon} Hémicycle · ${r.title} du ${frDate(r.day)}`, `${r.found}/9 · ${tail}`, ...lines].join('\n');
+    return [`${r.icon} Hémicycle · ${r.title} du ${frDate(r.day)}`, `${r.found}/9 · ${tail}`, ...lines, '', `Jouez aussi : ${SHARE_URL}`].join('\n');
   }
   const em = { ok: '🟥', mal: '🟨', non: '🟦' } as const;
-  return [`${r.icon} Hémicycle · ${r.title} du ${frDate(r.day)}`, `${r.found ? r.guesses.length : 'X'}/6 · ${r.word.length} lettres`, ...r.guesses.map(g => g.marks.map(m => em[m]).join(''))].join('\n');
+  return [`${r.icon} Hémicycle · ${r.title} du ${frDate(r.day)}`, `${r.found ? r.guesses.length : 'X'}/6 · ${r.word.length} lettres`, ...r.guesses.map(g => g.marks.map(m => em[m]).join('')), '', `Jouez aussi : ${SHARE_URL}`].join('\n');
 }
 
 function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
@@ -51,9 +54,9 @@ export async function shareImage(r: ArcadeResult): Promise<Blob | null> {
       c.fillText(ok ? '✓' : '✗', x0 + j * (size + gap) + size / 2, y0 + i * (size + gap) + size / 2 + 30);
     }
     c.fillStyle = '#ffffff'; c.font = '700 60px system-ui, sans-serif';
-    c.fillText(`${r.found}/9`, S / 2, 990);
+    c.fillText(`${r.found}/9`, S / 2, 975);
     c.font = '500 30px system-ui, sans-serif'; c.fillStyle = '#c9d6ea';
-    c.fillText(r.outcome === 'complete' ? (r.mistakes ? `${r.mistakes} erreur${r.mistakes > 1 ? 's' : ''} sur ${r.maxMistakes}` : 'Sans faute !') : r.outcome === 'perdu' ? 'Plus d’essais' : 'Grille rendue', S / 2, 1035);
+    c.fillText(r.outcome === 'complete' ? (r.mistakes ? `${r.mistakes} erreur${r.mistakes > 1 ? 's' : ''} sur ${r.maxMistakes}` : 'Sans faute !') : r.outcome === 'perdu' ? 'Plus d’essais' : 'Grille rendue', S / 2, 1020);
   } else {
     const n = r.word.length, rows = 6;
     const size = Math.min(110, Math.floor(860 / n) - 10), gap = 10;
@@ -65,12 +68,12 @@ export async function shareImage(r: ArcadeResult): Promise<Blob | null> {
       c.fillStyle = m ? col[m] : 'rgba(255,255,255,.12)'; c.fill();
     }
     c.fillStyle = '#ffffff'; c.font = '700 60px system-ui, sans-serif';
-    c.fillText(`${r.found ? r.guesses.length : 'X'}/6`, S / 2, 990);
+    c.fillText(`${r.found ? r.guesses.length : 'X'}/6`, S / 2, 975);
     c.font = '500 30px system-ui, sans-serif'; c.fillStyle = '#c9d6ea';
-    c.fillText(r.found ? `Trouvé en ${r.guesses.length} essai${r.guesses.length > 1 ? 's' : ''}` : 'Pas trouvé cette fois', S / 2, 1035);
+    c.fillText(r.found ? `Trouvé en ${r.guesses.length} essai${r.guesses.length > 1 ? 's' : ''}` : 'Pas trouvé cette fois', S / 2, 1020);
   }
-  c.font = '600 26px system-ui, sans-serif'; c.fillStyle = 'rgba(255,255,255,.55)';
-  c.fillText('Hémicycle · simulateur de carrière politique', S / 2, 1070);
+  c.font = '600 26px system-ui, sans-serif'; c.fillStyle = 'rgba(255,255,255,.7)';
+  c.fillText('hemicycle.linereve.com', S / 2, 1068);
   return new Promise(res => cv.toBlob(b => res(b), 'image/png'));
 }
 

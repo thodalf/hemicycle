@@ -1,5 +1,6 @@
 import { dailyPlayed, dailyWord, markDailyPlayed } from '../../../engine/daily';
 import { Component, DestroyRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
+import { FxService } from '../../../services/fx.service';
 import { MinigameDef } from '../../../data/minigames';
 import { MotResult, MotSave, clearSave, loadSave, saveResult, writeSave } from '../../../engine/arcade-save';
 import { todayKey } from '../../../engine/daily';
@@ -100,6 +101,7 @@ export class MotGameComponent {
   protected readonly shaking = signal(false);
   private over = false;
   protected score = 0;
+  private readonly fx = inject(FxService);
   protected readonly result = signal<MotResult | null>(null);
   private timer: ReturnType<typeof setInterval> | null = null;
 
@@ -191,6 +193,8 @@ export class MotGameComponent {
     this.current.set(this.word[0]);
     const key = this.saveKey();
     if (key) writeSave(key, { kind: 'mot', guesses: this.guesses().map(x => x.text) });
+    const ok = marks.filter(m => m === 'ok').length;
+    if (g !== this.word && ok > 1) setTimeout(() => this.fx.float(`${ok} bien placées`, 'good', window.innerWidth / 2, window.innerHeight * 0.4), 450);
     if (g === this.word) { this.finish(true, ['Du premier coup !', 'Bravo !', 'Bien joué !', 'Trouvé !', 'Trouvé, de justesse', 'Ouf, trouvé !'][this.guesses().length - 1]); return; }
     this.miss.emit();
     if (this.guesses().length >= ROWS) this.finish(false, 'Perdu…');
@@ -202,6 +206,13 @@ export class MotGameComponent {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
     this.message.set(`${text} Le mot était ${this.word}.`);
+    if (found) {
+      this.fx.stamp(this.word, 'good', `Trouvé en ${this.guesses().length} essai${this.guesses().length > 1 ? 's' : ''}`);
+      const w = window.innerWidth, h = window.innerHeight;
+      [0.3, 0.5, 0.7].forEach((x, i) => setTimeout(() => this.fx.burst(w * x, h * 0.3, 'good', 20), 300 + i * 160));
+    } else {
+      this.fx.stamp('Perdu', 'bad', `C’était ${this.word}`);
+    }
     const key = this.saveKey();
     if (key) clearSave(key);
     if (this.def().daily) markDailyPlayed();

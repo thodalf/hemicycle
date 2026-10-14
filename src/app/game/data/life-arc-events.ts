@@ -396,6 +396,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'seisme_gate', weight: 0.5, minRank: 'conseiller_municipal', eligible: d => !d.crises?.seisme && !d.player.flags['seismeDone'] && d.week > 22,
+    build: () => ({
+      title: 'La terre a tremblé',
+      context: 'À 4 h 17, un séisme de magnitude 6,4 frappe l’arrière-pays niçois. Des villages perchés sont coupés du monde ; des milliers de personnes dorment dehors.',
+      choices: [
+        c('partir', 'Partir sur place dans la nuit', [cr('seisme', 6, 2, true), { kind: 'flag', key: 'seismeDone', value: true }, s('energy', -8), s('popularity', 2)], 'À l’aube, vous êtes dans les décombres avec les pompiers. Les images font le tour du pays.'),
+        c('cellule', 'Piloter la cellule de crise depuis Paris', [cr('seisme', 4, 3, true), { kind: 'flag', key: 'seismeDone', value: true }, s('credibility', 2)], 'Moyens aériens, hôpitaux de campagne : l’organisation est impeccable, mais on vous reproche votre absence.'),
+      ],
+    }),
+  },
+  {
+    tag: 'loto_gate', weight: 0.4, minRank: 'militant', eligible: d => !d.crises?.loto && !d.player.flags['lotoDone'] && d.week > 10,
+    build: () => ({
+      title: 'Les six bons numéros',
+      context: 'Un vendredi soir, devant la télévision, vous vérifiez votre grille : 28 millions d’euros. Vos mains tremblent. Personne d’autre ne le sait… pour l’instant.',
+      choices: [
+        c('annoncer', 'L’annoncer publiquement, tout de suite', [cr('loto', 6, 3, true), { kind: 'flag', key: 'lotoDone', value: true }, s('popularity', 1), { kind: 'funds', account: 'personal', delta: 5000 }], '« Cet argent ne changera pas qui je suis. » Les caméras campent devant chez vous.'),
+        c('secret', 'Garder le secret', [cr('loto', 2, 6, true), { kind: 'flag', key: 'lotoDone', value: true }, { kind: 'funds', account: 'personal', delta: 20000 }, s('stress', 4)], 'Un premier virement discret. Mais un secret de 28 millions ne tient jamais longtemps.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -942,6 +964,50 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('dementir', 'Publier tous vos comptes de campagne', [cr('referendum', 5, -4), s('credibility', 2), { kind: 'exposure', delta: -1 }], 'Transparence totale : la rumeur s’essouffle en trois jours.'),
         c('riposter', 'Riposter en attaquant l’adversaire', [cr('referendum', 3, 3), s('credibility', -1)], 'La campagne devient un pugilat. Les indécis décrochent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'seisme_replique', weight: 1, eligible: d => !!d.crises?.seisme,
+    build: () => ({
+      title: 'Une forte réplique',
+      context: 'Une réplique de magnitude 5,1 fait s’effondrer une école déjà fissurée. Personne à l’intérieur, mais la peur revient.',
+      choices: [
+        c('evacuer', 'Évacuer tous les bâtiments douteux', [cr('seisme', 2, -5), s('popularity', -1), s('energy', -4)], 'Des milliers de personnes de plus sous la tente, mais aucune victime.'),
+        c('expertiser', 'Lancer une expertise rapide bâtiment par bâtiment', [cr('seisme', 5, 2), s('credibility', 1)], 'Deux cents ingénieurs en renfort. Les verdicts tombent, un par un.'),
+      ],
+    }),
+  },
+  {
+    tag: 'seisme_assurances', weight: 0.8, eligible: d => !!d.crises?.seisme,
+    build: () => ({
+      title: 'Les assureurs traînent',
+      context: 'Trois mois après, la moitié des sinistrés n’ont reçu aucune indemnisation. Les assureurs invoquent « des clauses ».',
+      choices: [
+        c('convoquer', 'Convoquer les assureurs, caméras comprises', [cr('seisme', 6, -4), { kind: 'segment', segment: 'populaires', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: -1 }], 'Ils promettent de payer sous trente jours. Vous comptez les jours.'),
+        c('fonds', 'Créer un fonds public d’avance', [cr('seisme', 8, -2), { kind: 'economy', deficit: 0.08 }], 'L’État avance l’argent et se retournera contre les assureurs. Les sinistrés respirent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'loto_famille', weight: 1, eligible: d => !!d.crises?.loto,
+    build: () => ({
+      title: 'Toute la famille appelle',
+      context: 'Un cousin éloigné veut ouvrir un restaurant, une tante a « toujours cru en vous », un ancien camarade de lycée a un projet de start-up.',
+      choices: [
+        c('aider', 'Aider les proches qui en ont vraiment besoin', [cr('loto', 4, -2), s('stress', -2), { kind: 'funds', account: 'personal', delta: -2000 }], 'Une maison de retraite payée pour une grand-tante, des études pour deux neveux.'),
+        c('non', 'Dire non à tout le monde', [cr('loto', 0, 3), s('stress', 3)], 'Les repas de famille deviennent glacials.'),
+      ],
+    }),
+  },
+  {
+    tag: 'loto_presse', weight: 0.8, eligible: d => !!d.crises?.loto,
+    build: () => ({
+      title: '« L’élu·e qui valait 28 millions »',
+      context: 'Un magazine people publie votre gain en couverture, avec une photo de votre maison au téléobjectif.',
+      choices: [
+        c('fondation', 'Annoncer la création d’une fondation', [cr('loto', 10, -4), s('popularity', 2)], 'Éducation, santé, patrimoine : la fondation portera votre nom… et vos engagements.'),
+        c('plainte', 'Porter plainte pour atteinte à la vie privée', [cr('loto', 0, 2), s('credibility', 1)], 'Vous gagnerez le procès. Pas la bataille de l’image.'),
       ],
     }),
   },

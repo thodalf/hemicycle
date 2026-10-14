@@ -598,6 +598,33 @@ const COUNTRY: ActionDefinition[] = [
     description: 'Cent vingt kilomètres en trois jours, de mairie en mairie, sans voiture.', cost: { ap: 1, energy: 12 }, cooldown: 6, effects: [seg('ruraux', 3), dos('ecologie', 2), { kind: 'health', delta: 1 }] },
   { id: 'hommage_disparus', label: 'Rendre hommage aux figures disparues', category: 'parti', minRank: 'conseiller_municipal',
     description: 'Une plaque, une rue, un discours : la mémoire des grands anciens du parti.', cost: { ap: 1, energy: 4 }, cooldown: 6, effects: [{ kind: 'cohesion', delta: 3 }, seg('retraites', 1), st('credibility', 1)] },
+  // Le séisme
+  { id: 'seisme_terrain', label: 'Passer une journée avec les sinistrés', category: 'crise', minRank: 'militant', requires: { arc: 'seisme' },
+    description: 'Mobil-homes, cantine collective, artisans débordés : écouter, noter, débloquer.', cost: { ap: 1, energy: 10 }, cooldown: 2, effects: [cr('seisme', 5, -4), st('popularity', 1)] },
+  { id: 'seisme_reconstruction', label: 'Débloquer un plan de reconstruction', category: 'crise', minRank: 'militant', requires: { arc: 'seisme' },
+    description: 'Normes parasismiques, entreprises locales, calendrier public.', cost: { ap: 1, politicalCapital: 8 }, maxPerMonth: 1, effects: [cr('seisme', 10), eco({ deficit: 0.05 }), dos('territoires', 2)] },
+  { id: 'seisme_concert', label: 'Organiser un concert de solidarité', category: 'crise', minRank: 'militant', requires: { arc: 'seisme' },
+    description: 'Trente artistes, une scène sous les étoiles, et chaque euro pour les villages.', cost: { ap: 1, energy: 6, money: 500 }, cooldown: 4, effects: [cr('seisme', 6, -3), seg('jeunes', 2)] },
+  // Le gros lot
+  { id: 'loto_fondation', label: 'Doter votre fondation', category: 'crise', minRank: 'militant', requires: { arc: 'loto' },
+    description: 'Des millions pour les bourses étudiantes et les hôpitaux de campagne.', cost: { ap: 1, energy: 4 }, maxPerMonth: 1, effects: [cr('loto', 10, -3), dos('education', 2), st('popularity', 1)] },
+  { id: 'loto_conseiller', label: 'Consulter un conseiller en patrimoine éthique', category: 'crise', minRank: 'militant', requires: { arc: 'loto' },
+    description: 'Placements verts, transparence fiscale, aucune niche exotique.', cost: { ap: 1, money: 1000 }, cooldown: 3, effects: [cr('loto', 4, -6), st('credibility', 1)] },
+  { id: 'loto_folie', label: 'Se faire un petit plaisir', category: 'crise', minRank: 'militant', requires: { arc: 'loto' },
+    description: 'Une voiture de collection, juste une. Personne ne le saura.', cost: { ap: 1, energy: 2 }, cooldown: 6, effects: [cr('loto', -4, 8), st('stress', -8), { kind: 'exposure', delta: 3 }] },
+  // Encore du quotidien
+  { id: 'urgences_pediatriques', label: 'Passer une nuit aux urgences pédiatriques', category: 'terrain', minRank: 'militant',
+    description: 'Bronchiolites, fractures, parents épuisés, internes héroïques.', cost: { ap: 1, energy: 10 }, cooldown: 4, effects: [dos('sante', 3), seg('populaires', 1), st('credibility', 1)] },
+  { id: 'cours_eloquence', label: 'Donner un cours d’éloquence en lycée professionnel', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Des élèves qui n’ont jamais pris la parole en public, et qui finissent par vous applaudir.', cost: { ap: 1, energy: 6 }, cooldown: 4, effects: [seg('jeunes', 2), seg('populaires', 1), dos('education', 2)] },
+  { id: 'reunion_commercants', label: 'Réunir les commerçants du centre-ville', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Vitrines vides, loyers trop chers, stationnement : un plan pour le cœur de ville.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [seg('cadres', 2), dos('economie', 2), st('popularity', 1)] },
+  { id: 'visite_caserne', label: 'Visiter une caserne de pompiers volontaires', category: 'terrain', minRank: 'militant',
+    description: 'Un exercice de désincarcération, un café, des vocations à soutenir.', cost: { ap: 1, energy: 6 }, cooldown: 4, effects: [seg('ruraux', 2), dos('securite', 2), st('popularity', 1)] },
+  { id: 'emission_cuisine', label: 'Participer à une émission de cuisine', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Votre blanquette contre celle d’un chef étoilé. Le pays entier regarde.', cost: { ap: 1, energy: 7 }, cooldown: 6, effects: [st('popularity', 3), seg('retraites', 1), st('credibility', -1)] },
+  { id: 'debat_fac_adverse', label: 'Débattre dans un amphi hostile', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Une salle acquise à vos adversaires. Sortir sous les applaudissements serait un exploit.', cost: { ap: 1, energy: 8 }, cooldown: 4, effects: [st('credibility', 3), seg('jeunes', 1), st('stress', 3)] },
 ];
 
 export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...LIFE, ...MINISTRIES, ...COUNTRY, ...APOCALYPSE];

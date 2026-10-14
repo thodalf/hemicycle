@@ -87,6 +87,26 @@ export const ASSETS: AssetDef[] = [
     description: 'Des éditions originales et des rapports reliés. Vos dossiers s’oublient moins vite.',
     perks: { dossierDecay: 0.8 }, onBuy: [st('credibility', 2)],
   },
+  {
+    id: 'chien', label: 'Un chien de refuge', category: 'quotidien', price: 400, upkeep: 90, ostentation: 0, drift: -1, volatility: 0,
+    description: 'Un bâtard au regard tendre, adopté au refuge. Les promenades du soir vous font du bien, et les photos aussi.',
+    perks: { stress: -2, popularity: 0.1 }, onBuy: [st('popularity', 2)],
+  },
+  {
+    id: 'espresso', label: 'Machine à espresso professionnelle', category: 'quotidien', price: 1800, upkeep: 30, ostentation: 1, drift: -0.15, volatility: 0,
+    description: 'Le carburant des nuits de négociation. Vos collaborateurs viennent au bureau avec le sourire.',
+    perks: { energy: 2 },
+  },
+  {
+    id: 'presse', label: 'Abonnements à toute la presse', category: 'quotidien', price: 600, upkeep: 120, ostentation: 0, drift: -1, volatility: 0,
+    description: 'Quotidiens, hebdos, revues spécialisées : vous lisez tout, et vos dossiers s’oublient moins vite.',
+    perks: { dossierDecay: 0.9, influence: 0.05 },
+  },
+  {
+    id: 'piano', label: 'Piano droit', category: 'quotidien', price: 6500, upkeep: 15, ostentation: 2, drift: -0.05, volatility: 0,
+    description: 'Une demi-heure de Chopin avant de dormir. Le stress fond.',
+    perks: { stress: -2 },
+  },
   // ── Véhicules ──
   {
     id: 'citadine', label: 'Citadine électrique', category: 'vehicule', price: 18000, upkeep: 150, ostentation: 1, drift: -0.15, volatility: 0,
@@ -102,6 +122,21 @@ export const ASSETS: AssetDef[] = [
     id: 'sportive', label: 'Voiture de sport', category: 'vehicule', price: 95000, upkeep: 500, ostentation: 9, drift: -0.12, volatility: 0,
     description: 'Le plaisir de conduire… et des photos qui ne passent pas inaperçues.',
     perks: { stress: -3, energy: 1 },
+  },
+  {
+    id: 'scooter', label: 'Scooter électrique', category: 'vehicule', price: 3500, upkeep: 35, ostentation: 0, drift: -0.2, volatility: 0,
+    description: 'Se faufiler entre deux rendez-vous, casque sous le bras.',
+    perks: { energy: 2, stress: -0.5 },
+  },
+  {
+    id: 'camping_car', label: 'Camping-car de campagne', category: 'vehicule', price: 62000, upkeep: 400, ostentation: 4, drift: -0.12, volatility: 0, minRank: 'conseiller_municipal',
+    description: 'Votre permanence ambulante : un tour de France des marchés, café offert.',
+    perks: { popularity: 0.15, energy: -1 }, onBuy: [{ kind: 'segment', segment: 'ruraux', delta: 2 }],
+  },
+  {
+    id: 'helico', label: 'Parts d’hélicoptère en multipropriété', category: 'vehicule', price: 180000, upkeep: 3500, ostentation: 9, drift: -0.1, volatility: 0, minRank: 'depute',
+    description: 'Trois déplacements dans la journée : un point d’action de plus… et des unes assassines.',
+    perks: { ap: 1, energy: 2 },
   },
   // ── Immobilier ──
   {
@@ -124,6 +159,26 @@ export const ASSETS: AssetDef[] = [
     description: 'Piscine, vue sur la mer, voisins influents. Les paparazzi adorent.',
     perks: { stress: -5, influence: 0.4 }, unlocks: 'Recevoir à dîner · Séjour à la campagne · Louer la villa',
   },
+  {
+    id: 'permanence', label: 'Local de permanence en centre-ville', category: 'immobilier', price: 120000, upkeep: 450, ostentation: 1, drift: 0.02, volatility: 0.003, mortgage: true, minRank: 'conseiller_municipal',
+    description: 'Une vitrine, une porte ouverte le samedi : les habitants viennent à vous.',
+    perks: { popularity: 0.2 }, onBuy: [{ kind: 'dossier', domain: 'territoires', delta: 3 }],
+  },
+  {
+    id: 'parking', label: 'Place de parking à Paris', category: 'immobilier', price: 35000, upkeep: 30, ostentation: 0, drift: 0.02, volatility: 0.002,
+    description: 'Le placement le plus parisien qui soit : un loyer chaque mois, sans locataire qui appelle la nuit.',
+    perks: { rent: 160 },
+  },
+  {
+    id: 'chalet', label: 'Chalet à la montagne', category: 'immobilier', price: 420000, upkeep: 900, ostentation: 6, drift: 0.03, volatility: 0.003, mortgage: true, minRank: 'conseiller_municipal',
+    description: 'Ski l’hiver, randonnées l’été, et des voisins qui dirigent de grandes entreprises.',
+    perks: { stress: -4, influence: 0.2 }, unlocks: 'Séjour à la campagne',
+  },
+  {
+    id: 'vignes', label: 'Parcelle de vignes', category: 'immobilier', price: 140000, upkeep: 600, ostentation: 3, drift: 0.03, volatility: 0.006, mortgage: true,
+    description: 'Deux hectares de coteaux, une cuvée à votre nom offerte aux maires du canton.',
+    perks: { rent: 500, influence: 0.1 }, onBuy: [{ kind: 'segment', segment: 'ruraux', delta: 2 }],
+  },
   // ── Luxe & art ──
   {
     id: 'montre', label: 'Montre de luxe', category: 'luxe', price: 9500, upkeep: 0, ostentation: 6, drift: 0.03, volatility: 0.006,
@@ -145,6 +200,21 @@ export const ASSETS: AssetDef[] = [
     description: 'Des invités prestigieux à bord. Une image désastreuse dans l’opinion.',
     perks: { stress: -5, influence: 0.6 },
   },
+  {
+    id: 'stylo', label: 'Stylo plume de collection', category: 'luxe', price: 1500, upkeep: 0, ostentation: 2, drift: 0.02, volatility: 0.003,
+    description: 'Pour signer les lois, un jour. En attendant, les dédicaces.',
+    perks: { credibility: 0.05 }, onBuy: [st('credibility', 1)],
+  },
+  {
+    id: 'street_art', label: 'Œuvre de street art', category: 'luxe', price: 14000, upkeep: 20, ostentation: 3, drift: 0.08, volatility: 0.02,
+    description: 'Un pochoir d’un artiste montant : les jeunes adorent, les galeristes spéculent.',
+    perks: { influence: 0.1 }, onBuy: [{ kind: 'segment', segment: 'jeunes', delta: 2 }],
+  },
+  {
+    id: 'cheval', label: 'Cheval de course', category: 'luxe', price: 75000, upkeep: 2200, ostentation: 8, drift: -0.1, volatility: 0.02, minRank: 'conseiller_municipal',
+    description: 'Les tribunes de Longchamp, les propriétaires influents… et le risque de finir en photo dans un magazine.',
+    perks: { influence: 0.4, stress: -1 },
+  },
   // ── Placements ──
   {
     id: 'livret', label: 'Épargne réglementée (5 000 €)', category: 'placement', price: 5000, upkeep: 0, ostentation: 0, drift: 0.03, volatility: 0, stackable: true,
@@ -160,6 +230,26 @@ export const ASSETS: AssetDef[] = [
     id: 'crypto', label: 'Cryptomonnaies (3 000 €)', category: 'placement', price: 3000, upkeep: 0, ostentation: 0, drift: 0.15, volatility: 0.09, stackable: true,
     description: 'Très volatil. Peut doubler en un trimestre ou fondre en un mois.',
     perks: {},
+  },
+  {
+    id: 'or', label: 'Lingot d’or (12 000 €)', category: 'placement', price: 12000, upkeep: 0, ostentation: 1, drift: 0.04, volatility: 0.012, stackable: true,
+    description: 'La valeur refuge par excellence. Ne rapporte rien, mais tient bon dans les crises.',
+    perks: {},
+  },
+  {
+    id: 'obligations', label: 'Obligations d’État (8 000 €)', category: 'placement', price: 8000, upkeep: 0, ostentation: 0, drift: 0.025, volatility: 0.004, stackable: true,
+    description: 'Prêter à la France : patriotique, sûr, et un petit coupon chaque mois.',
+    perks: { rent: 15 },
+  },
+  {
+    id: 'startup', label: 'Parts d’une start-up locale (5 000 €)', category: 'placement', price: 5000, upkeep: 0, ostentation: 1, drift: 0.12, volatility: 0.07, stackable: true,
+    description: 'Une jeune pousse de votre région : elle peut décupler… ou disparaître.',
+    perks: {}, onBuy: [{ kind: 'segment', segment: 'cadres', delta: 1 }],
+  },
+  {
+    id: 'foret', label: 'Parcelle de forêt (20 000 €)', category: 'placement', price: 20000, upkeep: 40, ostentation: 0, drift: 0.02, volatility: 0.002, stackable: true,
+    description: 'Des chênes qui poussent lentement : un patrimoine pour vos petits-enfants, et pour la planète.',
+    perks: { stress: -0.5 }, onBuy: [{ kind: 'dossier', domain: 'ecologie', delta: 2 }],
   },
 ];
 

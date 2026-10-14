@@ -678,6 +678,61 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'ev_selfie_star', weight: 0.5,
+    build: () => ({
+      title: 'Un selfie avec une star',
+      context: 'Une chanteuse populaire vous croise dans un TGV et propose un selfie. Elle a douze millions d’abonnés… et des positions tranchées.',
+      choices: [
+        c('selfie', 'Accepter avec le sourire', [{ kind: 'segment', segment: 'jeunes', delta: 3 }, s('popularity', 1), s('credibility', -1)], 'La photo bat des records. Ses fans découvrent votre existence.'),
+        c('poli', 'Discuter, mais sans photo', [s('credibility', 1)], 'Une conversation passionnante sur la musique à l’école. Personne n’en saura rien.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_panne_micro', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Le micro coupe',
+      context: 'En plein discours, le micro coupe. Trois cents personnes vous regardent, un technicien s’agite en coulisses.',
+      choices: [
+        c('voix', 'Continuer à pleine voix, debout sur une chaise', [s('popularity', 2), { kind: 'momentum', delta: 2 }, s('energy', -3)], 'La salle se lève. Personne n’oubliera ce discours sans micro.'),
+        c('attendre', 'Attendre que ça revienne', [s('stress', 2)], 'Dix minutes de flottement. On parle surtout de la panne.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_jumeaux_conseil', weight: 0.5, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Un conseil municipal des enfants',
+      context: 'Les élèves de CM2 ont élu leur conseil municipal. Leur première proposition : des toboggans à la place des escaliers de la mairie.',
+      choices: [
+        c('ecouter', 'Les recevoir et étudier leurs idées', [{ kind: 'segment', segment: 'jeunes', delta: 1 }, s('popularity', 2), s('stress', -2)], 'Pas de toboggan, mais un jardin partagé et des bancs dans la cour.'),
+        c('photo', 'Une photo officielle et c’est tout', [s('popularity', 1)], 'Les enfants sont un peu déçus. Les parents aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_brouillard_aeroport', weight: 0.5, minRank: 'depute',
+    build: () => ({
+      title: 'Bloqué·e à l’aéroport',
+      context: 'Le brouillard cloue tous les avions au sol. Vous devez être à Bruxelles demain matin pour une réunion cruciale.',
+      choices: [
+        c('voiture', 'Prendre la route toute la nuit', [s('energy', -10), s('credibility', 1), { kind: 'dossier', domain: 'diplomatie', delta: 2 }], 'Vous arrivez à 8 h 55, cravate de travers. On salue votre ténacité.'),
+        c('visio', 'Participer en visioconférence', [s('energy', 2), { kind: 'dossier', domain: 'diplomatie', delta: -1 }], 'L’écran fige au moment crucial. Votre homologue a parlé à votre place.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_mot_jeu_tele', weight: 0.4,
+    build: () => ({
+      title: 'Défié·e au Metrodoku',
+      context: 'Un humoriste vous met au défi, en direct, de remplir une grille de stations de métro plus vite que lui.',
+      choices: [
+        c('relever', 'Relever le défi', [{ kind: 'minigame', gameId: 'metrodoku', title: 'Le défi de l’humoriste', reward: [s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], penalty: [s('popularity', -1)] }], 'Le chronomètre démarre. Le public retient son souffle.'),
+        c('esquive', '« Je prends la ligne 14, elle est automatique »', [s('popularity', 1)], 'La blague fait sourire. Le défi, lui, reste ouvert.'),
+      ],
+    }),
+  },
 ];
 
 /** Une petite phrase : un moment où une formule peut rester (tirage à part) */

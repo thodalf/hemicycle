@@ -17,7 +17,7 @@ import { copyText, downloadBlob, shareImage, shareText } from '../../engine/arca
               <span class="crit">@if (row.badge) { <i class="lb" [style.background]="row.color">{{ row.badge }}</i> }{{ row.label }}</span>
               @for (c of r.cols; track $index; let j = $index) {
                 @let mine = r.cells[i * 3 + j];
-                <div class="cell" [class.ok]="!!mine">
+                <div class="cell" [class.ok]="!!mine" [style.animation-delay.ms]="(i * 3 + j) * 70">
                   @if (mine) { <b>{{ mine }}</b> } @else { <b class="miss">—</b> }
                   <small>{{ r.answers[i * 3 + j].length }} réponse{{ r.answers[i * 3 + j].length > 1 ? 's' : '' }}</small>
                 </div>
@@ -68,6 +68,11 @@ import { copyText, downloadBlob, shareImage, shareText } from '../../engine/arca
     .cell { display: grid; place-content: center; justify-items: center; gap: 2px; padding: 6px 4px; min-height: 58px; border-radius: 8px; text-align: center;
       border: 2px solid var(--bad); background: var(--bad-soft); b { font-size: 12px; line-height: 1.15; overflow-wrap: anywhere; } small { font-size: 10px; color: var(--ink-3); } }
     .cell.ok { border-color: var(--good); background: var(--good-soft); }
+    .cell { animation: cell-in .45s cubic-bezier(.2,.9,.3,1.3) both; }
+    .tile { animation: cell-in .35s ease both; }
+    .score { animation: cell-in .5s ease both; }
+    @keyframes cell-in { from { transform: scale(.6) rotateX(70deg); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .cell, .tile, .score { animation: none; } }
     .miss { color: var(--bad); }
     .all { font-size: 12.5px; summary { cursor: pointer; font-weight: 600; } ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 5px; max-height: 260px; overflow: auto; }
       li { display: grid; gap: 1px; padding-bottom: 4px; border-bottom: 1px solid var(--line); } .mine { font-weight: 700; color: var(--good); } }

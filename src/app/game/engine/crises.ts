@@ -65,6 +65,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Un volcan islandais a obscurci le ciel : l’été n’est pas venu.', 'Récoltes perdues, rationnement, files d’attente devant les boulangeries.', 'Les premiers rayons percent. Il faut tenir encore un peu.'] },
   sosie: { id: 'sosie', icon: '🎭', label: 'Votre sosie', gaugeLabel: 'Vérité rétablie', riskLabel: 'Dégâts du sosie', months: 6, drift: { gauge: 3, risk: 5 },
     stages: ['Un homme qui vous ressemble trait pour trait inaugure des ronds-points à votre place.', 'Le sosie donne des interviews, signe des pétitions et contredit vos discours.', 'Il annonce votre ralliement… au parti adverse. Il faut le démasquer.'] },
+  seisme: { id: 'seisme', icon: '🏚️', label: 'Le séisme du Sud-Est', gaugeLabel: 'Reconstruction', riskLabel: 'Colère des sinistrés', months: 8, drift: { gauge: 3, risk: 5 },
+    stages: ['Un séisme de magnitude 6,4 frappe l’arrière-pays niçois : villages coupés du monde, milliers de sinistrés.', 'Mobil-homes, gymnases, experts d’assurance : la reconstruction s’organise lentement.', 'Les premiers villages renaissent. Les sinistrés jugeront sur pièces.'] },
+  loto: { id: 'loto', icon: '🍀', label: 'Le gros lot', gaugeLabel: 'Usage exemplaire', riskLabel: 'Soupçons et tentations', months: 6, drift: { gauge: 2, risk: 4 },
+    stages: ['Vous avez gagné 28 millions d’euros au Loto. Pour l’instant, seul·e votre conjoint·e le sait.', 'La rumeur enfle : « l’élu millionnaire ». Chacun vient tendre la main.', 'Il faut trancher : que faire de cette fortune tombée du ciel ?'] },
   comete: { id: 'comete', icon: '☄️', label: 'La comète', gaugeLabel: 'Mission de déviation', riskLabel: 'Panique', months: 6, drift: { gauge: 4, risk: 5 },
     stages: ['Les astronomes confirment : une comète de deux kilomètres croisera l’orbite terrestre dans six mois.', 'La mission européenne de déviation se prépare à Kourou ; les bunkers se vendent à prix d’or.', 'Le vaisseau a décollé. Le monde retient son souffle.'] },
   referendum: { id: 'referendum', icon: '🗳️', label: 'Le référendum d’initiative citoyenne', gaugeLabel: 'Campagne de votre camp', riskLabel: 'Campagne adverse', months: 5, drift: { gauge: 3, risk: 4 },
@@ -320,6 +324,27 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.popularity = clamp(s.popularity - 8);
         economy(d).growth -= 1;
         lose('L’exode', 'Des millions de Français partis vers le Sud, des villages vidés. Le pays mettra des années à se relever.');
+      }
+      break;
+    case 'seisme':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5); s.credibility = clamp(s.credibility + 4);
+        win('Les villages reconstruits', 'Écoles rouvertes, maisons parasismiques, une fête dans chaque village : les sinistrés vous remercient en personne.');
+      } else {
+        s.popularity = clamp(s.popularity - 5);
+        economy(d).deficit += 0.1;
+        lose('Les oubliés du séisme', 'Un an après, des familles vivent toujours en mobil-home. « Abandonnés » titre la presse régionale.');
+      }
+      break;
+    case 'loto':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5); s.credibility = clamp(s.credibility + 3);
+        p.finances.personal += 30000;
+        win('Le gros lot partagé', 'Une fondation, des bourses, un hôpital rénové : le pays salue l’élu·e qui n’a rien gardé pour sa pomme. Vous n’avez gardé que 30 000 € pour refaire la toiture.');
+      } else {
+        s.credibility = clamp(s.credibility - 5); s.popularity = clamp(s.popularity - 3);
+        p.finances.personal += 150000;
+        lose('L’élu·e millionnaire', 'Villa, voiture de sport, soupçons : la presse vous surnomme « Picsou ». Après les avocats et le fisc, il vous reste 150 000 €, et une image abîmée.');
       }
       break;
     case 'comete':

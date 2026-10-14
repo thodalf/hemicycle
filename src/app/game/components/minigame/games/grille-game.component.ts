@@ -1,4 +1,5 @@
 import { Component, DestroyRef, ElementRef, computed, inject, input, output, signal, viewChild } from '@angular/core';
+import { FxService } from '../../../services/fx.service';
 import { MinigameDef } from '../../../data/minigames';
 import { normalize } from '../../../data/departements';
 import { Grid, GridItem, gridFromIds, makeGrid } from '../../../data/grids';
@@ -14,9 +15,10 @@ import { todayKey } from '../../../engine/daily';
   selector: 'app-grille-game',
   imports: [ArcadeResultComponent],
   template: `
-    <div class="doku">
+    <div class="doku" [class.shake]="shaking()">
       <div class="head">
-        <span>Essais restants <strong class="mono">{{ left() }}</strong></span>
+        <span class="lives" [attr.aria-label]="left() + ' erreur(s) encore permise(s)'">Erreurs permises
+          @for (h of hearts(); track $index) { <i class="heart" [class.lost]="!h" aria-hidden="true">{{ h ? '❤️' : '🖤' }}</i> }</span>
         <span><strong class="mono">{{ filled() }}</strong> / 9</span>
       </div>
       <div class="grid" role="grid" [attr.aria-label]="'Grille : ' + grid.set.noun + 's'">
@@ -26,7 +28,7 @@ import { todayKey } from '../../../engine/daily';
           <span class="crit row" [class.long]="r.label.length > 28" role="rowheader">@if (r.badge) { <i class="lb" [style.background]="r.color" [class.light]="light(r.color)">{{ r.badge }}</i> }{{ r.label }}</span>
           @for (c of grid.cols; track c.id; let ci = $index) {
             @let v = cells()[ri][ci];
-            <button type="button" class="cell" role="gridcell" [class.sel]="sel()?.[0] === ri && sel()?.[1] === ci" [class.done]="!!v" [class.reveal]="!!revealed()[ri][ci]"
+            <button type="button" class="cell" role="gridcell" [attr.data-cell]="ri * 3 + ci" [class.wrong]="wrong() === ri * 3 + ci" [class.sel]="sel()?.[0] === ri && sel()?.[1] === ci" [class.done]="!!v" [class.reveal]="!!revealed()[ri][ci]"
               (click)="choose(ri, ci)" [attr.aria-label]="v ? v.name : (r.label + ' et ' + c.label)">
               @if (v) { <b>{{ v.name }}</b>@if (v.tag) { <small>{{ v.tag }}</small> } }
               @else if (revealed()[ri][ci]; as x) { <b>{{ x.name }}</b>@if (x.tag) { <small>{{ x.tag }}</small> } }
@@ -83,7 +85,15 @@ import { todayKey } from '../../../engine/daily';
     .cell b { font-size: 12.5px; line-height: 1.15; overflow-wrap: anywhere; }
     .cell.sel { border-color: #2f6fb3; border-style: solid; background: #eaf2fb; }
     .cell.done { border-style: solid; border-color: var(--good); background: var(--good-soft); cursor: default; animation: pop .35s ease; }
-    .cell.reveal { border-style: solid; opacity: .6; }
+    .cell.reveal { border-style: solid; opacity: .6; animation: reveal .45s ease both; }
+    .cell.wrong { border-color: var(--bad); border-style: solid; background: var(--bad-soft); animation: wobble .4s ease; }
+    .doku.shake .grid { animation: wobble .35s ease; }
+    .lives { display: inline-flex; align-items: center; gap: 4px; }
+    .heart { font-style: normal; font-size: 14px; display: inline-block; transition: transform .3s; }
+    .heart.lost { animation: heartbreak .6s ease; opacity: .6; }
+    @keyframes heartbreak { 0% { transform: scale(1.4); } 40% { transform: scale(.7) rotate(-15deg); } 100% { transform: none; } }
+    @keyframes wobble { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+    @keyframes reveal { from { transform: rotateY(90deg); opacity: 0; } }
     @keyframes pop { 50% { transform: scale(1.06); } }
     .search { position: relative; }
     .search input { width: 100%; box-sizing: border-box; padding: 10px 12px; font: 15px var(--font-body); border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
@@ -116,6 +126,14 @@ export class GrilleGameComponent {
   protected readonly left = signal(12);
   /** Résultat de la partie du jour (salle de jeux) */
   protected readonly result = signal<GridResult | null>(null);
+  protected readonly shaking = signal(false);
+  protected readonly wrong = signal<number | null>(null);
+  protected readonly hearts = computed(() => Array.from({ length: MAX_MISTAKES }, (_, i) => i < this.left()));
+  private readonly fx = inject(FxService);
+  private readonly host = inject(ElementRef<HTMLElement>);
+  private cellEl(i: number): Element | null {
+    return (this.host.nativeElement as HTMLElement).querySelector(`[data-cell="${i}"]`);
+  }
   private readonly box = viewChild<ElementRef<HTMLInputElement>>('box');
   private timer: ReturnType<typeof setInterval> | null = null;
 
@@ -195,6 +213,9 @@ export class GrilleGameComponent {
     if (row.test(x) && col.test(x)) {
       this.cells.update(g => g.map((line, i) => line.map((v, j) => (i === r && j === c ? x : v))));
       this.message.set(`${x.name}${x.tag ? ` (${x.tag})` : ''} : bien vu !`);
+      const el = this.cellEl(r * 3 + c);
+      this.fx.burstAt(el, 'good');
+      this.fx.floatAt(el, ['Bien vu !', 'Exact !', 'Bravo !', '+1'][this.filled() % 4], 'good');
       this.sel.set(null);
       this.persist();
       if (this.filled() === 9) this.finish('Grille complète !');
@@ -203,6 +224,10 @@ export class GrilleGameComponent {
     this.left.update(n => n - 1);
     this.persist();
     this.miss.emit();
+    this.wrong.set(r * 3 + c);
+    this.shaking.set(true);
+    this.fx.floatAt(this.cellEl(r * 3 + c), '−1 ❤️', 'bad');
+    setTimeout(() => { this.shaking.set(false); this.wrong.set(null); }, 450);
     const why = !row.test(x) ? `pas « ${row.label} »` : `pas « ${col.label.toLowerCase()} »`;
     this.message.set(`${x.name} : ${why}.`);
     if (this.left() <= 0) this.finish('Plus d’essais.');
@@ -234,6 +259,17 @@ export class GrilleGameComponent {
     }));
     this.revealed.set(rev);
     const score = this.filled() / 9;
+    // Le verdict, façon une de journal
+    if (this.filled() === 9) {
+      this.fx.stamp('Grille complète', 'good', MAX_MISTAKES - this.left() ? `${MAX_MISTAKES - this.left()} erreur(s)` : 'Sans faute !');
+      const w = window.innerWidth, h = window.innerHeight;
+      [0.3, 0.5, 0.7].forEach((x, i) => setTimeout(() => this.fx.burst(w * x, h * 0.35, 'good', 22), i * 160));
+    } else if (this.left() <= 0) {
+      this.fx.stamp('Plus d’essais', 'bad', `${this.filled()}/9`);
+      this.fx.flash('bad');
+    } else {
+      this.fx.stamp('Grille rendue', 'neutral', `${this.filled()}/9`);
+    }
     this.message.set(`${text} ${this.filled()} case(s) sur 9.`);
     this.progress.emit({ live: score, time: 0 });
     if (key) {

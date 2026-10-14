@@ -2,6 +2,7 @@ import { yearOf } from './calendar';
 import { recordLaw } from './legacy';
 import { DOMAIN_LABELS } from '../models/game.models';
 import { applyAppointment, pmDecision } from './cabinet';
+import { makePledges } from './pledges';
 import { Decision, DecisionChoice, Effect, GameState, PresidentialCalendar, ScheduledElection } from '../models/game.models';
 import { inMonth, monthLabel } from './calendar';
 import { DECLARE_WINDOW, ELECTIONS, FIRST_PRESIDENTIAL_WEEK, MANDATE_MONTHS, PARRAINAGES_REQUIRED, RANKS, rankOrder } from '../data/ranks';
@@ -243,6 +244,7 @@ export function presidentialResult(d: GameState, e: ScheduledElection, winnerId:
       d.presidency.mandates += 1;
       d.presidency.since = d.week;
       d.presidency.approval = clamp(50 + (score - 50) * 0.6);
+      makePledges(d);
     } else {
       applyEffects(d, [{ kind: 'rank', rankId: 'president' }, { kind: 'stat', stat: 'influence', delta: 12 }, { kind: 'stat', stat: 'popularity', delta: 6 }, { kind: 'stat', stat: 'politicalCapital', delta: 25 }], {}, rng);
       startPresidency(d, score, rng);
@@ -299,6 +301,8 @@ export function startPresidency(d: GameState, score: number, rng: Rng): void {
   d.player.flags['menace'] = 0;
   // Premier acte du mandat : nommer son gouvernement
   if (!d.presidency.cohabitation) d.pendingDecisions.push(pmDecision(d));
+  // Le programme de campagne devient une liste d'engagements
+  makePledges(d);
 }
 
 /** Fin de présidence : terme du mandat, défaite, démission ou destitution */
