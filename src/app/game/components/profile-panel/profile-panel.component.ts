@@ -1,6 +1,8 @@
 import { DecimalPipe } from '@angular/common';
 import { TraitsComponent } from '../traits/traits.component';
 import { traitProgress } from '../../engine/traits';
+import { LIFESTYLES, LIFESTYLE_BY_ID, RENOWN_TIERS, XP_PER_PERK, renownTier } from '../../data/lifestyles';
+import { chooseLifestyle, perksIn, stressLevel } from '../../engine/character';
 import { TRAITS, traitLabel } from '../../data/traits';
 import { Component, computed, inject, signal } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
@@ -41,6 +43,40 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
           </details>
         }
       }
+
+      <div class="character">
+        <div class="ch-row">
+          <span class="ch-lbl">Stress</span>
+          <span class="stress" [class]="'lv' + stress().level">@for (i of [1, 2, 3]; track i) { <i [class.on]="stress().level >= i"></i> } {{ stress().label }}</span>
+        </div>
+        <div class="ch-row">
+          <span class="ch-lbl">Renommée</span>
+          <span><b class="mono">{{ tier().icon }}</b> {{ tier().label }} <small class="muted mono">· {{ renown() | number: '1.0-0' }}</small></span>
+        </div>
+        <div class="ch-row">
+          <span class="ch-lbl">Crainte</span>
+          <span class="dread"><i [style.width.%]="dread()"></i></span>
+        </div>
+        <div class="ch-row ls">
+          <span class="ch-lbl">Style de vie</span>
+          <select [value]="lifestyle()?.id ?? ''" (change)="setLifestyle($any($event.target).value)">
+            <option value="" disabled>— choisir —</option>
+            @for (l of lifestyles; track l.id) { <option [value]="l.id">{{ l.icon }} {{ l.label }}</option> }
+          </select>
+        </div>
+        @if (lsDef(); as l) {
+          <div class="ls-tree">
+            <small class="muted">{{ l.desc }} Actions « {{ l.categories.join(' », « ') }} » : expérience doublée.</small>
+            <div class="perks">
+              @for (p of l.perks; track p.id; let i = $index) {
+                <span class="perk" [class.got]="hasPerk(p.id)" [class.next]="!hasPerk(p.id) && i === perkCount()" [title]="p.desc">{{ hasPerk(p.id) ? '✓' : i + 1 }} {{ p.label }}</span>
+              }
+              <span class="perk final" [class.got]="perkCount() >= l.perks.length" title="Trait obtenu au bout de l’arbre">🏅</span>
+            </div>
+            @if (perkCount() < l.perks.length) { <span class="xp"><i [style.width.%]="xpPct()"></i></span> }
+          </div>
+        }
+      </div>
 
       <ul class="gauges">
         @for (g of gauges; track g.key) {
@@ -211,6 +247,19 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
     .via { font-size: 12.5px; margin-bottom: 10px; }
     .pay { display: grid; gap: 8px; .card-title { margin-bottom: 0; } }
     .my-traits { margin: 10px 0 4px; }
+    .character { display: grid; gap: 5px; margin: 6px 0 10px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); font-size: 12.5px; }
+    .ch-row { display: grid; grid-template-columns: 82px 1fr; gap: 8px; align-items: center; }
+    .ch-lbl { color: var(--ink-3); font-size: 11.5px; }
+    .stress { display: inline-flex; gap: 3px; align-items: center; i { width: 10px; height: 10px; border-radius: 3px; background: var(--line); } i.on { background: var(--warn); }
+      &.lv3 i.on { background: var(--bad); animation: throb 1s ease-in-out infinite; } }
+    @keyframes throb { 50% { transform: scale(1.25); } }
+    .dread, .xp { display: block; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; i { display: block; height: 100%; background: #6b3a8f; transition: width .4s ease; } }
+    .xp i { background: var(--accent); }
+    .ls select { font: 12.5px var(--font-body); padding: 3px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+    .ls-tree { display: grid; gap: 4px; }
+    .perks { display: flex; flex-wrap: wrap; gap: 4px; }
+    .perk { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-3);
+      &.got { background: var(--good-soft); color: var(--good); border-color: transparent; } &.next { border-color: var(--accent); color: var(--accent); } &.final.got { animation: throb 1.5s 2; } }
     .trait-path { margin: 0 0 8px; font-size: 12px; summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }
       .tp { display: grid; grid-template-columns: 1fr 70px; gap: 2px 8px; align-items: center; margin-top: 6px; small { grid-column: 1 / -1; } }
       .bar { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; i { display: block; height: 100%; background: var(--accent); } } }
@@ -257,6 +306,17 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
 })
 export class ProfilePanelComponent {
   protected readonly game = inject(GameStateService);
+  protected readonly lifestyles = LIFESTYLES;
+  protected readonly stress = computed(() => stressLevel(this.game.player().stats.stress));
+  protected readonly renown = computed(() => this.game.player().renown ?? 0);
+  protected readonly tier = computed(() => RENOWN_TIERS[renownTier(this.renown())]);
+  protected readonly dread = computed(() => this.game.player().dread ?? 0);
+  protected readonly lifestyle = computed(() => this.game.player().lifestyle ?? null);
+  protected readonly lsDef = computed(() => (this.lifestyle() ? LIFESTYLE_BY_ID.get(this.lifestyle()!.id) ?? null : null));
+  protected readonly perkCount = computed(() => (this.lsDef() ? perksIn(this.game.s(), this.lsDef()!.id) : 0));
+  protected readonly xpPct = computed(() => Math.min(100, ((this.lifestyle()?.xp ?? 0) / XP_PER_PERK) * 100));
+  protected hasPerk(id: string) { return !!this.lifestyle()?.perks.includes(id); }
+  protected setLifestyle(id: string): void { this.game.mutate(d => chooseLifestyle(d, id)); }
   /** Les traits acquis qui se rapprochent */
   protected readonly traitPath = computed(() => traitProgress(this.game.s()).map(r => ({ ...r, icon: TRAITS[r.id].icon, label: traitLabel(r.id, this.game.player().gender) })));
   /** Un trait acquis ce mois-ci arrive en tournoyant */

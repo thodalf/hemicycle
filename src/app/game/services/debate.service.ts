@@ -73,7 +73,7 @@ export class DebateService {
   private settle(d: GameState, rng: Rng): void {
     const debate = d.debate!;
     if (debate.status === 'en_cours') return;
-    debate.rewardSummary = applyEffects(d, debateRewards(debate), {}, rng);
+    debate.rewardSummary = applyEffects(d, debateRewards(debate), { reason: debate.status === 'gagne' ? `Battu·e en débat (${debate.title.toLowerCase()})` : debate.title }, rng);
     const verdict = { gagne: 'remporté', perdu: 'perdu', nul: 'match nul' }[debate.status];
     const tone = debate.status === 'gagne' ? 'positive' : debate.status === 'perdu' ? 'negative' : 'neutral';
     pushNews(d, 'decision', tone, `${debate.title} face à ${debate.opponentName} : ${verdict}${debate.ko ? ' par K.-O.' : ''}`,

@@ -4,6 +4,8 @@ import { Component, DestroyRef, ElementRef, afterNextRender, computed, effect, i
 import { DOMAIN_LABELS } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { DebateArenaComponent } from '../debate-arena/debate-arena.component';
+import { GrandPanelComponent } from '../grand-panel/grand-panel.component';
+import { ActivityComponent } from '../activity/activity.component';
 import { ProgramBuilderComponent } from '../program-builder/program-builder.component';
 import { ProtestComponent } from '../protest/protest.component';
 import { SceneComponent } from '../scene/scene.component';
@@ -70,7 +72,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
     DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ApocalypsePanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, CountryPanelComponent, WorldPanelComponent,
-    WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent, ArcadePanelComponent,
+    WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent, ArcadePanelComponent, GrandPanelComponent, ActivityComponent,
   ],
   template: `
     <header class="topbar">
@@ -142,6 +144,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
         <app-apocalypse-panel />
         <app-plot-panel />
         <app-schemes-panel />
+        <app-grand-panel />
         <app-war-panel />
         @if (!game.s().presidency) { <app-presidency-panel /> }
         <app-presidential-polls />
@@ -188,6 +191,8 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
       <app-scene />
     } @else if (game.s().vote) {
       <app-assembly-vote />
+    } @else if (game.s().activity) {
+      <app-activity />
     } @else if (game.s().minigames.length) {
       <app-minigame />
     } @else if (program.pending() && !builderHidden()) {

@@ -159,7 +159,7 @@ html { -webkit-text-size-adjust: 100%; background: var(--bg); }
   /* En bloc (et non en grille étirée) : la fenêtre grandit avec son contenu et l'overlay défile */
   .overlay:has(> .sheet, > .builder, > .arena) { padding: 0 !important; display: block !important; }
   .overlay > .sheet, .overlay > .builder, .overlay > .arena {
-    max-width: none !important; min-height: 100dvh; border-radius: 0 !important; border: 0 !important;
+    max-width: none !important; min-height: 100dvh; align-content: start; border-radius: 0 !important; border: 0 !important;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }

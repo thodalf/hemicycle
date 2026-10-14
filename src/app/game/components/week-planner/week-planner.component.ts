@@ -41,13 +41,13 @@ const SEASONS = ['❄️', '❄️', '🌱', '🌷', '🌸', '☀️', '☀️',
  * attend une réponse.
  */
 /** Un écran interactif occupe la scène : on ne joue pas d'animation par-dessus */
-export function blockingOverlay(st: { scene?: unknown; debate?: unknown; protest?: unknown; vote?: unknown; minigames?: unknown[] }): boolean {
-  return !!(st.scene || st.debate || st.protest || st.vote || (st.minigames ?? []).length);
+export function blockingOverlay(st: { scene?: unknown; debate?: unknown; protest?: unknown; vote?: unknown; minigames?: unknown[]; activity?: unknown }): boolean {
+  return !!(st.scene || st.debate || st.protest || st.vote || st.activity || (st.minigames ?? []).length);
 }
 
 /** Un petit pictogramme qui s'envole quand on planifie */
 const CATEGORY_ICONS: Partial<Record<string, string>> = {
-  terrain: '🤝', dossiers: '📚', parti: '🌹', reseau: '☎️', crise: '🚨', couronne: '👑', loge: '🔺', territoire: '🏗️',
+  terrain: '🤝', dossiers: '📚', parti: '🌹', reseau: '☎️', crise: '🚨', lutte: '⚖️', eclat: '🌟', couronne: '👑', loge: '🔺', territoire: '🏗️',
   sante: '💪', repos: '😴', guerre: '🎖️', international: '🌍', elysee: '🇫🇷', fonction: '🏛️', intrigue: '🕯️', zombie: '🧟', apocalypse: '🔥', contact: '👽',
 };
 

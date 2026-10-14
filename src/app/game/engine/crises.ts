@@ -87,6 +87,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Un dôme de chaleur s’installe : 46 °C à Montpellier, 41 °C à Paris, des nuits à 30 °C.', 'Ehpad, hôpitaux, crèches : tout le pays cherche de la fraîcheur.', 'La chaleur reflue lentement. Le bilan approche.'] },
   hacker: { id: 'hacker', icon: '💻', label: 'Le hacker justicier', gaugeLabel: 'Contre-enquête', riskLabel: 'Fuites', months: 6, drift: { gauge: 3, risk: 5 },
     stages: ['Un pirate anonyme, « Robespierre », publie les messages privés de trois ministres et promet « tout le reste ».', 'Chaque semaine, une nouvelle fuite : notes de frais, SMS, rendez-vous discrets.', 'Les enquêteurs se rapprochent. « Robespierre » annonce sa dernière salve.'] },
+  barons: { id: 'barons', icon: '🏰', label: 'La fronde des barons', gaugeLabel: 'Unité du parti', riskLabel: 'Sécession', months: 6, drift: { gauge: 3, risk: 5 },
+    stages: ['Les grands élus locaux du parti – maires de grandes villes, présidents de département – menacent de faire sécession.', 'Ils créent une « Ligue des territoires » et débauchent militants et financements.', 'Le congrès de la rupture approche : ils restent, ou ils partent avec la moitié du parti.'] },
+  grand_debat: { id: 'grand_debat', icon: '🗣️', label: 'Le grand débat national', gaugeLabel: 'Participation', riskLabel: 'Défiance', months: 6, drift: { gauge: 3, risk: 4 },
+    stages: ['Face à la colère, un grand débat national est lancé : réunions publiques, cahiers, plateforme en ligne.', 'Des milliers de réunions dans les mairies. Les Français parlent, beaucoup.', 'L’heure des conclusions : seront-elles à la hauteur de la parole donnée ?'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -466,6 +470,27 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         s.credibility = clamp(s.credibility - 5); p.scandalExposure = clamp(p.scandalExposure + 12);
         lose('Les fuites continuent', '« Robespierre » court toujours, et vos SMS les plus maladroits font la une.');
+      }
+      break;
+    case 'barons':
+      if (a.gauge >= a.risk) {
+        s.influence = clamp(s.influence + 6); d.party.cohesion = clamp(d.party.cohesion + 10);
+        p.renown = (p.renown ?? 0) + 30;
+        win('Les barons rentrent au bercail', 'Un accord de gouvernance partagée : les grands élus restent, le parti sort renforcé de l’épreuve.');
+      } else {
+        s.influence = clamp(s.influence - 6); d.party.cohesion = clamp(d.party.cohesion - 15);
+        for (const f of d.party.factions) f.supportForPlayer = clamp(f.supportForPlayer - 6);
+        lose('La sécession des barons', 'Les grands élus claquent la porte avec leurs fédérations et leurs financements. Le parti est amputé.');
+      }
+      break;
+    case 'grand_debat':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5); s.credibility = clamp(s.credibility + 3);
+        p.renown = (p.renown ?? 0) + 25;
+        win('La parole tenue', 'Deux millions de contributions, trente mesures retenues, une loi votée : le grand débat a changé quelque chose.');
+      } else {
+        s.credibility = clamp(s.credibility - 6);
+        lose('Un débat pour rien', 'Les conclusions finissent dans un tiroir. « Ils nous ont fait parler pour mieux ne rien faire. »');
       }
       break;
     case 'tempete_solaire':

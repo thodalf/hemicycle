@@ -20,7 +20,11 @@ export type TraitId =
   | 'tribun' | 'survivant' | 'balafre' | 'chanceux' | 'entache' | 'sage' | 'insomniaque' | 'homme_etat'
   | 'chef_guerre' | 'ancien_souverain' | 'erudit' | 'polyglotte' | 'marathonien' | 'mondain' | 'pilier'
   | 'increvable' | 'revolutionnaire' | 'legislateur' | 'meme'
-  | 'globe_trotteur' | 'ponctuel' | 'reformateur' | 'briscard' | 'mal_aime' | 'idole';
+  | 'globe_trotteur' | 'ponctuel' | 'reformateur' | 'briscard' | 'mal_aime' | 'idole'
+  // Fin d'un style de vie
+  | 'orateur_legendaire' | 'grand_commis' | 'faiseur_de_rois' | 'machiavel' | 'penseur'
+  // Exutoires (nés d'une crise de stress)
+  | 'noctambule' | 'reclus' | 'irascible' | 'journal_intime' | 'mystique' | 'sportif_compulsif';
 
 export type TraitKind = 'naissance' | 'temperament' | 'acquis';
 
@@ -131,6 +135,17 @@ export const TRAITS: Record<TraitId, TraitDef> = {
   reformateur: T('reformateur', 'Réformateur', '🛠️', 'acquis', 'good', 'Trois lois de votre plume adoptées : vous savez faire passer un texte.', { gain: { influence: 1.06 }, mastery: 1.05 }, { labelF: 'Réformatrice' }),
   briscard: T('briscard', 'Vieux briscard', '🗳️', 'acquis', 'good', 'Cinq campagnes électorales : plus rien ne vous surprend un soir de résultats.', { composure: 6, gain: { stress: 0.9 } }),
   mal_aime: T('mal_aime', 'Mal-aimé', '🌧️', 'acquis', 'bad', 'Six mois tout en bas des sondages : l’étiquette vous colle.', { gain: { popularity: 0.9 } }, { labelF: 'Mal-aimée' }),
+  orateur_legendaire: T('orateur_legendaire', 'Orateur légendaire', '🏟️', 'acquis', 'good', 'Le style Tribun mené à son terme : on vient vous écouter comme on va au théâtre.', { debate: { emotion: 1.12, attaque: 1.08 }, gain: { popularity: 1.08 }, composure: 8 }, { labelF: 'Oratrice légendaire' }),
+  grand_commis: T('grand_commis', 'Grand commis de l’État', '🏛️', 'acquis', 'good', 'Le style Gestionnaire mené à son terme : l’administration vous obéit au doigt et à l’œil.', { mastery: 1.12, gain: { credibility: 1.08 }, monthly: { politicalCapital: 0.6 } }),
+  faiseur_de_rois: T('faiseur_de_rois', 'Faiseur de rois', '♟️', 'acquis', 'good', 'Le style Négociateur mené à son terme : sans vous, aucune majorité ne se fait.', { relationUp: 1.15, gain: { influence: 1.1 } }, { labelF: 'Faiseuse de rois' }),
+  machiavel: T('machiavel', 'Machiavel', '🐍', 'acquis', 'mixed', 'Le style Intrigant mené à son terme : on vous craint plus qu’on ne vous aime.', { exposure: 0.85, debate: { parade: 1.12 }, relationUp: 0.92 }),
+  penseur: T('penseur', 'Penseur', '🧭', 'acquis', 'good', 'Le style Intellectuel mené à son terme : vos livres font référence.', { mastery: 1.1, debate: { faits: 1.12 }, gain: { credibility: 1.08 } }),
+  noctambule: T('noctambule', 'Noctambule', '🌃', 'acquis', 'mixed', 'Vous évacuez le stress dans les bars et les boîtes de nuit, au risque d’être photographié·e.', { monthly: { stress: -2, energy: -1 }, exposure: 1.1 }),
+  reclus: T('reclus', 'Reclus', '🚪', 'acquis', 'mixed', 'Vous vous enfermez pour souffler. Le calme revient, les amitiés se refroidissent.', { monthly: { stress: -2 }, relationUp: 0.85 }, { labelF: 'Recluse' }),
+  irascible: T('irascible', 'Irascible', '💢', 'acquis', 'bad', 'Le stress sort en colères mémorables : vos collaborateurs et collègues en font les frais.', { monthly: { stress: -2 }, relationDown: 1.25, debate: { attaque: 1.08 } }),
+  journal_intime: T('journal_intime', 'Journal intime', '📓', 'acquis', 'good', 'Chaque soir, vous écrivez. Ça apaise, et ça nourrira un jour vos mémoires.', { monthly: { stress: -1.5 }, mastery: 1.03 }),
+  mystique: T('mystique', 'Mystique', '🕯️', 'acquis', 'mixed', 'Retraites, méditation, abbayes : vous trouvez la paix ailleurs, et certains s’en moquent.', { monthly: { stress: -2 }, gain: { credibility: 0.95 } }),
+  sportif_compulsif: T('sportif_compulsif', 'Sportif compulsif', '🏋️', 'acquis', 'mixed', 'Deux heures de sport par jour pour tenir : la santé suit, l’agenda moins.', { monthly: { stress: -2, health: 0.2, energy: -1 } }, { labelF: 'Sportive compulsive' }),
   idole: T('idole', 'Idole des foules', '🌟', 'acquis', 'good', 'Six mois au sommet des sondages : on vous arrête dans la rue pour un selfie.', { gain: { popularity: 1.06 }, exposure: 1.05 }),
 };
 

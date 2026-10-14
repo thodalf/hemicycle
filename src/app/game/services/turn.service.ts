@@ -23,6 +23,12 @@ import { monthlyPledges } from '../engine/pledges';
 import { monthlySocial } from '../engine/social';
 import { monthlyKingdom } from '../engine/kingdom';
 import { monthlyTraits } from '../engine/traits';
+import { monthlyOpinions } from '../engine/memories';
+import { monthlySecrets } from '../engine/secrets';
+import { monthlyCharacter } from '../engine/character';
+import { monthlyCouncil } from '../engine/council';
+import { monthlyFrondes } from '../engine/frondes';
+import { monthlyStruggle } from '../engine/grand';
 import { checkAchievements } from '../data/achievements';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
@@ -99,7 +105,7 @@ export class TurnService {
   });
   readonly canEndWeek = computed(() =>
     this.game.s().status === 'en_cours' && this.blocking().length === 0 && !this.game.s().debate && !this.game.s().protest && !this.game.s().scene
-    && !this.game.s().vote && !(this.game.s().minigames ?? []).length
+    && !this.game.s().vote && !this.game.s().activity && !(this.game.s().minigames ?? []).length
     && !programPending(this.game.s()) && !nationalBudgetBlocking(this.game.s()));
 
   endWeek(): void {
@@ -135,6 +141,12 @@ export class TurnService {
     monthlySocial(d, rng);
     monthlyKingdom(d, rng);
     monthlyTraits(d, rng);
+    monthlyOpinions(d, rng);
+    monthlySecrets(d, rng);
+    monthlyCharacter(d, rng);
+    monthlyCouncil(d, rng);
+    monthlyFrondes(d, rng);
+    monthlyStruggle(d, rng);
     monthlyPlot(d, rng);
     monthlySchemes(d, rng);
     monthlyFamily(d, rng);
@@ -251,7 +263,7 @@ export class TurnService {
       const choice = [...pool].sort((a, b) => weight(a) - weight(b))[0];
       d.pendingDecisions = d.pendingDecisions.filter(x => x.id !== decision.id);
       if (!choice) continue;
-      const ctx = { domain: decision.domain, targetId: decision.targetId };
+      const ctx = { domain: decision.domain, targetId: decision.targetId, reason: decision.title };
       const failed = rollRisk(d, choice.risk, ctx, rng);
       applyEffects(d, failed ? choice.risk!.onFailure : choice.effects, ctx, rng);
       pushNews(d, 'decision', failed ? 'negative' : 'neutral', `${decision.title} — ${choice.label}`, 'Réglé en votre absence.');
@@ -315,7 +327,7 @@ export class TurnService {
       const choice = decision?.choices.find(c => c.id === choiceId);
       if (!decision || !choice || !meetsRequirement(d, choice.requires, decision.domain)) return;
 
-      const ctx = { domain: decision.domain, targetId: decision.targetId };
+      const ctx = { domain: decision.domain, targetId: decision.targetId, reason: decision.title };
       d.pendingDecisions = d.pendingDecisions.filter(x => x.id !== decisionId);
       const failed = rollRisk(d, choice.risk, ctx, rng);
       const summary = applyEffects(d, failed ? choice.risk!.onFailure : choice.effects, ctx, rng);

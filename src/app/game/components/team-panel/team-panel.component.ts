@@ -7,6 +7,8 @@ import { RANKS } from '../../data/ranks';
 import { FxService } from '../../services/fx.service';
 import { TeamService } from '../../services/team.service';
 import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
+import { GameStateService } from '../../services/game-state.service';
+import { MISSIONS, MISSION_BY_ID, missionSkill, setMission } from '../../engine/council';
 
 /** Équipe recrutée, vivier de candidats et boosters à ouvrir */
 @Component({
@@ -47,6 +49,25 @@ import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
                 <button type="button" class="st" (click)="change(r, 1)" aria-label="Augmenter le salaire">+</button>
               </div>
               <small class="muted ask">Prétentions {{ ask(r).toLocaleString('fr-FR') }} €</small>
+              <label class="mission">
+                <span>Mission</span>
+                <select [value]="r.mission ?? ''" (change)="setMission(r.id, $any($event.target).value, r.missionTarget)">
+                  <option value="">— aucune —</option>
+                  @for (m of missions; track m.id) { <option [value]="m.id">{{ m.icon }} {{ m.label }}</option> }
+                </select>
+                @if (missionNeeds(r.mission) === 'faction') {
+                  <select [value]="r.missionTarget ?? ''" (change)="setMission(r.id, r.mission ?? '', $any($event.target).value)">
+                    @for (f of game.s().party.factions; track f.id) { <option [value]="f.id">{{ f.name }}</option> }
+                  </select>
+                }
+                @if (missionNeeds(r.mission) === 'npc') {
+                  <select [value]="r.missionTarget ?? ''" (change)="setMission(r.id, r.mission ?? '', $any($event.target).value)">
+                    <option value="">— choisir —</option>
+                    @for (n of game.s().npcs; track n.id) { <option [value]="n.id">{{ n.name }}</option> }
+                  </select>
+                }
+                @if (r.mission) { <small class="muted">Efficacité ×{{ skill(r) }}</small> }
+              </label>
               <small class="payer" [class.party]="team.funding().partyIds.includes(r.id)">{{ team.funding().partyIds.includes(r.id) ? 'Payé par le parti' : team.personalRoles.includes(r.role) ? 'À vos frais (poste personnel)' : 'À vos frais (budget du parti épuisé)' }}</small>
             </div>
             <button class="btn small" (click)="team.fire(r.id)">Renvoyer</button>
@@ -109,6 +130,7 @@ import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
     </section>
   `,
   styles: `
+    .mission { display: grid; gap: 3px; font-size: 12px; span { color: var(--ink-3); font-size: 11px; } select { font: 12px var(--font-body); padding: 3px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); max-width: 100%; } }
     .funding { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; margin: 0 0 10px; font-size: 12.5px; small { grid-column: 1 / -1; font-size: 11px; } }
     .payer { font-size: 11px; color: var(--ink-3); } .payer.party { color: var(--good); }
     .list { display: grid; gap: 8px; margin-top: 8px; }
@@ -143,6 +165,15 @@ import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
 })
 export class TeamPanelComponent {
   protected readonly team = inject(TeamService);
+  protected readonly game = inject(GameStateService);
+  protected readonly missions = MISSIONS;
+  protected missionNeeds(id?: string) { return id ? MISSION_BY_ID.get(id)?.target : undefined; }
+  protected skill(r: Recruit) { return missionSkill(r).toFixed(1).replace('.', ','); }
+  protected setMission(id: string, mission: string, target?: string): void {
+    const def = MISSION_BY_ID.get(mission);
+    const t = def?.target === 'faction' ? target || this.game.s().party.factions[0]?.id : def?.target === 'npc' ? target : undefined;
+    this.game.mutate(d => setMission(d, id, mission || null, t));
+  }
   protected readonly showPool = signal(true);
   protected readonly showPosts = signal(false);
   protected readonly icons = STAFF_ICONS;

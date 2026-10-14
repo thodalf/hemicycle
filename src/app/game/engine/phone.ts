@@ -585,7 +585,7 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
       effects.push({ kind: 'stat', stat: 'stress', delta: -5 }, { kind: 'stat', stat: 'energy', delta: 3 });
     }
   }
-  const summary = applyEffects(d, effects, {}, rng);
+  const summary = applyEffects(d, effects, { reason: `Appel : ${ask.replace(/[«»]/g, '').slice(0, 60)}` }, rng);
   summary.unshift(...notes);
   if (note) summary.unshift(note);
   addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: answer, read: true, summary });
@@ -600,7 +600,7 @@ export function answerMessage(d: GameState, msgId: string, replyId: string, rng:
   m.answered = r.label;
   m.read = true;
   addMessage(d, { kind: 'sms', who: m.who, from: m.from, role: m.role, text: r.label, outgoing: true, read: true });
-  const summary = applyEffects(d, r.effects, {}, rng);
+  const summary = applyEffects(d, r.effects, { reason: `Au téléphone : « ${r.label} »` }, rng);
   if (r.answer) addMessage(d, { kind: 'sms', who: m.who, from: m.from, role: m.role, text: r.answer, read: true, summary });
   else if (summary.length) m.summary = summary;
   return summary;

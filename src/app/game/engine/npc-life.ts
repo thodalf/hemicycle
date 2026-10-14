@@ -3,6 +3,7 @@ import { uniqueName } from '../data/names';
 import { pushNews } from './effects';
 import { Rng } from './rng';
 import { npcLifeBonus } from './traits';
+import { forgetNpc } from './memories';
 
 /* ============================================================
  *  La vie des personnalités : elles vieillissent, partent à la
@@ -76,6 +77,7 @@ export function succeed(d: GameState, n: Npc, rng: Rng): string {
   n.relationToPlayer = 0;
   n.traits = [rng.pick(TRAITS)];
   n.persona = undefined; // nouveaux traits de naissance au prochain passage
+  forgetNpc(d, n.id);
   n.ambition = 50 + rng.int(0, 35);
   // Les noms recopiés ailleurs
   const pr = d.presidency;

@@ -1,5 +1,6 @@
 import { Effect, EffectContext, GameState, Npc, Scheme, SchemeAlly, SchemeType } from '../models/game.models';
 import { applyEffects, pushNews } from './effects';
+import { discoverSecret, grantHook } from './secrets';
 import { Rng, clamp, nextId, frSigned } from './rng';
 
 /* ============================================================
@@ -37,6 +38,12 @@ export const SCHEMES: Record<SchemeType, SchemeDef> = {
     description: 'Ses lieutenants, un par un, rejoignent votre camp.' },
   chantage: { type: 'chantage', icon: '✉️', label: 'Faire chanter', verb: 'Chantage contre', pace: 25, secrecy: 60, gravity: 2,
     description: 'Il faut un dossier compromettant. Ensuite, il ou elle vous obéit.' },
+  rallier: { type: 'rallier', icon: '🫱', label: 'Rallier à votre cause', verb: 'Ralliement de', pace: 16, secrecy: 85, gravity: 1,
+    description: 'Déjeuners, petits services, promesses : il ou elle finira par vous rejoindre.' },
+  fouiller: { type: 'fouiller', icon: '🗂️', label: 'Fouiller son passé', verb: 'Enquête sur', pace: 20, secrecy: 75, gravity: 1,
+    description: 'Archives, anciens collaborateurs, vieilles photos : tout le monde cache quelque chose.' },
+  putsch: { type: 'putsch', icon: '🗡️', label: 'Préparer un putsch au parti', verb: 'Putsch contre', pace: 10, secrecy: 65, gravity: 2,
+    description: 'Compter les fidèles, retourner les fédérations, choisir le moment : la direction tombera.' },
 };
 
 export function schemes(d: GameState): Scheme[] {
@@ -60,6 +67,7 @@ export function canLaunch(d: GameState, type: SchemeType, targetId: string | und
   if (list.length >= MAX_SCHEMES) return `Trois complots à la fois, pas plus`;
   if (list.some(s => s.targetId === targetId && s.type === type)) return 'Ce complot est déjà en cours';
   if (type === 'chantage' && kompromat(d, targetId) < 1) return 'Il vous faut un dossier compromettant sur cette personne';
+  if (type === 'putsch' && targetId !== d.party.leaderNpcId) return 'Un putsch vise la direction de votre parti';
   return null;
 }
 
@@ -198,6 +206,27 @@ function complete(d: GameState, s: Scheme, rng: Rng): string[] {
       effects = [{ kind: 'npcRelation', npcId: npc.id, delta: 45 }, st('politicalCapital', 15), { kind: 'funds', account: 'personal', delta: 5000 }, { kind: 'exposure', delta: 4 }];
       title = `${npc.name} cède`;
       text = 'Un rendez-vous dans un parking, une enveloppe, une promesse de silence. Désormais, il ou elle vous obéit.';
+      break;
+    case 'rallier':
+      effects = [{ kind: 'npcRelation', npcId: npc.id, delta: 35, reason: 'Vous l’avez rallié·e à votre cause' }, { kind: 'flagAdd', key: 'billSupport', delta: 4 }];
+      npc.isRival = false;
+      title = `${npc.name} vous rejoint`;
+      text = 'Des mois de patience : il ou elle se dit désormais « de vos amis ».';
+      grantHook(d, npc.id, 'faible', 'Il ou elle vous doit sa place');
+      break;
+    case 'fouiller': {
+      const who = discoverSecret(d, rng, npc.id);
+      effects = who ? [st('influence', 1)] : [{ kind: 'npcStat', npcId: npc.id, stat: 'popularity', delta: -3 }];
+      title = who ? `Le passé de ${npc.name} n’a plus de secret` : `Rien sur ${npc.name}`;
+      text = who ? 'Vos enquêteurs ont trouvé : à vous de choisir l’usage.' : 'Une vie sans tache, ou des traces trop bien effacées. Quelques rumeurs, tout de même.';
+      break;
+    }
+    case 'putsch':
+      npc.influence = clamp(npc.influence - 20); npc.popularity = clamp(npc.popularity - 8);
+      effects = [st('influence', 10), { kind: 'faction', factionId: '*', delta: 8 }, { kind: 'dread', delta: 15 }, { kind: 'npcRelation', npcId: npc.id, delta: -50, reason: 'Votre putsch' }];
+      if (['depute', 'ministre', 'premier_ministre'].includes(d.player.rankId)) effects.push({ kind: 'rank', rankId: 'chef_parti' });
+      title = `Putsch réussi contre ${npc.name}`;
+      text = 'Au petit matin, les fédérations basculent. La direction tombe ; on vous appelle déjà « patron·ne ».';
       break;
   }
   // Les complices sont récompensés : la confiance se gagne aussi dans l'ombre

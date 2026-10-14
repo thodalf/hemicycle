@@ -47,7 +47,7 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'zombie' | 'apocalypse' | 'crise' | 'territoire' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'zombie' | 'apocalypse' | 'crise' | 'lutte' | 'eclat' | 'territoire' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
@@ -56,6 +56,8 @@ export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   zombie: 'Épidémie Z',
   apocalypse: 'Fin du monde',
   crise: 'Crise',
+  lutte: 'Lutte',
+  eclat: 'Actions d’éclat',
   territoire: 'Territoire',
   intrigue: 'Intrigues',
   guerre: 'Guerre',
@@ -168,6 +170,12 @@ export interface Player {
   sideIncomes?: SideIncome[];
   /** Traits de personnage (naissance et acquis) : définitifs */
   traits?: string[];
+  /** Style de vie choisi, expérience et avantages débloqués */
+  lifestyle?: { id: string; xp: number; perks: string[] } | null;
+  /** Renommée (s'accumule, se dépense pour les actions d'éclat) */
+  renown?: number;
+  /** Crainte inspirée (0-100) */
+  dread?: number;
   flags: Record<string, boolean | number>;
 }
 
@@ -231,11 +239,17 @@ export type TargetRef = string;
 export type Effect =
   | { kind: 'stat'; stat: StatKey; delta: number }
   | { kind: 'trait'; trait: string }
+  | { kind: 'renown'; delta: number }
+  | { kind: 'dread'; delta: number }
+  | { kind: 'secret'; owner?: string; reveal?: boolean; type?: string }
+  | { kind: 'hook'; npcId: string; strength: 'faible' | 'fort'; reason?: string }
+  | { kind: 'struggle'; balance?: number; progress?: number }
+  | { kind: 'fronde'; factionId?: FactionId | '*'; delta: number }
   | { kind: 'dossier'; domain: DomainRef; delta: number }
   | { kind: 'funds'; account: 'personal' | 'campaign'; delta: number }
   | { kind: 'faction'; factionId: FactionId | '*' | '$target'; delta: number }
   | { kind: 'cohesion'; delta: number }
-  | { kind: 'npcRelation'; npcId: TargetRef; delta: number }
+  | { kind: 'npcRelation'; npcId: TargetRef; delta: number; reason?: string }
   | { kind: 'contact'; contactId: TargetRef; trust?: number; balance?: number }
   | { kind: 'favor'; contactId: TargetRef }
   | { kind: 'exposure'; delta: number }
@@ -313,6 +327,8 @@ export type Effect =
 export interface EffectContext {
   domain?: Domain;
   targetId?: string;
+  /** Raison retenue dans les souvenirs des personnages (action, décision…) */
+  reason?: string;
 }
 
 export interface RiskProfile {
@@ -331,6 +347,8 @@ export interface ActionCost {
   energy?: number;
   money?: number;
   politicalCapital?: number;
+  /** Renommée dépensée (actions d'éclat) */
+  renown?: number;
 }
 
 export interface ActionDefinition {
@@ -342,7 +360,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean; renownTier?: number; dread?: number; struggle?: string; lifestyle?: string; knownSecret?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -735,6 +753,10 @@ export interface Recruit {
   hiredWeek?: number;
   /** Dernier mois où il ou elle a prévenu qu'il ou elle songe à partir */
   warnedWeek?: number;
+  /** Mission confiée chaque mois (conseil) */
+  mission?: string;
+  /** Cible de la mission (courant, personnalité) */
+  missionTarget?: string;
 }
 
 // ── Scénarios spéciaux ──────────────────────────────────────
@@ -1051,6 +1073,20 @@ export interface GameState {
   vote: AssemblyVote | null;
   /** Projets de loi rédigés par le joueur (nom, domaine, orientation, ampleur) */
   customBills?: CustomBill[];
+  /** Ce que chaque personnalité pense de vous, raison par raison (s'estompe avec le temps) */
+  opinions?: OpinionMod[];
+  /** Ce dont les personnalités se souviennent pour toujours */
+  memories?: Memory[];
+  /** Les secrets : ceux des personnalités et les vôtres */
+  secrets?: Secret[];
+  /** Vos moyens de pression sur les personnalités */
+  hooks?: Hook[];
+  /** Les frondes des courants du parti */
+  frondes?: Fronde[];
+  /** Activité en cours (université d'été, dîner, congrès…) */
+  activity?: ActivityState | null;
+  /** Grande lutte en cours (sur plusieurs années) */
+  struggle?: StruggleState | null;
   /** Derniers votes du joueur à l'Assemblée */
   voteHistory: VoteRecord[];
   /** Mini-jeux à jouer (file d'attente) */
@@ -1169,7 +1205,7 @@ export interface Romance {
   secret?: boolean;
 }
 
-export type SchemeType = 'espionnage' | 'calomnie' | 'sabotage' | 'debauchage' | 'chantage';
+export type SchemeType = 'espionnage' | 'calomnie' | 'sabotage' | 'debauchage' | 'chantage' | 'rallier' | 'fouiller' | 'putsch';
 
 /** Un complot du joueur contre un PNJ */
 export interface Scheme {
@@ -1282,6 +1318,75 @@ export interface VoteTally {
   pour: number;
   contre: number;
   abstention: number;
+}
+
+export interface OpinionMod {
+  id: string;
+  npcId: string;
+  label: string;
+  /** Valeur d'origine */
+  value: number;
+  /** Ce qu'il en reste */
+  left: number;
+  months: number;
+  week: number;
+}
+
+export interface Memory {
+  npcId: string;
+  text: string;
+  value: number;
+  week: number;
+}
+
+export interface Secret {
+  id: string;
+  /** 'player' ou id de la personnalité */
+  owner: string;
+  type: string;
+  /** Connu du joueur (pour un secret de PNJ) */
+  known: boolean;
+  /** Personnalités qui connaissent ce secret du joueur */
+  knownBy: string[];
+  exposed: boolean;
+  week: number;
+}
+
+export interface Hook {
+  npcId: string;
+  strength: 'faible' | 'fort';
+  reason: string;
+  week: number;
+  /** Dernière utilisation */
+  usedWeek?: number;
+}
+
+export interface Fronde {
+  factionId: FactionId;
+  demand: 'ligne' | 'postes' | 'consultation' | 'demission';
+  strength: number;
+  since: number;
+}
+
+export interface ActivityState {
+  type: string;
+  guests: string[];
+  stage: number;
+  /** Indices des scènes tirées */
+  steps: number[];
+  log: string[];
+  status: 'en_cours' | 'fini';
+  summary: string[];
+  week: number;
+}
+
+export interface StruggleState {
+  id: string;
+  phase: number;
+  progress: number;
+  /** -100 … +100 : vers l'un ou l'autre dénouement */
+  balance: number;
+  since: number;
 }
 
 export interface CustomBill {
@@ -1489,7 +1594,7 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
-  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours' | 'penurie_essence' | 'capitale_culture' | 'canicule' | 'hacker';
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours' | 'penurie_essence' | 'capitale_culture' | 'canicule' | 'hacker' | 'barons' | 'grand_debat';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

@@ -16,6 +16,7 @@ import { CRISIS_EVENTS, CRISIS_GATES, FAMILY_EVENTS, MISC_ARC_EVENTS } from './l
 import { PHONE_EVENTS } from './phone-events';
 import { CALENDAR_EVENTS, COUNTRY_EVENTS, PHRASE_EVENT } from './country-events';
 import { REVOLUTION_EVENTS } from './royal-events';
+import { GRAND_EVENTS } from './grand-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
 import { RANK_EVENTS } from './rank-events';
@@ -1419,6 +1420,11 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
   // Le règne : la rue et l'Assemblée mettent la Couronne à l'épreuve presque chaque mois
   if (!ev && d.kingdom && rng.chance(0.5 + d.kingdom.opposition / 300)) {
     const pool = [...REVOLUTION_EVENTS, ...COUNTRY_EVENTS.filter(e => e.tag.startsWith('roy_'))].filter(e => canFire(e, 8));
+    if (pool.length) ev = pick(pool);
+  }
+  // Le grand jeu : secrets, souvenirs, frondes et grandes luttes
+  if (!ev && d.week > 3 && rng.chance(d.struggle || (d.frondes ?? []).length ? 0.3 : 0.15)) {
+    const pool = GRAND_EVENTS.filter(e => canFire(e, 10));
     if (pool.length) ev = pick(pool);
   }
   // Premier contact : la porte d'entrée (rare), puis les rebondissements du dossier

@@ -1,4 +1,4 @@
-import { kingdomGauges, restoreRepublic } from '../../engine/kingdom';
+import { COURT_AMENITIES, courtCost, courtGrandeur, kingdomGauges, restoreRepublic, setCourt } from '../../engine/kingdom';
 import { durationLabel } from '../../engine/calendar';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -110,6 +110,17 @@ import { MOLE_GOAL } from '../../engine/mole';
             </div>
           }
         </div>
+        <div class="court">
+          <div class="row"><span class="eyebrow">La cour</span><span class="mono">Grandeur {{ grandeur() }} · {{ courtCost() | number: '1.0-0' }} €/mois</span></div>
+          @for (c of amenities; track c.id) {
+            <div class="amen">
+              <span>{{ c.icon }} {{ c.label }}</span>
+              <span class="lvl">{{ c.levels[courtLevel(c.id)] }}</span>
+              <span class="st"><button type="button" (click)="setCourtLevel(c.id, -1)" [disabled]="courtLevel(c.id) <= 0">−</button><button type="button" (click)="setCourtLevel(c.id, 1)" [disabled]="courtLevel(c.id) >= 3">+</button></span>
+            </div>
+          }
+          <small class="muted">Au-dessus de 40, la grandeur nourrit le prestige ; au-dessus de 50, le luxe arme le front républicain. Un mécénat généreux apporte de la renommée.</small>
+        </div>
         @if (confirmRepublic()) {
           <div class="confirm"><span>Abdiquer et rétablir la République ? Une présidentielle aura lieu dans un an.</span>
             <button class="btn small primary" (click)="restore()">Oui, rendre le pouvoir</button>
@@ -186,6 +197,10 @@ import { MOLE_GOAL } from '../../engine/mole';
       div { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 6px 10px; border-radius: 8px; background: var(--surface-2); }
       .chip { margin-left: auto; } }
     .crown { border-left: 4px solid #8a6a1f; }
+    .court { display: grid; gap: 4px; padding: 8px 0 4px; border-top: 1px dashed var(--line); margin-top: 6px;
+      .row { display: flex; justify-content: space-between; font-size: 12px; } }
+    .amen { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; font-size: 12.5px;
+      .lvl { color: var(--ink-3); font-size: 11.5px; } .st { display: inline-flex; gap: 2px; button { width: 24px; height: 22px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; } } }
     .kingdom { background: linear-gradient(135deg, color-mix(in srgb, #c9a227 10%, var(--surface)), var(--surface)); animation: royal-in .6s ease;
       .confirm { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; }
       .fill { transition: width .9s cubic-bezier(.3,1.3,.5,1); overflow: hidden; }
@@ -235,6 +250,11 @@ export class ScenarioPanelComponent {
   });
   protected stance(v: number) { return stanceLabel(v); }
 
+  protected readonly amenities = COURT_AMENITIES;
+  protected readonly grandeur = computed(() => { const k = this.game.s().kingdom; return k ? courtGrandeur({ ...k, court: k.court ?? { table: 1, ceremonial: 1, mecenat: 0, garde: 1 } }) : 0; });
+  protected readonly courtCost = computed(() => { const k = this.game.s().kingdom; return k ? courtCost({ ...k, court: k.court ?? { table: 1, ceremonial: 1, mecenat: 0, garde: 1 } }) : 0; });
+  protected courtLevel(id: string): number { const c = this.game.s().kingdom?.court ?? { table: 1, ceremonial: 1, mecenat: 0, garde: 1 }; return c[id] ?? 0; }
+  protected setCourtLevel(id: string, delta: number): void { this.game.mutate(d => setCourt(d, id, this.courtLevel(id) + delta)); }
   protected readonly kingdomGauges = computed(() => { const k = this.game.s().kingdom; return k ? kingdomGauges(k) : []; });
   protected readonly reign = computed(() => { const k = this.game.s().kingdom; return k ? durationLabel(Math.max(1, this.game.s().week - k.since)) : ''; });
   protected readonly confirmRepublic = signal(false);

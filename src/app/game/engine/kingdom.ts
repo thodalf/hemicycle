@@ -25,6 +25,32 @@ export interface KingdomState {
   /** Front républicain : l'opposition de tous les autres partis (0-100) */
   opposition: number;
   title: string;
+  /** La cour : table, cérémonial, mécénat, garde (niveaux 0-3) */
+  court?: Record<string, number>;
+}
+
+export const COURT_AMENITIES: { id: string; label: string; icon: string; levels: string[] }[] = [
+  { id: 'table', label: 'La table', icon: '🍷', levels: ['Repas simples', 'Bonne cuisine', 'Chef étoilé', 'Banquets fastueux'] },
+  { id: 'ceremonial', label: 'Le cérémonial', icon: '🎺', levels: ['Aucun', 'Discret', 'Solennel', 'Grandiose'] },
+  { id: 'mecenat', label: 'Le mécénat', icon: '🎨', levels: ['Aucun', 'Quelques artistes', 'Opéra et musées', 'Siècle des Lumières'] },
+  { id: 'garde', label: 'La garde', icon: '💂', levels: ['Gendarmes', 'Garde républicaine', 'Garde d’honneur', 'Régiment d’apparat'] },
+];
+
+/** Grandeur de la cour (0-100) : ce que la noblesse attend, ce que le front républicain dénonce */
+export function courtGrandeur(k: KingdomState): number {
+  const c = k.court ?? {};
+  return Math.round(Object.values(c).reduce((s, v) => s + v, 0) * 100 / 12);
+}
+
+/** Ce que coûte la cour chaque mois (fonds personnels) */
+export function courtCost(k: KingdomState): number {
+  return Object.values(k.court ?? {}).reduce((s, v) => s + v * v * 900, 0);
+}
+
+export function setCourt(d: GameState, id: string, level: number): void {
+  const k = d.kingdom;
+  if (!k || !COURT_AMENITIES.some(a => a.id === id)) return;
+  k.court = { table: 1, ceremonial: 1, mecenat: 0, garde: 1, ...(k.court ?? {}), [id]: Math.max(0, Math.min(3, level)) };
 }
 
 export function sovereignTitle(d: GameState): string {
@@ -120,6 +146,13 @@ export function monthlyKingdom(d: GameState, rng: Rng): void {
   k.prestige = clamp(k.prestige + (50 - k.prestige) * 0.03 - 0.8 + d.player.stats.popularity / 200);
   k.opposition = clamp(k.opposition + 2.4 - k.prestige / 100 - k.stabilite / 150);
   k.stabilite = clamp(k.stabilite - (k.opposition - 45) / 30 + (k.prestige - 50) / 60);
+  // La cour : la grandeur nourrit le prestige, mais le luxe arme le front républicain
+  k.court ??= { table: 1, ceremonial: 1, mecenat: 0, garde: 1 };
+  const g = courtGrandeur(k);
+  d.player.finances.personal -= courtCost(k);
+  k.prestige = clamp(k.prestige + (g - 40) / 25);
+  k.opposition = clamp(k.opposition + Math.max(0, g - 50) / 30);
+  if ((k.court['mecenat'] ?? 0) >= 2) d.player.renown = (d.player.renown ?? 0) + 1;
   // Des flambées révolutionnaires presque chaque mois
   if (rng.chance(0.3 + k.opposition / 250)) {
     const [title, text] = rng.pick(UNREST);

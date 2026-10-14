@@ -561,6 +561,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'barons_gate', weight: 0.4, minRank: 'depute', eligible: d => !d.crises?.barons && !d.player.flags['baronsDone'] && d.week > 30,
+    build: () => ({
+      title: 'Les barons menacent',
+      context: 'Huit maires de grandes villes et cinq présidents de département vous écrivent : « Écoutez les territoires, ou nous partirons. »',
+      choices: [
+        c('recevoir', 'Les recevoir tous, longuement', [cr('barons', 6, 3, true), { kind: 'flag', key: 'baronsDone', value: true }, s('energy', -4)], 'Une journée entière de doléances. Rien n’est réglé, mais on se parle.'),
+        c('ignorer', 'Rappeler que le parti n’est pas une fédération de féodaux', [cr('barons', 2, 7, true), { kind: 'flag', key: 'baronsDone', value: true }, { kind: 'dread', delta: 5 }], 'La lettre suivante est publique, et beaucoup plus dure.'),
+      ],
+    }),
+  },
+  {
+    tag: 'debat_gate', weight: 0.4, minRank: 'depute', eligible: d => !d.crises?.grand_debat && !d.player.flags['debatDone'] && d.week > 20,
+    build: () => ({
+      title: 'Lancer un grand débat national ?',
+      context: 'Après des mois de colère, on vous propose d’organiser un grand débat : des réunions dans toutes les mairies, et l’engagement d’en tirer des lois.',
+      choices: [
+        c('lancer', 'Lancer le grand débat', [cr('grand_debat', 6, 3, true), { kind: 'flag', key: 'debatDone', value: true }, s('popularity', 2)], 'Les premières réunions affichent complet.'),
+        c('cadrer', 'Le lancer, mais avec des thèmes cadrés', [cr('grand_debat', 4, 5, true), { kind: 'flag', key: 'debatDone', value: true }], '« Débat sous contrôle », raillent les opposants.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1437,6 +1459,50 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('enqueteurs', 'Transmettre le message aux enquêteurs', [cr('hacker', 7, 2)], 'Grâce à votre message, les enquêteurs remontent une adresse IP.'),
         c('ignorer', 'Ne pas répondre', [cr('hacker', 2, 1)], 'Silence. Le pirate passe à quelqu’un d’autre… pour l’instant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'barons_ligue', weight: 1, eligible: d => !!d.crises?.barons,
+    build: () => ({
+      title: 'La Ligue des territoires',
+      context: 'Les barons fondent une « Ligue des territoires » et invitent les fédérations à les rejoindre.',
+      choices: [
+        c('pacte', 'Proposer un pacte de gouvernance partagée', [cr('barons', 6, -4), s('politicalCapital', -6)], 'Trois barons acceptent de négocier.'),
+        c('exclure', 'Exclure les meneurs', [cr('barons', 2, 6), { kind: 'dread', delta: 8 }], 'Les meneurs sont exclus ; leurs fédérations les suivent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'barons_tresor', weight: 0.8, eligible: d => !!d.crises?.barons,
+    build: () => ({
+      title: 'Le trésor des fédérations',
+      context: 'Les barons bloquent les cotisations de leurs fédérations : la trésorerie du parti s’assèche.',
+      choices: [
+        c('payer', 'Combler le trou sur vos réseaux de donateurs', [cr('barons', 4, -2), { kind: 'funds', account: 'campaign', delta: -4000 }], 'Le parti tient. Les barons perdent un moyen de pression.'),
+        c('justice', 'Saisir la commission des conflits', [cr('barons', 3, 3), s('credibility', 1)], 'Procédure longue, rancunes tenaces.'),
+      ],
+    }),
+  },
+  {
+    tag: 'debat_reunion', weight: 1, eligible: d => !!d.crises?.grand_debat,
+    build: () => ({
+      title: 'Une réunion qui tourne mal',
+      context: 'Dans une salle des fêtes bondée, un participant prend le micro : « Vous ne nous écoutez jamais ! » La salle applaudit.',
+      choices: [
+        c('rester', 'Rester jusqu’au bout et répondre à tout', [cr('grand_debat', 6, -4), s('energy', -6), s('popularity', 2)], 'Cinq heures de questions. On vous applaudit en partant.'),
+        c('partir', 'Écourter la réunion', [cr('grand_debat', 1, 5)], 'La vidéo de votre départ circule toute la soirée.'),
+      ],
+    }),
+  },
+  {
+    tag: 'debat_cahiers', weight: 0.8, eligible: d => !!d.crises?.grand_debat,
+    build: () => ({
+      title: 'Les cahiers débordent',
+      context: 'Deux millions de contributions : personne ne pourra tout lire. Un cabinet de conseil propose une synthèse par intelligence artificielle.',
+      choices: [
+        c('citoyens', 'Faire lire les cahiers par des citoyens tirés au sort', [cr('grand_debat', 6, -3), s('politicalCapital', -5)], 'Cent citoyens lisent, trient, débattent. La démarche est saluée.'),
+        c('cabinet', 'Confier la synthèse au cabinet', [cr('grand_debat', 4, 4), { kind: 'funds', account: 'campaign', delta: -2000 }], '« Une machine pour résumer la colère du peuple » : la polémique enfle.'),
       ],
     }),
   },

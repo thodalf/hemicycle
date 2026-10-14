@@ -1,3 +1,5 @@
+import { onAction } from '../engine/character';
+import { RENOWN_TIERS, renownTier } from '../data/lifestyles';
 import { rankAllowed } from '../data/ranks';
 import { actionSegments } from '../engine/country';
 import { actionImage } from '../engine/legacy';
@@ -157,6 +159,11 @@ export class ActionPlannerService {
       if (req.appoint) { const why = canAppoint(s); if (why) return { ok: false, reason: why }; }
       if (req.coalition && !s.coalition) return { ok: false, reason: 'Aucune coalition en cours' };
       if (req.kingdom && !s.kingdom) return { ok: false, reason: 'Réservé au souverain' };
+      if (req.renownTier && renownTier(s.player.renown ?? 0) < req.renownTier) return { ok: false, reason: `Il faut être ${RENOWN_TIERS[req.renownTier].label.toLowerCase()}` };
+      if (req.dread && (s.player.dread ?? 0) < req.dread) return { ok: false, reason: `Il faut inspirer de la crainte (${req.dread})` };
+      if (req.struggle && s.struggle?.id !== req.struggle) return { ok: false, reason: 'Seulement pendant cette grande lutte' };
+      if (req.lifestyle && s.player.lifestyle?.id !== req.lifestyle) return { ok: false, reason: 'Réservé à ce style de vie' };
+      if (req.knownSecret && !(s.secrets ?? []).some(x => x.known && !x.exposed && x.owner !== 'player')) return { ok: false, reason: 'Aucun secret en main' };
       if (req.governing && !s.presidency && !['ministre', 'premier_ministre'].includes(s.player.rankId)) return { ok: false, reason: 'Réservé aux membres du gouvernement' };
       if (req.promises && !(s.promises ?? []).some(x => x.status === 'en_cours')) return { ok: false, reason: 'Aucune promesse en cours' };
       if (req.secondRound && !inSecondRound(s)) return { ok: false, reason: 'Seulement entre les deux tours de la présidentielle' };
@@ -175,6 +182,7 @@ export class ActionPlannerService {
     if (action.cooldown && count >= 1) return { ok: false, reason: 'Une fois par mois' };
     if (this.apLeft() < cost.ap) return { ok: false, reason: 'Points d’action insuffisants' };
     if ((cost.energy ?? 0) + spent.energy > s.player.stats.energy) return { ok: false, reason: 'Trop épuisé·e' };
+    if ((cost.renown ?? 0) > (s.player.renown ?? 0)) return { ok: false, reason: `Il faut ${cost.renown} de renommée` };
     const party = payer === 'parti';
     if (party) {
       if (!partyFundable(action)) return { ok: false, reason: 'Le parti ne paie pas ça' };
@@ -216,7 +224,7 @@ export class ActionPlannerService {
   execute(d: GameState, rng: Rng): void {
     for (const planned of this._plan()) {
       const action = ACTIONS_BY_ID.get(planned.actionId)!;
-      const ctx = { domain: planned.domain, targetId: planned.targetId };
+      const ctx = { domain: planned.domain, targetId: planned.targetId, reason: action.label };
       const { cost } = action;
 
       d.player.actionPoints.current -= cost.ap;
@@ -228,6 +236,8 @@ export class ActionPlannerService {
       if (action.cooldown) d.cooldowns[action.id] = d.week + action.cooldown;
 
       recordObjectiveEvent(d, 'category', action.category);
+      onAction(d, action);
+      if (cost.renown) d.player.renown = Math.max(0, (d.player.renown ?? 0) - cost.renown);
       actionSegments(d, action, ctx);
       actionImage(d, action, ctx);
       const lastUse = Number(d.player.flags[`last_${action.id}`] ?? -99);

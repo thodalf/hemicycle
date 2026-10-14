@@ -370,6 +370,24 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Il a fait une erreur hier : il s’est connecté depuis un café du 11ᵉ.', effects: [{ kind: 'crisis', arc: 'hacker', gauge: 4 }] }) },
     ],
   },
+  // ── La fronde des barons ──
+  {
+    key: 'sc:barons', icon: '🏰', when: d => !!d.crises?.barons,
+    name: () => 'Gérard Montvallon', role: () => 'Maire de Lyon, chef de file des barons',
+    options: () => [
+      { id: 'sc_barons_point', label: 'Sonder ses intentions', hint: 'Il parle franc, et fort.', ask: 'Gérard, vous partez ou vous restez ?', cooldown: 1,
+        run: () => ({ answer: 'Ça dépend de vous. Donnez-nous des postes et du respect, on restera.', effects: [{ kind: 'crisis', arc: 'barons', gauge: 3, risk: -2 }] }) },
+    ],
+  },
+  // ── Le grand débat ──
+  {
+    key: 'sc:debat', icon: '🗣️', when: d => !!d.crises?.grand_debat,
+    name: () => 'Anne-Sophie Vautrin', role: () => 'Garante du grand débat national',
+    options: () => [
+      { id: 'sc_debat_point', label: 'Faire le point sur la participation', hint: 'Elle tient les compteurs.', ask: 'Combien de contributions cette semaine ?', cooldown: 1,
+        run: () => ({ answer: 'Trois cent mille de plus. Mais il faudra des réponses, et vite.', effects: [{ kind: 'crisis', arc: 'grand_debat', gauge: 4 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -453,7 +471,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

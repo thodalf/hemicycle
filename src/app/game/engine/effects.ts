@@ -1,4 +1,8 @@
 import { adjustKingdom } from './kingdom';
+import { recordOpinion } from './memories';
+import { adjustSecret, grantHook } from './secrets';
+import { adjustStruggle } from './grand';
+import { adjustFronde } from './frondes';
 import { exposureTraitMult, gainTrait, masteryTraitMult, npcRelationMult, relationTraitMult, statTraitMult } from './traits';
 import { TraitId } from '../data/traits';
 import {
@@ -271,8 +275,10 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         const npc = d.npcs.find(n => n.id === target(e.npcId));
         if (npc) {
           const delta = Math.round(e.delta * relationTraitMult(d, e.delta) * npcRelationMult(npc, e.delta) * 10) / 10;
+          const before = npc.relationToPlayer;
           npc.relationToPlayer = clamp(npc.relationToPlayer + delta, -100, 100);
-          summary.push(`Relation ${npc.name.split(' ')[0]} ${signed(delta)}`);
+          recordOpinion(d, npc, Math.round(npc.relationToPlayer - before), e.reason ?? ctx.reason ?? (delta > 0 ? 'Un geste en sa faveur' : 'Un affront'));
+          summary.push(`Relation ${npc.name.split(' ')[0]} ${signed(Math.round(delta))}`);
         }
         break;
       }
@@ -426,6 +432,28 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       case 'trait':
         summary.push(...gainTrait(d, e.trait as TraitId));
+        break;
+      case 'renown':
+        d.player.renown = Math.max(0, (d.player.renown ?? 0) + e.delta);
+        summary.push(`Renommée ${signed(e.delta)}`);
+        break;
+      case 'dread':
+        d.player.dread = clamp((d.player.dread ?? 0) + e.delta);
+        summary.push(`Crainte ${signed(e.delta)}`);
+        break;
+      case 'secret':
+        summary.push(...adjustSecret(d, e, rng));
+        break;
+      case 'hook': {
+        const id = target(e.npcId);
+        if (id) summary.push(...grantHook(d, id, e.strength, e.reason ?? ctx.reason ?? 'Un service rendu'));
+        break;
+      }
+      case 'struggle':
+        summary.push(...adjustStruggle(d, e));
+        break;
+      case 'fronde':
+        summary.push(...adjustFronde(d, e));
         break;
       case 'phoneBook': {
         const id = e.npcId === '$target' ? ctx.targetId : e.npcId;

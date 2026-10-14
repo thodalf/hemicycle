@@ -1,6 +1,7 @@
 import { DebateMove, GameState, Npc, NpcTrait, StatKey } from '../models/game.models';
 import { APTITUDE_WEIGHT, BIRTH_APTITUDES, TEMPERAMENTS, TRAITS, TraitDef, TraitId, traitLabel } from '../data/traits';
 import { rankOrder } from '../data/ranks';
+import { PERK_BY_ID } from '../data/lifestyles';
 import { pushNews } from './effects';
 import { Rng, clamp } from './rng';
 
@@ -80,7 +81,10 @@ export function gainTrait(d: GameState, id: TraitId, why?: string): string[] {
 }
 
 function defs(d: GameState): TraitDef[] {
-  return traitsOf(d).map(t => TRAITS[t]).filter(Boolean);
+  // Les avantages des styles de vie se comportent comme des traits
+  const perks = (d.player.lifestyle?.perks ?? []).map(id => PERK_BY_ID.get(id)).filter(Boolean)
+    .map(p => ({ id: p!.id, label: p!.label, icon: '', kind: 'acquis', tone: 'good', desc: p!.desc, mods: p!.mods }) as unknown as TraitDef);
+  return [...traitsOf(d).map(t => TRAITS[t]).filter(Boolean), ...perks];
 }
 
 /** Multiplicateur d'une variation de stat selon les traits */
