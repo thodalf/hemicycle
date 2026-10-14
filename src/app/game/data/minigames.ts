@@ -1,10 +1,11 @@
+import { MOTS_DU_JOUR } from './mots';
 /* ============================================================
  *  Mini-jeux : dix mécaniques, déclinées en thèmes.
  *  Le score (0 à 1) décide de l'ampleur des gains de l'action
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite';
 
 export interface TriItem {
   text: string;
@@ -35,6 +36,12 @@ export interface MinigameDef {
   max?: number;
   /** Applaudimètre : les phrases du discours */
   lines?: string[];
+  /** Sommet : le format (Conseil européen, G20, climat) */
+  summit?: 'ue' | 'g20' | 'climat';
+  /** Grille : la base de données (villes, métro, capitales) */
+  grid?: 'villes' | 'metro' | 'capitales';
+  /** Mot : un seul mot par jour réel (mot du jour) */
+  daily?: boolean;
   /** Mot : la liste des mots à deviner (majuscules, sans accents) */
   words?: string[];
   /** Quiz : catégories retenues (toutes par défaut) */
@@ -461,22 +468,46 @@ export const MINIGAMES: MinigameDef[] = [
     lines: ['« Bonsoir le festival ! »', '« Vous êtes magnifiques ! »', '« La culture, c’est ce qui nous rassemble ! »', '« Je laisse la place aux artistes… »', '« Merci et bon concert ! »'],
   },
   {
-    id: 'mot_du_jour', kind: 'mot', icon: '🔤', title: 'Le mot du jour',
-    rule: 'Trouvez le mot politique en six essais. Rouge : bonne lettre bien placée ; jaune : bonne lettre mal placée.',
-    words: POLITICAL_WORDS,
+    id: 'mot_du_jour', kind: 'mot', icon: '🔤', title: 'Le mot du jour', daily: true,
+    rule: 'Un mot par jour, le même pour tout le monde, pas forcément politique : six essais pour le trouver. Rouge : bonne lettre bien placée ; jaune : bonne lettre mal placée. Une seule partie par jour.',
+    words: MOTS_DU_JOUR,
   },
   {
     id: 'motus_tele', kind: 'mot', icon: '📺', title: 'Le jeu télévisé',
     rule: 'Le présentateur vous tend la première lettre : six essais pour trouver le mot, sous les yeux de la France entière.',
-    words: POLITICAL_WORDS,
+    words: [...MOTS_DU_JOUR, ...POLITICAL_WORDS],
   },
   {
-    id: 'departodoku', kind: 'grille', icon: '🗺️', title: 'Départodoku',
-    rule: 'Remplissez la grille : chaque case attend un département qui vérifie sa ligne et sa colonne. Un département ne sert qu’une fois.',
+    id: 'departodoku', kind: 'grille', icon: '🗺️', title: 'Villodoku', grid: 'villes',
+    rule: 'Remplissez la grille : chaque case attend une ville de France qui vérifie sa ligne et sa colonne. Une ville ne sert qu’une fois.',
   },
   {
-    id: 'interro_carte', kind: 'grille', icon: '🎙️', title: 'L’interro surprise',
-    rule: 'Le journaliste vous teste en direct sur la carte de France : un département par case, sans vous tromper trop souvent.',
+    id: 'interro_carte', kind: 'grille', icon: '🎙️', title: 'L’interro surprise', grid: 'villes',
+    rule: 'Le journaliste vous teste en direct sur la carte de France : une ville par case, sans vous tromper trop souvent.',
+  },
+  {
+    id: 'sommet_ue', kind: 'sommet', icon: '🇪🇺', title: 'Conseil européen', summit: 'ue',
+    rule: 'Négociez le texte article par article jusqu’à l’aube : défendez les intérêts de la France (🇫🇷), mais sans unanimité, pas d’accord. Trois apartés possibles pour amadouer un dirigeant.',
+  },
+  {
+    id: 'sommet_g20', kind: 'sommet', icon: '🌐', title: 'Sommet du G20', summit: 'g20',
+    rule: 'Un communiqué final à arracher, article par article, avant six heures du matin. Chaque dirigeant a ses lignes rouges.',
+  },
+  {
+    id: 'sommet_climat', kind: 'sommet', icon: '🌡️', title: 'Conférence sur le climat', summit: 'climat',
+    rule: 'Un accord mondial sur le climat : ambition pour la planète et pour la France, mais un seul pays fâché suffit à tout bloquer.',
+  },
+  {
+    id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',
+    rule: 'Cadeau, menu, toast et programme : lisez la fiche du protocole et évitez le faux pas qui ferait un incident diplomatique.',
+  },
+  {
+    id: 'metrodoku', kind: 'grille', icon: 'Ⓜ', title: 'Metrodoku', grid: 'metro',
+    rule: 'Chaque case attend une station du métro parisien qui vérifie sa ligne et sa colonne (souvent : desservie par les deux lignes). Une station ne sert qu’une fois.',
+  },
+  {
+    id: 'capitalodoku', kind: 'grille', icon: '🌍', title: 'Capitalodoku', grid: 'capitales',
+    rule: 'Chaque case attend une capitale du monde qui vérifie sa ligne et sa colonne. Tapez la capitale ou le pays. Une capitale ne sert qu’une fois.',
   },
   {
     id: 'interview_piege', kind: 'interview', icon: '🎙️', title: 'L’interview piège',

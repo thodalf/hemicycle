@@ -346,6 +346,74 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
 
+  {
+    tag: 'sommet_crise_nuit', weight: 1, eligible: d => !!d.presidency || d.player.rankId === 'premier_ministre',
+    build: () => ({
+      title: 'Sommet européen de crise cette nuit',
+      context: 'Une crise bancaire menace la zone euro. Les vingt-sept se réunissent en urgence à Bruxelles : il faut un texte avant l’ouverture des marchés.',
+      choices: [
+        c('y_aller', 'Y aller et négocier vous-même', [{ kind: 'minigame', gameId: 'sommet_ue', title: 'Sommet de crise à Bruxelles', reward: [{ kind: 'intl', prestige: 5 }, s('credibility', 3), eco({ confidence: 4 })], penalty: [{ kind: 'intl', prestige: -3 }, eco({ confidence: -3 })] }, s('energy', -8)], 'Avion à 18 h, café à 3 h du matin.'),
+        c('ministre', 'Envoyer le ministre des Affaires étrangères', [{ kind: 'intl', prestige: -1 }, eco({ confidence: -1 })], 'On remarque votre absence.'),
+      ],
+    }),
+  },
+  {
+    tag: 'chef_etat_invite', weight: 0.8, eligible: d => !!d.presidency,
+    build: () => ({
+      title: 'Un chef d’État s’invite',
+      context: 'Un dirigeant étranger annonce sa visite officielle à Paris dans dix jours. Le protocole est sur les dents.',
+      choices: [
+        c('recevoir', 'Le recevoir avec tous les honneurs', [{ kind: 'minigame', gameId: 'visite_officielle', title: 'Visite d’État à l’Élysée', reward: [{ kind: 'intl', prestige: 4 }, s('popularity', 1)], penalty: [{ kind: 'intl', prestige: -4 }, s('popularity', -1)] }], 'Garde républicaine, tapis rouge, dîner d’État.'),
+        c('sobre', 'Une visite de travail, sans faste', [{ kind: 'intl', prestige: 1 }, s('credibility', 1)], 'Deux heures de réunion, un communiqué. Efficace.'),
+      ],
+    }),
+  }
+
+];
+
+/** Une petite phrase : un moment où une formule peut rester (tirage à part) */
+export const PHRASE_EVENT: RandomEvent =
+{
+    tag: 'petite_phrase', weight: 1.4, minRank: 'conseiller_municipal',
+    build: (_d, rng) => {
+      const ctx = rng.pick(PHRASES);
+      const q = (text: string, bold: number): Effect => ({ kind: 'quote', text, bold });
+      return {
+        title: ctx.title,
+        context: `${ctx.context} Ce que vous direz restera peut-être.`,
+        choices: [
+          c('prudent', ctx.f[0], [q(ctx.f[0].replace(/^« | »$/g, ''), 0.05)], 'Une réponse sans risque. Sans relief non plus.'),
+          c('marquant', ctx.f[1], [q(ctx.f[1].replace(/^« | »$/g, ''), 0.45)], 'La formule est reprise dans les titres du soir.'),
+          c('provoc', ctx.f[2], [q(ctx.f[2].replace(/^« | »$/g, ''), 0.85)], 'Un silence, puis la salle s’enflamme. Pour le meilleur ou pour le pire.'),
+        ],
+      };
+    },
+  };
+
+/** Les moments où une petite phrase peut naître : prudente, marquante, provocatrice */
+const PHRASES: { title: string; context: string; f: [string, string, string] }[] = [
+  { title: 'Sur le plateau du 20 heures', context: 'La journaliste vous interroge sur le pouvoir d’achat. Les caméras zooment.',
+    f: ['« Nous agirons avec responsabilité et méthode. »', '« Le pouvoir d’achat, ce n’est pas un slogan : c’est un frigo plein. »', '« Les fins de mois difficiles, je connais : moi aussi je compte en fin de mois… mes rendez-vous. »'] },
+  { title: 'Au pupitre du meeting', context: 'Cinq mille personnes, des drapeaux, un silence avant votre conclusion.',
+    f: ['« Ensemble, nous construirons l’avenir. »', '« La France n’est pas fatiguée : elle est impatiente ! »', '« Ceux qui nous gouvernent ont des montres, nous, nous avons le temps ! »'] },
+  { title: 'Devant l’usine qui ferme', context: 'Les salariés vous attendent derrière les grilles, gilets orange sur le dos.',
+    f: ['« Je serai à vos côtés dans les négociations. »', '« Une usine qui ferme, c’est une ville qui s’éteint. »', '« Si l’État ne peut rien, alors à quoi sert l’État ? »'] },
+  { title: 'Au milieu des tracteurs', context: 'Un agriculteur vous tend le micro, de la paille dans les bottes.',
+    f: ['« Nous travaillons à des solutions concrètes. »', '« Sans paysans, pas de pays. »', '« Bruxelles connaît mieux les vaches en photo que dans les prés ! »'] },
+  { title: 'Sur le climat, au micro du matin', context: 'Le présentateur cite le dernier rapport du GIEC.',
+    f: ['« Le climat est une priorité de notre action. »', '« Il n’y a pas de planète B, et pas de plan B. »', '« L’écologie punitive, c’est l’écologie des riches. »'] },
+  { title: 'Devant des lycéens', context: 'Un élève vous demande pourquoi il devrait croire en la politique.',
+    f: ['« Parce que la démocratie a besoin de vous. »', '« La politique, si vous ne vous en occupez pas, elle s’occupe de vous. »', '« Franchement ? Ne croyez personne. Pas même moi. »'] },
+  { title: 'Après une soirée électorale difficile', context: 'Les militants sont déçus. Les caméras attendent votre réaction.',
+    f: ['« Nous prenons acte du résultat. »', '« On ne perd jamais : on gagne ou on apprend. »', '« Les électeurs se sont trompés, ils le comprendront vite. »'] },
+  { title: 'Face aux élites, sur un plateau', context: 'On vous accuse d’être « déconnecté·e ».',
+    f: ['« Je reste à l’écoute de tous les Français. »', '« Je préfère un marché du dimanche à un dîner en ville. »', '« Les vrais déconnectés, ce sont ceux qui n’ont jamais pris un RER à 7 heures. »'] },
+  { title: 'Sur la sécurité, au journal régional', context: 'Une agression a choqué votre région.',
+    f: ['« Toute la lumière doit être faite. »', '« La sécurité, c’est la première des libertés. »', '« Il faut nettoyer tout ça, et vite. »'] },
+  { title: 'Sur l’école, au congrès des parents', context: 'On vous interpelle sur les professeurs non remplacés.',
+    f: ['« Nous recruterons davantage. »', '« Une classe sans professeur, c’est une promesse trahie. »', '« Les vacances scolaires sont trop longues, voilà le vrai problème. »'] },
+  { title: 'Dans une émission humoristique', context: 'L’humoriste vous pousse dans vos retranchements. Le public rit déjà.',
+    f: ['« Je prends l’humour avec humour. »', '« Mon programme tient en trois mots : moins de blabla. Enfin, quatre. »', '« Si je n’étais pas en politique, je serais… humoriste. Ah, on me dit que c’est pareil. »'] },
 ];
 
 /** Libellés des électorats (pour les textes) */

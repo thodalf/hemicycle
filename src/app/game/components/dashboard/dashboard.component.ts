@@ -1,3 +1,4 @@
+import { epilogue } from '../../engine/legacy';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DOMAIN_LABELS } from '../../models/game.models';
@@ -235,6 +236,14 @@ import { Milestone } from '../../models/game.models';
               }
             </ol>
           }
+          @if (epi(); as ep) {
+            <section class="epilogue" aria-label="Épilogue">
+              <div class="eyebrow">Épilogue · le jugement de l’histoire</div>
+              <p class="grade"><strong class="mono">{{ ep.grade }}/20</strong> — {{ ep.verdict }}</p>
+              <p class="honors">🛣️ {{ ep.streets }} rue{{ ep.streets > 1 ? 's' : '' }} et place{{ ep.streets > 1 ? 's' : '' }} à votre nom · 🏫 {{ ep.schools }} école{{ ep.schools > 1 ? 's' : '' }}@if (ep.statue) { · 🗿 {{ ep.statue }} }</p>
+              <ol class="bio">@for (c of ep.chapters; track $index) { <li>{{ c }}</li> }</ol>
+            </section>
+          }
           <div class="obit-btns">
             <button class="btn" (click)="memoirs.set(true)">📜 Journal et mémoires</button>
             <button class="btn primary" (click)="game.quit()">Retour à mes parties</button>
@@ -255,6 +264,7 @@ import { Milestone } from '../../models/game.models';
     }
   `,
   styles: `
+    .epilogue { display: grid; gap: 6px; margin: 10px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); text-align: left; .grade { margin: 0; font-size: 14px; } .honors { margin: 0; font-size: 12.5px; } .bio { margin: 0; padding-left: 18px; font-size: 12.5px; display: grid; gap: 2px; } }
     :host { display: block; }
     .topbar {
       position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; align-items: center; gap: 24px;
@@ -389,6 +399,7 @@ export class DashboardComponent {
   /** Un écran interactif est ouvert : les cartes « nouveau chapitre » attendent */
   protected readonly blocking = computed(() => blockingOverlay(this.game.s()));
   protected readonly summary = () => lifeSummary(this.game.s());
+  protected readonly epi = computed(() => (this.game.s().status === 'mort' ? epilogue(this.game.s()) : null));
   protected deathLabel(c: keyof typeof DEATH_LABELS) { return DEATH_LABELS[c]; }
 
   /** Promotions, victoire et défaite : tampon et confettis */

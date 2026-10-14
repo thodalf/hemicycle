@@ -1,3 +1,4 @@
+import { recordLaw } from './legacy';
 import { AssemblyGroup, AssemblyVote, Ballot, Effect, GameState, VoteTally } from '../models/game.models';
 import { BASE_SEATS, BILLS, BILLS_BY_ID, BillDef, NON_INSCRITS, SEATS } from '../data/bills';
 import { DOMAIN_LABELS } from '../models/game.models';
@@ -414,6 +415,7 @@ function consequences(d: GameState, v: AssemblyVote, ballot: Ballot, adopted: bo
   // Guerre autorisée à l'initiative du parti du joueur (chef de parti)
   if (v.warEnemy && v.role === 'chef' && adopted) startWar(d, v.warEnemy, true);
 
+  if (adopted && (v.own || (v.origin === 'gouvernement' && v.role === 'gouvernement')) && !v.warEnemy) recordLaw(d, v.title, v.domain);
   record(d, v, ballot, adopted, rebel);
   const close = margin <= 6 ? ` à ${margin} voix près` : '';
   pushNews(d, 'actu', adopted ? 'positive' : 'negative', `${v.title} : ${adopted ? 'adopté' : 'rejeté'}${close}`,

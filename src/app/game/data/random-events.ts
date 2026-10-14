@@ -14,7 +14,7 @@ import { APOC_EVENTS, APOC_GATE, DEVIL_DUE } from './apocalypse-events';
 import { canStartArc } from '../engine/arcs';
 import { CRISIS_EVENTS, CRISIS_GATES, FAMILY_EVENTS, MISC_ARC_EVENTS } from './life-arc-events';
 import { PHONE_EVENTS } from './phone-events';
-import { CALENDAR_EVENTS, COUNTRY_EVENTS } from './country-events';
+import { CALENDAR_EVENTS, COUNTRY_EVENTS, PHRASE_EVENT } from './country-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
 import { RANK_EVENTS } from './rank-events';
@@ -1443,6 +1443,8 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     const pool = CRISIS_EVENTS.filter(e => canFire(e, 4));
     if (pool.length) ev = pick(pool);
   }
+  // Une petite phrase qui peut rester
+  if (!ev && d.week > 4 && canFire(PHRASE_EVENT, 8) && rng.chance(0.05)) ev = PHRASE_EVENT;
   // La vie de famille
   if (!ev && d.week > 3 && rng.chance(0.1)) {
     const pool = FAMILY_EVENTS.filter(e => canFire(e, 10));

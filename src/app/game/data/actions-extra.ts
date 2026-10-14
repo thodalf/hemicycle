@@ -8,6 +8,8 @@ import { ActionDefinition, CrisisArcId, Domain, Effect } from '../models/game.mo
 const st = (stat: 'popularity' | 'influence' | 'credibility' | 'politicalCapital' | 'stress' | 'energy', delta: number): Effect => ({ kind: 'stat', stat, delta });
 const dos = (domain: Domain, delta: number): Effect => ({ kind: 'dossier', domain, delta });
 const ct = (contactId: string, trust: number): Effect => ({ kind: 'contact', contactId, trust });
+const seg = (segment: 'jeunes' | 'retraites' | 'populaires' | 'cadres' | 'ruraux', delta: number): Effect => ({ kind: 'segment', segment, delta });
+const eco = (x: Omit<Extract<Effect, { kind: 'economy' }>, 'kind'>): Effect => ({ kind: 'economy', ...x });
 
 const INTRIGUES: ActionDefinition[] = [
   {
@@ -297,6 +299,41 @@ const LIFE: ActionDefinition[] = [
     description: 'Des équipes avec perches et combinaisons, du lever au coucher du soleil.', cost: { ap: 1, politicalCapital: 5 }, maxPerMonth: 1, effects: [cr('frelons', 6, -8)] },
   { id: 'fr_apiculteurs', label: 'Visiter un rucher sinistré', category: 'crise', minRank: 'militant', requires: { arc: 'frelons' },
     description: 'Voile sur la tête, enfumoir en main : une photo qui fera le tour des réseaux.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [cr('frelons', 3, -3), st('popularity', 2), { kind: 'segment', segment: 'ruraux', delta: 2 }] },
+  // La France sur Mars
+  { id: 'mars_budget', label: 'Arracher des crédits pour la mission martienne', category: 'crise', minRank: 'militant', requires: { arc: 'mars' },
+    description: 'Bercy grince, mais la gloire n’a pas de prix.', cost: { ap: 1, politicalCapital: 8 }, maxPerMonth: 1, effects: [cr('mars', 12, 2), { kind: 'economy', deficit: 0.05 }] },
+  { id: 'mars_tests', label: 'Multiplier les essais de sécurité', category: 'crise', minRank: 'militant', requires: { arc: 'mars' },
+    description: 'Chaque test évité aujourd’hui est un risque demain.', cost: { ap: 1, energy: 6 }, maxPerMonth: 1, effects: [cr('mars', 4, -10)] },
+  { id: 'mars_ecoles', label: 'Faire rêver les écoles avec la mission', category: 'crise', minRank: 'militant', requires: { arc: 'mars' },
+    description: 'Visioconférence avec les astronautes, maquettes de fusées dans chaque classe.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [cr('mars', 3), st('popularity', 2), seg('jeunes', 3)] },
+  // Le retour de Napoléon
+  { id: 'napo_historiens', label: 'Mobiliser les historiens', category: 'crise', minRank: 'militant', requires: { arc: 'napoleon' },
+    description: 'Le rétablissement de l’esclavage, les guerres, le Code civil : remettre l’Empereur à sa juste place.', cost: { ap: 1, energy: 5 }, maxPerMonth: 1, effects: [cr('napoleon', 8, -3), st('credibility', 1)] },
+  { id: 'napo_adn', label: 'Exiger un test ADN', category: 'crise', minRank: 'militant', requires: { arc: 'napoleon' },
+    description: 'Un laboratoire indépendant, une mèche de cheveux authentique, la vérité scientifique.', cost: { ap: 1, politicalCapital: 6 }, cooldown: 3, effects: [cr('napoleon', 12, -4)] },
+  { id: 'napo_fete', label: 'Organiser une grande fête républicaine', category: 'crise', minRank: 'militant', requires: { arc: 'napoleon' },
+    description: 'Bals, Marseillaise, bonnets phrygiens : la République sait faire la fête aussi.', cost: { ap: 1, energy: 8, money: 1000 }, cooldown: 2, effects: [cr('napoleon', 5, -6), st('popularity', 1)] },
+  // L'Atlantide
+  { id: 'atl_fouilles', label: 'Financer les fouilles archéologiques', category: 'crise', minRank: 'militant', requires: { arc: 'atlantide' },
+    description: 'Chaque colonne exhumée renforce le dossier français.', cost: { ap: 1, money: 1500 }, maxPerMonth: 1, effects: [cr('atlantide', 10), { kind: 'dossier', domain: 'territoires', delta: 2 }] },
+  { id: 'atl_diplomatie', label: 'Plaider la cause française à l’ONU', category: 'crise', minRank: 'militant', requires: { arc: 'atlantide' },
+    description: 'Cartes anciennes, droit de la mer, alliances : la bataille juridique.', cost: { ap: 1, energy: 6 }, maxPerMonth: 1, effects: [cr('atlantide', 4, -8), { kind: 'intl', prestige: 1 }] },
+  { id: 'atl_bretons', label: 'Associer les pêcheurs bretons', category: 'crise', minRank: 'militant', requires: { arc: 'atlantide' },
+    description: 'Ils connaissent ces eaux mieux que personne.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [cr('atlantide', 5, -2), seg('ruraux', 2)] },
+  // L'IA candidate
+  { id: 'iac_conseil', label: 'Saisir le Conseil constitutionnel', category: 'crise', minRank: 'militant', requires: { arc: 'ia_candidate' },
+    description: 'Une machine peut-elle être candidate ? Le droit va trancher.', cost: { ap: 1, politicalCapital: 6 }, cooldown: 3, effects: [cr('ia_candidate', 10, -4)] },
+  { id: 'iac_debat', minigame: 'eloquence', label: 'Débattre en direct avec ALMA', category: 'crise', minRank: 'militant', requires: { arc: 'ia_candidate' },
+    description: 'L’humain contre la machine : de l’émotion, de l’humour, des convictions.', cost: { ap: 1, energy: 8 }, cooldown: 2, effects: [cr('ia_candidate', 10, -8), st('popularity', 2)] },
+  { id: 'iac_education', label: 'Lancer une campagne d’éducation au numérique', category: 'crise', minRank: 'militant', requires: { arc: 'ia_candidate' },
+    description: 'Comprendre comment pense une IA, c’est mieux voter.', cost: { ap: 1, energy: 5 }, maxPerMonth: 1, effects: [cr('ia_candidate', 5, -3), seg('jeunes', 2)] },
+  // Le grand hiver
+  { id: 'hiver_serres', label: 'Construire des serres géantes', category: 'crise', minRank: 'militant', requires: { arc: 'grand_hiver' },
+    description: 'Des légumes sous verre, chauffés par la géothermie.', cost: { ap: 1, politicalCapital: 8 }, maxPerMonth: 1, effects: [cr('grand_hiver', 10, -2), seg('ruraux', 2)] },
+  { id: 'hiver_solidarite', label: 'Organiser la solidarité de quartier', category: 'crise', minRank: 'militant', requires: { arc: 'grand_hiver' },
+    description: 'Repas partagés, chauffage collectif, voisins qui veillent.', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [cr('grand_hiver', 6, -6), st('popularity', 1)] },
+  { id: 'hiver_stocks', label: 'Réquisitionner les stocks spéculatifs', category: 'crise', minRank: 'militant', requires: { arc: 'grand_hiver' },
+    description: 'Des entrepôts pleins pendant que les rayons sont vides : c’est fini.', cost: { ap: 1, politicalCapital: 6 }, cooldown: 3, effects: [cr('grand_hiver', 4, -10), seg('populaires', 2), seg('cadres', -2)] },
 ];
 
 /* ── Fin du monde ─────────────────────────────────────────── */
@@ -324,6 +361,8 @@ function min(domain: Domain, id: string, label: string, description: string, cos
 }
 
 const MINISTRIES: ActionDefinition[] = [
+  min('diplomatie', 'min_dipl_visite', 'Organiser la visite d’État d’un dirigeant étranger', 'Le président vous confie tout : cadeau, menu, toast, programme. Le moindre faux pas sera le vôtre.',
+    { ap: 1, energy: 8 }, [{ kind: 'intl', prestige: 3 }, st('influence', 2)], { minigame: 'visite_officielle', cooldown: 4 }),
   // Économie
   min('economie', 'min_eco_patrons', 'Réunir les grands patrons à Bercy', 'Un petit-déjeuner, quarante chefs d’entreprise, des promesses d’investissement en France.',
     { ap: 2, energy: 10 }, [dos('economie', 5), st('influence', 3), ct('ct-btp', 4), st('popularity', -1)]),
@@ -380,8 +419,6 @@ const MINISTRIES: ActionDefinition[] = [
 ];
 
 /* ── Le pays : économie, électorats, coalition, circonscription ─ */
-const seg = (segment: 'jeunes' | 'retraites' | 'populaires' | 'cadres' | 'ruraux', delta: number): Effect => ({ kind: 'segment', segment, delta });
-const eco = (x: Omit<Extract<Effect, { kind: 'economy' }>, 'kind'>): Effect => ({ kind: 'economy', ...x });
 
 const COUNTRY: ActionDefinition[] = [
   // Gouverner l'économie
@@ -431,6 +468,26 @@ const COUNTRY: ActionDefinition[] = [
     description: 'Appels, sirènes, détresses : une nuit qui vous change.', cost: { ap: 1, energy: 10 }, cooldown: 4, effects: [{ kind: 'dossier', domain: 'sante', delta: 3 }, seg('populaires', 2), st('popularity', 1)] },
   { id: 'debat_lyceens', label: 'Répondre aux questions d’une classe de terminale', category: 'terrain', minRank: 'militant',
     description: 'Une heure dans un amphi de lycée : climat, réseaux, avenir. Pas de langue de bois possible.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [seg('jeunes', 3), { kind: 'dossier', domain: 'education', delta: 2 }] },
+  { id: 'defi_metrodoku', minigame: 'metrodoku', label: 'Relever le défi Metrodoku d’un quotidien gratuit', category: 'medias', minRank: 'militant',
+    description: 'Le jeu que tout Paris fait dans le métro : vos scores seront publiés demain.', cost: { ap: 1, energy: 3 }, cooldown: 2, effects: [st('popularity', 1), seg('jeunes', 2), seg('cadres', 1)] },
+  { id: 'quiz_capitales', minigame: 'capitalodoku', label: 'Affronter le corps diplomatique au quiz des capitales', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Une soirée à l’ambassade : les diplomates parient que vous ne connaissez pas la capitale du Bhoutan.', cost: { ap: 1, energy: 4 }, cooldown: 3, effects: [st('credibility', 2), { kind: 'dossier', domain: 'diplomatie', delta: 3 }, { kind: 'intl', prestige: 1 }] },
+  // Sommets et visites d'État
+  { id: 'sommet_conseil_ue', minigame: 'sommet_ue', label: 'Négocier au Conseil européen', category: 'elysee', minRank: 'president', onlyRanks: ['president'],
+    description: 'Une nuit de négociation à Bruxelles, article par article, face à vingt-six dirigeants (six autour de vous).', cost: { ap: 1, energy: 12 }, cooldown: 4,
+    effects: [{ kind: 'intl', prestige: 5 }, st('credibility', 2), { kind: 'economy', confidence: 2 }, seg('cadres', 1)] },
+  { id: 'sommet_g20_elysee', minigame: 'sommet_g20', label: 'Représenter la France au G20', category: 'elysee', minRank: 'president', onlyRanks: ['president'],
+    description: 'Les vingt plus grandes économies du monde, un communiqué à arracher avant l’aube.', cost: { ap: 1, energy: 12 }, cooldown: 12,
+    effects: [{ kind: 'intl', prestige: 6 }, st('influence', 3)] },
+  { id: 'sommet_climat_elysee', minigame: 'sommet_climat', label: 'Porter un accord à la conférence sur le climat', category: 'elysee', minRank: 'president', onlyRanks: ['president'],
+    description: 'Les petits États insulaires contre les pétromonarchies : à vous de trouver le compromis.', cost: { ap: 1, energy: 10 }, cooldown: 12,
+    effects: [{ kind: 'intl', prestige: 4 }, seg('jeunes', 3), { kind: 'dossier', domain: 'ecologie', delta: 3 }] },
+  { id: 'recevoir_visite_etat', minigame: 'visite_officielle', label: 'Recevoir un chef d’État en visite officielle', category: 'elysee', minRank: 'president', onlyRanks: ['president'],
+    description: 'Garde républicaine, dîner d’État, toast : chaque détail compte, et un faux pas fait la une à l’étranger.', cost: { ap: 1, energy: 8, politicalCapital: 4 }, cooldown: 4,
+    effects: [{ kind: 'intl', prestige: 3 }, st('popularity', 1), { kind: 'economy', confidence: 1 }] },
+  { id: 'pm_conseil_ue', minigame: 'sommet_ue', label: 'Remplacer le président au Conseil européen', category: 'fonction', minRank: 'premier_ministre', onlyRanks: ['premier_ministre'],
+    description: 'Le président est retenu : c’est vous qui négociez à Bruxelles cette nuit.', cost: { ap: 1, energy: 12 }, cooldown: 6,
+    effects: [{ kind: 'intl', prestige: 3 }, st('influence', 2), st('credibility', 2)] },
   // L'Élysée nomme son gouvernement
   { id: 'nommer_gouvernement', label: 'Nommer (ou remanier) le gouvernement', category: 'elysee', minRank: 'president', onlyRanks: ['president'], requires: { appoint: true },
     description: 'Choisir le Premier ministre, puis l’équilibre des ministères : fidèles, courants, ouverture, société civile ou experts.', cost: { ap: 1, energy: 6 }, cooldown: 6,

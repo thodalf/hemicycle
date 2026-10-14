@@ -53,6 +53,16 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['L’algorithme qui gère les aides sociales suspend 200 000 allocations sans raison.', 'Impôts recalculés au hasard, convocations absurdes : la confiance s’effondre.', 'Les ingénieurs tentent de comprendre ce que la machine a appris.'] },
   frelons: { id: 'frelons', icon: '🐝', label: 'L’invasion des frelons géants', gaugeLabel: 'Pièges posés', riskLabel: 'Ruches détruites', months: 4, drift: { gauge: 5, risk: 6 },
     stages: ['Des nuées de frelons géants s’abattent sur les ruchers du Sud-Ouest.', 'Pique-niques annulés, apiculteurs désespérés, pots de miel hors de prix.', 'Pièges, nids détruits, appel aux volontaires : la riposte s’organise.'] },
+  mars: { id: 'mars', icon: '🚀', label: 'La France sur Mars', gaugeLabel: 'Préparation de la mission', riskLabel: 'Risques techniques', months: 10, drift: { gauge: 4, risk: 4 },
+    stages: ['Le programme « Lutèce » est lancé : quatre astronautes français vers Mars.', 'La fusée prend forme à Kourou ; les budgets aussi.', 'Compte à rebours. Le monde entier regarde.'] },
+  napoleon: { id: 'napoleon', icon: '🎩', label: 'Le retour de Napoléon', gaugeLabel: 'Riposte républicaine', riskLabel: 'Fièvre bonapartiste', months: 8, drift: { gauge: 3, risk: 5 },
+    stages: ['Un homme en bicorne affirme être Napoléon, cloné à partir d’une mèche de cheveux.', 'Ses meetings font salle comble ; ses grognards défilent sur les Champs.', 'Il annonce son « retour de l’île d’Elbe » : une marche sur Paris.'] },
+  atlantide: { id: 'atlantide', icon: '🏛️', label: 'L’Atlantide refait surface', gaugeLabel: 'Souveraineté française', riskLabel: 'Convoitises étrangères', months: 8, drift: { gauge: 3, risk: 4 },
+    stages: ['Une île inconnue émerge au large de la Bretagne, couverte de ruines de marbre.', 'Archéologues, pêcheurs et marines étrangères se disputent les lieux.', 'L’ONU doit trancher : à qui appartient l’Atlantide ?'] },
+  ia_candidate: { id: 'ia_candidate', icon: '🖥️', label: 'Une IA candidate à la présidentielle', gaugeLabel: 'Débat démocratique', riskLabel: 'Sondages de l’IA', months: 6, drift: { gauge: 3, risk: 6 },
+    stages: ['« ALMA », une intelligence artificielle, annonce sa candidature. Elle promet zéro mensonge.', 'Elle répond à des millions d’électeurs en même temps. Les sondages s’affolent.', 'Le Conseil constitutionnel doit se prononcer. Le débat fait rage.'] },
+  grand_hiver: { id: 'grand_hiver', icon: '🌋', label: 'Le grand hiver', gaugeLabel: 'Résilience du pays', riskLabel: 'Pénuries', months: 18, drift: { gauge: 3, risk: 4 },
+    stages: ['Un volcan islandais a obscurci le ciel : l’été n’est pas venu.', 'Récoltes perdues, rationnement, files d’attente devant les boulangeries.', 'Les premiers rayons percent. Il faut tenir encore un peu.'] },
 };
 
 export function crises(d: GameState): Partial<Record<CrisisArcId, CrisisArc>> {
@@ -246,6 +256,58 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.popularity = clamp(s.popularity - 2);
         electorate(d).offsets.ruraux = clamp(electorate(d).offsets.ruraux - 4, -30, 30);
         lose('Le miel a disparu', 'Un tiers des ruches détruites. Les apiculteurs manifestent en combinaison devant la préfecture.');
+      }
+      break;
+    case 'mars':
+      if (a.gauge >= 60 && a.risk < 55) {
+        s.popularity = clamp(s.popularity + 10); s.influence = clamp(s.influence + 5);
+        d.intl.prestige = clamp(d.intl.prestige + 15);
+        win('Des Français sur Mars', 'Le premier pas français sur Mars, en direct devant deux milliards de téléspectateurs. La Marseillaise résonne sur la planète rouge.');
+      } else if (a.gauge >= 45) {
+        pushNews(d, 'actu', 'neutral', 'Le lancement reporté', 'Trop de doutes techniques : la mission partira plus tard, sans vous comme visage du programme.');
+      } else {
+        s.popularity = clamp(s.popularity - 8); s.credibility = clamp(s.credibility - 5);
+        lose('La catastrophe en direct', 'La fusée explose quarante secondes après le décollage. L’équipage s’en sort par miracle ; votre réputation, moins.');
+      }
+      break;
+    case 'napoleon':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); s.credibility = clamp(s.credibility + 4);
+        win('L’Empereur démasqué', 'Le « clone » était un comédien de Montélimar. Il repart en exil volontaire… à Sainte-Hélène, où il ouvre un restaurant.');
+      } else {
+        s.popularity = clamp(s.popularity - 6);
+        if (d.presidency) d.presidency.approval = clamp(d.presidency.approval - 8);
+        lose('Le sacre', 'Il se fait couronner sur le parvis de Notre-Dame devant une foule en délire. Son mouvement pèsera désormais dans chaque élection.');
+      }
+      break;
+    case 'atlantide':
+      if (a.gauge >= a.risk) {
+        d.intl.prestige = clamp(d.intl.prestige + 8);
+        economy(d).growth += 0.2;
+        win('L’Atlantide française', 'L’ONU reconnaît la souveraineté française. Le premier musée de l’Atlantide ouvre à Brest.');
+      } else {
+        d.intl.prestige = clamp(d.intl.prestige - 5); s.popularity = clamp(s.popularity - 3);
+        lose('L’Atlantide internationalisée', 'L’île est placée sous tutelle internationale. La Bretagne regarde passer les touristes du monde entier.');
+      }
+      break;
+    case 'ia_candidate':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 5);
+        electorate(d).offsets.jeunes = clamp(electorate(d).offsets.jeunes + 2, -30, 30);
+        win('L’IA renvoyée à ses serveurs', 'Le Conseil constitutionnel rappelle qu’un candidat doit être une personne. Le débat a réveillé la démocratie.');
+      } else {
+        s.popularity = clamp(s.popularity - 4); s.influence = clamp(s.influence - 3);
+        lose('L’IA en tête des sondages', 'Écartée du scrutin in extremis, ALMA reste la personnalité préférée des Français. Les humains ont pris un coup de vieux.');
+      }
+      break;
+    case 'grand_hiver':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 6); s.credibility = clamp(s.credibility + 4);
+        win('Le printemps revenu', 'Le soleil reparaît enfin. Le pays a tenu, solidaire, et s’en souviendra.');
+      } else {
+        s.popularity = clamp(s.popularity - 8);
+        economy(d).growth -= 1;
+        lose('L’exode', 'Des millions de Français partis vers le Sud, des villages vidés. Le pays mettra des années à se relever.');
       }
       break;
     case 'dissolution': {

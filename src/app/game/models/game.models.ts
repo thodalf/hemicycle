@@ -298,6 +298,7 @@ export type Effect =
   | { kind: 'segment'; segment: Segment | '*'; delta: number }
   | { kind: 'coalition'; partyId?: string; open?: boolean; mood?: number; leave?: boolean }
   | { kind: 'circo'; move: CircoKind }
+  | { kind: 'quote'; text: string; bold: number }
   | { kind: 'annex'; enemyId: string; mode: 'annex' | 'protectorat' | 'reparations' | 'magnanime' | 'liberer' }
   | { kind: 'crisis'; arc: CrisisArcId; start?: boolean; gauge?: number; risk?: number; meta?: string }
   | { kind: 'apocalypse'; start?: boolean; darkness?: number; resistance?: number; cult?: number; pact?: boolean; raid?: boolean }
@@ -1054,6 +1055,12 @@ export interface GameState {
   electorate?: ElectorateState;
   electoralMap?: ElectoralMap | null;
   coalition?: Coalition | null;
+  /** Votre image par thème (0-100) */
+  reputation?: Record<Domain, number>;
+  /** Vos petites phrases restées dans les mémoires */
+  quotes?: Quote[];
+  /** Vos lois et réformes adoptées */
+  laws?: Law[];
   plot?: PlotState | null;
   player: Player;
   party: Party;
@@ -1374,6 +1381,12 @@ export interface TerritoryState {
 
 export type CircoKind = 'bastion' | 'disputee' | 'mission';
 
+/** Une petite phrase restée dans les mémoires */
+export interface Quote { id: string; text: string; week: number; fame: 'culte' | 'boulet' }
+
+/** Une loi ou une réforme adoptée : elle vit après le vote */
+export interface Law { id: string; title: string; domain: Domain; week: number; mastery: number; status: 'en_vigueur' | 'evaluee' | 'abrogee'; verdict?: 'succes' | 'echec' }
+
 /** L'économie française : réagit aux réformes, aux crises et à la conjoncture */
 export interface EconomyState {
   /** Taux de chômage (%) */
@@ -1425,7 +1438,8 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
-  | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons';
+  | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

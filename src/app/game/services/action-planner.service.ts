@@ -1,5 +1,8 @@
 import { actionSegments } from '../engine/country';
+import { actionImage } from '../engine/legacy';
 import { canAppoint } from '../engine/cabinet';
+import { dailyPlayed } from '../engine/daily';
+import { MINIGAMES_BY_ID } from '../data/minigames';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { inMonth } from '../engine/calendar';
 import { ALIEN_PHASES } from '../engine/alien';
@@ -126,6 +129,7 @@ export class ActionPlannerService {
     const { cost } = action;
     if (rankOrder(action.minRank) > rankOrder(s.player.rankId)) return { ok: false, reason: 'Rang insuffisant' };
     if ((s.cooldowns[action.id] ?? 0) > s.week) return { ok: false, reason: `De nouveau possible ${inMonth(s.cooldowns[action.id])}` };
+    if (action.minigame && MINIGAMES_BY_ID.get(action.minigame)?.daily && dailyPlayed()) return { ok: false, reason: 'Déjà joué aujourd’hui : nouveau mot demain' };
     const req = action.requires;
     if (req) {
       const c = s.crown;
@@ -223,6 +227,7 @@ export class ActionPlannerService {
 
       recordObjectiveEvent(d, 'category', action.category);
       actionSegments(d, action, ctx);
+      actionImage(d, action, ctx);
       const lastUse = Number(d.player.flags[`last_${action.id}`] ?? -99);
       const prevStreak = d.week - lastUse <= 1 ? Number(d.player.flags[`streak_${action.id}`] ?? 0) : -1;
       const record = () => { d.player.flags[`streak_${action.id}`] = prevStreak + 1; d.player.flags[`last_${action.id}`] = d.week; };

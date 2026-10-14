@@ -39,6 +39,7 @@ import { adjustEconomy, adjustSegment, moveCirco } from './country';
 import { adjustCoalition } from './coalition';
 import { applyAnnex } from './annex';
 import { adjustApocalypse } from './apocalypse';
+import { adjustQuote } from './legacy';
 
 /* ============================================================
  *  Moteur d'effets — fonctions pures appliquées sur un brouillon
@@ -451,6 +452,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       case 'coalition':
         summary.push(...adjustCoalition(d, e, rng));
+        break;
+      case 'quote':
+        summary.push(...adjustQuote(d, e, rng));
         break;
       case 'apocalypse':
         summary.push(...adjustApocalypse(d, e, rng));

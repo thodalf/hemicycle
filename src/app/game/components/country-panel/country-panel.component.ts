@@ -2,9 +2,11 @@ import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { annexedEnemies } from '../../engine/annex';
+import { IMAGE_LABELS, lawsByStatus, topImages } from '../../engine/legacy';
+import { DOMAINS } from '../../models/game.models';
 import { CIRCO_LABELS, MAP_REGIONS, RATINGS, accountability, econBonus, liveMap, segmentBonus, segmentRows } from '../../engine/country';
 
-type Tab = 'eco' | 'electorat' | 'carte';
+type Tab = 'eco' | 'electorat' | 'carte' | 'image';
 
 /** Le pays : économie, électorats, carte électorale */
 @Component({
@@ -19,6 +21,7 @@ type Tab = 'eco' | 'electorat' | 'carte';
         <button type="button" role="tab" [class.on]="tab() === 'eco'" (click)="tab.set('eco')">Économie</button>
         <button type="button" role="tab" [class.on]="tab() === 'electorat'" (click)="tab.set('electorat')">Électorats</button>
         <button type="button" role="tab" [class.on]="tab() === 'carte'" (click)="tab.set('carte')">Carte</button>
+        <button type="button" role="tab" [class.on]="tab() === 'image'" (click)="tab.set('image')">Image</button>
       </nav>
 
       @if (tab() === 'eco') {
@@ -52,6 +55,24 @@ type Tab = 'eco' | 'electorat' | 'carte';
           }
         </ul>
         <p class="note muted">Votre cote dans chaque électorat (écart à votre popularité générale). Chaque action plaît à certains et en agace d’autres. Effet sur une présidentielle : {{ segBonus() >= 0 ? '+' : '' }}{{ segBonus() | number: '1.0-1' }} pts.</p>
+      } @else if (tab() === 'image') {
+        <p class="label-line">@if (images().length) { On vous voit comme <strong>{{ images()[0].label }}</strong>@if (images()[1]; as b) {<span>, et un peu {{ b.label }}</span>}. } @else { Pas encore d’image marquée : vos actions la forgeront, lentement. }</p>
+        <ul class="segs">
+          @for (r of themes(); track r.domain) {
+            <li><span class="lbl">{{ r.label }}</span><span class="bar"><i [style.width.%]="r.value"></i></span><span class="mono val">{{ r.value }}</span><small></small></li>
+          }
+        </ul>
+        <div class="eyebrow">Vos petites phrases</div>
+        <ul class="quotes">
+          @for (q of quotesList(); track q.id) { <li [class]="q.fame"><span>{{ q.fame === 'culte' ? '⭐' : '🪨' }}</span> « {{ q.text }} » <small class="muted">{{ game.month(q.week) }}</small></li> }
+          @empty { <li class="muted">Aucune phrase n’est encore restée dans les mémoires.</li> }
+        </ul>
+        <div class="eyebrow">Vos lois</div>
+        <ul class="quotes">
+          @for (l of lawList(); track $index) { <li><span>📜</span> {{ l.title }} <small class="muted">{{ l.domain }} · {{ l.status }}</small></li> }
+          @empty { <li class="muted">Aucune loi adoptée pour l’instant.</li> }
+        </ul>
+        <p class="note muted">L’image se forge lentement et compte aux élections quand le sujet du moment est le vôtre. Les lois sont évaluées trois ans après leur vote ; vos successeurs peuvent les abroger.</p>
       } @else {
         <svg [attr.viewBox]="tiles().length > 14 ? '-0.15 -0.15 5.8 7' : '-0.15 -0.15 5.8 5.95'" class="fmap" role="img" aria-label="Carte électorale par région">
           @for (r of tiles(); track r.id) {
@@ -88,6 +109,9 @@ type Tab = 'eco' | 'electorat' | 'carte';
     .segs .bar i.hi { background: var(--good); } .segs .bar i.lo { background: var(--bad); }
     .val { text-align: right; } .off { font-size: 11px; text-align: right; color: var(--ink-3); } .off.pos { color: var(--good); } .off.neg { color: var(--bad); }
     .fmap { width: 100%; max-height: 260px; }
+    .label-line { margin: 0; font-size: 13px; } .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin-top: 4px; }
+    .quotes { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 12.5px; li { padding: 4px 8px; border-radius: 6px; background: var(--surface-2); } li.culte { background: var(--good-soft); } li.boulet { background: var(--bad-soft); } }
+    .tabs button { padding: 5px 4px; }
     .tile { stroke: var(--surface); stroke-width: 0.03; } .tile.mine { stroke: var(--ink); stroke-width: 0.06; }
     .code { font: 700 0.24px var(--font-body); fill: #fff; text-anchor: middle; paint-order: stroke; stroke: rgba(0,0,0,.35); stroke-width: 0.03; }
     .pct { font: 0.19px var(--font-mono); fill: #fff; text-anchor: middle; paint-order: stroke; stroke: rgba(0,0,0,.35); stroke-width: 0.025; }
@@ -100,6 +124,13 @@ export class CountryPanelComponent {
   protected readonly tab = signal<Tab>('eco');
   protected readonly rating = computed(() => RATINGS[this.game.s().economy?.rating ?? 2]);
   protected readonly rows = computed(() => segmentRows(this.game.s()));
+  protected readonly images = computed(() => topImages(this.game.s()));
+  protected readonly themes = computed(() => {
+    const r = this.game.s().reputation;
+    return DOMAINS.map(domain => ({ domain, label: IMAGE_LABELS[domain], value: Math.round(r?.[domain] ?? 0) })).sort((a, b) => b.value - a.value).slice(0, 5);
+  });
+  protected readonly quotesList = computed(() => [...(this.game.s().quotes ?? [])].reverse().slice(0, 6));
+  protected readonly lawList = computed(() => lawsByStatus(this.game.s()));
   protected readonly segBonus = computed(() => segmentBonus(this.game.s(), 'presidentielle'));
   protected readonly circo = computed(() => CIRCO_LABELS[this.game.s().territory?.kind ?? 'disputee'].toLowerCase());
 

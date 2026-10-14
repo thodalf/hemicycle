@@ -13,6 +13,8 @@ import { InterceptionGameComponent } from './games/interception-game.component';
 import { DeminageGameComponent } from './games/deminage-game.component';
 import { InterviewGameComponent } from './games/interview-game.component';
 import { CmpGameComponent } from './games/cmp-game.component';
+import { SommetGameComponent } from './games/sommet-game.component';
+import { VisiteGameComponent } from './games/visite-game.component';
 
 type Phase = 'intro' | 'play' | 'over';
 
@@ -42,7 +44,7 @@ const DURATION = 15000;
  */
 @Component({
   selector: 'app-minigame',
-  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent, ProtocoleGameComponent, TableGameComponent, InterceptionGameComponent, DeminageGameComponent, InterviewGameComponent, CmpGameComponent],
+  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent, ProtocoleGameComponent, TableGameComponent, InterceptionGameComponent, DeminageGameComponent, InterviewGameComponent, CmpGameComponent, SommetGameComponent, VisiteGameComponent],
   templateUrl: './minigame.component.html',
   styleUrl: './minigame.component.scss',
 })
@@ -58,7 +60,7 @@ export class MinigameComponent {
   protected readonly shake = signal(false);
   protected readonly tierLabels = TIER_LABELS;
   /** Jeux qui affichent eux-mêmes leur progression */
-  protected readonly selfScored = new Set(['tournee', 'mot', 'quiz', 'grille', 'protocole', 'table', 'interception', 'deminage', 'interview', 'cmp']);
+  protected readonly selfScored = new Set(['tournee', 'mot', 'quiz', 'grille', 'protocole', 'table', 'interception', 'deminage', 'interview', 'cmp', 'sommet', 'visite']);
   private timer: ReturnType<typeof setInterval> | null = null;
   private started = 0;
   private seq = 0;

@@ -1,8 +1,9 @@
 import { Component, DestroyRef, ElementRef, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { MinigameDef } from '../../../data/minigames';
-import { DEPARTEMENTS, Departement, Grid, makeGrid, normalize } from '../../../data/departements';
+import { normalize } from '../../../data/departements';
+import { Grid, GridItem, makeGrid } from '../../../data/grids';
 
-/** Départodoku : une grille 3 × 3 de départements (façon Metrodoku) */
+/** Grilles façon Metrodoku : villes de France, stations de métro, capitales du monde */
 @Component({
   selector: 'app-grille-game',
   template: `
@@ -11,8 +12,8 @@ import { DEPARTEMENTS, Departement, Grid, makeGrid, normalize } from '../../../d
         <span>Essais restants <strong class="mono">{{ left() }}</strong></span>
         <span><strong class="mono">{{ filled() }}</strong> / 9</span>
       </div>
-      <div class="grid" role="grid" aria-label="Grille des départements">
-        <span class="corner" aria-hidden="true">🇫🇷</span>
+      <div class="grid" role="grid" [attr.aria-label]="'Grille : ' + grid.set.noun + 's'">
+        <span class="corner" aria-hidden="true">{{ grid.set.corner }}</span>
         @for (c of grid.cols; track c.id) { <span class="crit col" role="columnheader">{{ c.label }}</span> }
         @for (r of grid.rows; track r.id; let ri = $index) {
           <span class="crit row" role="rowheader">{{ r.label }}</span>
@@ -20,8 +21,8 @@ import { DEPARTEMENTS, Departement, Grid, makeGrid, normalize } from '../../../d
             @let v = cells()[ri][ci];
             <button type="button" class="cell" role="gridcell" [class.sel]="sel()?.[0] === ri && sel()?.[1] === ci" [class.done]="!!v" [class.reveal]="!!revealed()[ri][ci]"
               (click)="choose(ri, ci)" [attr.aria-label]="v ? v.name : (r.label + ' et ' + c.label)">
-              @if (v) { <b class="mono">{{ v.code }}</b><small>{{ v.name }}</small> }
-              @else if (revealed()[ri][ci]; as x) { <b class="mono">{{ x.code }}</b><small>{{ x.name }}</small> }
+              @if (v) { <b>{{ v.name }}</b><small>{{ v.tag }}</small> }
+              @else if (revealed()[ri][ci]; as x) { <b>{{ x.name }}</b><small>{{ x.tag }}</small> }
               @else { <span class="plus">+</span><small class="n">{{ grid.answers[ri][ci].length }} possibles</small> }
             </button>
           }
@@ -29,15 +30,15 @@ import { DEPARTEMENTS, Departement, Grid, makeGrid, normalize } from '../../../d
       </div>
       @if (sel() && !over()) {
         <div class="search">
-          <input #box type="text" [value]="query()" (input)="query.set($any($event.target).value)" (keydown.enter)="pickFirst()" placeholder="Nom ou numéro du département" aria-label="Département" autocomplete="off" />
+          <input #box type="text" [value]="query()" (input)="query.set($any($event.target).value)" (keydown.enter)="pickFirst()" [placeholder]="grid.set.placeholder" [attr.aria-label]="grid.set.noun" autocomplete="off" />
           @if (suggestions().length) {
             <ul class="sugg">
-              @for (s of suggestions(); track s.code) { <li><button type="button" (click)="pick(s)"><b class="mono">{{ s.code }}</b> {{ s.name }}</button></li> }
+              @for (s of suggestions(); track s.key) { <li><button type="button" (click)="pick(s)">{{ s.name }} <small class="muted">{{ s.tag }}</small></button></li> }
             </ul>
           }
         </div>
       } @else if (!over()) {
-        <p class="said muted">Touchez une case pour proposer un département.</p>
+        <p class="said muted">Touchez une case pour proposer une réponse.</p>
       }
       @if (message()) { <p class="said" aria-live="polite">{{ message() }}</p> }
       @if (!over()) { <button type="button" class="btn" (click)="giveUp()">Rendre la grille</button> }
@@ -57,7 +58,7 @@ import { DEPARTEMENTS, Departement, Grid, makeGrid, normalize } from '../../../d
     .cell .plus { font-size: 22px; color: var(--ink-3); line-height: 1; }
     .cell small { font-size: 11px; line-height: 1.15; overflow-wrap: anywhere; }
     .cell .n { color: var(--ink-3); font-size: 10px; }
-    .cell b { font-size: 16px; }
+    .cell b { font-size: 12.5px; line-height: 1.15; overflow-wrap: anywhere; }
     .cell.sel { border-color: #2f6fb3; border-style: solid; background: #eaf2fb; }
     .cell.done { border-style: solid; border-color: var(--good); background: var(--good-soft); cursor: default; animation: pop .35s ease; }
     .cell.reveal { border-style: solid; opacity: .6; }
@@ -80,9 +81,9 @@ export class GrilleGameComponent {
   readonly progress = output<{ live: number; time: number }>();
   readonly miss = output<void>();
 
-  protected readonly grid: Grid = makeGrid();
-  protected readonly cells = signal<(Departement | null)[][]>([[null, null, null], [null, null, null], [null, null, null]]);
-  protected readonly revealed = signal<(Departement | null)[][]>([[null, null, null], [null, null, null], [null, null, null]]);
+  protected grid!: Grid;
+  protected readonly cells = signal<(GridItem | null)[][]>([[null, null, null], [null, null, null], [null, null, null]]);
+  protected readonly revealed = signal<(GridItem | null)[][]>([[null, null, null], [null, null, null], [null, null, null]]);
   protected readonly sel = signal<[number, number] | null>(null);
   protected readonly query = signal('');
   protected readonly message = signal('');
@@ -96,6 +97,7 @@ export class GrilleGameComponent {
   }
 
   ngOnInit(): void {
+    this.grid = makeGrid(this.def().grid ?? 'villes');
     this.left.set(Math.round(12 / Math.max(0.8, this.diff())));
     const limit = 240000 / this.diff();
     const t0 = performance.now();
@@ -107,14 +109,14 @@ export class GrilleGameComponent {
   }
 
   protected readonly filled = computed(() => this.cells().flat().filter(Boolean).length);
-  private readonly usedCodes = computed(() => new Set(this.cells().flat().filter(Boolean).map(x => x!.code)));
+  private readonly usedCodes = computed(() => new Set(this.cells().flat().filter(Boolean).map(x => x!.key)));
 
   protected readonly suggestions = computed(() => {
     const q = normalize(this.query());
     if (!q) return [];
     const used = this.usedCodes();
-    return DEPARTEMENTS.filter(x => !used.has(x.code) && (x.code.toLowerCase().startsWith(q) || normalize(x.name).includes(q)))
-      .sort((a, b) => Number(normalize(b.name).startsWith(q)) - Number(normalize(a.name).startsWith(q)))
+    return this.grid.set.items.filter(x => !used.has(x.key) && x.search.some(k => k.includes(q)))
+      .sort((a, b) => Number(b.search.some(k => k.startsWith(q))) - Number(a.search.some(k => k.startsWith(q))))
       .slice(0, 6);
   });
 
@@ -130,7 +132,7 @@ export class GrilleGameComponent {
     if (s) this.pick(s);
   }
 
-  protected pick(x: Departement): void {
+  protected pick(x: GridItem): void {
     const at = this.sel();
     if (!at || this.over()) return;
     const [r, c] = at;
@@ -138,14 +140,14 @@ export class GrilleGameComponent {
     this.query.set('');
     if (row.test(x) && col.test(x)) {
       this.cells.update(g => g.map((line, i) => line.map((v, j) => (i === r && j === c ? x : v))));
-      this.message.set(`${x.name} (${x.code}) : bien vu !`);
+      this.message.set(`${x.name} (${x.tag}) : bien vu !`);
       this.sel.set(null);
       if (this.filled() === 9) this.finish('Grille complète !');
       return;
     }
     this.left.update(n => n - 1);
     this.miss.emit();
-    const why = !row.test(x) ? `pas en ${row.label}` : `pas « ${col.label.toLowerCase()} »`;
+    const why = !row.test(x) ? `pas « ${row.label} »` : `pas « ${col.label.toLowerCase()} »`;
     this.message.set(`${x.name} : ${why}.`);
     if (this.left() <= 0) this.finish('Plus d’essais.');
   }
@@ -164,8 +166,8 @@ export class GrilleGameComponent {
     const used = new Set(this.usedCodes());
     const rev = this.grid.answers.map((line, i) => line.map((opts, j) => {
       if (this.cells()[i][j]) return null;
-      const x = opts.find(o => !used.has(o.code)) ?? opts[0];
-      used.add(x.code);
+      const x = opts.find(o => !used.has(o.key)) ?? opts[0];
+      used.add(x.key);
       return x;
     }));
     this.revealed.set(rev);

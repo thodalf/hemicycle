@@ -66,6 +66,7 @@ export function describeEffect(e: Effect): EffectChip[] {
       if (e.pact) out.push({ text: 'Pacte avec le Diable', tone: 'neutral' });
       return out;
     }
+    case 'quote': return [{ text: e.bold >= 0.6 ? 'Formule risquée : culte… ou boulet' : e.bold >= 0.3 ? 'Formule marquante' : 'Formule prudente', tone: 'neutral' }];
     case 'annex': return [{ text: e.mode === 'liberer' ? 'Rendre l’indépendance : prestige +10' : e.mode === 'annex' ? 'Annexion : prestige −15, tension +20' : e.mode === 'protectorat' ? 'Protectorat : influence +3' : e.mode === 'reparations' ? 'Réparations : déficit −0,4 pt' : 'Paix magnanime : prestige +12', tone: e.mode === 'annex' ? 'neutral' : 'good' }];
     case 'circo': return [{ text: e.move === 'bastion' ? 'Parachutage dans un bastion' : e.move === 'mission' ? 'Parachutage en terre de mission' : 'Parachutage dans une circonscription disputée', tone: 'neutral' }];
     case 'crisis': {

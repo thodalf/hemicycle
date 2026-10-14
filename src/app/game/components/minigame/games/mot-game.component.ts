@@ -1,3 +1,4 @@
+import { dailyPlayed, dailyWord, markDailyPlayed } from '../../../engine/daily';
 import { Component, DestroyRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
 import { MinigameDef } from '../../../data/minigames';
 
@@ -93,8 +94,16 @@ export class MotGameComponent {
 
   ngOnInit(): void {
     const words = this.def().words ?? ['SCRUTIN'];
-    this.word = words[Math.floor(Math.random() * words.length)];
+    const daily = !!this.def().daily;
+    this.word = daily ? dailyWord(words) : words[Math.floor(Math.random() * words.length)];
     this.current.set(this.word[0]);
+    // Déjà joué aujourd'hui : l'équipe s'en charge, revenez demain
+    if (daily && dailyPlayed()) {
+      this.over = true;
+      this.message.set('Le mot du jour a déjà été joué aujourd’hui. Revenez demain pour un nouveau mot ! Votre équipe fait de son mieux en attendant.');
+      setTimeout(() => this.done.emit(0.5), 2600);
+      return;
+    }
     const limit = 150000 / this.diff();
     const t0 = performance.now();
     this.timer = setInterval(() => {
@@ -166,6 +175,7 @@ export class MotGameComponent {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
     this.message.set(`${text} Le mot était ${this.word}.`);
+    if (this.def().daily) markDailyPlayed();
     const score = found ? ROW_SCORE[this.guesses().length - 1] : 0.3 * this.live();
     this.progress.emit({ live: score, time: 0 });
     setTimeout(() => this.done.emit(score), 1500);

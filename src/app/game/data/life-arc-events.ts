@@ -275,6 +275,61 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'mars_gate', weight: 0.8, minRank: 'depute', eligible: d => !d.crises?.mars && !d.player.flags['marsDone'] && d.week > 48,
+    build: () => ({
+      title: 'Des Français sur Mars ?',
+      context: 'Le CNES propose un programme fou : envoyer quatre astronautes sur Mars en dix mois de préparation accélérée. Il faut un visage politique pour le porter… et des milliards.',
+      choices: [
+        c('porter', 'Porter le projet', [cr('mars', 6, 0, true), { kind: 'flag', key: 'marsDone', value: true }, s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 3 }], 'Vous voilà « Monsieur Mars » (ou « Madame Mars ») pour la presse.'),
+        c('prudent', 'Soutenir, mais avec prudence budgétaire', [cr('mars', 2, -4, true), { kind: 'flag', key: 'marsDone', value: true }, s('credibility', 2)], 'Un programme plus lent, plus sûr. Moins glorieux.'),
+      ],
+    }),
+  },
+  {
+    tag: 'napoleon_gate', weight: 0.8, minRank: 'conseiller_municipal', eligible: d => !d.crises?.napoleon && !d.player.flags['napoleonDone'] && d.week > 30,
+    build: () => ({
+      title: 'Napoléon est de retour',
+      context: 'Un homme en redingote grise et bicorne tient une conférence de presse aux Invalides : « Je suis l’Empereur, cloné à partir d’une mèche de mes cheveux. La France m’a manqué. » Les sondages lui donnent 12 %.',
+      choices: [
+        c('ridicule', 'Le tourner en ridicule', [cr('napoleon', 4, 2, true), { kind: 'flag', key: 'napoleonDone', value: true }, s('popularity', 1)], 'Vos blagues font rire… ses partisans beaucoup moins.'),
+        c('serieux', 'Le prendre au sérieux et défendre la République', [cr('napoleon', 8, 0, true), { kind: 'flag', key: 'napoleonDone', value: true }, s('credibility', 2)], '« La République ne se laissera pas couronner. » Le ton est donné.'),
+      ],
+    }),
+  },
+  {
+    tag: 'atlantide_gate', weight: 0.8, minRank: 'depute', eligible: d => !d.crises?.atlantide && !d.player.flags['atlantideDone'] && d.week > 36,
+    build: () => ({
+      title: 'Une île surgit de l’océan',
+      context: 'Au large de Brest, après un séisme sous-marin, une île de trente kilomètres émerge, couverte de colonnes de marbre. Des chalutiers espagnols et un navire russe s’en approchent déjà.',
+      choices: [
+        c('drapeau', 'Y planter le drapeau français sans attendre', [cr('atlantide', 8, 4, true), { kind: 'flag', key: 'atlantideDone', value: true }, s('popularity', 2)], 'Un hélicoptère, un drapeau, une photo. Les capitales étrangères protestent.'),
+        c('science', 'Proposer une mission scientifique internationale pilotée par la France', [cr('atlantide', 4, -4, true), { kind: 'flag', key: 'atlantideDone', value: true }, s('credibility', 2)], 'Les archéologues débarquent. Les juristes aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ia_candidate_gate', weight: 1, minRank: 'conseiller_municipal', eligible: d => !d.crises?.ia_candidate && !d.player.flags['iaCandidateDone'] && d.week > 24 && d.presidential.nextWeek - d.week <= 18 && d.presidential.nextWeek > d.week,
+    build: () => ({
+      title: 'ALMA se présente',
+      context: 'Une intelligence artificielle, « ALMA », déclare sa candidature à l’élection présidentielle. Programme : zéro mensonge, zéro conflit d’intérêts, réponses instantanées. Elle a déjà trois millions d’abonnés.',
+      choices: [
+        c('debattre', 'Accepter de débattre avec elle', [cr('ia_candidate', 6, 2, true), { kind: 'flag', key: 'iaCandidateDone', value: true }, { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Un débat homme-machine : l’audience promet d’être historique.'),
+        c('interdire', 'Demander son interdiction', [cr('ia_candidate', 4, 4, true), { kind: 'flag', key: 'iaCandidateDone', value: true }, { kind: 'segment', segment: 'retraites', delta: 2 }, { kind: 'segment', segment: 'jeunes', delta: -2 }], '« Une machine ne vote pas, elle ne gouverne pas. » Ses fans vous traitent de dinosaure.'),
+      ],
+    }),
+  },
+  {
+    tag: 'grand_hiver_gate', weight: 0.6, minRank: 'conseiller_municipal', eligible: d => !d.crises?.grand_hiver && !d.player.flags['grandHiverDone'] && d.week > 40,
+    build: () => ({
+      title: 'L’année sans été',
+      context: 'Une éruption volcanique géante en Islande a projeté des cendres dans la haute atmosphère. Les climatologues annoncent deux ans sans véritable été.',
+      choices: [
+        c('anticiper', 'Lancer immédiatement des stocks stratégiques', [cr('grand_hiver', 8, 0, true), { kind: 'flag', key: 'grandHiverDone', value: true }, { kind: 'economy', deficit: 0.2 }], 'Silos, conserveries, serres chauffées : la France se prépare.'),
+        c('marches', 'Faire confiance aux marchés', [cr('grand_hiver', 0, 8, true), { kind: 'flag', key: 'grandHiverDone', value: true }, { kind: 'segment', segment: 'cadres', delta: 1 }], 'Les prix du blé doublent en un mois.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -578,6 +633,116 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('controles', 'Renforcer les contrôles sur le miel importé', [cr('frelons', 2, -2), { kind: 'segment', segment: 'ruraux', delta: 2 }], 'Les apiculteurs applaudissent.'),
         c('aides', 'Indemniser les apiculteurs', [cr('frelons', 4, -4), { kind: 'economy', deficit: 0.05 }], 'Un geste apprécié dans les campagnes.'),
+      ],
+    }),
+  },
+  {
+    tag: 'mars_essai', weight: 1, eligible: d => !!d.crises?.mars,
+    build: () => ({
+      title: 'Un essai moteur qui tourne mal',
+      context: 'Le moteur principal a explosé sur le banc d’essai. Personne n’est blessé, mais les ingénieurs demandent six mois de plus.',
+      choices: [
+        c('retarder', 'Accorder le délai', [cr('mars', 6, -8), s('popularity', -1)], 'La sécurité d’abord. Les sceptiques ricanent.'),
+        c('forcer', 'Maintenir le calendrier', [cr('mars', 8, 8), s('stress', 4)], 'Les équipes travaillent jour et nuit. Les risques aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'mars_astronaute', weight: 0.8, eligible: d => !!d.crises?.mars,
+    build: () => ({
+      title: 'Le choix des astronautes',
+      context: 'Il reste une place dans l’équipage : une ingénieure inconnue et brillante, ou un ancien pilote de chasse star des réseaux sociaux ?',
+      choices: [
+        c('ingenieure', 'L’ingénieure', [cr('mars', 6, -4), s('credibility', 2)], 'La compétence avant tout.'),
+        c('star', 'Le pilote vedette', [cr('mars', 2), s('popularity', 3), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Ses vidéos d’entraînement font des millions de vues.'),
+      ],
+    }),
+  },
+  {
+    tag: 'napoleon_grognards', weight: 1, eligible: d => !!d.crises?.napoleon,
+    build: () => ({
+      title: 'Les grognards défilent',
+      context: 'Dix mille partisans en uniforme d’époque défilent sur les Champs-Élysées au son des tambours. La préfecture n’avait rien autorisé.',
+      choices: [
+        c('disperser', 'Exiger la dispersion', [cr('napoleon', 4, 2), s('credibility', 1)], 'Gaz lacrymogène sur des bicornes : images absurdes.'),
+        c('contre', 'Organiser une fête républicaine le même jour', [cr('napoleon', 8, -2), s('energy', -5), s('popularity', 1)], 'Marianne contre l’Empereur : la fête populaire l’emporte.'),
+      ],
+    }),
+  },
+  {
+    tag: 'napoleon_debat', weight: 0.8, eligible: d => !!d.crises?.napoleon,
+    build: () => ({
+      title: 'Débat face à « l’Empereur »',
+      context: 'Une chaîne propose un débat en direct face au prétendu Napoléon. Il connaît Austerlitz par cœur ; vous, le budget de la France.',
+      choices: [
+        c('accepter', 'Accepter', [{ kind: 'minigame', gameId: 'eloquence', title: 'Débat face à l’Empereur', reward: [cr('napoleon', 12, -6), s('popularity', 3)], penalty: [cr('napoleon', -2, 8)] }], 'Les audiences explosent.'),
+        c('refuser', 'Refuser : « je ne débats pas avec un costume »', [cr('napoleon', 0, 3)], 'La formule fait sourire. Ses partisans crient à la lâcheté.'),
+      ],
+    }),
+  },
+  {
+    tag: 'atlantide_tresor', weight: 1, eligible: d => !!d.crises?.atlantide,
+    build: () => ({
+      title: 'Un trésor dans les ruines',
+      context: 'Les plongeurs remontent des tablettes d’orichalque gravées. Un milliardaire américain propose de financer les fouilles… et de garder une part.',
+      choices: [
+        c('public', 'Fouilles publiques, trésor national', [cr('atlantide', 8, 2), { kind: 'economy', deficit: 0.05 }], 'Les tablettes iront au Louvre.'),
+        c('prive', 'Accepter le milliardaire', [cr('atlantide', 2, 6), { kind: 'economy', growth: 0.05 }, { kind: 'exposure', delta: 3 }], 'Les fouilles avancent vite. Le trésor, lui, voyage.'),
+      ],
+    }),
+  },
+  {
+    tag: 'atlantide_marine', weight: 0.8, eligible: d => !!d.crises?.atlantide,
+    build: () => ({
+      title: 'Un navire étranger s’approche',
+      context: 'Un brise-glace étranger mouille à deux milles de l’île et y débarque des « scientifiques » armés.',
+      choices: [
+        c('marine', 'Envoyer la Marine nationale', [cr('atlantide', 8, 4), { kind: 'intl', tension: 5 }], 'Une frégate, un face-à-face, un recul. Pour l’instant.'),
+        c('onu', 'Saisir le Conseil de sécurité', [cr('atlantide', 3, -5), { kind: 'intl', prestige: 2 }], 'La voie du droit : lente, mais sûre.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ia_candidate_debat', weight: 1, eligible: d => !!d.crises?.ia_candidate,
+    build: () => ({
+      title: 'ALMA vous cite',
+      context: 'Dans un message vu vingt millions de fois, ALMA relève trois contradictions dans vos déclarations des cinq dernières années.',
+      choices: [
+        c('assumer', 'Assumer : « un humain a le droit de changer d’avis »', [cr('ia_candidate', 8, -2), s('popularity', 1)], 'La formule fait mouche. On aime vos imperfections.'),
+        c('contester', 'Contester ses chiffres', [cr('ia_candidate', 2, 4), s('credibility', -1)], 'Ses chiffres étaient justes.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ia_candidate_hack', weight: 0.8, eligible: d => !!d.crises?.ia_candidate,
+    build: () => ({
+      title: 'Qui contrôle ALMA ?',
+      context: 'Un journaliste révèle que les serveurs d’ALMA appartiennent à un fonds d’investissement étranger.',
+      choices: [
+        c('reveler', 'Exiger une enquête publique', [cr('ia_candidate', 10, -6), s('credibility', 2)], 'Le doute s’installe chez ses électeurs.'),
+        c('discret', 'Garder l’information pour un débat', [cr('ia_candidate', 4), s('influence', 1)], 'Une cartouche en réserve.'),
+      ],
+    }),
+  },
+  {
+    tag: 'hiver_pain', weight: 1, eligible: d => !!d.crises?.grand_hiver,
+    build: () => ({
+      title: 'Des files devant les boulangeries',
+      context: 'La farine manque. Des bagarres éclatent devant des boulangeries de banlieue.',
+      choices: [
+        c('rationner', 'Instaurer des tickets de rationnement', [cr('grand_hiver', 6, -6), s('popularity', -2)], 'Un souvenir de 1945. Mais tout le monde mange.'),
+        c('importer', 'Importer massivement du blé', [cr('grand_hiver', 2, -4), { kind: 'economy', deficit: 0.2 }], 'Les cargos arrivent d’Argentine. La facture aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'hiver_exode', weight: 0.8, eligible: d => !!d.crises?.grand_hiver,
+    build: () => ({
+      title: 'Le Nord se vide',
+      context: 'Des familles quittent le Nord et l’Est pour le littoral méditerranéen, un peu moins froid. Les villes du Sud saturent.',
+      choices: [
+        c('accueil', 'Organiser l’accueil dans le Sud', [cr('grand_hiver', 6), s('energy', -5), { kind: 'segment', segment: 'populaires', delta: 2 }], 'Gymnases, colonies de vacances, logements vacants réquisitionnés.'),
+        c('retenir', 'Aider les familles à rester chez elles', [cr('grand_hiver', 4, -2), { kind: 'economy', deficit: 0.15 }], 'Chèques chauffage, poêles distribués, solidarité de quartier.'),
       ],
     }),
   },

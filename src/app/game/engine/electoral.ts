@@ -7,6 +7,7 @@ import { addParrainages, incumbentBonus, presidentialRivals } from './presidency
 import { Rng, clamp } from './rng';
 import { localBonus } from './territory';
 import { circoBonus, econBonus, segmentBonus } from './country';
+import { imageBonus, quoteBonus } from './legacy';
 
 /* ============================================================
  *  Intentions de vote : le score d'un·e candidat·e, les parts
@@ -33,7 +34,7 @@ export function candidateScore(d: GameState, id: string, type: ElectionType, bon
       : d.program?.validated ? programReport(d).electoralBonus : campaign ? -6 : 0;
     const incumbent = type === 'presidentielle' ? incumbentBonus(d, 'player') : 0;
     const local = type === 'municipales' || type === 'legislatives' ? localBonus(d) : 0;
-    const country = econBonus(d, type) + segmentBonus(d, type) + circoBonus(d, type);
+    const country = econBonus(d, type) + segmentBonus(d, type) + circoBonus(d, type) + imageBonus(d, type) + quoteBonus(d, type);
     return country + base + d.player.momentum * 0.35 + 5 - penalty(d.player.stance) + program + incumbent - (type === 'primaire' ? 0 : youngPartyMalus(d)) + bonus + local;
   }
   const npc = d.npcs.find(n => n.id === id);
