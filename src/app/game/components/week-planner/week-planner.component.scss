@@ -180,3 +180,9 @@
   app-objectives-panel { display: block; padding: 0 10px 10px; animation: obj-open .25s ease; }
 }
 @keyframes obj-open { from { opacity: 0; transform: translateY(-4px); } }
+
+/* Glisser d'une catégorie à l'autre : la liste arrive du côté du geste */
+.catalog.swipe-l > :not(nav) { animation: cat-from-r .28s cubic-bezier(.2,.8,.3,1); }
+.catalog.swipe-r > :not(nav) { animation: cat-from-l .28s cubic-bezier(.2,.8,.3,1); }
+@keyframes cat-from-r { from { transform: translateX(32px); opacity: .35; } }
+@keyframes cat-from-l { from { transform: translateX(-32px); opacity: .35; } }

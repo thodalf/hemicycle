@@ -455,7 +455,8 @@ export class DashboardComponent {
   /** On ne vole pas le geste aux champs de saisie ni aux bandeaux qui défilent déjà horizontalement */
   private swipeable(el: HTMLElement | null): boolean {
     for (let n = el; n && !n.classList?.contains('grid'); n = n.parentElement) {
-      if (n.matches?.('input, textarea, select, [contenteditable], .no-swipe, .overlay')) return false;
+      // Le catalogue de l'agenda a son propre geste : on y glisse d'une catégorie à l'autre
+      if (n.matches?.('input, textarea, select, [contenteditable], .no-swipe, .overlay, app-week-planner .catalog')) return false;
       const ox = getComputedStyle(n).overflowX;
       if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 4) return false;
     }

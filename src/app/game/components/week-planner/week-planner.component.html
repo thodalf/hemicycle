@@ -64,10 +64,11 @@
 
   <div class="planner-body">
     <!-- Catalogue -->
-    <div class="catalog">
+    <div class="catalog" [class.swipe-l]="catAnim() === 'l'" [class.swipe-r]="catAnim() === 'r'"
+         (touchstart)="catSwipeStart($event)" (touchend)="catSwipeEnd($event)" (touchcancel)="catSwipe = null">
       <nav class="tabs" role="tablist">
         @for (c of categories(); track c[0]) {
-          <button role="tab" [class.active]="category() === c[0]" [attr.aria-selected]="category() === c[0]"
+          <button role="tab" [class.active]="category() === c[0]" [attr.aria-selected]="category() === c[0]" [attr.data-cat]="c[0]"
                   (click)="category.set(c[0])">{{ c[1] }}</button>
         }
       </nav>

@@ -122,6 +122,47 @@ export class WeekPlannerComponent {
   });
   protected readonly confirmAbandon = signal(false);
 
+  /* ── Glisser d'une catégorie à l'autre (mobile) ──────────── */
+  protected catSwipe: { x: number; y: number; t: number } | null = null;
+  protected readonly catAnim = signal<'l' | 'r' | null>(null);
+  private catTimer: ReturnType<typeof setTimeout> | null = null;
+
+  protected catSwipeStart(ev: TouchEvent): void {
+    this.catSwipe = null;
+    if (ev.touches.length !== 1 || document.querySelector('.overlay')) return;
+    // Pas sur la bande d'onglets (elle défile déjà), ni sur un champ de saisie ou un curseur
+    for (let n = ev.target as HTMLElement | null; n && !n.classList?.contains('catalog'); n = n.parentElement) {
+      if (n.matches?.('nav.tabs, input, textarea, select, [contenteditable], app-bill-composer')) return;
+      const ox = getComputedStyle(n).overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 4) return;
+    }
+    const t = ev.touches[0];
+    this.catSwipe = { x: t.clientX, y: t.clientY, t: Date.now() };
+  }
+
+  protected catSwipeEnd(ev: TouchEvent): void {
+    const s0 = this.catSwipe;
+    this.catSwipe = null;
+    if (!s0 || !ev.changedTouches.length) return;
+    const t = ev.changedTouches[0];
+    const dx = t.clientX - s0.x, dy = t.clientY - s0.y;
+    // Un geste franc et horizontal : au moins 60 px, deux fois plus large que haut, en moins de 0,7 s
+    if (Date.now() - s0.t > 700 || Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    const ids = this.categories().map(c => c[0]);
+    const j = ids.indexOf(this.category()) + (dx < 0 ? 1 : -1);
+    if (j < 0 || j >= ids.length) return;
+    this.category.set(ids[j]);
+    this.catAnim.set(null);
+    if (this.catTimer) clearTimeout(this.catTimer);
+    requestAnimationFrame(() => {
+      this.catAnim.set(dx < 0 ? 'l' : 'r');
+      // L'onglet actif revient au centre de la bande
+      const host = this.host.nativeElement as HTMLElement;
+      host.querySelector(`nav.tabs [data-cat="${ids[j]}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    });
+    this.catTimer = setTimeout(() => this.catAnim.set(null), 320);
+  }
+
   /** Objectifs : un volet repliable, ouvert ou fermé selon votre dernier choix */
   protected readonly objOpen = signal(((): boolean => { try { return localStorage.getItem('polsim.objOpen') !== '0'; } catch { return true; } })());
   protected objToggle(ev: Event): void {
