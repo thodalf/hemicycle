@@ -299,6 +299,25 @@ const LIFE: ActionDefinition[] = [
     description: 'Voile sur la tête, enfumoir en main : une photo qui fera le tour des réseaux.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [cr('frelons', 3, -3), st('popularity', 2), { kind: 'segment', segment: 'ruraux', delta: 2 }] },
 ];
 
+/* ── Fin du monde ─────────────────────────────────────────── */
+const apo = (x: Omit<Extract<Effect, { kind: 'apocalypse' }>, 'kind'>): Effect => ({ kind: 'apocalypse', ...x });
+const APOCALYPSE: ActionDefinition[] = [
+  { id: 'apo_enquete', label: 'Faire enquêter sur la secte', category: 'apocalypse', minRank: 'militant',
+    description: 'Comptes bancaires, bagues noires, carnets d’adresses : remonter le réseau de l’Aube Noire.', cost: { ap: 1, energy: 6 }, maxPerMonth: 1, effects: [apo({ cult: -10 })] },
+  { id: 'apo_raid', label: 'Faire perquisitionner les repaires de la secte', category: 'apocalypse', minRank: 'militant',
+    description: 'Avant le rituel seulement. Réussi, l’emprise de la secte s’effondre ; raté, elle se renforce.', cost: { ap: 1, politicalCapital: 8 }, cooldown: 2, effects: [apo({ raid: true })] },
+  { id: 'apo_veillee', label: 'Organiser une veillée républicaine', category: 'apocalypse', minRank: 'militant',
+    description: 'Des bougies sur les places, des chants, des voisins qui se parlent.', cost: { ap: 1, energy: 8 }, maxPerMonth: 1, effects: [apo({ resistance: 8 }), st('popularity', 1)] },
+  { id: 'apo_exorciste', label: 'Faire venir un exorciste', category: 'apocalypse', minRank: 'militant',
+    description: 'Le père Anselme, quatre-vingt-trois ans, n’a peur de rien. Les éditorialistes se moquent.', cost: { ap: 1, money: 800 }, cooldown: 3, effects: [apo({ darkness: -8 }), st('credibility', -2)] },
+  { id: 'apo_science', label: 'Réunir un conseil scientifique', category: 'apocalypse', minRank: 'militant',
+    description: 'Physiciens, psychiatres, astronomes : comprendre, c’est déjà résister.', cost: { ap: 1, energy: 5 }, maxPerMonth: 1, effects: [apo({ resistance: 5 }), st('credibility', 1)] },
+  { id: 'apo_proteger', label: 'Protéger écoles et lieux de culte', category: 'apocalypse', minRank: 'conseiller_municipal',
+    description: 'Des patrouilles, de la lumière toute la nuit, des parents rassurés.', cost: { ap: 1, money: 1500 }, maxPerMonth: 1, effects: [apo({ darkness: -3, resistance: 4 })] },
+  { id: 'apo_discours', minigame: 'discours', label: 'Parler à la nation contre la peur', category: 'apocalypse', minRank: 'conseiller_municipal',
+    description: 'Un discours qui doit tenir debout un pays qui ne dort plus.', cost: { ap: 1, energy: 8 }, cooldown: 2, effects: [apo({ resistance: 10, darkness: -2 }), st('popularity', 2)] },
+];
+
 /** Deux actions par ministère */
 function min(domain: Domain, id: string, label: string, description: string, cost: ActionDefinition['cost'], effects: Effect[], extra: Partial<ActionDefinition> = {}): ActionDefinition {
   return { id, label, description, category: 'fonction', minRank: 'ministre', onlyRanks: ['ministre'], requires: { portfolio: domain }, cost, effects, cooldown: 3, ...extra };
@@ -399,6 +418,23 @@ const COUNTRY: ActionDefinition[] = [
     description: 'L’université d’été des chefs d’entreprise : compétitivité, impôts, simplification.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [seg('cadres', 4), seg('populaires', -2), st('influence', 1)] },
   { id: 'seg_comice', label: 'Arpenter le comice agricole', category: 'terrain', minRank: 'militant',
     description: 'Vaches primées, tracteurs rutilants, verre de cidre : le monde rural vous regarde.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [seg('ruraux', 4)] },
+  // Encore du terrain et des médias
+  { id: 'conf_presse', minigame: 'conference_presse', label: 'Tenir une conférence de presse', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Vingt journalistes, une heure de questions : répondre sur le fond, éluder les pièges.', cost: { ap: 1, energy: 6 }, cooldown: 2, effects: [st('credibility', 2), st('popularity', 2), st('influence', 1)] },
+  { id: 'tribune_grand_quotidien', label: 'Signer une tribune avec des intellectuels', category: 'medias', minRank: 'conseiller_municipal', target: 'domain',
+    description: 'Huit mille signes, une idée forte, une signature.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [st('credibility', 2), { kind: 'dossier', domain: '$domain', delta: 2 }, seg('cadres', 2)] },
+  { id: 'marche_du_dimanche', label: 'Tenir un stand au marché du dimanche', category: 'terrain', minRank: 'militant',
+    description: 'Un cabas, des poignées de main, des doléances entre deux étals de fromage.', cost: { ap: 1, energy: 4 }, cooldown: 1, effects: [st('popularity', 1), seg('retraites', 2), seg('ruraux', 1)] },
+  { id: 'visite_maison_arret', label: 'Inspecter une maison d’arrêt à l’improviste', category: 'dossiers', minRank: 'depute',
+    description: 'Le droit de visite des parlementaires : surpopulation, matelas au sol, surveillants épuisés.', cost: { ap: 1, energy: 6 }, cooldown: 4, effects: [{ kind: 'dossier', domain: 'justice', delta: 4 }, st('credibility', 2)] },
+  { id: 'nuit_samu', label: 'Passer une nuit avec le Samu', category: 'terrain', minRank: 'militant',
+    description: 'Appels, sirènes, détresses : une nuit qui vous change.', cost: { ap: 1, energy: 10 }, cooldown: 4, effects: [{ kind: 'dossier', domain: 'sante', delta: 3 }, seg('populaires', 2), st('popularity', 1)] },
+  { id: 'debat_lyceens', label: 'Répondre aux questions d’une classe de terminale', category: 'terrain', minRank: 'militant',
+    description: 'Une heure dans un amphi de lycée : climat, réseaux, avenir. Pas de langue de bois possible.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [seg('jeunes', 3), { kind: 'dossier', domain: 'education', delta: 2 }] },
+  // L'Élysée nomme son gouvernement
+  { id: 'nommer_gouvernement', label: 'Nommer (ou remanier) le gouvernement', category: 'elysee', minRank: 'president', onlyRanks: ['president'], requires: { appoint: true },
+    description: 'Choisir le Premier ministre, puis l’équilibre des ministères : fidèles, courants, ouverture, société civile ou experts.', cost: { ap: 1, energy: 6 }, cooldown: 6,
+    effects: [{ kind: 'decision', templateId: 'nommer_gouvernement' }] },
   // Coalition
   { id: 'coal_negocier', label: 'Négocier une coalition', category: 'fonction', minRank: 'premier_ministre', onlyRanks: ['premier_ministre', 'president'],
     description: 'Majorité relative ? Un parti voisin peut vous apporter ses sièges, contre des ministères.', cost: { ap: 1, energy: 6 }, cooldown: 2,
@@ -418,4 +454,4 @@ const COUNTRY: ActionDefinition[] = [
     effects: [{ kind: 'decision', templateId: 'parachutage' }] },
 ];
 
-export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...LIFE, ...MINISTRIES, ...COUNTRY];
+export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...LIFE, ...MINISTRIES, ...COUNTRY, ...APOCALYPSE];

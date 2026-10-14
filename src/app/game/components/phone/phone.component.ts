@@ -8,6 +8,7 @@ import { PhoneMessage } from '../../models/game.models';
 const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
   { kind: 'equipe', label: 'Équipe' },
   { kind: 'chef', label: 'Parti' },
+  { kind: 'scenario', label: 'Numéros spéciaux' },
   { kind: 'gouvernement', label: 'Gouvernement' },
   { kind: 'collegue', label: 'Collègues' },
   { kind: 'personnalite', label: 'Personnalités' },

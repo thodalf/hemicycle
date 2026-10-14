@@ -93,7 +93,7 @@ export class WorldPanelComponent {
   protected readonly relevant = computed(() => intlRelevant(this.game.s()));
   protected readonly power = computed(() => intlPower(this.game.s()));
   protected readonly isPresident = computed(() => !!this.game.s().presidency);
-  protected readonly hostile = computed(() => ENEMIES.map(e => {
+  protected readonly hostile = computed(() => ENEMIES.filter(e => !this.game.s().player.flags[`annexed_${e.id}`]).map(e => {
     const value = Math.round(this.w().hostile?.[e.id] ?? 0);
     return { id: e.id, name: e.name, value, label: hostileLabel(value) };
   }));

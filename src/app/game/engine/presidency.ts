@@ -1,3 +1,4 @@
+import { applyAppointment, pmDecision } from './cabinet';
 import { Decision, DecisionChoice, Effect, GameState, PresidentialCalendar, ScheduledElection } from '../models/game.models';
 import { inMonth, monthLabel } from './calendar';
 import { DECLARE_WINDOW, ELECTIONS, FIRST_PRESIDENTIAL_WEEK, MANDATE_MONTHS, PARRAINAGES_REQUIRED, RANKS, rankOrder } from '../data/ranks';
@@ -293,6 +294,8 @@ export function startPresidency(d: GameState, score: number, rng: Rng): void {
   };
   d.party.leaderNpcId = d.party.founder ? 'player' : d.party.leaderNpcId;
   d.player.flags['menace'] = 0;
+  // Premier acte du mandat : nommer son gouvernement
+  if (!d.presidency.cohabitation) d.pendingDecisions.push(pmDecision(d));
 }
 
 /** Fin de présidence : terme du mandat, défaite, démission ou destitution */
@@ -346,6 +349,7 @@ export function adjustPresidency(d: GameState, e: Extract<Effect, { kind: 'presi
       out.push('Réforme rejetée par l’Assemblée');
     }
   }
+  if (e.pmName || e.cabinet) out.push(...applyAppointment(d, e, rng));
   if (e.pm) {
     const before = pr.primeMinister;
     pr.primeMinister = rng.pick(PRIME_MINISTERS.filter(n => n !== before));

@@ -1,5 +1,6 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FinishedArc, closeArc, finishedArcs } from '../../engine/arcs';
 import { GRADES, GRADE_REQUIREMENTS } from '../../engine/scenarios';
 import { GameStateService } from '../../services/game-state.service';
 import { OUTLETS, PRESS_GRADES, PRESS_REQUIREMENTS } from '../../data/press';
@@ -11,6 +12,22 @@ import { MOLE_GOAL } from '../../engine/mole';
   selector: 'app-scenario-panel',
   imports: [DecimalPipe],
   template: `
+    @if (finished().length) {
+      <section class="card closing" aria-label="Scénarios terminés">
+        <div class="card-title"><span>Scénarios terminés</span></div>
+        @for (f of finished(); track f.id) {
+          <div class="fin">
+            <span><strong>{{ f.label }}</strong> <small class="muted">· {{ f.why }}</small></span>
+            @if (confirmClose() === f.id) {
+              <span class="cf"><button class="btn small" (click)="close(f.id)">Confirmer</button><button class="btn small ghost" (click)="confirmClose.set(null)">Annuler</button></span>
+            } @else {
+              <button class="btn small" (click)="confirmClose.set(f.id)">Clore ce scénario</button>
+            }
+          </div>
+        }
+        <small class="muted">Clore range le scénario dans vos mémoires : son panneau, ses actions et ses événements disparaissent, et il ne reviendra pas.</small>
+      </section>
+    }
     @if (game.s().mole; as m) {
       <section class="card mole">
         <div class="card-title"><span class="radar-title"><span class="radar" aria-hidden="true"></span>Mission d’infiltration</span><span class="chip bad">Top secret</span></div>
@@ -132,6 +149,7 @@ import { MOLE_GOAL } from '../../engine/mole';
     }
   `,
   styles: `
+    .closing { display: grid; gap: 8px; .card-title { margin-bottom: 0; } } .fin { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; } .cf { display: inline-flex; gap: 6px; }
     .small { font-size: 12.5px; margin: 0 0 10px; }
     .gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
     .g { display: grid; gap: 4px; small { font-size: 11.5px; } }
@@ -165,6 +183,12 @@ import { MOLE_GOAL } from '../../engine/mole';
 })
 export class ScenarioPanelComponent {
   protected readonly game = inject(GameStateService);
+  protected readonly finished = computed(() => finishedArcs(this.game.s()));
+  protected readonly confirmClose = signal<string | null>(null);
+  protected close(id: FinishedArc['id']): void {
+    this.game.mutate(d => closeArc(d, id));
+    this.confirmClose.set(null);
+  }
   protected readonly grades = GRADES;
   protected readonly pressGrades = PRESS_GRADES;
   protected readonly goal = MOLE_GOAL;

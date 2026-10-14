@@ -7,6 +7,7 @@ import { FxService } from '../../services/fx.service';
 import { PARRAINAGES_REQUIRED } from '../../data/ranks';
 import { campaignOpensAt } from '../../engine/presidency';
 import { lifeRisks } from '../../engine/life';
+import { DOMAINS, DOMAIN_LABELS } from '../../models/game.models';
 
 /** Calendrier présidentiel, candidature et tableau de bord de l'Élysée */
 @Component({
@@ -22,6 +23,15 @@ import { lifeRisks } from '../../engine/life';
         <p class="muted small">Premier ministre : <strong>{{ pr.primeMinister }}</strong>
           @if (pr.cohabitation) { · <span class="chip bad">Cohabitation</span> }
           · {{ pr.reforms }} réforme(s) adoptée(s) · fin du mandat en {{ dateLabel(cal().nextWeek) }}</p>
+        @if (pr.cabinet) {
+          <details class="cabinet">
+            <summary>Votre gouvernement ({{ cabinetStyle(pr.cabinetStyle) }})</summary>
+            <ul>
+              @for (m of cabinet(); track m.dom) { <li><span class="muted">{{ m.label }}</span> <strong>{{ m.name }}</strong></li> }
+            </ul>
+            <small class="muted">Leurs numéros sont dans votre téléphone.</small>
+          </details>
+        }
         <div class="gauges">
           <div class="g">
             <div class="row"><span>Cote de confiance</span><span class="mono">{{ pr.approval | number: '1.0-0' }} %</span></div>
@@ -89,6 +99,7 @@ import { lifeRisks } from '../../engine/life';
     }
   `,
   styles: `
+    .cabinet { font-size: 12.5px; margin: 4px 0 8px; summary { cursor: pointer; font-weight: 600; } ul { list-style: none; margin: 6px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 3px 12px; } li { display: grid; } }
     .small { font-size: 12.5px; margin: 0 0 10px; }
     .gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
     .g { display: grid; gap: 4px; small { font-size: 11.5px; } }
@@ -140,5 +151,12 @@ export class PresidencyPanelComponent {
     this.confirmResign.set(false);
     this.turn.resign();
     this.fx.stamp('Démission', 'bad', 'Élection anticipée');
+  }
+  protected readonly cabinet = computed(() => {
+    const c = this.game.s().presidency?.cabinet ?? {};
+    return DOMAINS.filter(dom => c[dom]).map(dom => ({ dom, label: DOMAIN_LABELS[dom], name: c[dom]! }));
+  });
+  protected cabinetStyle(s?: string): string {
+    return ({ fideles: 'de fidèles', courants: 'd’équilibre', ouverture: 'd’ouverture', societe: 'de la société civile', experts: 'd’experts' } as Record<string, string>)[s ?? ''] ?? 'nommé par vous';
   }
 }

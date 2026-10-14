@@ -56,6 +56,17 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'coalition': return e.open ? [{ text: 'Ouvre des négociations de coalition', tone: 'neutral' }]
       : e.mood ? [{ text: `Humeur du partenaire ${e.mood > 0 ? '+' : ''}${e.mood}`, tone: e.mood > 0 ? 'good' : 'bad' }]
       : e.leave ? [{ text: 'Rompt la coalition', tone: 'bad' }] : [{ text: 'Forme une coalition', tone: 'good' }];
+    case 'apocalypse': {
+      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      if (e.start) out.push({ text: 'Déclenche la fin du monde', tone: 'bad' });
+      if (e.darkness) out.push({ text: `Ténèbres ${e.darkness > 0 ? '+' : ''}${e.darkness}`, tone: e.darkness < 0 ? 'good' : 'bad' });
+      if (e.resistance) out.push({ text: `Résistance ${e.resistance > 0 ? '+' : ''}${e.resistance}`, tone: e.resistance > 0 ? 'good' : 'bad' });
+      if (e.cult) out.push({ text: `Emprise de la secte ${e.cult > 0 ? '+' : ''}${e.cult}`, tone: e.cult < 0 ? 'good' : 'bad' });
+      if (e.raid) out.push({ text: 'Raid contre la secte (avant le rituel)', tone: 'neutral' });
+      if (e.pact) out.push({ text: 'Pacte avec le Diable', tone: 'neutral' });
+      return out;
+    }
+    case 'annex': return [{ text: e.mode === 'liberer' ? 'Rendre l’indépendance : prestige +10' : e.mode === 'annex' ? 'Annexion : prestige −15, tension +20' : e.mode === 'protectorat' ? 'Protectorat : influence +3' : e.mode === 'reparations' ? 'Réparations : déficit −0,4 pt' : 'Paix magnanime : prestige +12', tone: e.mode === 'annex' ? 'neutral' : 'good' }];
     case 'circo': return [{ text: e.move === 'bastion' ? 'Parachutage dans un bastion' : e.move === 'mission' ? 'Parachutage en terre de mission' : 'Parachutage dans une circonscription disputée', tone: 'neutral' }];
     case 'crisis': {
       const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];

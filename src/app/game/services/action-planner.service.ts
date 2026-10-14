@@ -1,4 +1,5 @@
 import { actionSegments } from '../engine/country';
+import { canAppoint } from '../engine/cabinet';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { inMonth } from '../engine/calendar';
 import { ALIEN_PHASES } from '../engine/alien';
@@ -95,6 +96,7 @@ export class ActionPlannerService {
       if (a.category === 'arriere') return !!s.war;
       if (a.category === 'securite') return !!s.plot;
       if (a.category === 'zombie') return !!s.zombie;
+      if (a.category === 'apocalypse') return !!s.apocalypse && s.apocalypse.phase < 4;
       if (a.requires?.arc && !s.crises?.[a.requires.arc]) return false;
       if (a.category === 'crise') return Object.values(s.crises ?? {}).some(Boolean);
       if (a.category === 'administration') return civilActive(s);
@@ -147,6 +149,7 @@ export class ActionPlannerService {
       if (req.placement !== undefined && Number(s.player.flags['placement'] ?? 0) === req.placement) return { ok: false, reason: req.placement === 0 ? 'Rien n’est placé' : 'Déjà fait' };
       if (req.schemes && !(s.schemes ?? []).length) return { ok: false, reason: 'Aucun complot en cours' };
       if (req.heir) { const why = canAnoint(s); if (why) return { ok: false, reason: why }; }
+      if (req.appoint) { const why = canAppoint(s); if (why) return { ok: false, reason: why }; }
       if (req.coalition && !s.coalition) return { ok: false, reason: 'Aucune coalition en cours' };
       if (req.governing && !s.presidency && !['ministre', 'premier_ministre'].includes(s.player.rankId)) return { ok: false, reason: 'Réservé aux membres du gouvernement' };
       if (req.promises && !(s.promises ?? []).some(x => x.status === 'en_cours')) return { ok: false, reason: 'Aucune promesse en cours' };

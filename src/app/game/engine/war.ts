@@ -1,3 +1,4 @@
+import { annexDecision } from './annex';
 import { Decision, Effect, GameState, Tone, WarState } from '../models/game.models';
 import { canStartArc } from './arcs';
 import { RANKS } from '../data/ranks';
@@ -42,8 +43,8 @@ export const ENEMIES_BY_ID = new Map(ENEMIES.map(e => [e.id, e]));
 /** L'État le plus hostile, avec son article (« la Karstanie ») */
 export function worstEnemyName(d: GameState): string {
   const h = d.intl.hostile ?? {};
-  const worst = [...ENEMIES].sort((a, b) => (h[a.id] ?? 0) - (h[b.id] ?? 0))[0];
-  return worst.the;
+  const worst = [...ENEMIES].filter(e => !d.player.flags[`annexed_${e.id}`]).sort((a, b) => (h[a.id] ?? 0) - (h[b.id] ?? 0))[0];
+  return worst?.the ?? 'une puissance étrangère';
 }
 
 /* ── Les États hostiles : relations, menaces, invasion ─────── */
@@ -104,7 +105,7 @@ export function monthlyHostile(d: GameState, rng: Rng): void {
     h[id] = clamp(h[id] + (HOSTILE_START[id] - h[id]) * 0.03 + rng.range(-2.5, 1.9) - clamp((tension - 50) * 0.02, 0, 0.6) - (d.intl.crisis ? 0.3 : 0), -100, 100);
   }
   // De temps à autre, un incident fait plonger une relation
-  if (rng.chance(0.03)) {
+  if (rng.chance(0.03) && Object.keys(h).some(id => d.war?.enemyId !== id)) {
     const ids = Object.keys(h).filter(id => d.war?.enemyId !== id);
     const id = rng.pick(ids);
     const drop = Math.round(rng.range(10, 22));
@@ -116,7 +117,7 @@ export function monthlyHostile(d: GameState, rng: Rng): void {
       'Des manœuvres navales à quelques milles de nos côtes.',
     ]) + ` Relations −${drop}.`);
   }
-  if (d.war || d.status !== 'en_cours') return;
+  if (d.war || d.status !== 'en_cours' || !Object.keys(h).length) return;
   const [worst, rel] = Object.entries(h).sort((a, b) => a[1] - b[1])[0];
   const enemy = ENEMIES_BY_ID.get(worst);
   if (!enemy) return;
@@ -448,6 +449,7 @@ export function endWar(d: GameState, how: WarEnd, rng: Rng): string[] {
     d.status = how === 'victoire' ? 'victoire' : 'defaite';
     d.endTitle = title;
     d.endReason = text;
+    if (how === 'victoire') d.pendingDecisions.push(annexDecision(d, w.enemyId));
     return [title];
   }
   p.flags['warLosses'] = Number(p.flags['warLosses'] ?? 0) + w.losses;
@@ -455,6 +457,8 @@ export function endWar(d: GameState, how: WarEnd, rng: Rng): string[] {
   const summary = applyEffects(d, effects, {}, rng);
   addMilestone(d, kind, title, text);
   pushNews(d, 'actu', how === 'defaite' ? 'negative' : 'positive', title, text);
+  // Le vainqueur dicte la paix : annexion, protectorat, réparations ou magnanimité
+  if (how === 'victoire' && !d.player.flags[`annexed_${w.enemyId}`]) d.pendingDecisions.push(annexDecision(d, w.enemyId));
   // Une défaite emporte le gouvernement
   if (how === 'defaite') {
     if (p.rankId === 'premier_ministre') applyEffects(d, [{ kind: 'government', fall: true }], {}, rng);

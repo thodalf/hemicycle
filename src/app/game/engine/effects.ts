@@ -37,6 +37,8 @@ import { counterPlots } from './rivals';
 import { adjustCrisis } from './crises';
 import { adjustEconomy, adjustSegment, moveCirco } from './country';
 import { adjustCoalition } from './coalition';
+import { applyAnnex } from './annex';
+import { adjustApocalypse } from './apocalypse';
 
 /* ============================================================
  *  Moteur d'effets — fonctions pures appliquées sur un brouillon
@@ -449,6 +451,12 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       case 'coalition':
         summary.push(...adjustCoalition(d, e, rng));
+        break;
+      case 'apocalypse':
+        summary.push(...adjustApocalypse(d, e, rng));
+        break;
+      case 'annex':
+        summary.push(...applyEffects(d, applyAnnex(d, e), ctx, rng));
         break;
       case 'circo':
         summary.push(...moveCirco(d, e.move, rng));

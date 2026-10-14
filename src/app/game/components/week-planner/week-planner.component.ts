@@ -155,7 +155,7 @@ export class WeekPlannerComponent {
       case 'partner':
         return PARTNERS.filter(p => !s.war?.allies.includes(p.id)).map(p => ({ id: p.id, label: `${p.name} · ${Math.round(s.intl.relations[p.id] ?? 0)}` }));
       case 'enemy':
-        return ENEMIES.map(e => { const r = Math.round(s.intl.hostile?.[e.id] ?? 0); return { id: e.id, label: `${e.name} · relations ${r > 0 ? '+' : ''}${r} · puissance ${Math.round(e.strength * 100)}` }; });
+        return ENEMIES.filter(e => !s.player.flags[`annexed_${e.id}`]).map(e => { const r = Math.round(s.intl.hostile?.[e.id] ?? 0); return { id: e.id, label: `${e.name} · relations ${r > 0 ? '+' : ''}${r} · puissance ${Math.round(e.strength * 100)}` }; });
       default:
         return [];
     }

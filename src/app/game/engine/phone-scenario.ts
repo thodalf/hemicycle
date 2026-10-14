@@ -1,0 +1,233 @@
+import { Effect, GameState } from '../models/game.models';
+import type { CallOption, PhoneEntry } from './phone';
+import { grantNumber } from './phone';
+import { ENEMIES } from './war';
+import { DEVIL } from './apocalypse';
+import { Rng, clamp } from './rng';
+
+/* ============================================================
+ *  Chaque scénario débloque ses numéros : le Vénérable de votre
+ *  loge, l'émissaire extraterrestre, le Prince, la rédaction,
+ *  l'officier traitant, la virologue, la cheffe d'état-major, le
+ *  commissaire de la DGSI, le Grand Prêtre de l'Aube Noire… et
+ *  Monsieur Nicolas en personne.
+ * ============================================================ */
+
+type Result = { answer: string; effects: Effect[]; notes?: string[] };
+interface ScenOption {
+  id: `sc_${string}`;
+  label: string;
+  hint: string;
+  ask: string;
+  /** Mois avant de pouvoir redemander */
+  cooldown?: number;
+  run: (d: GameState, rng: Rng) => Result;
+}
+interface ScenContact {
+  key: string;
+  icon: string;
+  when: (d: GameState) => boolean;
+  name: (d: GameState) => string;
+  role: (d: GameState) => string;
+  options: (d: GameState) => ScenOption[];
+}
+
+const st = (stat: 'popularity' | 'influence' | 'credibility' | 'politicalCapital' | 'stress' | 'energy', delta: number): Effect => ({ kind: 'stat', stat, delta });
+
+/** Une information compromettante sur une personnalité au hasard */
+function kompromat(d: GameState, rng: Rng): string | null {
+  const n = rng.pick(d.npcs);
+  if (!n) return null;
+  d.player.flags[`kompromat_${n.id}`] = Number(d.player.flags[`kompromat_${n.id}`] ?? 0) + 1;
+  return n.name;
+}
+
+const CONTACTS: ScenContact[] = [
+  // ── La loge ──
+  {
+    key: 'sc:loge', icon: '🔺', when: d => !!d.lodge,
+    name: d => `Le Vénérable · ${d.lodge!.loge}`, role: d => `Votre loge · ${d.lodge!.obedience}`,
+    options: () => [
+      { id: 'sc_loge_service', label: 'Demander un service fraternel', hint: 'Un frère bien placé, une porte qui s’ouvre.', ask: 'Mon frère, j’aurais besoin d’un coup de main…', cooldown: 3,
+        run: (d, rng) => rng.chance(clamp(0.35 + d.lodge!.fraternite / 120, 0.15, 0.9))
+          ? { answer: 'Un frère siège au conseil d’administration qui vous intéresse. Il vous recevra mardi.', effects: [st('influence', 3), st('politicalCapital', 5), { kind: 'lodge', discretion: -3 }] }
+          : { answer: 'La fraternité n’est pas un guichet, mon frère. Revenez quand vous aurez donné.', effects: [{ kind: 'lodge', fraternite: -2 }] } },
+      { id: 'sc_loge_numero', label: 'Obtenir le numéro d’un frère haut placé', hint: 'Ministres, préfets, patrons : la chaîne d’union est longue.', ask: 'Vous connaîtriez quelqu’un, en haut ?', cooldown: 6,
+        run: (d, rng) => { const got = grantNumber(d, rng); return { answer: got ? 'Je vous transmets ses coordonnées. Il saura qui vous êtes.' : 'Vous connaissez déjà tout le monde, il me semble.', effects: [], notes: got ? [got] : [] }; } },
+      { id: 'sc_loge_planche', label: 'Proposer une planche sur un sujet de société', hint: 'Fin de vie, laïcité, école : un débat entre frères.', ask: 'Je voudrais présenter une planche à la prochaine tenue.', cooldown: 2,
+        run: d => ({ answer: 'Excellent sujet. La tenue du mois prochain vous est réservée.', effects: [{ kind: 'lodge', planches: 1, fraternite: 3 }, st('credibility', 1), { kind: 'dossier', domain: d.agendaDomain, delta: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:grandmaitre', icon: '⚜️', when: d => !!d.lodge && d.lodge.grade >= 3,
+    name: () => 'Le Grand Maître', role: d => `Grand Maître · ${d.lodge!.obedience}`,
+    options: () => [
+      { id: 'sc_gm_reseau', label: 'Mobiliser les frères parlementaires sur un texte', hint: 'Des voix de tous les bancs, sans que personne ne sache pourquoi.', ask: 'Nos frères de l’Assemblée pourraient-ils m’aider ?', cooldown: 6,
+        run: () => ({ answer: 'Ils voteront selon leur conscience… éclairée.', effects: [{ kind: 'flagAdd', key: 'billSupport', delta: 8 }, { kind: 'lodge', discretion: -4 }], notes: ['8 voix promises pour votre prochain texte'] }) },
+    ],
+  },
+  // ── Premier contact ──
+  {
+    key: 'sc:alien', icon: '👽', when: d => !!d.alien && d.alien.phase >= 1,
+    name: d => `L’émissaire ${d.alien!.species}`, role: () => 'Fréquence 1 420 MHz',
+    options: () => [
+      { id: 'sc_alien_paix', label: 'Envoyer un message de paix', hint: 'Les nombres premiers, puis une phrase simple.', ask: '2, 3, 5, 7, 11… Nous venons en paix.', cooldown: 2,
+        run: () => ({ answer: '··· ·–· ·· ··· (Le signal répond par une suite de nombres premiers… plus longue.)', effects: [{ kind: 'alien', confiance: 5, panique: -2 }] }) },
+      { id: 'sc_alien_langue', label: 'Échanger quelques mots', hint: 'Un cours de langue à des années-lumière.', ask: 'Bonjour. Je. Suis. Humain.', cooldown: 1,
+        run: () => ({ answer: '« BON-JOUR. TU. ES. PETIT. » (C’est un progrès.)', effects: [{ kind: 'alien', comprehension: 6 }, st('energy', -4)] }) },
+      { id: 'sc_alien_techno', label: 'Demander un savoir technologique', hint: 'Une énergie propre ? Un remède ? Ils peuvent refuser.', ask: 'Pourriez-vous partager un peu de votre savoir ?', cooldown: 6,
+        run: (d, rng) => rng.chance(clamp((d.alien!.confiance ?? 30) / 100, 0.1, 0.85))
+          ? { answer: 'Un schéma s’affiche : une batterie qui ne se décharge jamais. Les ingénieurs pleurent de joie.', effects: [{ kind: 'economy', growth: 0.2, confidence: 4 }, { kind: 'dossier', domain: 'numerique', delta: 5 }, st('influence', 2)] }
+          : { answer: '« PAS. ENCORE. » Le signal se tait trois jours.', effects: [{ kind: 'alien', confiance: -6 }] } },
+      { id: 'sc_alien_secret', label: 'Leur demander qui ment au gouvernement', hint: 'Ils écoutent toutes nos communications.', ask: 'Vous qui entendez tout… qui ment ?', cooldown: 6,
+        run: (d, rng) => { const n = kompromat(d, rng); return { answer: n ? `Le signal épelle un nom : ${n}. Puis des chiffres de compte bancaire.` : 'Silence.', effects: [{ kind: 'alien', confiance: -2 }], notes: n ? [`Information compromettante sur ${n}`] : [] }; } },
+    ],
+  },
+  // ── La Couronne ──
+  {
+    key: 'sc:prince', icon: '👑', when: d => !!d.crown,
+    name: d => d.crown!.pretendant, role: () => 'Prétendant au trône de France',
+    options: () => [
+      { id: 'sc_prince_salon', label: 'Être reçu·e au salon du Prince', hint: 'Lustres, vieilles familles et un thé à la bergamote.', ask: 'Monseigneur, me ferez-vous l’honneur d’une audience ?', cooldown: 2,
+        run: () => ({ answer: 'Monseigneur vous attend jeudi, à dix-sept heures. Tenue correcte exigée.', effects: [{ kind: 'crown', legitimite: 3 }, st('influence', 1), { kind: 'segment', segment: 'retraites', delta: 1 }] }) },
+      { id: 'sc_prince_generaux', label: 'Organiser un déjeuner avec des généraux', hint: 'Des épaulettes acquises à la cause.', ask: 'Quelques officiers aimeraient vous rencontrer, Monseigneur.', cooldown: 3,
+        run: () => ({ answer: 'Un déjeuner au cercle militaire. On y parle beaucoup de « l’ordre ».', effects: [{ kind: 'crown', armee: 4 }, { kind: 'exposure', delta: 2 }] }) },
+      { id: 'sc_prince_soutien', label: 'Solliciter un soutien financier discret', hint: 'Les vieilles fortunes aiment les causes perdues.', ask: 'La cause aurait besoin de moyens…', cooldown: 6,
+        run: () => ({ answer: 'Un notaire vous contactera. Discrètement.', effects: [{ kind: 'funds', account: 'campaign', delta: 5000 }, { kind: 'exposure', delta: 3 }, { kind: 'crown', soutien: 1 }] }) },
+    ],
+  },
+  // ── La rédaction ──
+  {
+    key: 'sc:redac', icon: '🗞️', when: d => !!d.press,
+    name: d => `Rédaction de ${d.press!.outlet}`, role: () => 'Votre rédacteur·rice en chef',
+    options: () => [
+      { id: 'sc_redac_une', label: 'Négocier la une de demain', hint: 'Votre papier en tête de gondole.', ask: 'Mon papier mérite la une, non ?', cooldown: 2,
+        run: (d, rng) => rng.chance(0.55) ? { answer: 'D’accord. Mais titre choc, et pas plus de 6 000 signes.', effects: [{ kind: 'press', audience: 3 }, st('popularity', 1)] } : { answer: 'La une est prise. Page 4, et c’est déjà bien.', effects: [] } },
+      { id: 'sc_redac_scoop', label: 'Récupérer un tuyau de la rédaction', hint: 'Les journalistes savent tout sur tout le monde.', ask: 'Tu n’aurais pas un tuyau qui traîne ?', cooldown: 4,
+        run: (d, rng) => { const n = kompromat(d, rng); return { answer: n ? `On n’a pas assez pour publier, mais ${n} a des choses à cacher.` : 'Rien de sérieux en ce moment.', effects: [{ kind: 'press', scoops: 1 }], notes: n ? [`Information compromettante sur ${n}`] : [] }; } },
+    ],
+  },
+  // ── L'infiltration ──
+  {
+    key: 'sc:handler', icon: '🕶️', when: d => !!d.mole,
+    name: d => d.mole!.handler, role: d => `Officier traitant · ${d.mole!.homeName}`,
+    options: () => [
+      { id: 'sc_mole_rapport', label: 'Faire un rapport oral', hint: 'Il préfère les informations fraîches.', ask: 'J’ai du nouveau.', cooldown: 1,
+        run: () => ({ answer: 'Bien. Continuez. Et effacez cet appel.', effects: [{ kind: 'mole', intel: 4, handler: 4 }] }) },
+      { id: 'sc_mole_couverture', label: 'Demander de l’aide pour votre couverture', hint: 'Une fausse piste, un témoin bien choisi.', ask: 'On commence à me soupçonner.', cooldown: 3,
+        run: () => ({ answer: 'Un article sur un autre suspect paraîtra jeudi. Respirez.', effects: [{ kind: 'mole', cover: 8, handler: -3 }] }) },
+    ],
+  },
+  // ── Épidémie Z ──
+  {
+    key: 'sc:viro', icon: '🧪', when: d => !!d.zombie,
+    name: () => 'Pr Hélène Varga', role: () => 'Virologue · Institut national des virus émergents',
+    options: () => [
+      { id: 'sc_z_vaccin', label: 'Faire le point sur le vaccin', hint: 'Elle dort quatre heures par nuit, au labo.', ask: 'Où en est le vaccin ?', cooldown: 1,
+        run: () => ({ answer: 'Un candidat prometteur sur les primates. Il me faut des crédits, pas des appels.', effects: [{ kind: 'zombie', cure: 4 }, st('stress', -1)] }) },
+      { id: 'sc_z_bastion', label: 'Demander une place dans un bastion sécurisé', hint: 'Pour vous et vos proches.', ask: 'Si ça tourne mal… il y a une place pour ma famille ?', cooldown: 99,
+        run: () => ({ answer: 'Le bastion de Brest. Badge 0417. Ne le dites à personne.', effects: [{ kind: 'zombie', shelter: true }, { kind: 'exposure', delta: 2 }] }) },
+    ],
+  },
+  // ── La guerre ──
+  {
+    key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
+    name: () => 'Générale Anne Corbière', role: () => 'Cheffe d’état-major des armées',
+    options: () => [
+      { id: 'sc_war_front', label: 'Faire le point sur le front', hint: 'Cartes, pertes, besoins : la vérité sans fard.', ask: 'Générale, où en est-on vraiment ?', cooldown: 1,
+        run: () => ({ answer: 'Nous tenons. Mais il me faut des drones, et vite.', effects: [{ kind: 'war', front: 2 }, st('stress', 2)] }) },
+      { id: 'sc_war_moral', label: 'Annoncer une visite aux troupes', hint: 'Un treillis, une gamelle, des poignées de main.', ask: 'Je veux voir les soldats en première ligne.', cooldown: 2,
+        run: () => ({ answer: 'Ils seront fiers. Je vous préviens : il fait froid, là-bas.', effects: [{ kind: 'war', morale: 4 }, st('popularity', 1), st('energy', -4)] }) },
+      { id: 'sc_war_paix', label: 'Sonder une sortie de crise', hint: 'Des canaux discrets existent, même en guerre.', ask: 'Ont-ils envie d’en finir, en face ?', cooldown: 3,
+        run: () => ({ answer: 'Leur état-major est épuisé lui aussi. Il y a peut-être une porte.', effects: [{ kind: 'hostile', enemy: '$war', delta: 8 }, { kind: 'war', support: -2 }] }) },
+    ],
+  },
+  // ── Le complot contre vous ──
+  {
+    key: 'sc:dgsi', icon: '🛡️', when: d => !!d.plot,
+    name: () => 'Commissaire Marc Leroy', role: () => 'DGSI · protection des personnalités',
+    options: () => [
+      { id: 'sc_plot_enquete', label: 'Demander où en est l’enquête', hint: 'Il ne dit jamais tout, mais il dit l’essentiel.', ask: 'Vous avancez, commissaire ?', cooldown: 1,
+        run: () => ({ answer: 'Nous avons un nom, pas encore de preuves. Ne changez rien à vos habitudes.', effects: [{ kind: 'plot', intel: 8 }] }) },
+      { id: 'sc_plot_protection', label: 'Renforcer votre protection', hint: 'Itinéraires changés, voiture blindée.', ask: 'Je veux plus de protection.', cooldown: 2,
+        run: () => ({ answer: 'Deux officiers de plus, dès ce soir. Évitez les bains de foule.', effects: [{ kind: 'plot', danger: -6 }, st('stress', -2)] }) },
+    ],
+  },
+  // ── La fin du monde ──
+  {
+    key: 'sc:pretre', icon: '🌑', when: d => !!d.apocalypse && (d.apocalypse.phase === 1 || d.apocalypse.phase === 2),
+    name: () => 'Le Grand Prêtre', role: () => 'Ordre de l’Aube Noire',
+    options: () => [
+      { id: 'sc_apo_menacer', label: 'Le menacer de poursuites', hint: 'Il ne craint pas grand-chose. Peut-être la justice.', ask: 'Arrêtez tout, ou je vous fais arrêter.', cooldown: 2,
+        run: (d, rng) => rng.chance(0.5) ? { answer: '« Vous êtes plus courageux·se que les autres. » Trois membres quittent l’Ordre le lendemain.', effects: [{ kind: 'apocalypse', cult: -6 }, st('stress', 2)] } : { answer: 'Un rire, puis la ligne coupe. Le soir, un soleil noir est peint sur votre porte.', effects: [{ kind: 'apocalypse', darkness: 3 }, st('stress', 5)] } },
+      { id: 'sc_apo_infiltrer', label: 'Feindre de vouloir rejoindre l’Ordre', hint: 'Pour voir de l’intérieur. Dangereux.', ask: 'J’aimerais en savoir plus sur votre… communauté.', cooldown: 4,
+        run: () => ({ answer: 'Venez seul·e, samedi, à minuit. Portez du noir.', effects: [{ kind: 'apocalypse', cult: -10 }, { kind: 'exposure', delta: 5 }, st('stress', 4)] }) },
+    ],
+  },
+  {
+    key: 'sc:diable', icon: '😈', when: d => (!!d.apocalypse && d.apocalypse.phase === 3) || Number(d.player.flags['devilDebt'] ?? 0) > 0,
+    name: () => DEVIL, role: () => 'Le Diable, en personne',
+    options: d => d.apocalypse?.phase === 3 && !d.apocalypse.pact ? [
+      { id: 'sc_devil_pacte', label: 'Signer le pacte', hint: 'Il part, tout vous réussit… et il reviendra chaque année.', ask: 'Je vous écoute. Quelles sont vos conditions ?',
+        run: () => ({ answer: '« Une petite signature, ici. Ne lisez pas les petites lignes, c’est très ennuyeux. »', effects: [{ kind: 'apocalypse', pact: true }] }) },
+      { id: 'sc_devil_partir', label: 'Lui ordonner de partir', hint: 'Il n’aime pas qu’on lui donne des ordres.', ask: 'Quittez ce pays. Maintenant.', cooldown: 1,
+        run: (_d, rng) => rng.chance(0.5) ? { answer: '« Quel aplomb ! » Il rit, mais quelque chose a vacillé dans sa voix.', effects: [{ kind: 'apocalypse', resistance: 5 }] } : { answer: '« Non. » Toutes les ampoules de votre bureau éclatent.', effects: [{ kind: 'apocalypse', darkness: 3 }, st('stress', 4)] } },
+      { id: 'sc_devil_marchander', label: 'Lui demander ce qu’il veut vraiment', hint: 'Comprendre l’adversaire.', ask: 'Qu’est-ce que vous voulez, au fond ?', cooldown: 2,
+        run: () => ({ answer: '« Ce que vous voulez tous : être aimé. Et un peu de chaos, pour le plaisir. »', effects: [st('influence', 1), st('stress', 3), { kind: 'apocalypse', resistance: 2 }] }) },
+    ] : [
+      { id: 'sc_devil_nouvelles', label: 'Prendre de ses nouvelles', hint: 'Il répond toujours. C’est bien le problème.', ask: 'Vous allez bien ?', cooldown: 3,
+        run: () => ({ answer: '« Toujours ravi de vous entendre. Je repasse bientôt, ne vous inquiétez pas. »', effects: [st('stress', 2), st('influence', 2)] }) },
+    ],
+  },
+  // ── Coalition et territoires annexés ──
+  {
+    key: 'sc:coalition', icon: '🤝', when: d => !!d.coalition,
+    name: d => `Chef de file · ${d.coalition!.name}`, role: () => 'Votre partenaire de coalition',
+    options: () => [
+      { id: 'sc_coal_dejeuner', label: 'Proposer un déjeuner de travail', hint: 'Un peu de considération évite bien des crises.', ask: 'On déjeune cette semaine ?', cooldown: 1,
+        run: () => ({ answer: 'Avec plaisir. On a deux ou trois sujets à régler.', effects: [{ kind: 'coalition', mood: 8 }, st('energy', -2)] }) },
+    ],
+  },
+];
+
+/** Gouverneurs des territoires annexés (un contact par territoire) */
+function annexContacts(d: GameState): ScenContact[] {
+  return ENEMIES.filter(e => d.player.flags[`annexed_${e.id}`]).map(e => ({
+    key: `sc:anx_${e.id}`, icon: '🏴', when: () => true,
+    name: () => `Gouverneur ${e.of}`, role: () => 'Territoire annexé',
+    options: () => [
+      { id: `sc_anx_apaiser_${e.id}` as const, label: 'Ordonner une politique d’apaisement', hint: 'Libérer des prisonniers, rouvrir les écoles.', ask: 'Où en est la situation ?', cooldown: 2,
+        run: () => ({ answer: 'Les manifestations se calment. Les durs du régime déchu, non.', effects: [st('credibility', 1), { kind: 'intl', prestige: 2 }] }) },
+      { id: `sc_anx_invest_${e.id}` as const, label: 'Lancer un plan d’investissement', hint: 'Routes, hôpitaux, emplois : acheter la paix.', ask: 'Il nous faut gagner les cœurs.', cooldown: 4,
+        run: () => ({ answer: 'Les chantiers démarrent. On commence à nous saluer dans la rue.', effects: [{ kind: 'economy', deficit: 0.1, growth: 0.05 }, st('popularity', 1)] }) },
+    ],
+  }));
+}
+
+function allContacts(d: GameState): ScenContact[] {
+  return [...CONTACTS, ...annexContacts(d)].filter(c => c.when(d));
+}
+
+export function scenarioEntries(d: GameState): PhoneEntry[] {
+  return allContacts(d).map(c => ({ key: c.key, kind: 'scenario', name: c.name(d), role: c.role(d), icon: c.icon }));
+}
+
+export function scenarioOptions(d: GameState, e: PhoneEntry, block?: string): CallOption[] {
+  const c = allContacts(d).find(x => x.key === e.key);
+  if (!c) return [];
+  return c.options(d).map(o => {
+    const wait = o.cooldown && d.week - Number(d.player.flags[`cd_${o.id}`] ?? -99) < o.cooldown ? 'Déjà demandé il y a peu' : undefined;
+    return { id: o.id, label: o.label, hint: o.hint, ok: !block && !wait, reason: block ?? wait };
+  });
+}
+
+export function scenarioAsk(d: GameState, e: PhoneEntry, id: string): string | undefined {
+  return allContacts(d).find(x => x.key === e.key)?.options(d).find(o => o.id === id)?.ask;
+}
+
+export function scenarioCall(d: GameState, e: PhoneEntry, id: string, rng: Rng): Result {
+  const o = allContacts(d).find(x => x.key === e.key)?.options(d).find(x => x.id === id);
+  if (!o) return { answer: '…', effects: [] };
+  d.player.flags[`cd_${o.id}`] = d.week;
+  return o.run(d, rng);
+}

@@ -2,6 +2,7 @@ import { Effect, GameState, Segment } from '../models/game.models';
 import type { EvChoice, RandomEvent } from './random-events';
 import { monthIndex, yearOf } from '../engine/calendar';
 import { accountability, segmentRows } from '../engine/country';
+import { annexedEnemies } from '../engine/annex';
 import { SEGMENTS } from './programme';
 
 /* ============================================================
@@ -256,6 +257,95 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'anx_resistance', weight: 1.4, eligible: d => annexedEnemies(d).length > 0,
+    build: d => {
+      const e = annexedEnemies(d)[0];
+      const an = (mode: 'liberer'): Effect => ({ kind: 'annex', enemyId: e.id, mode });
+      return {
+        title: `Résistance armée ${e.of.startsWith('du') ? 'au' + e.of.slice(2) : 'en' + e.of.slice(5)}`,
+        context: `Des attentats contre l’administration française, des grèves générales, des drapeaux interdits aux fenêtres : ${e.the} ne se résigne pas.`,
+        choices: [
+          c('reprimer', 'Réprimer fermement', [s('popularity', 1), { kind: 'intl', prestige: -5, tension: 5 }, seg('jeunes', -2), seg('retraites', 2)], 'Couvre-feu, arrestations, images terribles dans la presse étrangère.'),
+          c('autonomie', 'Accorder une large autonomie', [s('credibility', 2), { kind: 'intl', prestige: 3 }], 'Un parlement local, une langue officielle : la tension baisse d’un cran.'),
+          c('liberer', 'Rendre l’indépendance', [an('liberer')], 'Un référendum, un drapeau qu’on descend. Certains crient à la trahison, d’autres à la sagesse.'),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'ministre_scandale', weight: 1, eligible: d => !!d.presidency?.cabinet && !d.presidency.cohabitation,
+    build: (d, rng) => {
+      const doms = Object.keys(d.presidency!.cabinet!) as (keyof NonNullable<NonNullable<GameState['presidency']>['cabinet']>)[];
+      const dom = rng.pick(doms);
+      const name = d.presidency!.cabinet![dom];
+      return {
+        title: `${name} dans la tourmente`,
+        context: `Votre ministre est mis·e en cause pour des notes de frais extravagantes : un week-end à Courchevel aux frais du ministère.`,
+        choices: [
+          c('limoger', 'Le ou la limoger et remanier', [{ kind: 'presidency', approval: 2 }, { kind: 'decision', templateId: 'casting_gouvernement' }], 'Un communiqué à 22 h. Le remaniement suit.'),
+          c('soutenir', 'Le ou la soutenir', [{ kind: 'presidency', approval: -3 }, { kind: 'exposure', delta: 3 }, { kind: 'cohesion', delta: 2 }], '« Une erreur administrative. » La presse n’en croit pas un mot.'),
+        ],
+      };
+    },
+  },
+  {
+    tag: 'ministre_demission', weight: 0.7, eligible: d => !!d.presidency?.cabinet && !d.presidency.cohabitation,
+    build: d => ({
+      title: 'Un ministre claque la porte',
+      context: `Votre ministre de la Transition écologique démissionne en direct à la radio : « Je ne peux plus cautionner l’inaction. »`,
+      choices: [
+        c('remanier', 'Remanier dans la foulée', [{ kind: 'decision', templateId: 'casting_gouvernement' }, s('energy', -4)], 'Un nouveau casting, pour reprendre la main.'),
+        c('minimiser', 'Minimiser : « une décision personnelle »', [{ kind: 'presidency', approval: -2 }, seg('jeunes', -2)], 'Les écologistes de la majorité grincent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'musee_cambriole', weight: 0.7,
+    build: () => ({
+      title: 'Les joyaux de la Couronne volés',
+      context: 'En sept minutes, des cambrioleurs ont dérobé des bijoux historiques dans un grand musée parisien. Le monde entier se moque de la sécurité française.',
+      choices: [
+        c('securite', 'Réclamer un audit de la sécurité des musées', [s('credibility', 2), { kind: 'dossier', domain: 'securite', delta: 2 }], 'Un rapport accablant sort deux mois plus tard.'),
+        c('humour', 'En plaisanter à la radio', [s('popularity', 1)], 'La blague fait rire. Les conservateurs du musée, beaucoup moins.',
+          { risk: { baseChance: 0.35, onFailure: [s('credibility', -2), s('popularity', -1)], failureNews: 'On vous reproche de rire d’une perte patrimoniale.' } }),
+      ],
+    }),
+  },
+  {
+    tag: 'vague_de_froid', weight: 0.8, eligible: d => [11, 0, 1].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'Vague de froid',
+      context: 'Moins quinze degrés à Strasbourg, des sans-abri en danger, des canalisations qui gèlent.',
+      choices: [
+        c('gymnases', 'Ouvrir les gymnases', [s('popularity', 2), seg('populaires', 2), s('energy', -4)], 'Des lits de camp, de la soupe, des bénévoles.'),
+        c('cheque', 'Réclamer un chèque énergie d’urgence', [seg('retraites', 2), seg('populaires', 1), eco({ deficit: 0.05 })], 'Le gouvernement cède sous la pression.'),
+      ],
+    }),
+  },
+  {
+    tag: 'penurie_moutarde', weight: 0.5,
+    build: () => ({
+      title: 'Pénurie de moutarde',
+      context: 'Plus un pot dans les rayons : la sécheresse au Canada a ruiné la récolte de graines. Les Français sont scandalisés.',
+      choices: [
+        c('souverainete', 'Plaider pour la souveraineté moutardière', [seg('ruraux', 2), s('popularity', 1)], '« Relocalisons la graine de moutarde en Bourgogne ! » Le Dijonnais applaudit.'),
+        c('relativiser', 'Relativiser', [s('credibility', 1), seg('populaires', -1)], 'On vous reproche de ne pas comprendre la France.'),
+      ],
+    }),
+  },
+  {
+    tag: 'controleurs_aeriens', weight: 0.7, eligible: d => [3, 6, 7, 11].includes(monthIndex(d.week)),
+    build: () => ({
+      title: 'Grève des contrôleurs aériens',
+      context: 'Deux mille vols annulés en plein départ en vacances. Les aéroports sont pleins de familles furieuses.',
+      choices: [
+        c('service_minimum', 'Réclamer un service minimum', [seg('cadres', 2), seg('retraites', 1), seg('populaires', -1)], 'Le débat sur le droit de grève est relancé.'),
+        c('dialogue', 'Appeler au dialogue', [s('credibility', 1), seg('populaires', 1)], 'Une médiation s’ouvre. Les vacanciers attendent.'),
+      ],
+    }),
+  },
+
 ];
 
 /** Libellés des électorats (pour les textes) */

@@ -1,6 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
+import { annexedEnemies } from '../../engine/annex';
 import { CIRCO_LABELS, MAP_REGIONS, RATINGS, accountability, econBonus, liveMap, segmentBonus, segmentRows } from '../../engine/country';
 
 type Tab = 'eco' | 'electorat' | 'carte';
@@ -52,13 +53,13 @@ type Tab = 'eco' | 'electorat' | 'carte';
         </ul>
         <p class="note muted">Votre cote dans chaque électorat (écart à votre popularité générale). Chaque action plaît à certains et en agace d’autres. Effet sur une présidentielle : {{ segBonus() >= 0 ? '+' : '' }}{{ segBonus() | number: '1.0-1' }} pts.</p>
       } @else {
-        <svg viewBox="-0.15 -0.15 5.8 5.95" class="fmap" role="img" aria-label="Carte électorale par région">
+        <svg [attr.viewBox]="tiles().length > 14 ? '-0.15 -0.15 5.8 7' : '-0.15 -0.15 5.8 5.95'" class="fmap" role="img" aria-label="Carte électorale par région">
           @for (r of tiles(); track r.id) {
             <g [attr.transform]="'translate(' + r.x + ' ' + r.y + ')'">
               <title>{{ r.name }} : {{ r.party }} en tête ({{ r.share | number: '1.0-0' }} %)</title>
               <rect width="0.94" height="0.94" rx="0.12" [attr.fill]="r.color" [class.mine]="r.mine" class="tile" />
               <text x="0.47" y="0.5" class="code">{{ r.short }}</text>
-              <text x="0.47" y="0.78" class="pct">{{ r.share | number: '1.0-0' }} %</text>
+              @if (r.party !== 'Territoire annexé') { <text x="0.47" y="0.78" class="pct">{{ r.share | number: '1.0-0' }} %</text> } @else { <text x="0.47" y="0.78" class="pct">annexé</text> }
               @if (r.home) { <text x="0.82" y="0.24" class="star">★</text> }
             </g>
           }
@@ -132,11 +133,15 @@ export class CountryPanelComponent {
     const s = this.game.s();
     const m = this.map();
     const parties = [s.party, ...s.otherParties];
-    return MAP_REGIONS.map(r => {
+    const tiles = MAP_REGIONS.map(r => {
       const v = m.regions[r.id];
       const p = parties.find(x => x.id === v?.partyId);
       return { ...r, color: p?.color ?? '#8a8f9a', party: p?.name ?? '?', share: v?.share ?? 0, mine: v?.partyId === s.party.id, home: s.territory?.region === r.id };
     });
+    // Les territoires annexés après une guerre
+    const extra = annexedEnemies(s).map((e, i) => ({ id: `anx-${e.id}`, name: `${e.name} (annexé)`, short: e.name.slice(0, 4), x: i * 1.05, y: 5.75, lean: 0, rural: 0.5, towns: [],
+      color: '#5b5f6b', party: 'Territoire annexé', share: 100, mine: false, home: false }));
+    return [...tiles, ...extra];
   });
 
   protected readonly legend = computed(() => {

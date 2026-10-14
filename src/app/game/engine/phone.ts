@@ -5,6 +5,7 @@ import { DOMAINS } from '../models/game.models';
 import { MINISTRIES } from './government';
 import { dateCall, romanceOptions } from './phone-extra';
 import { askCall, askOptions, isAsk, monthlyDebts } from './phone-asks';
+import { scenarioAsk, scenarioCall, scenarioEntries, scenarioOptions } from './phone-scenario';
 import { applyEffects, campaignOpen, partySupport } from './effects';
 import { voteRole } from './assembly';
 import { Rng, clamp, nextId } from './rng';
@@ -22,7 +23,7 @@ export const CALLS_PER_MONTH = 4;
 export const EXTRA_CALL_ENERGY = 4;
 const MAX_MESSAGES = 60;
 
-export type CallerKind = 'equipe' | 'chef' | 'gouvernement' | 'collegue' | 'personnalite' | 'contact' | 'proche';
+export type CallerKind = 'equipe' | 'chef' | 'gouvernement' | 'collegue' | 'personnalite' | 'contact' | 'proche' | 'scenario';
 
 export interface PhoneEntry {
   key: string;
@@ -35,7 +36,7 @@ export interface PhoneEntry {
 }
 
 export interface CallOption {
-  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage' | 'seduire' | 'rompre' | 'complot' | 'apparition';
+  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage' | 'seduire' | 'rompre' | 'complot' | 'apparition' | `sc_${string}`;
   label: string;
   hint: string;
   ok: boolean;
@@ -114,7 +115,7 @@ export function governmentRoster(d: GameState): GovMember[] {
     if (p.rankId === 'ministre' && d.portfolio === dom) continue;
     const npc = npcMinisters[i];
     if (npc) i++;
-    out.push({ key: `gouv:${dom}`, name: npc?.name ?? name(dom), role: `Ministre ${MINISTRIES[dom]}` });
+    out.push({ key: `gouv:${dom}`, name: d.presidency?.cabinet?.[dom] ?? npc?.name ?? name(dom), role: `Ministre ${MINISTRIES[dom]}` });
   }
   return out;
 }
@@ -169,6 +170,7 @@ export function directory(d: GameState): PhoneEntry[] {
     const party = parties.find(x => x.id === n.partyId);
     out.push({ key: `perso:${n.id}`, kind: 'personnalite', name: n.name, role: `${RANKS[n.rankId]?.label ?? 'Élu·e'} · ${party?.name ?? 'sans parti'}`, icon: n.isRival ? '⚔️' : '⭐', bond: Math.round(n.relationToPlayer) });
   }
+  out.push(...scenarioEntries(d));
   for (const c of d.contacts) out.push({ key: `contact:${c.id}`, kind: 'contact', name: c.name, role: CONTACT_LABEL[c.type], icon: CONTACT_ICON[c.type], bond: Math.round(c.trust) });
   const partner = d.family?.partner;
   if (partner) out.push({ key: 'conjoint', kind: 'proche', name: partner.name, role: partner.married ? 'Votre conjoint·e' : 'Votre moitié', icon: '💞' });
@@ -267,6 +269,9 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       opts.push({ id: 'nouvelles', label: 'Entretenir la relation', hint: 'La confiance se cultive.', ok: !block, reason: block });
       break;
     }
+    case 'scenario':
+      opts.push(...scenarioOptions(d, e, block));
+      break;
     case 'proche': {
       if (key === 'conjoint') {
         opts.push({ id: 'nouvelles', label: 'Lui dire que vous l’aimez', hint: 'Deux minutes qui comptent.', ok: !block, reason: block });
@@ -325,7 +330,7 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     appui: 'Votre parole compte beaucoup pour vos fidèles…', seduire: 'Tu serais libre un soir de la semaine ?', rompre: 'Il faut qu’on parle.', arbitrage: 'J’aurais besoin d’un coup de pouce…',
     complot: 'J’ai un projet… discret. J’aurais besoin de toi.', apparition: 'Tu accepterais de t’afficher à mes côtés ?',
   };
-  const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : ASK[optionId] ?? 'Je prenais des nouvelles.';
+  const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : ASK[optionId] ?? scenarioAsk(d, e, optionId) ?? 'Je prenais des nouvelles.';
   addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: `📞 ${ask}`, outgoing: true, read: true });
 
   let notes: string[] = [];
@@ -334,6 +339,11 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     answer = res.answer;
     effects.push(...res.effects);
     note = res.note;
+  } else if (e.kind === 'scenario') {
+    const res = scenarioCall(d, e, optionId, rng);
+    answer = res.answer;
+    effects.push(...res.effects);
+    notes = res.notes ?? [];
   } else if (isAsk(d, e, optionId)) {
     const res = askCall(d, e, optionId, rng);
     answer = res.answer;
@@ -741,6 +751,19 @@ export function monthlyPhone(d: GameState, rng: Rng): void {
     return true;
   };
   monthlyDebts(d, sent, rng);
+  // Les numéros spéciaux écrivent aussi
+  if ((d.apocalypse?.phase === 3 || Number(d.player.flags['devilDebt'] ?? 0) > 0) && rng.chance(0.4)) {
+    send({ kind: 'sms', who: 'sc:diable', from: 'Monsieur Nicolas', role: 'Le Diable, en personne', text: rng.pick(['Je pense à vous. Souvent.', 'Belle intervention hier. J’ai presque cru que vous y croyiez.', 'Un petit service contre un grand ? Mon offre tient toujours.']),
+      replies: [rep('ignorer', 'Ne pas répondre', [st('stress', 1)]), rep('repondre', '« Laissez-moi tranquille. »', d.apocalypse?.phase === 3 ? [{ kind: 'apocalypse', resistance: 2 }, st('stress', 2)] : [st('stress', 2)], '😊')] });
+  }
+  if (d.alien && d.alien.phase >= 1 && d.alien.phase < 4 && rng.chance(0.25)) {
+    send({ kind: 'sms', who: 'sc:alien', from: `L’émissaire ${d.alien.species}`, role: 'Fréquence 1 420 MHz', text: rng.pick(['·· –· ·– (VOUS. DORMEZ. TROP. PEU.)', 'QUESTION : POURQUOI. LES. HUMAINS. VOTENT. POUR. CEUX. QU’ILS. DÉTESTENT ?', 'NOUS. AIMONS. LE. FROMAGE.']),
+      replies: [rep('repondre', 'Répondre patiemment', [{ kind: 'alien', comprehension: 3, confiance: 2 }], 'MERCI. PETIT. HUMAIN.'), rep('ignorer', 'Ignorer', [{ kind: 'alien', confiance: -2 }])] });
+  }
+  if (d.lodge && rng.chance(0.2)) {
+    send({ kind: 'sms', who: 'sc:loge', from: `Le Vénérable · ${d.lodge.loge}`, role: `Votre loge · ${d.lodge.obedience}`, text: 'Tenue mardi, 19 h 30. Votre présence serait appréciée, mon frère.',
+      replies: [rep('oui', 'J’y serai', [{ kind: 'lodge', fraternite: 3 }, st('energy', -2)], 'Bien. Le parvis vous attend.'), rep('non', 'Empêché·e', [{ kind: 'lodge', fraternite: -1 }])] });
+  }
   const n = 1 + (rng.chance(0.6) ? 1 : 0) + (rng.chance(0.3) ? 1 : 0);
   let delivered = 0;
   for (let tries = 0; tries < n * 3 && delivered < n; tries++) {

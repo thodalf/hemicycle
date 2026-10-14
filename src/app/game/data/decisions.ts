@@ -1,5 +1,6 @@
 import { formationDecision } from '../engine/government';
 import { coalitionDecision } from '../engine/coalition';
+import { canAppoint, castingDecision, pmDecision } from '../engine/cabinet';
 import { CIRCO_HINTS, CIRCO_LABELS } from '../engine/country';
 import {
   DOMAIN_LABELS, Decision, DecisionChoice, Domain, Effect, EffectContext, GameState,
@@ -129,6 +130,8 @@ type Template = (d: GameState, rng: Rng, ctx: EffectContext) => Decision | null;
 const TEMPLATES: Record<string, Template> = {
   former_gouvernement: d => formationDecision(d, !!d.government?.composition),
   coalition: d => coalitionDecision(d),
+  nommer_gouvernement: d => (canAppoint(d) ? null : pmDecision(d)),
+  casting_gouvernement: d => (canAppoint(d) ? null : castingDecision(d)),
   parachutage: d => ({
     id: uid(d, 'dec'), tag: 'parachutage', week: d.week, deadlineWeek: d.week + 1, source: 'parti',
     title: 'Changer de circonscription',

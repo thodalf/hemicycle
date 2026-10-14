@@ -46,13 +46,14 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'zombie' | 'crise' | 'territoire' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'zombie' | 'apocalypse' | 'crise' | 'territoire' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
   contact: 'Premier contact',
   securite: 'Sécurité',
   zombie: 'Épidémie Z',
+  apocalypse: 'Fin du monde',
   crise: 'Crise',
   territoire: 'Territoire',
   intrigue: 'Intrigues',
@@ -279,7 +280,7 @@ export type Effect =
   | { kind: 'partyAllocation'; line: PartyLine; value: number }
   | { kind: 'rank'; rankId: RankId }
   | { kind: 'health'; delta: number }
-  | { kind: 'presidency'; approval?: number; majority?: number; security?: number; threat?: number; reform?: boolean; force?: boolean; pm?: boolean; dissolve?: boolean }
+  | { kind: 'presidency'; approval?: number; majority?: number; security?: number; threat?: number; reform?: boolean; force?: boolean; pm?: boolean; dissolve?: boolean; pmName?: string; pmNpcId?: string; cabinet?: string }
   | { kind: 'parrainages'; delta: number }
   | { kind: 'declare' }
   | { kind: 'resign'; why?: 'demission' | 'destitution' }
@@ -297,7 +298,9 @@ export type Effect =
   | { kind: 'segment'; segment: Segment | '*'; delta: number }
   | { kind: 'coalition'; partyId?: string; open?: boolean; mood?: number; leave?: boolean }
   | { kind: 'circo'; move: CircoKind }
+  | { kind: 'annex'; enemyId: string; mode: 'annex' | 'protectorat' | 'reparations' | 'magnanime' | 'liberer' }
   | { kind: 'crisis'; arc: CrisisArcId; start?: boolean; gauge?: number; risk?: number; meta?: string }
+  | { kind: 'apocalypse'; start?: boolean; darkness?: number; resistance?: number; cult?: number; pact?: boolean; raid?: boolean }
   | { kind: 'zombie'; start?: 'alerte' | 'minimiser' | 'confiner'; infection?: number; containment?: number; panic?: number; cure?: number; shelter?: boolean }
   | { kind: 'scheme'; type?: string; targetId?: TargetRef; progress?: number; secrecy?: number; abandon?: boolean; ally?: TargetRef };
 
@@ -333,7 +336,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -637,6 +640,11 @@ export interface PresidencyState {
   /** Menace terroriste / d'attentat contre vous (0-100) */
   threat: number;
   primeMinister: string;
+  /** Premier ministre choisi parmi les personnalités (sinon, un·e technocrate) */
+  pmNpcId?: string;
+  /** Le gouvernement nommé par vous : un nom par ministère */
+  cabinet?: Partial<Record<Domain, string>>;
+  cabinetStyle?: string;
   reforms: number;
   cohabitation: boolean;
   lastCrisisWeek: number;
@@ -1034,6 +1042,7 @@ export interface GameState {
   schemes?: Scheme[];
   /** Épidémie Z en cours */
   zombie?: ZombieState | null;
+  apocalypse?: ApocalypseState | null;
   family?: FamilyState;
   romance?: Romance | null;
   heir?: HeirState | null;
@@ -1420,6 +1429,23 @@ export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */
+/** Fin du monde : une secte, des présages, puis le Diable en personne */
+export interface ApocalypseState {
+  since: number;
+  /** 0 présages, 1 la secte, 2 le rituel, 3 le Diable, 4 dénouement */
+  phase: number;
+  phaseSince: number;
+  /** Ténèbres qui gagnent le pays (0-100) */
+  darkness: number;
+  /** Résistance : foi, raison, solidarité (0-100) */
+  resistance: number;
+  /** Emprise de la secte (0-100) */
+  cult: number;
+  /** Pacte signé avec le Diable */
+  pact?: boolean;
+  outcome?: 'secte_demantelee' | 'diable_repousse' | 'regne' | 'pacte';
+}
+
 export interface ZombieState {
   since: number;
   /** Part du territoire touchée (0-100) */

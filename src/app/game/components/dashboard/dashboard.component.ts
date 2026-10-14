@@ -18,6 +18,7 @@ import { ElectionNightComponent } from '../election-night/election-night.compone
 import { PresidentialPollsComponent } from '../presidential-polls/presidential-polls.component';
 import { SchemesPanelComponent } from '../schemes-panel/schemes-panel.component';
 import { ZombiePanelComponent } from '../zombie-panel/zombie-panel.component';
+import { ApocalypsePanelComponent } from '../apocalypse-panel/apocalypse-panel.component';
 import { TutorialComponent } from '../tutorial/tutorial.component';
 import { blockingOverlay } from '../week-planner/week-planner.component';
 import { JournalComponent } from '../journal/journal.component';
@@ -60,7 +61,7 @@ import { Milestone } from '../../models/game.models';
     DecimalPipe,
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
-    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
+    DebateArenaComponent, ObjectivesPanelComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ApocalypsePanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, CountryPanelComponent, WorldPanelComponent,
     WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent,
   ],
@@ -131,6 +132,7 @@ import { Milestone } from '../../models/game.models';
       <main class="col-main">
         <app-crisis-panel />
         <app-zombie-panel />
+        <app-apocalypse-panel />
         <app-plot-panel />
         <app-schemes-panel />
         <app-war-panel />

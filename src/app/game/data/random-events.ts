@@ -10,6 +10,7 @@ import { LIFE_EVENTS } from './life-events';
 import { EXTRA_EVENTS } from './extra-events';
 import { CAMPAIGN_EVENTS, MORE_EVENTS, inPresidentialRace } from './campaign-events';
 import { ZOMBIE_EVENTS, ZOMBIE_GATE } from './zombie-events';
+import { APOC_EVENTS, APOC_GATE, DEVIL_DUE } from './apocalypse-events';
 import { canStartArc } from '../engine/arcs';
 import { CRISIS_EVENTS, CRISIS_GATES, FAMILY_EVENTS, MISC_ARC_EVENTS } from './life-arc-events';
 import { PHONE_EVENTS } from './phone-events';
@@ -52,7 +53,7 @@ const c = (id: string, label: string, effects: Effect[], outcome: string, extra:
 const GATEWAY_EVENTS: RandomEvent[] = [
   {
     tag: 'offre_chronique', weight: 2,
-    eligible: d => !d.press,
+    eligible: d => !d.press && !d.player.flags['closed_press'],
     build: d => ({
       title: 'Les médias vous font la cour',
       context: `Votre sens de la formule a été remarqué. Trois rédactions proposent à ${d.player.name} une chronique régulière, payée.`,
@@ -66,7 +67,7 @@ const GATEWAY_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'offre_journal', weight: 1,
-    eligible: d => !d.press,
+    eligible: d => !d.press && !d.player.flags['closed_press'],
     build: () => ({
       title: 'Un quotidien cherche une plume',
       context: `La directrice du ${OUTLETS.presse.name.replace(/^Le /, '')} vous invite à déjeuner : « Vous écrivez bien. Et si vous écriviez pour nous ? »`,
@@ -78,7 +79,7 @@ const GATEWAY_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'emissaire_royaliste', weight: 2,
-    eligible: d => !d.crown,
+    eligible: d => !d.crown && !d.player.flags['closed_crown'],
     build: d => ({
       title: 'Un émissaire du prétendant',
       context: 'Un homme en loden vous attend à la sortie de votre permanence. Le prince Louis-Amaury de Valmont cherche « une voix politique » pour porter la cause de la Couronne. Il a lu vos discours.',
@@ -99,7 +100,7 @@ const GATEWAY_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'bal_legitimiste', weight: 1, minRank: 'conseiller_municipal',
-    eligible: d => !d.crown,
+    eligible: d => !d.crown && !d.player.flags['closed_crown'],
     build: () => ({
       title: 'Invitation au bal du château de Montfaucon',
       context: 'Carton gravé, dress code « tenue de soirée, décorations ». Toute la noblesse légitimiste sera là… et le prétendant compte vous parler entre deux valses.',
@@ -115,7 +116,7 @@ const GATEWAY_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'parrain_loge', weight: 2,
-    eligible: d => !d.lodge,
+    eligible: d => !d.lodge && !d.player.flags['closed_lodge'],
     build: (d, rng) => {
       const npc = rng.pick(d.npcs.filter(n => n.relationToPlayer > 0 && !n.isRival));
       const who = npc?.name ?? 'un ancien bâtonnier que vous estimez';
@@ -137,7 +138,7 @@ const GATEWAY_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'tenue_blanche', weight: 1,
-    eligible: d => !d.lodge,
+    eligible: d => !d.lodge && !d.player.flags['closed_lodge'],
     build: d => ({
       title: 'Une tenue blanche ouverte',
       context: 'Une loge vous invite à donner une conférence devant ses membres et quelques « profanes ». Après le débat, le Vénérable vous retient : « Et si vous frappiez à notre porte ? »',
@@ -1422,6 +1423,13 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
   }
   // Épidémie Z : la porte d'entrée (rare), puis l'épidémie domine l'actualité
   if (!ev && room && canFire(ZOMBIE_GATE, 12) && rng.chance(0.008)) ev = ZOMBIE_GATE;
+  // Fin du monde : la porte d'entrée (rare), les rebondissements, et le Diable qui réclame son dû
+  if (!ev && canFire(DEVIL_DUE, 11) && rng.chance(0.7)) ev = DEVIL_DUE;
+  if (!ev && room && canFire(APOC_GATE, 12) && rng.chance(0.006)) ev = APOC_GATE;
+  if (!ev && d.apocalypse && d.apocalypse.phase < 4 && rng.chance(0.45)) {
+    const pool = APOC_EVENTS.filter(e => canFire(e, 5));
+    if (pool.length) ev = pick(pool);
+  }
   if (!ev && d.zombie && rng.chance(0.45)) {
     const pool = ZOMBIE_EVENTS.filter(e => canFire(e, 6));
     if (pool.length) ev = pick(pool);
