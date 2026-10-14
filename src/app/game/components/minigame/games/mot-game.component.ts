@@ -1,6 +1,7 @@
 import { dailyPlayed, dailyWord, markDailyPlayed } from '../../../engine/daily';
 import { Component, DestroyRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
 import { MinigameDef } from '../../../data/minigames';
+import { MotSave, clearSave, loadSave, writeSave } from '../../../engine/arcade-save';
 
 type Mark = 'ok' | 'mal' | 'non';
 const ROWS = 6;
@@ -78,6 +79,8 @@ export class MotGameComponent {
   readonly done = output<number>();
   readonly progress = output<{ live: number; time: number }>();
   readonly miss = output<void>();
+  /** Salle de jeux : la partie se sauvegarde et se reprend (jusqu'à minuit) */
+  readonly saveKey = input<string | null>(null);
 
   protected readonly keys = KEYS;
   protected word = '';
@@ -102,6 +105,16 @@ export class MotGameComponent {
       this.over = true;
       this.message.set('Le mot du jour a déjà été joué aujourd’hui. Revenez demain pour un nouveau mot ! Votre équipe fait de son mieux en attendant.');
       setTimeout(() => this.done.emit(0.5), 2600);
+      return;
+    }
+    const key = this.saveKey();
+    if (key) {
+      const saved = loadSave<MotSave>(key);
+      if (saved?.kind === 'mot' && saved.guesses.every(g => g.length === this.word.length)) {
+        this.guesses.set(saved.guesses.map(text => ({ text, marks: markGuess(text, this.word) })));
+        if (saved.guesses.length) this.message.set(`Partie reprise : ${saved.guesses.length} essai(s) déjà joué(s).`);
+      }
+      this.timer = setInterval(() => this.progress.emit({ live: this.live(), time: 1 }), 500);
       return;
     }
     const limit = 150000 / this.diff();
@@ -164,6 +177,8 @@ export class MotGameComponent {
     const marks = markGuess(g, this.word);
     this.guesses.update(list => [...list, { text: g, marks }]);
     this.current.set(this.word[0]);
+    const key = this.saveKey();
+    if (key) writeSave(key, { kind: 'mot', guesses: this.guesses().map(x => x.text) });
     if (g === this.word) { this.finish(true, ['Du premier coup !', 'Bravo !', 'Bien joué !', 'Trouvé !', 'Trouvé, de justesse', 'Ouf, trouvé !'][this.guesses().length - 1]); return; }
     this.miss.emit();
     if (this.guesses().length >= ROWS) this.finish(false, 'Perdu…');
@@ -175,6 +190,8 @@ export class MotGameComponent {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
     this.message.set(`${text} Le mot était ${this.word}.`);
+    const key = this.saveKey();
+    if (key) clearSave(key);
     if (this.def().daily) markDailyPlayed();
     const score = found ? ROW_SCORE[this.guesses().length - 1] : 0.3 * this.live();
     this.progress.emit({ live: score, time: 0 });

@@ -352,6 +352,28 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'templiers_gate', weight: 0.6, minRank: 'conseiller_municipal', eligible: d => !d.crises?.templiers && !d.player.flags['templiersDone'] && d.week > 14,
+    build: () => ({
+      title: 'La crypte des Templiers',
+      context: 'Des ouvriers qui renforçaient les fondations d’une église ont percé une crypte scellée depuis 1307. À l’intérieur : des coffres frappés de la croix rouge des Templiers. La rumeur d’un trésor enflamme le pays.',
+      choices: [
+        c('etat', 'Confier le site aux archéologues de l’État', [cr('templiers', 7, 2, true), { kind: 'flag', key: 'templiersDone', value: true }, s('credibility', 2)], 'Barrières, gendarmes et pinceaux : la fouille sera longue et minutieuse.'),
+        c('spectacle', 'En faire un événement populaire', [cr('templiers', 3, 6, true), { kind: 'flag', key: 'templiersDone', value: true }, s('popularity', 3)], 'Visites guidées, direct à la télévision : la foule afflue… et les pillards aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'eurovision_gate', weight: 0.6, minRank: 'conseiller_municipal', eligible: d => !d.crises?.eurovision && !d.player.flags['eurovisionDone'] && d.week > 20,
+    build: () => ({
+      title: 'Douze points pour la France !',
+      context: 'Contre toute attente, la France remporte l’Eurovision. Elle organisera la prochaine édition, et on vous demande de porter la candidature de votre ville.',
+      choices: [
+        c('porter', 'Porter la candidature avec enthousiasme', [cr('eurovision', 6, 3, true), { kind: 'flag', key: 'eurovisionDone', value: true }, { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Votre ville est retenue. Il reste huit mois pour monter le plus grand show d’Europe.'),
+        c('sobre', 'Exiger un budget raisonnable', [cr('eurovision', 3, 1, true), { kind: 'flag', key: 'eurovisionDone', value: true }, s('credibility', 2), { kind: 'segment', segment: 'retraites', delta: 1 }], 'Une Eurovision « sobre et populaire ». Les fans s’inquiètent pour les paillettes.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -809,6 +831,51 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('donner', 'Donner, et le dire', [cr('greve_generale', 5), { kind: 'segment', segment: 'populaires', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: -2 }, { kind: 'funds', account: 'personal', delta: -200 }], 'Deux cents euros et un message de solidarité. Les patrons froncent les sourcils.'),
         c('critiquer', 'Critiquer « une prime au blocage »', [cr('greve_generale', -2, 3), { kind: 'segment', segment: 'cadres', delta: 2 }], 'La formule tourne en boucle. Les grévistes la brandissent sur leurs pancartes.'),
+      ],
+    }),
+  },
+  {
+    tag: 'templiers_youtubeur', weight: 1, eligible: d => !!d.crises?.templiers,
+    build: () => ({
+      title: 'Un youtubeur dans la crypte',
+      context: 'Un vidéaste aux trois millions d’abonnés s’est introduit de nuit dans la crypte et filme « la vérité que l’État vous cache ».',
+      choices: [
+        c('expulser', 'Le faire expulser et renforcer la garde', [cr('templiers', 3, -6), s('energy', -3)], 'Projecteurs, chiens et maîtres-chiens : le site est désormais une forteresse.'),
+        c('inviter', 'L’inviter à filmer officiellement les fouilles', [cr('templiers', 4, 2), { kind: 'segment', segment: 'jeunes', delta: 3 }], 'Sa série documentaire bat des records. La crypte est connue dans le monde entier.'),
+      ],
+    }),
+  },
+  {
+    tag: 'templiers_manuscrit', weight: 0.8, eligible: d => !!d.crises?.templiers,
+    build: () => ({
+      title: 'Le manuscrit codé',
+      context: 'Dans le premier coffre : un manuscrit chiffré. Des cryptographes amateurs du monde entier se mettent au travail ; certains prétendent qu’il désigne un second trésor.',
+      choices: [
+        c('ouvrir', 'Publier le manuscrit en ligne', [cr('templiers', 6, 3), s('popularity', 1)], 'Quarante-huit heures plus tard, un lycéen de Rodez le déchiffre. Il désigne… la crypte elle-même.'),
+        c('garder', 'Le confier aux services du chiffre', [cr('templiers', 5, -2), s('credibility', 1)], 'Le secret est gardé. La théorie du complot aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'eurovision_chanson', weight: 1, eligible: d => !!d.crises?.eurovision,
+    build: () => ({
+      title: 'Quelle chanson pour la France ?',
+      context: 'Le choix du représentant français déchaîne les passions : une chanteuse lyrique, un groupe de rap ou un accordéoniste breton.',
+      choices: [
+        c('lyrique', 'La voix lyrique', [cr('eurovision', 4), { kind: 'segment', segment: 'retraites', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: 1 }], 'Un air d’opéra remixé : les jurys adorent.'),
+        c('rap', 'Le groupe de rap', [cr('eurovision', 5, 2), { kind: 'segment', segment: 'jeunes', delta: 3 }], 'Des millions de vues, quelques sourcils froncés.'),
+        c('accordeon', 'L’accordéoniste breton', [cr('eurovision', 3, -2), { kind: 'segment', segment: 'ruraux', delta: 3 }], 'Le bal populaire à l’échelle européenne. Tout le monde danse.'),
+      ],
+    }),
+  },
+  {
+    tag: 'eurovision_hotels', weight: 0.8, eligible: d => !!d.crises?.eurovision,
+    build: () => ({
+      title: 'Les hôtels triplent leurs prix',
+      context: 'À l’approche de la finale, les nuitées s’affichent à 900 euros. Les fans menacent de boycotter.',
+      choices: [
+        c('plafonner', 'Négocier un plafond avec les hôteliers', [cr('eurovision', 5, -3), s('politicalCapital', -4)], 'Un accord arraché à deux heures du matin : 250 euros maximum.'),
+        c('camping', 'Ouvrir un village de tentes géant', [cr('eurovision', 3, 2), s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Le « camping de l’Eurovision » devient l’endroit le plus festif d’Europe.'),
       ],
     }),
   },

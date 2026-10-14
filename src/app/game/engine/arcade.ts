@@ -1,6 +1,6 @@
 import { Effect, GameState } from '../models/game.models';
 import { MINIGAMES_BY_ID } from '../data/minigames';
-import { dailyPlayed, markDailyPlayed } from './daily';
+import { dailyPlayed } from './daily';
 import { difficultyOf } from './minigame';
 import { nextId } from './rng';
 
@@ -76,7 +76,6 @@ export function startArcade(d: GameState, id: ArcadeId): boolean {
   const def = a && MINIGAMES_BY_ID.get(a.gameId);
   if (!a || !def || !arcadeAvailability(d, a).ok) return false;
   const paid = arcadeRewardOpen(d, a);
-  if (paid && a.limit === 'mois') d.player.flags[`arcade_${a.id}`] = d.week;
   d.minigames ??= [];
   d.minigames.push({
     id: nextId(d, 'jeu'), gameId: a.gameId, title: def.title, origin: paid ? 'Salle de jeux' : 'Salle de jeux · pour le plaisir',
@@ -85,10 +84,7 @@ export function startArcade(d: GameState, id: ArcadeId): boolean {
   return true;
 }
 
-/** Abandonner une partie de la salle de jeux */
+/** Quitter une partie de la salle de jeux : elle reste sauvegardée jusqu'à minuit */
 export function quitArcade(d: GameState, id: string): void {
-  const g = d.minigames?.find(x => x.id === id);
-  // Le mot du jour est consommé dès qu'on l'a vu
-  if (g?.gameId === 'mot_du_jour' && g.status === 'pret') markDailyPlayed();
   d.minigames = (d.minigames ?? []).filter(x => x.id !== id);
 }

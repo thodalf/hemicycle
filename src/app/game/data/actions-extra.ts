@@ -540,6 +540,37 @@ const COUNTRY: ActionDefinition[] = [
     description: 'Rixes, violences conjugales, contrôles : la nuit vue de la voiture de patrouille.', cost: { ap: 1, energy: 10 }, cooldown: 4, effects: [dos('securite', 3), seg('retraites', 1), st('credibility', 1)] },
   { id: 'tribune_europeenne', label: 'Cosigner une tribune européenne', category: 'dossiers', minRank: 'depute',
     description: 'Vingt élus de dix pays, un appel commun dans cinq quotidiens.', cost: { ap: 1, energy: 3 }, cooldown: 4, effects: [dos('diplomatie', 3), st('credibility', 1), seg('cadres', 1)] },
+  // Le trésor des Templiers
+  { id: 'templiers_garde', label: 'Placer la crypte sous garde militaire', category: 'crise', minRank: 'militant', requires: { arc: 'templiers' },
+    description: 'Des soldats de l’opération Sentinelle devant une église : rassurant, et très photogénique.', cost: { ap: 1, politicalCapital: 6 }, cooldown: 3, effects: [cr('templiers', 2, -8)] },
+  { id: 'templiers_experts', label: 'Faire venir les meilleurs médiévistes', category: 'crise', minRank: 'militant', requires: { arc: 'templiers' },
+    description: 'Une équipe internationale, des scanners, des pinceaux et beaucoup de patience.', cost: { ap: 1, money: 1500 }, maxPerMonth: 1, effects: [cr('templiers', 9), dos('education', 1)] },
+  { id: 'templiers_visite', label: 'Ouvrir une visite virtuelle de la crypte', category: 'crise', minRank: 'militant', requires: { arc: 'templiers' },
+    description: 'La crypte en 3D pour tous : plus besoin de venir camper devant.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [cr('templiers', 4, -4), seg('jeunes', 2), dos('numerique', 1)] },
+  // L'Eurovision
+  { id: 'eurovision_repetition', label: 'Assister aux répétitions générales', category: 'crise', minRank: 'militant', requires: { arc: 'eurovision' },
+    description: 'Plateau géant, machines à fumée et techniciens épuisés : votre présence remotive les équipes.', cost: { ap: 1, energy: 7 }, cooldown: 2, effects: [cr('eurovision', 7), st('stress', 1)] },
+  { id: 'eurovision_securite', label: 'Boucler le plan de sécurité', category: 'crise', minRank: 'militant', requires: { arc: 'eurovision' },
+    description: 'Cent mille fans, quarante délégations : préfet, police et pompiers autour d’une table.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [cr('eurovision', 3, -8), dos('securite', 2)] },
+  { id: 'eurovision_fete', label: 'Organiser la fan zone en centre-ville', category: 'crise', minRank: 'militant', requires: { arc: 'eurovision' },
+    description: 'Écrans géants, karaoké géant, drapeaux de toute l’Europe.', cost: { ap: 1, money: 1000 }, cooldown: 3, effects: [cr('eurovision', 5, 2), seg('jeunes', 3), st('popularity', 1)] },
+  // Encore du quotidien d'élu
+  { id: 'reunion_copro', label: 'Débloquer une copropriété dégradée', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Ascenseur en panne depuis huit mois, syndic introuvable : vous prenez le dossier en main.', cost: { ap: 1, energy: 7, politicalCapital: 3 }, cooldown: 4, effects: [seg('populaires', 3), st('popularity', 1), dos('territoires', 1)] },
+  { id: 'atelier_numerique', label: 'Animer un atelier numérique pour seniors', category: 'terrain', minRank: 'militant',
+    description: 'Visio avec les petits-enfants, démarches en ligne, arnaques à éviter.', cost: { ap: 1, energy: 5 }, cooldown: 3, effects: [seg('retraites', 3), dos('numerique', 2), st('stress', -1)] },
+  { id: 'podcast_politique', label: 'Lancer votre podcast', category: 'medias', minRank: 'conseiller_municipal',
+    description: 'Quarante minutes par mois avec un invité : pas de petites phrases, des vraies conversations.', cost: { ap: 1, energy: 6, money: 300 }, cooldown: 4, effects: [seg('cadres', 2), seg('jeunes', 1), st('credibility', 2)] },
+  { id: 'chantier_benevole', label: 'Participer à un chantier de bénévoles', category: 'terrain', minRank: 'militant',
+    description: 'Restaurer un lavoir avec une association du patrimoine, truelle en main.', cost: { ap: 1, energy: 10 }, cooldown: 4, effects: [seg('ruraux', 2), st('popularity', 2), { kind: 'health', delta: 1 }] },
+  { id: 'audit_citoyen', label: 'Commander un audit citoyen des comptes', category: 'dossiers', minRank: 'conseiller_municipal',
+    description: 'Vingt habitants tirés au sort épluchent le budget. Transparence totale.', cost: { ap: 1, politicalCapital: 5 }, cooldown: 6, effects: [st('credibility', 3), { kind: 'exposure', delta: -2 }, dos('economie', 1)] },
+  { id: 'jumelage_europeen', label: 'Recevoir une délégation d’une ville jumelle', category: 'reseau', minRank: 'conseiller_municipal',
+    description: 'Fanfare, échange de cadeaux, dîner franco-allemand bien arrosé.', cost: { ap: 1, energy: 6, money: 400 }, cooldown: 6, effects: [dos('diplomatie', 2), st('influence', 1), seg('retraites', 1)] },
+  { id: 'foret_urbaine', label: 'Planter une forêt urbaine avec les écoles', category: 'terrain', minRank: 'conseiller_municipal',
+    description: 'Six cents arbres sur un ancien parking, une classe par parcelle.', cost: { ap: 1, energy: 8, politicalCapital: 4 }, cooldown: 6, effects: [dos('ecologie', 3), seg('jeunes', 2), st('popularity', 1)] },
+  { id: 'question_ecrite', label: 'Déposer une rafale de questions écrites', category: 'dossiers', minRank: 'depute', target: 'domain',
+    description: 'Dix questions précises au gouvernement : les ministères doivent répondre sous deux mois.', cost: { ap: 1, energy: 4 }, cooldown: 3, effects: [{ kind: 'dossier', domain: '$domain', delta: 3 }, st('credibility', 1)] },
 ];
 
 export const EXTRA_ACTIONS: ActionDefinition[] = [...INTRIGUES, ...ZOMBIE, ...ORDINARY, ...LIFE, ...MINISTRIES, ...COUNTRY, ...APOCALYPSE];

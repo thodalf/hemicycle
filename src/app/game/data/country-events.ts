@@ -479,6 +479,94 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'ev_chat_mairie', weight: 0.6,
+    build: () => ({
+      title: 'Le chat de la mairie',
+      context: 'Un chat roux s’est installé à l’accueil de la mairie. Il a désormais son propre compte sur les réseaux, plus suivi que le vôtre.',
+      choices: [
+        c('adopter', 'L’adopter officiellement', [s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }, s('stress', -2)], '« Monsieur le Chat » reçoit une médaille de la ville. Vous posez à côté, au second plan.'),
+        c('refuge', 'Le confier à un refuge', [s('credibility', 1), s('popularity', -1)], 'Les commentaires sont impitoyables. Le chat, lui, est très bien traité.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_sondage_bidon', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Un sondage farfelu',
+      context: 'Un institut publie : « Avec quel élu aimeriez-vous partir en vacances ? » Vous arrivez deuxième, juste derrière un ancien footballeur.',
+      choices: [
+        c('jouer', 'Jouer le jeu avec humour', [s('popularity', 2), { kind: 'momentum', delta: 2 }], '« Je prends le camping-car, il apporte le ballon. » La vidéo tourne partout.'),
+        c('serieux', '« Je préfère parler du fond »', [s('credibility', 1)], 'Un peu raide. Mais personne ne vous en veut.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_inondation_cave', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Orage de grêle',
+      context: 'Des grêlons gros comme des balles de golf ont haché les vignes et les vergers de votre circonscription en vingt minutes.',
+      choices: [
+        c('catastrophe', 'Réclamer l’état de catastrophe naturelle', [{ kind: 'segment', segment: 'ruraux', delta: 3 }, s('politicalCapital', -4), s('energy', -4)], 'Vous arpentez les parcelles avec les viticulteurs. L’arrêté tombe en trois semaines.'),
+        c('assurance', 'Renvoyer vers les assurances', [{ kind: 'segment', segment: 'ruraux', delta: -2 }, s('credibility', 1)], 'Juridiquement exact. Humainement glacial.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_prof_menace', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Un professeur menacé',
+      context: 'Un professeur d’histoire de votre ville est menacé sur les réseaux après un cours sur la liberté d’expression. Ses collègues demandent du soutien.',
+      choices: [
+        c('soutenir', 'Lui rendre visite et le soutenir publiquement', [s('credibility', 2), { kind: 'dossier', domain: 'education', delta: 2 }, { kind: 'flagAdd', key: 'menace', delta: 2 }], 'Une poignée de main devant le lycée, une protection policière renforcée.'),
+        c('discret', 'Saisir le rectorat discrètement', [{ kind: 'dossier', domain: 'securite', delta: 1 }, s('credibility', -1)], 'Efficace, mais ses collègues auraient aimé vous voir.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_cagnotte_hopital', weight: 0.5,
+    build: () => ({
+      title: 'La cagnotte de l’hôpital',
+      context: 'Les soignants de l’hôpital local lancent une cagnotte pour acheter un échographe. Une honte pour certains, un bel élan pour d’autres.',
+      choices: [
+        c('financer', 'Débloquer les fonds publics nécessaires', [{ kind: 'dossier', domain: 'sante', delta: 3 }, s('politicalCapital', -5), s('popularity', 2)], 'L’échographe arrive en un mois. La cagnotte finance une salle de repos.'),
+        c('donner', 'Donner personnellement', [{ kind: 'funds', account: 'personal', delta: -300 }, s('popularity', 1)], 'Votre nom en bas de la liste des donateurs. Discret et apprécié.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_record_guinness', weight: 0.5,
+    build: () => ({
+      title: 'Un record du monde',
+      context: 'Votre commune veut battre le record du monde de la plus longue table de banquet : 4 kilomètres, 12 000 convives.',
+      choices: [
+        c('participer', 'Présider le banquet', [s('popularity', 3), s('energy', -6), { kind: 'segment', segment: 'retraites', delta: 2 }], 'Record battu de 212 mètres. Vous avez serré 3 000 mains et mangé onze fromages.'),
+        c('message', 'Envoyer un message de soutien', [s('popularity', 1)], 'Lu au micro entre le fromage et le dessert.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_greve_profs', weight: 0.6, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Les enseignants en grève',
+      context: 'Les enseignants du département manifestent contre les fermetures de classes. Les parents d’élèves les rejoignent.',
+      choices: [
+        c('defiler', 'Défiler avec eux', [{ kind: 'segment', segment: 'populaires', delta: 2 }, { kind: 'dossier', domain: 'education', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: -1 }], 'Une banderole, une écharpe tricolore, des slogans que vous chantez faux.'),
+        c('mediation', 'Proposer une médiation avec le rectorat', [s('credibility', 2), s('politicalCapital', -3)], 'Deux classes sauvées sur cinq. Personne n’est pleinement satisfait.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_metro_mot', weight: 0.5,
+    build: () => ({
+      title: 'Le jeu de la matinale',
+      context: 'La matinale de la radio vous propose de jouer en direct au mot mystère, avant votre interview politique.',
+      choices: [
+        c('jouer', 'Jouer en direct', [{ kind: 'minigame', gameId: 'motus_tele', title: 'Le mot de la matinale', reward: [s('popularity', 2), { kind: 'segment', segment: 'retraites', delta: 1 }], penalty: [s('popularity', -1)] }], 'Première lettre : à vous de jouer.'),
+        c('passer', 'Passer directement à l’interview', [s('credibility', 1)], 'Sérieux, peut-être un peu trop.'),
+      ],
+    }),
+  },
 ];
 
 /** Une petite phrase : un moment où une formule peut rester (tirage à part) */

@@ -155,6 +155,30 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Je soumets ça aux assemblées générales ce soir. Je ne promets rien… mais c’est sérieux.', effects: [{ kind: 'crisis', arc: 'greve_generale', gauge: 10, risk: -4 }, { kind: 'economy', deficit: 0.1 }, { kind: 'segment', segment: 'populaires', delta: 1 }] }) },
     ],
   },
+  // ── Le trésor des Templiers ──
+  {
+    key: 'sc:templiers', icon: '🗝️', when: d => !!d.crises?.templiers,
+    name: () => 'Pr Agnès Montclar', role: () => 'Médiéviste · cheffe des fouilles de la crypte',
+    options: () => [
+      { id: 'sc_templiers_point', label: 'Faire le point sur les fouilles', hint: 'Elle dort sur place, dans une caravane.', ask: 'Alors, ce dernier coffre ?', cooldown: 1,
+        run: () => ({ answer: 'Un reliquaire du XIIIe siècle, intact. Je vous envoie la photo. Ne la publiez pas encore !', effects: [{ kind: 'crisis', arc: 'templiers', gauge: 5 }, st('stress', -1)] }) },
+      { id: 'sc_templiers_exclu', label: 'Lui demander une exclusivité pour la presse', hint: 'Une photo du trésor avec vous : risqué pour le chantier.', ask: 'Et si on montrait une pièce aux caméras, ensemble ?', cooldown: 4,
+        run: () => ({ answer: 'Une seule pièce, deux minutes, et pas de flash.', effects: [st('popularity', 3), { kind: 'crisis', arc: 'templiers', risk: 4 }] }) },
+    ],
+  },
+  // ── L'Eurovision ──
+  {
+    key: 'sc:eurovision', icon: '🎤', when: d => !!d.crises?.eurovision,
+    name: () => 'Jean-Marc Delval', role: () => 'Producteur exécutif de la finale',
+    options: () => [
+      { id: 'sc_euro_point', label: 'Faire le point sur le show', hint: 'Il répond depuis un plateau en ébullition.', ask: 'On en est où, Jean-Marc ?', cooldown: 1,
+        run: () => ({ answer: 'Les écrans LED arrivent mardi. Le dragon gonflable, je n’en parle même pas.', effects: [{ kind: 'crisis', arc: 'eurovision', gauge: 5 }] }) },
+      { id: 'sc_euro_chanter', label: 'Proposer de chanter en ouverture', hint: 'Un couplet en direct devant 160 millions de personnes. Audacieux.', ask: 'Et si j’ouvrais la soirée… en chantant ?', cooldown: 99,
+        run: (d, rng) => rng.chance(0.5)
+          ? { answer: 'C’est fou. On le fait. (Votre couplet devient un mème européen… plutôt affectueux.)', effects: [st('popularity', 4), { kind: 'segment', segment: 'jeunes', delta: 3 }, { kind: 'crisis', arc: 'eurovision', gauge: 4 }] }
+          : { answer: 'On a fait un essai. Avec tout le respect que je vous dois : non.', effects: [st('stress', 2)] } },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,

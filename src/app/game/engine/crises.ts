@@ -65,6 +65,10 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Un volcan islandais a obscurci le ciel : l’été n’est pas venu.', 'Récoltes perdues, rationnement, files d’attente devant les boulangeries.', 'Les premiers rayons percent. Il faut tenir encore un peu.'] },
   sosie: { id: 'sosie', icon: '🎭', label: 'Votre sosie', gaugeLabel: 'Vérité rétablie', riskLabel: 'Dégâts du sosie', months: 6, drift: { gauge: 3, risk: 5 },
     stages: ['Un homme qui vous ressemble trait pour trait inaugure des ronds-points à votre place.', 'Le sosie donne des interviews, signe des pétitions et contredit vos discours.', 'Il annonce votre ralliement… au parti adverse. Il faut le démasquer.'] },
+  templiers: { id: 'templiers', icon: '🗝️', label: 'Le trésor des Templiers', gaugeLabel: 'Fouilles officielles', riskLabel: 'Pillards et fièvre', months: 7, drift: { gauge: 3, risk: 5 },
+    stages: ['Une crypte scellée est découverte sous une église de votre département : des coffres frappés de la croix templière.', 'Chasseurs de trésor, youtubeurs et illuminés campent autour du chantier.', 'Les archéologues s’apprêtent à ouvrir le dernier coffre.'] },
+  eurovision: { id: 'eurovision', icon: '🎤', label: 'L’Eurovision en France', gaugeLabel: 'Préparation du show', riskLabel: 'Risque de fiasco', months: 8, drift: { gauge: 4, risk: 4 },
+    stages: ['La France a gagné l’Eurovision : elle accueille la prochaine édition, et votre ville est candidate.', 'Salle, hôtels, sécurité, polémiques sur la chanson française : le chantier est immense.', 'Grande finale en direct devant 160 millions de téléspectateurs.'] },
   greve_generale: { id: 'greve_generale', icon: '✊', label: 'La grève générale', gaugeLabel: 'Dialogue social', riskLabel: 'Paralysie du pays', months: 5, drift: { gauge: 3, risk: 5 },
     stages: ['L’intersyndicale appelle à une grève générale reconductible.', 'Trains à l’arrêt, raffineries bloquées, écoles fermées : le pays tourne au ralenti.', 'Les négociations de la dernière chance s’ouvrent rue de Grenelle.'] },
 };
@@ -312,6 +316,28 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
         s.popularity = clamp(s.popularity - 8);
         economy(d).growth -= 1;
         lose('L’exode', 'Des millions de Français partis vers le Sud, des villages vidés. Le pays mettra des années à se relever.');
+      }
+      break;
+    case 'templiers':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); s.credibility = clamp(s.credibility + 3);
+        economy(d).growth += 0.1;
+        win('Le trésor au musée', 'Manuscrits, reliquaires et pièces d’or rejoignent un musée flambant neuf. Le tourisme explose dans le département.');
+      } else {
+        s.credibility = clamp(s.credibility - 4); s.popularity = clamp(s.popularity - 2);
+        lose('Le trésor pillé', 'Une nuit de brouillard, la crypte est vidée. Les coffres réapparaissent, un par un, dans des ventes aux enchères à l’étranger.');
+      }
+      break;
+    case 'eurovision':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5); s.influence = clamp(s.influence + 2);
+        electorate(d).offsets.jeunes = clamp(electorate(d).offsets.jeunes + 3, -30, 30);
+        d.intl.prestige = clamp(d.intl.prestige + 4);
+        win('Une finale de légende', 'Paillettes, feux d’artifice et zéro incident : l’Europe entière parle de la meilleure Eurovision de l’histoire.');
+      } else {
+        s.popularity = clamp(s.popularity - 4);
+        economy(d).deficit += 0.1;
+        lose('Douze points de pénalité', 'Panne de son en plein direct, budget explosé, chanteur hué : la France devient la risée du continent.');
       }
       break;
     case 'sosie':

@@ -6,6 +6,7 @@ import { MinigameService } from '../../services/minigame.service';
 import { FxService } from '../../services/fx.service';
 import { MotGameComponent } from './games/mot-game.component';
 import { GrilleGameComponent } from './games/grille-game.component';
+import { saveProgress } from '../../engine/arcade-save';
 import { QuizGameComponent } from './games/quiz-game.component';
 import { ProtocoleGameComponent } from './games/protocole-game.component';
 import { TableGameComponent } from './games/table-game.component';
@@ -94,6 +95,8 @@ export class MinigameComponent {
       fn(now, now - this.started);
     }, ms);
   }
+
+  protected resumable(id: string): boolean { return !!saveProgress(id); }
 
   start(): void {
     const def = this.def();

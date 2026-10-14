@@ -28,6 +28,9 @@ export interface GridItem {
 export interface GridCrit {
   id: string;
   label: string;
+  /** Pastille de lisibilité (numéro de ligne) et sa couleur */
+  badge?: string;
+  color?: string;
   /** Deux critères du même groupe ne se croisent pas */
   group: string;
   test: (x: GridItem) => boolean;
@@ -122,13 +125,16 @@ const GRANDES_GARES = new Set(['Gare du Nord', 'Gare de l\'Est', 'Gare de Lyon',
 const PERSONNES = /Césaire|Dumas|Anatole|Barbara|Bolivar|Michels|de Gaulle|Fabien|Corentin|Dupleix|Duroc|Quinet|Étienne Marcel|Exelmans|Faidherbe|Falguière|Félix Faure|Roosevelt|Péri|Gallieni|Gambetta|Garibaldi|George V|Goncourt|Môquet|Hoche|Bonsergent|Jasmin|Jaurès|Joffrin|Jussieu|Kléber|Lamarck|Ledru|Louis Blanc|Louise Michel|Mabillon|Malesherbes|Sembat|Dormoy|Bizot|Mirabeau|Miromesnil|Mouton|Oberkampf|Parmentier|Pasteur|Pereire|Pernety|Philippe Auguste|Curie|Raspail|Richard-Lenoir|Richelieu|Robespierre|Rambuteau|Gainsbourg|Victor Hugo|Voltaire|Boucicaut|Cambronne|Daumesnil|Dugommier|Bréguet|Lucie Aubrac|Picasso|Queneau|Aragon|Vaillant|Roussy|Lagrange|Citroën|Mitterrand|Daubenton|Clemenceau|Diderot|Caulaincourt|Bienvenüe|Dolet|Carnot|Chardon-Lagache|Lemoine|Michel-Ange|Molitor|Brochant|Lourmel|Estienne|Sully|Froissart|Pierre/;
 const BATAILLES = /Alma|Austerlitz|Bir-Hakeim|Campo-Formio|Crimée|Iéna|Wagram|Solférino|Pyramides|Rivoli|Stalingrad|Sébastopol|Malakoff|Buzenval|Trocadéro|Marengo|Magenta/;
 const AUTO: L[] = ['1', '4', '14'];
+/** Couleurs des lignes, pour la pastille */
+const LINE_COLORS: Record<string, string> = { '1': '#FFCD00', '2': '#003CA6', '3': '#837902', '4': '#CF009E', '5': '#FF7E2E', '6': '#6ECA97', '7': '#FA9ABA',
+  '8': '#E19BDF', '9': '#B6BD00', '10': '#C9910D', '11': '#704B1C', '12': '#007852', '13': '#6EC4E8', '14': '#62259D' };
 const even = (l: L) => parseInt(l, 10) % 2 === 0;
 const metro: GridSet = {
   id: 'metro', corner: 'Ⓜ', placeholder: 'Nom de la station', noun: 'station',
   items: STATIONS.map(x => ({ key: x.name, name: x.name, tag: '', search: [normalize(x.name)], data: x })),
-  rows: LINE_LABELS.map(([l, label]) => ({ id: `l-${l}`, label, group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) })),
+  rows: LINE_LABELS.map(([l, label]) => ({ id: `l-${l}`, label, badge: l, color: LINE_COLORS[l], group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) })),
   cols: [
-    ...LINE_LABELS.map(([l, label]) => ({ id: `c-${l}`, label: label.replace(/^Sur /, 'Aussi sur '), group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) && st(x).lines.length >= 2 })),
+    ...LINE_LABELS.map(([l, label]) => ({ id: `c-${l}`, label: label.replace(/^Sur /, 'Aussi sur '), badge: l, color: LINE_COLORS[l], group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) && st(x).lines.length >= 2 })),
     { id: 'rer', label: 'Correspondance avec le RER', group: 'rer', test: x => st(x).rer.length > 0 },
     { id: 'norer', label: 'Aucune correspondance RER', group: 'rer', test: x => st(x).rer.length === 0 },
     { id: 'hub', label: 'Nœud d’au moins 3 lignes de métro', group: 'count', test: x => st(x).lines.length >= 3 },
@@ -218,4 +224,14 @@ export function makeGrid(id: GridSetId, rand: () => number = Math.random): Grid 
   const rows = set.rows.slice(0, 3);
   const cols = set.cols.filter((c, i, a) => a.findIndex(o => o.group === c.group) === i && !rows.some(r => r.group === c.group)).slice(0, 3);
   return { set, rows, cols, answers: rows.map(r => cols.map(c => set.items.filter(x => r.test(x) && c.test(x)))) };
+}
+
+/** Reconstruit une grille sauvegardée à partir des identifiants de critères */
+export function gridFromIds(id: GridSetId, rowIds: string[], colIds: string[]): Grid | null {
+  const set = GRID_SETS[id];
+  const rows = rowIds.map(r => set.rows.find(x => x.id === r));
+  const cols = colIds.map(c => set.cols.find(x => x.id === c));
+  if (rows.some(r => !r) || cols.some(c => !c) || rows.length !== 3 || cols.length !== 3) return null;
+  const R = rows as GridCrit[], C = cols as GridCrit[];
+  return { set, rows: R, cols: C, answers: R.map(r => C.map(c => set.items.filter(x => r.test(x) && c.test(x)))) };
 }

@@ -1,7 +1,8 @@
 import { Component, DestroyRef, ElementRef, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { MinigameDef } from '../../../data/minigames';
 import { normalize } from '../../../data/departements';
-import { Grid, GridItem, makeGrid } from '../../../data/grids';
+import { Grid, GridItem, gridFromIds, makeGrid } from '../../../data/grids';
+import { GridSave, clearSave, loadSave, writeSave } from '../../../engine/arcade-save';
 
 /** Grilles façon Metrodoku : villes de France, stations de métro, capitales du monde */
 @Component({
@@ -14,9 +15,9 @@ import { Grid, GridItem, makeGrid } from '../../../data/grids';
       </div>
       <div class="grid" role="grid" [attr.aria-label]="'Grille : ' + grid.set.noun + 's'">
         <span class="corner" aria-hidden="true">{{ grid.set.corner }}</span>
-        @for (c of grid.cols; track c.id) { <span class="crit col" [class.long]="c.label.length > 28" role="columnheader">{{ c.label }}</span> }
+        @for (c of grid.cols; track c.id) { <span class="crit col" [class.long]="c.label.length > 28" role="columnheader">@if (c.badge) { <i class="lb" [style.background]="c.color" [class.light]="light(c.color)">{{ c.badge }}</i> }{{ c.label }}</span> }
         @for (r of grid.rows; track r.id; let ri = $index) {
-          <span class="crit row" [class.long]="r.label.length > 28" role="rowheader">{{ r.label }}</span>
+          <span class="crit row" [class.long]="r.label.length > 28" role="rowheader">@if (r.badge) { <i class="lb" [style.background]="r.color" [class.light]="light(r.color)">{{ r.badge }}</i> }{{ r.label }}</span>
           @for (c of grid.cols; track c.id; let ci = $index) {
             @let v = cells()[ri][ci];
             <button type="button" class="cell" role="gridcell" [class.sel]="sel()?.[0] === ri && sel()?.[1] === ci" [class.done]="!!v" [class.reveal]="!!revealed()[ri][ci]"
@@ -53,6 +54,10 @@ import { Grid, GridItem, makeGrid } from '../../../data/grids';
     .crit { display: grid; place-items: center; text-align: center; padding: 4px; font-size: 11.5px; font-weight: 600; line-height: 1.2;
       background: var(--surface-2); border-radius: 6px; color: var(--ink-2); hyphens: auto; overflow-wrap: anywhere; }
     .crit.col { min-height: 44px; }
+    .crit { align-content: center; gap: 3px; }
+    .lb { display: inline-grid; place-items: center; justify-self: center; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 999px; color: #fff;
+      font: 700 12px var(--font-body); font-style: normal; box-sizing: border-box; }
+    .lb.light { color: #1b2130; }
     .crit.long { font-size: 10.5px; font-weight: 600; }
     @media (max-width: 420px) { .crit { font-size: 10px; padding: 3px; } .crit.long { font-size: 9.5px; } }
     .cell { aspect-ratio: 1.15; display: grid; place-content: center; justify-items: center; gap: 2px; padding: 4px; border: 2px dashed var(--line);
@@ -82,6 +87,8 @@ export class GrilleGameComponent {
   readonly done = output<number>();
   readonly progress = output<{ live: number; time: number }>();
   readonly miss = output<void>();
+  /** Salle de jeux : la partie se sauvegarde et se reprend (jusqu'à minuit) */
+  readonly saveKey = input<string | null>(null);
 
   protected grid!: Grid;
   protected readonly cells = signal<(GridItem | null)[][]>([[null, null, null], [null, null, null], [null, null, null]]);
@@ -99,8 +106,24 @@ export class GrilleGameComponent {
   }
 
   ngOnInit(): void {
-    this.grid = makeGrid(this.def().grid ?? 'villes');
+    const id = this.def().grid ?? 'villes';
+    const key = this.saveKey();
+    const saved = key ? loadSave<GridSave>(key) : null;
+    const restored = saved?.kind === 'grille' ? gridFromIds(id, saved.rows, saved.cols) : null;
+    this.grid = restored ?? makeGrid(id);
     this.left.set(Math.round(12 / Math.max(0.8, this.diff())));
+    if (restored && saved) {
+      const byKey = new Map(this.grid.set.items.map(x => [x.key, x]));
+      this.cells.set([0, 1, 2].map(r => [0, 1, 2].map(c => byKey.get(saved.cells[r * 3 + c] ?? '') ?? null)));
+      this.left.set(saved.left);
+      this.message.set(`Partie reprise : ${this.filled()} case(s) déjà remplie(s).`);
+    }
+    this.persist();
+    if (key) {
+      // Pas de chrono dans la salle de jeux : on prend son temps
+      this.timer = setInterval(() => this.progress.emit({ live: this.filled() / 9, time: 1 }), 500);
+      return;
+    }
     const limit = 240000 / this.diff();
     const t0 = performance.now();
     this.timer = setInterval(() => {
@@ -108,6 +131,16 @@ export class GrilleGameComponent {
       this.progress.emit({ live: this.filled() / 9, time: Math.max(0, 1 - t / limit) });
       if (t >= limit) this.finish('Temps écoulé !');
     }, 250);
+  }
+
+  private persist(): void {
+    const key = this.saveKey();
+    if (!key || this.over()) return;
+    writeSave(key, { kind: 'grille', rows: this.grid.rows.map(r => r.id), cols: this.grid.cols.map(c => c.id), cells: this.cells().flat().map(x => x?.key ?? null), left: this.left() });
+  }
+
+  protected light(color?: string): boolean {
+    return !!color && ['#FFCD00', '#6ECA97', '#FA9ABA', '#E19BDF', '#B6BD00', '#6EC4E8', '#FF7E2E'].includes(color);
   }
 
   protected readonly filled = computed(() => this.cells().flat().filter(Boolean).length);
@@ -144,10 +177,12 @@ export class GrilleGameComponent {
       this.cells.update(g => g.map((line, i) => line.map((v, j) => (i === r && j === c ? x : v))));
       this.message.set(`${x.name}${x.tag ? ` (${x.tag})` : ''} : bien vu !`);
       this.sel.set(null);
+      this.persist();
       if (this.filled() === 9) this.finish('Grille complète !');
       return;
     }
     this.left.update(n => n - 1);
+    this.persist();
     this.miss.emit();
     const why = !row.test(x) ? `pas « ${row.label} »` : `pas « ${col.label.toLowerCase()} »`;
     this.message.set(`${x.name} : ${why}.`);
@@ -161,6 +196,8 @@ export class GrilleGameComponent {
   private finish(text: string): void {
     if (this.over()) return;
     this.over.set(true);
+    const key = this.saveKey();
+    if (key) clearSave(key);
     this.sel.set(null);
     if (this.timer) clearInterval(this.timer);
     this.timer = null;

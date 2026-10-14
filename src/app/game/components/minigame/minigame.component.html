@@ -48,9 +48,9 @@
               }
             </p>
             <div class="go">
-              <button class="btn primary big" (click)="start()">Jouer</button>
+              <button class="btn primary big" (click)="start()">{{ g.arcade && resumable(g.arcade) ? 'Reprendre la partie' : 'Jouer' }}</button>
               @if (g.arcade) {
-                <button class="btn" (click)="svc.quit()">Renoncer</button>
+                <button class="btn" (click)="svc.quit()">Plus tard</button>
               } @else {
                 <button class="btn" (click)="delegate()">Laisser faire l’équipe (résultat moyen)</button>
               }
@@ -58,6 +58,9 @@
           </div>
         } @else {
           <div class="play">
+            @if (g.arcade) {
+              <button type="button" class="btn small pause" (click)="svc.quit()" title="Vos réponses sont gardées jusqu’à minuit">⏸ Quitter, reprendre plus tard</button>
+            }
             @if (!selfScored.has(def.kind)) { <div class="live mono">Score {{ liveScore() * 100 | number: '1.0-0' }}</div> }
             @switch (def.kind) {
               @case ('poignees') {
@@ -149,8 +152,8 @@
                   <button class="btn" (click)="homeward()">Rentrer à Paris (terminer)</button>
                 </div>
               }
-              @case ('mot') { <app-mot-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
-              @case ('grille') { <app-grille-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('mot') { <app-mot-game [def]="def" [diff]="g.difficulty ?? 1" [saveKey]="g.arcade ?? null" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('grille') { <app-grille-game [def]="def" [diff]="g.difficulty ?? 1" [saveKey]="g.arcade ?? null" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('quiz') { <app-quiz-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('protocole') { <app-protocole-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('table') { <app-table-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
