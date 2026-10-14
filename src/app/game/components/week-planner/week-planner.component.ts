@@ -388,7 +388,7 @@ export class WeekPlannerComponent {
       // Objectifs atteints : gerbe de confettis sur le panneau
       const done = freshNews.filter(n => n.title.startsWith('Objectif atteint'));
       done.forEach((n, i) => setTimeout(() => {
-        const panel = document.querySelector('.obj-fold');
+        const panel = document.querySelector('.obj-fab') ?? document.querySelector('.obj-fold');
         this.anim.burstAt(panel, 'good');
         this.anim.floatAt(panel, n.title.replace('Objectif atteint : ', '✓ '), 'good');
       }, 1100 + i * 400));

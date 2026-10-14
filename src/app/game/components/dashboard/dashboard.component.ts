@@ -1,5 +1,6 @@
 import { epilogue } from '../../engine/legacy';
 import { DecimalPipe } from '@angular/common';
+import { ObjectivesFabComponent } from '../objectives-fab/objectives-fab.component';
 import { Component, DestroyRef, ElementRef, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DOMAIN_LABELS } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
@@ -65,7 +66,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [
+  imports: [ObjectivesFabComponent, 
     DecimalPipe,
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
@@ -90,7 +91,8 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
       <button class="btn small quit" (click)="confirmQuit()" aria-label="Mes parties">Mes parties</button>
     </header>
 
-    <div class="grid" [attr.data-tab]="tab()">
+    <div class="grid" [attr.data-tab]="tab()" [class.swipe-l]="swipeAnim() === 'l'" [class.swipe-r]="swipeAnim() === 'r'"
+         (touchstart)="swipeStart($event)" (touchend)="swipeEnd($event)" (touchcancel)="swipe = null">
       <div class="col-left">
         <app-profile-panel />
         <!-- Votre fonction : Élysée, gouvernement, scénarios -->
@@ -204,6 +206,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
     }
 
     <!-- Téléphone : une colonne à la fois, onglets en bas d'écran -->
+    <app-objectives-fab [raised]="tab() === 'agenda'" />
     <nav class="mobile-tabs" aria-label="Sections">
       @for (t of tabs; track t.id) {
         <button type="button" [class.on]="tab() === t.id" [attr.aria-current]="tab() === t.id ? 'page' : null" (click)="setTab(t.id)">
@@ -383,6 +386,11 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
       .good-dot { background: var(--good); }
       .dot-badge { min-width: 9px; width: 9px; height: 9px; padding: 0; top: 7px; }
       .end { padding: 22px 18px; h2 { font-size: 25px; } }
+      /* Glisser d'un onglet à l'autre : la nouvelle page arrive du côté du geste */
+      .grid.swipe-l > * { animation: swipe-from-r .3s cubic-bezier(.2,.8,.3,1); }
+      .grid.swipe-r > * { animation: swipe-from-l .3s cubic-bezier(.2,.8,.3,1); }
+      @keyframes swipe-from-r { from { transform: translateX(36px); opacity: .4; } }
+      @keyframes swipe-from-l { from { transform: translateX(-36px); opacity: .4; } }
       .obit { padding: 22px 16px; h2 { font-size: 28px; } }
       .facts-grid { grid-template-columns: 1fr; }
     }
@@ -408,6 +416,52 @@ export class DashboardComponent {
     this.tab.set(t);
     window.scrollTo({ top: 0 });
   }
+  /* ── Glisser d'un onglet à l'autre (mobile) ─────────────── */
+  protected swipe: { x: number; y: number; t: number } | null = null;
+  protected readonly swipeAnim = signal<'l' | 'r' | null>(null);
+  private swipeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  protected swipeStart(ev: TouchEvent): void {
+    this.swipe = null;
+    if (ev.touches.length !== 1 || window.innerWidth > 820 || document.querySelector('.overlay')) return;
+    if (!this.swipeable(ev.target as HTMLElement | null)) return;
+    const t = ev.touches[0];
+    this.swipe = { x: t.clientX, y: t.clientY, t: Date.now() };
+  }
+
+  protected swipeEnd(ev: TouchEvent): void {
+    const s0 = this.swipe;
+    this.swipe = null;
+    if (!s0 || !ev.changedTouches.length) return;
+    const t = ev.changedTouches[0];
+    const dx = t.clientX - s0.x, dy = t.clientY - s0.y, dt = Date.now() - s0.t;
+    // Un geste franc et horizontal : au moins 70 px, deux fois plus large que haut, en moins de 0,7 s
+    if (dt > 700 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    const ids = this.tabs.map(x => x.id);
+    const i = ids.indexOf(this.tab());
+    const j = dx < 0 ? i + 1 : i - 1;
+    if (j < 0 || j >= ids.length) return;
+    this.setTab(ids[j]);
+    this.bump(dx < 0 ? 'l' : 'r');
+  }
+
+  private bump(dir: 'l' | 'r'): void {
+    this.swipeAnim.set(null);
+    if (this.swipeTimer) clearTimeout(this.swipeTimer);
+    requestAnimationFrame(() => this.swipeAnim.set(dir));
+    this.swipeTimer = setTimeout(() => this.swipeAnim.set(null), 320);
+  }
+
+  /** On ne vole pas le geste aux champs de saisie ni aux bandeaux qui défilent déjà horizontalement */
+  private swipeable(el: HTMLElement | null): boolean {
+    for (let n = el; n && !n.classList?.contains('grid'); n = n.parentElement) {
+      if (n.matches?.('input, textarea, select, [contenteditable], .no-swipe, .overlay')) return false;
+      const ox = getComputedStyle(n).overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 4) return false;
+    }
+    return true;
+  }
+
   /** Hauteur de la barre du haut, pour les éléments collants (onglets de l'agenda) */
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroyRef = inject(DestroyRef);

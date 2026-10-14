@@ -415,6 +415,33 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Deux ex-épouses, trois monarques brouillés et un dictateur : j’ai trouvé une solution. Ne me demandez pas laquelle.', effects: [{ kind: 'crisis', arc: 'mariage_princier', gauge: 3, risk: -3 }] }) },
     ],
   },
+  // ── La cathédrale ──
+  {
+    key: 'sc:cathedrale', icon: '⛪', when: d => !!d.crises?.cathedrale,
+    name: () => 'Bastien Delorme', role: () => 'Architecte en chef des monuments historiques',
+    options: () => [
+      { id: 'sc_cath_point', label: 'Faire le point sur le chantier', hint: 'Il vit pratiquement sur l’échafaudage.', ask: 'Bastien, où en est la charpente ?', cooldown: 1,
+        run: () => ({ answer: 'Les chênes sont arrivés de la forêt de Bercé. Si on me laisse travailler, on tient les délais.', effects: [{ kind: 'crisis', arc: 'cathedrale', gauge: 3, risk: -2 }] }) },
+    ],
+  },
+  // ── Les punaises ──
+  {
+    key: 'sc:punaises', icon: '🪲', when: d => !!d.crises?.punaises,
+    name: () => 'Dr Fatoumata Keïta', role: () => 'Entomologiste, cheffe du plan national',
+    options: () => [
+      { id: 'sc_pun_point', label: 'Demander les derniers chiffres', hint: 'Elle a une punaise épinglée sur son bureau.', ask: 'Docteure, ça recule ?', cooldown: 1,
+        run: () => ({ answer: 'Les signalements baissent de 12 % cette semaine. Continuez l’information : la peur fait plus de dégâts que les punaises.', effects: [{ kind: 'crisis', arc: 'punaises', gauge: 3, risk: -3 }] }) },
+    ],
+  },
+  // ── L'e-sport ──
+  {
+    key: 'sc:esport', icon: '🎮', when: d => !!d.crises?.esport,
+    name: () => 'Lina « Nova » Aksoy', role: () => 'Capitaine de l’équipe de France d’e-sport',
+    options: () => [
+      { id: 'sc_esport_point', label: 'Encourager l’équipe', hint: 'Elle répond entre deux parties d’entraînement.', ask: 'Lina, l’équipe est prête ?', cooldown: 1,
+        run: () => ({ answer: 'On s’entraîne douze heures par jour. Venez nous voir, ça motiverait tout le monde !', effects: [{ kind: 'crisis', arc: 'esport', gauge: 4 }, { kind: 'segment', segment: 'jeunes', delta: 1 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -498,7 +525,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

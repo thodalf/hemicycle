@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations';
 
 export interface TriItem {
   text: string;
@@ -532,6 +532,14 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'commission_investitures', kind: 'investitures', icon: '🗳️', title: 'La commission d’investiture',
     rule: 'Placez chaque candidat·e dans la circonscription qui lui ressemble : chaque étiquette commune fait gagner des voix.',
+  },
+  {
+    id: 'arbitrage_budgetaire', kind: 'arbitrage', icon: '⚖️', title: 'L’arbitrage budgétaire',
+    rule: 'Partagez l’enveloppe entre cinq services : chacun a un plancher à ne pas franchir et un souhait à approcher. Il n’y en aura pas pour tout le monde.',
+  },
+  {
+    id: 'qui_a_dit', kind: 'citations', icon: '💬', title: 'Qui a dit ça ?',
+    rule: 'Reliez chaque citation historique à son auteur. Un auteur est en trop, et chaque erreur coûte des points.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',

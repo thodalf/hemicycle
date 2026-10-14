@@ -1098,6 +1098,94 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'ev_chien_fugue', weight: 0.35,
+    build: () => ({
+      title: 'Votre chien a fugué en plein meeting',
+      context: 'Au milieu de votre discours, votre chien s’échappe des coulisses et file entre les rangées. La salle éclate de rire.',
+      choices: [
+        c('chercher', 'Interrompre le discours pour le rattraper', [s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 1 }], 'Vous le rattrapez sous les applaudissements. C’est le seul extrait qu’on retiendra.'),
+        c('continuer', 'Continuer comme si de rien n’était', [s('credibility', 1)], 'Imperturbable. Le chien, lui, a mangé le buffet.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_coiffeur', weight: 0.35, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'La facture du coiffeur',
+      context: 'Un journal révèle que votre coiffeur est payé 400 euros la séance, sur vos frais de représentation.',
+      choices: [
+        c('rembourser', 'Rembourser tout, de votre poche', [{ kind: 'funds', account: 'personal', delta: -4800 }, s('credibility', 2)], 'Le geste désamorce l’affaire. Votre coiffure, elle, reste impeccable.'),
+        c('assumer', 'Assumer : « L’image fait partie du métier »', [s('popularity', -3), { kind: 'exposure', delta: 3 }], 'La phrase est imprimée sur des tee-shirts. Pas à votre avantage.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_ecole_fermeture', weight: 0.4, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Une école de village va fermer',
+      context: 'L’académie annonce la fermeture de la dernière classe d’un village de votre secteur : onze élèves, une institutrice, trente ans d’histoire.',
+      choices: [
+        c('battre', 'Se battre pour la garder', [{ kind: 'segment', segment: 'ruraux', delta: 3 }, s('politicalCapital', -4), { kind: 'dossier', domain: 'education', delta: 2 }], 'Après trois réunions et une pétition, la classe est sauvée pour un an.'),
+        c('accompagner', 'Accompagner le regroupement avec le village voisin', [s('credibility', 1), { kind: 'segment', segment: 'ruraux', delta: -2 }], 'Le car scolaire part à 7 h 10. Les parents s’en souviendront.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_faux_compte', weight: 0.4,
+    build: () => ({
+      title: 'Un faux compte à votre nom',
+      context: 'Un compte imitant le vôtre publie des messages absurdes : il promet la semaine de trois jours et un poney par foyer.',
+      choices: [
+        c('plainte', 'Porter plainte et faire fermer le compte', [s('credibility', 1), s('energy', -2)], 'Le compte disparaît. Les captures d’écran, non.'),
+        c('humour', 'Répondre avec humour : « Pour le poney, on en reparle »', [s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Votre réponse fait plus de vues que tous les faux messages réunis.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_tempete_toits', weight: 0.4, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Une tempête arrache les toits',
+      context: 'Dans la nuit, une tempête a arraché les toits d’une cinquantaine de maisons de votre secteur. Les sinistrés attendent.',
+      choices: [
+        c('terrain', 'Aller sur place dès l’aube, bâches à la main', [s('popularity', 3), s('energy', -6), { kind: 'segment', segment: 'ruraux', delta: 2 }], 'On vous voit grimper sur une échelle avec les pompiers.'),
+        c('assureurs', 'Réunir les assureurs pour accélérer les indemnisations', [s('credibility', 2), { kind: 'dossier', domain: 'territoires', delta: 2 }], 'Les chèques arrivent en trois semaines au lieu de six mois.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_invitation_mariage', weight: 0.35,
+    build: () => ({
+      title: 'Invité·e à un mariage',
+      context: 'Un couple d’électeurs que vous avez aidé à obtenir un logement vous invite à leur mariage, samedi, dans la salle des fêtes.',
+      choices: [
+        c('aller', 'Y aller, et danser', [{ kind: 'segment', segment: 'populaires', delta: 2 }, s('energy', -3), s('stress', -3)], 'Vous ouvrez le bal avec la grand-mère de la mariée.'),
+        c('carte', 'Envoyer une carte et un cadeau', [s('credibility', 1)], 'Une attention appréciée, mais votre chaise est restée vide.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_abstention_record', weight: 0.35,
+    build: () => ({
+      title: 'Une abstention record',
+      context: 'À l’élection partielle de dimanche, 78 % des inscrits ne sont pas allés voter dans votre département.',
+      choices: [
+        c('ecouter', 'Faire une tournée d’écoute des abstentionnistes', [s('credibility', 2), s('energy', -5), { kind: 'segment', segment: 'jeunes', delta: 1 }], '« Personne ne nous avait jamais demandé pourquoi. »'),
+        c('accuser', 'Accuser le gouvernement de dégoûter les électeurs', [s('credibility', -2), s('popularity', 1)], 'Facile, et chacun le sait.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_montre_cadeau', weight: 0.35, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Une montre de luxe en cadeau',
+      context: 'Un industriel de votre région vous fait livrer une montre suisse « pour vous remercier de votre soutien ».',
+      choices: [
+        c('renvoyer', 'La renvoyer avec une lettre polie', [s('credibility', 2)], 'L’industriel comprend le message.'),
+        c('garder', 'La garder : « C’est un cadeau entre amis »', [{ kind: 'exposure', delta: 6 }, s('stress', -2)], 'Elle est très belle. Elle pourrait coûter très cher.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

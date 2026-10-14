@@ -616,6 +616,39 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'cathedrale_gate', weight: 0.35, minRank: 'conseiller_municipal', eligible: d => !d.crises?.cathedrale && !d.player.flags['cathedraleDone'] && d.week > 20,
+    build: () => ({
+      title: 'La cathédrale brûle',
+      context: 'Il est 23 heures. La flèche de la cathédrale Saint-Ambroise vient de s’effondrer dans les flammes. Les caméras du monde entier vous attendent sur le parvis.',
+      choices: [
+        c('identique', 'Promettre une reconstruction à l’identique en cinq ans', [cr('cathedrale', 6, 3, true), { kind: 'flag', key: 'cathedraleDone', value: true }, s('popularity', 2)], 'Cinq ans : la promesse fait le tour du monde. Il faudra la tenir.'),
+        c('concours', 'Lancer un concours d’architecture contemporaine', [cr('cathedrale', 4, 5, true), { kind: 'flag', key: 'cathedraleDone', value: true }, { kind: 'segment', segment: 'jeunes', delta: 2 }, { kind: 'segment', segment: 'retraites', delta: -2 }], 'Une flèche de verre ? Le débat s’enflamme, lui aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'punaises_gate', weight: 0.4, minRank: 'militant', eligible: d => !d.crises?.punaises && !d.player.flags['punaisesDone'] && d.week > 10,
+    build: () => ({
+      title: 'Des punaises de lit partout',
+      context: 'Une vidéo de punaises de lit dans un siège de métro dépasse les dix millions de vues. Hôtels, cinémas, écoles : la psychose s’installe.',
+      choices: [
+        c('plan', 'Annoncer un plan national de désinsectisation', [cr('punaises', 6, 3, true), { kind: 'flag', key: 'punaisesDone', value: true }], 'Un plan, un numéro vert, des moyens : on vous trouve réactif·ve.'),
+        c('calmer', 'Appeler au calme : « Pas de psychose »', [cr('punaises', 2, 6, true), { kind: 'flag', key: 'punaisesDone', value: true }, s('credibility', 1)], 'Raisonnable… jusqu’à ce qu’on en trouve à l’Assemblée.'),
+      ],
+    }),
+  },
+  {
+    tag: 'esport_gate', weight: 0.35, minRank: 'conseiller_municipal', eligible: d => !d.crises?.esport && !d.player.flags['esportDone'] && d.week > 18,
+    build: () => ({
+      title: 'La finale mondiale d’e-sport',
+      context: 'La France est candidate pour accueillir la finale mondiale d’un jeu vidéo culte. Les organisateurs demandent un soutien politique fort.',
+      choices: [
+        c('soutenir', 'Soutenir la candidature à fond', [cr('esport', 6, 3, true), { kind: 'flag', key: 'esportDone', value: true }, { kind: 'segment', segment: 'jeunes', delta: 3 }], 'La France l’emporte : rendez-vous à Bercy.'),
+        c('reserve', 'Soutenir, mais sans un euro d’argent public', [cr('esport', 3, 3, true), { kind: 'flag', key: 'esportDone', value: true }, s('credibility', 1)], 'Les sponsors paieront. Ils voudront aussi décider.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1602,6 +1635,72 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('dialoguer', 'Leur proposer un autre parcours et une tribune', [cr('mariage_princier', 3, -3), s('politicalCapital', -3)], 'La marche aura lieu, mais loin du cortège.'),
         c('interdire', 'Interdire la manifestation', [cr('mariage_princier', 4, 3), s('credibility', -2), { kind: 'segment', segment: 'jeunes', delta: -2 }], 'Interdite, la marche devient le sujet du jour.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cathedrale_dons', weight: 1, eligible: d => !!d.crises?.cathedrale,
+    build: () => ({
+      title: 'Les milliardaires promettent des millions',
+      context: 'En quarante-huit heures, trois grandes fortunes promettent 600 millions d’euros… déductibles de leurs impôts à 66 %.',
+      choices: [
+        c('accepter', 'Accepter avec gratitude', [cr('cathedrale', 6, 2), { kind: 'segment', segment: 'populaires', delta: -2 }], 'L’argent arrive. La polémique sur les niches fiscales aussi.'),
+        c('plafonner', 'Plafonner la déduction fiscale', [cr('cathedrale', 3, -2), s('credibility', 2)], 'Deux donateurs se retirent. Le pays applaudit le geste.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cathedrale_plomb', weight: 0.9, eligible: d => !!d.crises?.cathedrale,
+    build: () => ({
+      title: 'Du plomb autour du chantier',
+      context: 'L’incendie a dispersé des tonnes de plomb : des taux inquiétants sont relevés dans les écoles du quartier.',
+      choices: [
+        c('confiner', 'Fermer les écoles et décontaminer', [cr('cathedrale', 2, -4), s('energy', -4), { kind: 'dossier', domain: 'sante', delta: 2 }], 'Une opération longue, coûteuse, et saluée par les parents.'),
+        c('minimiser', 'Parler de « taux sous surveillance »', [cr('cathedrale', 3, 5), s('credibility', -3)], 'Les parents d’élèves portent plainte.'),
+      ],
+    }),
+  },
+  {
+    tag: 'punaises_hlm', weight: 1, eligible: d => !!d.crises?.punaises,
+    build: () => ({
+      title: 'Une cité infestée',
+      context: 'Dans une cité HLM, 200 logements sont infestés. Le bailleur et la mairie se renvoient la facture.',
+      choices: [
+        c('payer', 'Débloquer l’argent tout de suite', [cr('punaises', 5, -2), { kind: 'funds', account: 'campaign', delta: -2000 }, { kind: 'segment', segment: 'populaires', delta: 2 }], 'Les désinsectiseurs arrivent le lendemain matin.'),
+        c('bailleur', 'Exiger que le bailleur paie', [cr('punaises', 1, 4), { kind: 'segment', segment: 'populaires', delta: -2 }], 'Le bailleur fait appel. Les locataires dorment sur leur balcon.'),
+      ],
+    }),
+  },
+  {
+    tag: 'punaises_tgv', weight: 0.9, eligible: d => !!d.crises?.punaises,
+    build: () => ({
+      title: 'Une punaise dans un TGV',
+      context: 'Une vidéo de punaise de lit sur un siège de TGV fait vingt millions de vues. Les réservations s’effondrent.',
+      choices: [
+        c('inspecter', 'Inspecter un train en personne, lampe à la main', [cr('punaises', 3, -3), s('energy', -4), s('popularity', 1)], 'Pas une punaise trouvée devant les caméras. Le message passe.'),
+        c('dementir', 'Parler d’un montage', [cr('punaises', 1, 4), s('credibility', -2)], 'La vidéo était authentique.'),
+      ],
+    }),
+  },
+  {
+    tag: 'esport_serveurs', weight: 1, eligible: d => !!d.crises?.esport,
+    build: () => ({
+      title: 'Les serveurs tombent à la répétition',
+      context: 'Pendant la répétition générale, les serveurs s’effondrent au bout de vingt minutes. La finale est dans six semaines.',
+      choices: [
+        c('renforts', 'Payer des ingénieurs en renfort', [cr('esport', 5, -3), { kind: 'funds', account: 'campaign', delta: -2500 }], 'Une task force travaille nuit et jour. Les serveurs tiennent.'),
+        c('benevoles', 'Faire confiance aux bénévoles du club', [cr('esport', 2, 4)], 'Ils sont passionnés. Ils sont aussi épuisés.'),
+      ],
+    }),
+  },
+  {
+    tag: 'esport_sport', weight: 0.9, eligible: d => !!d.crises?.esport,
+    build: () => ({
+      title: '« Le jeu vidéo n’est pas un sport »',
+      context: 'Un ancien champion olympique déclare à la télévision que « le jeu vidéo n’est pas un sport ». Les joueurs s’enflamment.',
+      choices: [
+        c('defendre', 'Défendre les joueurs', [cr('esport', 4), { kind: 'segment', segment: 'jeunes', delta: 3 }, { kind: 'segment', segment: 'retraites', delta: -2 }], 'Le mot-dièse #AussiUnSport vous remercie.'),
+        c('neutre', 'Botter en touche', [cr('esport', 1, 2)], 'Personne n’est fâché, personne n’est convaincu.'),
       ],
     }),
   },

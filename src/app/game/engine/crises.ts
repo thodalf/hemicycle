@@ -97,6 +97,12 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Une baleine à bosse remonte la Seine jusqu’à Rouen. Le pays entier la suit en direct.', 'Elle s’affaiblit. Vétérinaires, pompiers, militants : chacun a sa solution, et tout le monde vous regarde.', 'Dernière chance : un convoi de barges pour la ramener vers la mer.'] },
   mariage_princier: { id: 'mariage_princier', icon: '💍', label: 'Un mariage princier à Paris', gaugeLabel: 'Éclat de la fête', riskLabel: 'Fiasco protocolaire', months: 5, drift: { gauge: 3, risk: 4 },
     stages: ['Le prince héritier de Valmorie épouse une Française : la cérémonie aura lieu à Paris, et tout le gotha débarque.', 'Plan de table explosif, républicains dans la rue, journalistes du monde entier : le protocole sue à grosses gouttes.', 'Le grand jour approche : cortège, bal à l’Hôtel de Ville et feu d’artifice sur la Seine.'] },
+  cathedrale: { id: 'cathedrale', icon: '⛪', label: 'L’incendie de la cathédrale', gaugeLabel: 'Reconstruction', riskLabel: 'Polémique', months: 6, drift: { gauge: 3, risk: 4 },
+    stages: ['Dans la nuit, la flèche de la cathédrale Saint-Ambroise s’effondre dans les flammes. Le pays entier pleure devant les images.', 'Les dons affluent ; on se déchire entre reconstruction à l’identique et geste contemporain ; l’enquête cherche les causes.', 'Le chantier est lancé : il faut tenir les délais promis… et les budgets.'] },
+  punaises: { id: 'punaises', icon: '🪲', label: 'L’invasion des punaises de lit', gaugeLabel: 'Désinfestation', riskLabel: 'Panique', months: 4, drift: { gauge: 3, risk: 5 },
+    stages: ['Des punaises de lit dans les trains, les cinémas, les hôpitaux : la psychose gagne le pays.', 'Les vidéos se multiplient, les désinsectiseurs sont débordés, les touristes annulent.', 'Le pic semble passé… ou pas. Une dernière offensive s’impose.'] },
+  esport: { id: 'esport', icon: '🎮', label: 'La finale mondiale d’e-sport', gaugeLabel: 'Engouement', riskLabel: 'Fiasco technique', months: 5, drift: { gauge: 3, risk: 4 },
+    stages: ['La France décroche la finale mondiale d’un jeu vidéo culte : 40 000 spectateurs à Bercy, 200 millions en ligne.', 'Serveurs à tester, billetterie prise d’assaut, et un débat qui enflamme les plateaux : « le jeu vidéo, est-ce du sport ? »', 'La grande finale approche, et l’équipe de France est qualifiée.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -526,6 +532,33 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         d.intl.prestige = clamp(d.intl.prestige - 3); s.credibility = clamp(s.credibility - 3);
         lose('Le fiasco du mariage', 'Un plan de table désastreux, des huées sur le cortège et une mariée en larmes : la Valmorie rappelle son ambassadeur.');
+      }
+      break;
+    case 'cathedrale':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); s.credibility = clamp(s.credibility + 3); p.renown = (p.renown ?? 0) + 25;
+        win('La flèche renaît', 'Cinq ans jour pour jour après l’incendie, les cloches sonnent à nouveau. Les compagnons qui ont rebâti la charpente sont applaudis sur le parvis.');
+      } else {
+        s.credibility = clamp(s.credibility - 5);
+        lose('Un chantier enlisé', 'Querelles d’architectes, budgets explosés, délais repoussés : la cathédrale reste sous bâche, et on vous en tient pour responsable.');
+      }
+      break;
+    case 'punaises':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 3); s.credibility = clamp(s.credibility + 2);
+        win('Le pays dort tranquille', 'Chiens renifleurs, chèques de désinsectisation, information : l’invasion est contenue, la psychose retombe.');
+      } else {
+        s.popularity = clamp(s.popularity - 3); s.credibility = clamp(s.credibility - 3); economy(d).confidence -= 2;
+        lose('La psychose', 'Les touristes boudent Paris, les cinémas se vident, et l’opposition brandit une boîte de punaises à la tribune.');
+      }
+      break;
+    case 'esport':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); d.intl.prestige = clamp(d.intl.prestige + 2); p.renown = (p.renown ?? 0) + 20;
+        win('Bercy en délire', 'La France remporte la finale au bout d’une nuit folle. Les jeunes vous découvrent ; les parents, un peu perplexes, applaudissent quand même.');
+      } else {
+        s.popularity = clamp(s.popularity - 3); s.credibility = clamp(s.credibility - 2);
+        lose('Le grand bug', 'Les serveurs tombent en pleine finale. Deux cents millions de spectateurs fixent un écran noir, et le mot-dièse #FranceBug fait le tour du monde.');
       }
       break;
     case 'tempete_solaire':
