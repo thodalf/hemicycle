@@ -47,7 +47,7 @@ export const STAT_LABELS: Record<StatKey, string> = {
   energy: 'Énergie',
 };
 
-export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'zombie' | 'apocalypse' | 'crise' | 'lutte' | 'eclat' | 'territoire' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
+export type ActionCategory = 'fonction' | 'elysee' | 'contact' | 'zombie' | 'apocalypse' | 'saga' | 'crise' | 'lutte' | 'eclat' | 'territoire' | 'securite' | 'intrigue' | 'guerre' | 'arriere' | 'administration' | 'international' | 'terrain' | 'medias' | 'dossiers' | 'parti' | 'reseau' | 'argent' | 'redaction' | 'infiltration' | 'couronne' | 'loge' | 'sante' | 'repos';
 export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   fonction: 'Fonction',
   elysee: 'Élysée',
@@ -55,6 +55,7 @@ export const CATEGORY_LABELS: Record<ActionCategory, string> = {
   securite: 'Sécurité',
   zombie: 'Épidémie Z',
   apocalypse: 'Fin du monde',
+  saga: 'Saga',
   crise: 'Crise',
   lutte: 'Lutte',
   eclat: 'Actions d’éclat',
@@ -324,6 +325,7 @@ export type Effect =
   | { kind: 'quote'; text: string; bold: number }
   | { kind: 'annex'; enemyId: string; mode: 'annex' | 'protectorat' | 'reparations' | 'magnanime' | 'liberer' }
   | { kind: 'crisis'; arc: CrisisArcId; start?: boolean; gauge?: number; risk?: number; meta?: string }
+  | { kind: 'saga'; start?: string; a?: number; b?: number; c?: number }
   | { kind: 'apocalypse'; start?: boolean; darkness?: number; resistance?: number; cult?: number; pact?: boolean; raid?: boolean }
   | { kind: 'zombie'; start?: 'alerte' | 'minimiser' | 'confiner'; infection?: number; containment?: number; panic?: number; cure?: number; shelter?: boolean }
   | { kind: 'scheme'; type?: string; targetId?: TargetRef; progress?: number; secrecy?: number; abandon?: boolean; ally?: TargetRef };
@@ -364,7 +366,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean; renownTier?: number; dread?: number; struggle?: string; lifestyle?: string; knownSecret?: boolean; decision?: string; partyLeader?: boolean; treasury?: number; natCrisis?: string };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean; renownTier?: number; dread?: number; struggle?: string; lifestyle?: string; knownSecret?: boolean; decision?: string; partyLeader?: boolean; treasury?: number; natCrisis?: string; saga?: string; sagaPhase?: number[] };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
@@ -1114,6 +1116,10 @@ export interface GameState {
   /** Épidémie Z en cours */
   zombie?: ZombieState | null;
   apocalypse?: ApocalypseState | null;
+  /** Grande saga au long cours (l'Éveil, le Parc, la base lunaire…) */
+  saga?: SagaState | null;
+  /** Sagas déjà vécues (elles ne reviennent pas) */
+  sagasDone?: string[];
   family?: FamilyState;
   romance?: Romance | null;
   heir?: HeirState | null;
@@ -1615,6 +1621,19 @@ export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
   | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours' | 'penurie_essence' | 'capitale_culture' | 'canicule' | 'hacker' | 'barons' | 'grand_debat' | 'tour_eiffel' | 'baleine' | 'mariage_princier' | 'cathedrale' | 'punaises' | 'esport' | 'satellite' | 'casse' | 'vin' | 'nuage' | 'taxis' | 'fusion' | 'viaduc' | 'tresor' | 'algues' | 'barrage' | 'aviaire' | 'skipper' | 'drones' | 'cyclone' | 'lithium' | 'sous_marin' | 'joconde' | 'quatre_jours';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
+
+/** Une grande saga : trois jauges (a = votre camp, b = la menace, c = l'opinion), des phases, une fin */
+export interface SagaState {
+  id: string;
+  since: number;
+  phase: number;
+  phaseSince: number;
+  a: number;
+  b: number;
+  c: number;
+  /** Fin obtenue (la saga est alors terminée) */
+  outcome?: string;
+}
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */
 /** Fin du monde : une secte, des présages, puis le Diable en personne */

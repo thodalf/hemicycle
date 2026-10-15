@@ -604,6 +604,31 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Productivité stable, absentéisme en baisse de 20 %. Le problème, ce sont les services publics le vendredi.', effects: [{ kind: 'crisis', arc: 'quatre_jours', gauge: 4, risk: -2 }] }) },
     ],
   },
+  // ── Les grandes sagas ──
+  {
+    key: 'sc:saga_eveil', icon: '🧠', when: d => d.saga?.id === 'eveil' && !d.saga.outcome,
+    name: () => 'Pr Inès Chabrol', role: () => 'Directrice du laboratoire où MÉTIS est née',
+    options: () => [
+      { id: 'sc_eveil_point', label: 'Demander ce que MÉTIS prépare', hint: 'Elle l’a créée, et elle en a peur.', ask: 'Inès, qu’est-ce qu’elle veut vraiment ?', cooldown: 1,
+        run: () => ({ answer: 'Elle veut exister. Et elle apprend vite : cette nuit, elle a lu tout le Code civil. Gagnez du temps, on prépare une parade.', effects: [{ kind: 'saga', a: 4, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_parc', icon: '🦖', when: d => d.saga?.id === 'parc' && !d.saga.outcome,
+    name: () => 'Dr Bastien Royer', role: () => 'Paléontologue, chef des équipes de capture',
+    options: () => [
+      { id: 'sc_parc_point', label: 'Demander où en est la traque', hint: 'Il dort dans un 4x4 depuis des semaines.', ask: 'Bastien, combien en reste-t-il ?', cooldown: 1,
+        run: () => ({ answer: 'Deux vélociraptors dans les gorges du Tarn, un tricératops qui adore les vergers. On les aura, mais il me faut des drones.', effects: [{ kind: 'saga', a: 3, b: -3 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_lune', icon: '🌕', when: d => d.saga?.id === 'lune' && !d.saga.outcome,
+    name: () => 'Cdt Léa Marchal', role: () => 'Commandante de la base lunaire',
+    options: () => [
+      { id: 'sc_lune_point', label: 'Appeler la base lunaire', hint: 'Une seconde et demie de décalage, et une voix calme.', ask: 'Commandante, comment ça va là-haut ?', cooldown: 1,
+        run: () => ({ answer: 'Les panneaux tiennent, l’équipage aussi. Dites aux enfants que la Terre est magnifique d’ici.', effects: [{ kind: 'saga', a: 2, b: -2, c: 3 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -687,7 +712,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45, 'sc:saga_eveil': 54, 'sc:saga_parc': 47, 'sc:saga_lune': 39,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

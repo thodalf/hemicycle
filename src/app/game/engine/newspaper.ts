@@ -1,7 +1,8 @@
 import { GameState, NewsItem, NewsKind } from '../models/game.models';
 import { monthLabel } from './calendar';
 import { economy, regionShares, segmentRows } from './country';
-import { nameRng, personName } from '../data/names';
+import { genderOf, nameRng, personName } from '../data/names';
+import { cleanBody, degender, guessFem, pressHeadline, toThird } from './headline';
 import { clamp, fr } from './rng';
 import { inPower, office, seat } from './office';
 import { renownTier } from '../data/lifestyles';
@@ -56,7 +57,7 @@ const THEMES: [RegExp, ArtTheme][] = [
   [/scandale|affaire|enquête|révél|secret|chantage|fuite|parjure|mis en examen/i, 'loupe'],
   [/\broi\b|\breine\b|couronne|palais|royal|souverain|prince/i, 'couronne'],
   [/police|policier|attentat|émeute|violences|commissariat|gendarm|sécurité publique|cambriol|braquage|\bcasse\b/i, 'police'],
-  [/fusée|spatial|satellite|comète|astéro|météorite|éclipse|planète mars|sur mars|cosmonaute|astronaute/i, 'espace'],
+  [/fusée|spatial|satellite|comète|astéro|météorite|éclipse|planète mars|sur mars|cosmonaute|astronaute|\blune\b|lunaire|kourou/i, 'espace'],
   [/\bponts?\b|viaduc|ouvrage d’art/i, 'pont'],
   [/\bgares?\b|\btrains?\b(?! de)|sncf|\btgv\b|cheminot|ferroviaire/i, 'gare'],
   [/aéroport|\bavions?\b|aérien|compagnie aérienne|décoll|contrôleurs aériens/i, 'aeroport'],
@@ -67,7 +68,7 @@ const THEMES: [RegExp, ArtTheme][] = [
   [/concert|chanteu|festival|musique|eurovision|spectacle|théâtre|artiste|chanson/i, 'concert'],
   [/musée|tableau|exposition|œuvre|archéolog|trésor|fouilles|patrimoine culturel/i, 'musee'],
   [/école|lycée|collège|élèves|enseign|professeur|\bbac\b|\bclasses?\b|étudiant|universit|campus|rentrée/i, 'ecole'],
-  [/recherche|laboratoire|scientifique|vaccin|fusion nucléaire|nobel|chercheu|intelligence artificielle|nucléaire/i, 'labo'],
+  [/recherche|laboratoire|scientifique|vaccin|fusion nucléaire|nobel|chercheu|intelligence artificielle|nucléaire|MÉTIS|serveurs|clonage|cloné/i, 'labo'],
   [/\btélé\b|télévis|plateau|matinale|émission|interview|débat télévisé|journal de 20/i, 'plateau'],
   [/censure|\bvote|\bloi\b|\blois\b|assembl|scrutin|amendement|49\.3|obstruction|hémicycle|réforme/i, 'hemicycle'],
   [/élection|présidentielle|législatives|municipales|candidat|urne|second tour/i, 'urne'],
@@ -83,7 +84,7 @@ const THEMES: [RegExp, ArtTheme][] = [
   [/santé|hôpital|épidémie|virus|soignant|urgences|punaise/i, 'croix'],
   [/tour eiffel|cathédrale|château|patrimoine|monument/i, 'monument'],
   [/sommet|ambassad|diplomat|international|étranger|visite d’état|chef d’état/i, 'globe'],
-  [/climat|canicule|forêt|feux|\beau\b|ours|écolog|inondation|tempête/i, 'nature'],
+  [/climat|canicule|forêt|feux|\beau\b|ours|écolog|inondation|tempête|dinosaure|tricératops|vélociraptor/i, 'nature'],
   [/\bvilles?\b|quartier|banlieue|municip|\bcommunes?\b|métro|logement|immobilier|loyer|maire/i, 'ville'],
 ];
 
@@ -175,11 +176,51 @@ function prose(body = ''): string {
   return body.split(' — ').filter(part => !/^([A-ZÉ][\wÀ-ÿ’' -]+ [+−-]\d[\d,]*( %)?( · |$))+/.test(part.trim())).join(' — ').trim();
 }
 
+/** Comment la presse désigne le joueur : son nom, ou sa fonction (« La présidente »), en alternance */
+function pressName(d: GameState, key: string): string {
+  const fem = d.player.gender === 'femme';
+  const o = office(d);
+  const role = o === 'couronne' ? (fem ? 'La reine' : 'Le roi')
+    : o === 'elysee' ? (fem ? 'La présidente' : 'Le président')
+    : d.player.rankId === 'premier_ministre' ? (fem ? 'La Première ministre' : 'Le Premier ministre')
+    : d.player.rankId === 'ministre' ? (fem ? 'La ministre' : 'Le ministre')
+    : null;
+  const h = [...key].reduce((t, c) => (t * 31 + c.charCodeAt(0)) >>> 0, 3);
+  return role && h % 2 ? role : d.player.name;
+}
+
+/** Le genre de la personnalité nommée dans un titre (prénom reconnu, sinon PNJ connu, sinon terminaison) */
+function personGender(d: GameState, title: string): boolean | undefined {
+  for (const w of title.split(/[\s’']+/)) {
+    if (!/^[A-ZÉÈ]/.test(w)) continue;
+    const g = genderOf(w.replace(/[^\wÀ-ÿ-]/g, ''));
+    if (g) return g === 'f';
+  }
+  const npc = d.npcs.find(x => title.includes(x.name));
+  return npc ? guessFem(npc.name) : undefined;
+}
+
+/** Un corps encore écrit pour le joueur (« vous ») : récrit à la troisième personne, ou en confidence d'un proche */
+function thirdPersonBody(body: string, who: string, fem: boolean, key: string): string {
+  if (!/\b(vous|votre|vos)\b/i.test(body)) return body;
+  const t = toThird(body, who, fem);
+  if (t) return t;
+  const h = [...key].reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) >>> 0, 11);
+  const by = ['confie un proche', 'glisse un conseiller', 'résume un collaborateur', 'souffle un fidèle'][h % 4];
+  return `« ${body.replace(/[.!]\s*$/, '')} », ${by}.`;
+}
+
 function toArticle(d: GameState, n: NewsItem, page: number, used?: Set<ArtTheme>): Article {
   const text = `${n.title} ${n.body ?? ''}`;
-  const title = n.title.replace(/^Coup d’éclat : /, '').replace(/^Raté : /, 'Raté : ');
-  const body = prose(n.body) || (n.tone === 'negative' ? 'Un mois difficile, commentent les observateurs.' : 'Les observateurs saluent l’initiative.');
-  return { id: n.id, kicker: n.title.startsWith('Coup d’éclat') ? 'Le coup d’éclat' : n.title.startsWith('Raté') ? 'Fait divers' : KICKER[n.kind], title, body, tone: n.tone, theme: pickTheme(themesOf(text, n.kind, n.title), used), byline: byline(d, n.id), page };
+  const about = aboutPlayer(d, n);
+  const who = pressName(d, n.id);
+  // La personnalité citée (nécrologie, élection…) : pour accorder « élu·e », « éteint·e »
+  const personFem = personGender(d, n.title);
+  const h = pressHeadline(n.title, n.body, { who, fem: d.player.gender === 'femme', aboutPlayer: about, personFem: about ? undefined : personFem }, n.id, n.kind);
+  let raw = cleanBody(prose(n.body));
+  if (!about && personFem !== undefined) raw = degender(raw, personFem);
+  const body = (about ? thirdPersonBody(raw, who, d.player.gender === 'femme', n.id) : raw) || (n.tone === 'negative' ? 'Un mois difficile, commentent les observateurs.' : 'Les observateurs saluent l’initiative.');
+  return { id: n.id, kicker: h.kicker ?? KICKER[n.kind], title: h.title, body, tone: n.tone, theme: pickTheme(themesOf(text, n.kind, n.title), used), byline: byline(d, n.id), page };
 }
 
 /** Deux articles d'un même numéro n'ont jamais la même photo */

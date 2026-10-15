@@ -18,6 +18,7 @@ import { monthlyCrises } from '../engine/crises';
 import { monthlyEconomy, monthlyElectorate } from '../engine/country';
 import { monthlyCoalition } from '../engine/coalition';
 import { monthlyApocalypse } from '../engine/apocalypse';
+import { monthlySaga } from '../engine/saga';
 import { monthlyImage, monthlyLaws, monthlyQuotes } from '../engine/legacy';
 import { monthlyNpcLife } from '../engine/npc-life';
 import { monthlyPledges } from '../engine/pledges';
@@ -168,6 +169,7 @@ export class TurnService {
     monthlyElectorate(d);
     monthlyCoalition(d, rng);
     monthlyApocalypse(d, rng);
+    monthlySaga(d, rng);
     monthlyImage(d);
     monthlyQuotes(d, rng);
     monthlyLaws(d, rng);

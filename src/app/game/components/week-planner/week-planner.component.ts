@@ -1,3 +1,4 @@
+import { SAGA_BY_ID } from '../../data/saga-defs';
 import { RoyalPipe } from '../shared/royal.pipe';
 import { tierOdds } from '../../engine/outcomes';
 import { ObjectivesPanelComponent } from '../objectives-panel/objectives-panel.component';
@@ -51,7 +52,7 @@ export function blockingOverlay(st: { scene?: unknown; debate?: unknown; protest
 /** Un petit pictogramme qui s'envole quand on planifie */
 const CATEGORY_ICONS: Partial<Record<string, string>> = {
   terrain: '🤝', dossiers: '📚', parti: '🌹', reseau: '☎️', crise: '🚨', lutte: '⚖️', eclat: '🌟', couronne: '👑', loge: '🔺', territoire: '🏗️',
-  sante: '💪', repos: '😴', guerre: '🎖️', international: '🌍', elysee: '🇫🇷', fonction: '🏛️', intrigue: '🕯️', zombie: '🧟', apocalypse: '🔥', contact: '👽',
+  sante: '💪', repos: '😴', guerre: '🎖️', international: '🌍', elysee: '🇫🇷', fonction: '🏛️', intrigue: '🕯️', zombie: '🧟', apocalypse: '🔥', saga: '📜', contact: '👽',
 };
 
 import { BillComposerComponent } from '../bill-composer/bill-composer.component';
@@ -86,7 +87,8 @@ export class WeekPlannerComponent {
   /** Onglets présents dans ce scénario, scénario en premier */
   protected readonly categories = computed(() => {
     const present = new Set([...this.planner.unlocked(), ...this.planner.locked()].map(a => a.category));
-    const all = (Object.entries(CATEGORY_LABELS) as [ActionCategory, string][]).filter(([c]) => present.has(c));
+    const sagaTab = this.game.s().saga ? SAGA_BY_ID.get(this.game.s().saga!.id)?.tab : undefined;
+    const all = (Object.entries(CATEGORY_LABELS) as [ActionCategory, string][]).filter(([c]) => present.has(c)).map(([c, l]) => [c, c === 'saga' && sagaTab ? sagaTab : l] as [ActionCategory, string]);
     const scenario = this.game.s().scenario;
     // L'onglet Guerre n'existe qu'en temps de guerre, et passe alors en tête
     if (this.game.s().war) {
@@ -109,6 +111,7 @@ export class WeekPlannerComponent {
       all.splice(0, all.length, ...sec, ...all.filter(([c]) => c !== 'securite'));
       return withProjects(all);
     }
+    if (this.game.s().saga && !this.game.s().saga!.outcome && present.has('saga')) return withProjects([...all.filter(([c]) => c === 'saga'), ...all.filter(([c]) => c !== 'saga')]);
     if (this.game.s().war && (all[0]?.[0] === 'guerre' || all[0]?.[0] === 'arriere')) return withProjects(all);
     if (this.game.s().presidency) return withProjects([...all.filter(([c]) => c === 'elysee'), ...all.filter(([c]) => c !== 'elysee')]);
     if (present.has('fonction') && !['royaute', 'franc_macon', 'editorialiste', 'infiltre', 'contact'].includes(scenario)) return withProjects([...all.filter(([c]) => c === 'fonction'), ...all.filter(([c]) => c !== 'fonction')]);

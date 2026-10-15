@@ -47,6 +47,7 @@ import { adjustEconomy, adjustSegment, moveCirco } from './country';
 import { adjustCoalition } from './coalition';
 import { applyAnnex } from './annex';
 import { adjustApocalypse } from './apocalypse';
+import { adjustSaga } from './saga';
 import { adjustQuote } from './legacy';
 
 /* ============================================================
@@ -504,6 +505,9 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         break;
       case 'quote':
         summary.push(...adjustQuote(d, e, rng));
+        break;
+      case 'saga':
+        summary.push(...adjustSaga(d, e));
         break;
       case 'apocalypse':
         summary.push(...adjustApocalypse(d, e, rng));

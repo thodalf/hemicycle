@@ -6,6 +6,7 @@ import { ActionCategory, ActionDefinition, Effect } from '../models/game.models'
  */
 import { EXTRA_ACTIONS } from './actions-extra';
 import { NAT_ACTIONS } from './national-crises';
+import { SAGA_ACTIONS } from './sagas';
 
 const RAW_ACTIONS: ActionDefinition[] = [
   // ── Terrain ───────────────────────────────────────────────
@@ -2124,6 +2125,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
   },
   ...EXTRA_ACTIONS,
   ...NAT_ACTIONS,
+  ...SAGA_ACTIONS,
 ];
 
 /* ── Contrepoids automatiques ────────────────────────────────

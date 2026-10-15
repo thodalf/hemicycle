@@ -11,6 +11,7 @@ import { EXTRA_EVENTS } from './extra-events';
 import { CAMPAIGN_EVENTS, MORE_EVENTS, inPresidentialRace } from './campaign-events';
 import { ZOMBIE_EVENTS, ZOMBIE_GATE } from './zombie-events';
 import { APOC_EVENTS, APOC_GATE, DEVIL_DUE } from './apocalypse-events';
+import { SAGA_EVENTS, SAGA_GATES } from './sagas';
 import { canStartArc } from '../engine/arcs';
 import { CRISIS_EVENTS, CRISIS_GATES, FAMILY_EVENTS, MISC_ARC_EVENTS } from './life-arc-events';
 import { PHONE_EVENTS } from './phone-events';
@@ -21,7 +22,8 @@ import { highOffice } from '../engine/office';
 /** Des histoires de terrain qui n'arrivent pas à un chef d'État */
 const LOCAL_TAGS = new Set(['circo_rival_local', 'ev_chat_mairie', 'ev_metro_panne', 'ev_metro_mot', 'ev_greve_sncf_tournee', 'ev_standard_sature', 'ev_jumeaux_conseil',
   'ev_stage_lyceen', 'ev_tracteurs_permanence', 'ev_village_sans_eau', 'ev_cantine_greve', 'ev_robot_mairie', 'ev_tournoi_boules', 'ev_inondation_cave',
-  'ev_invitation_mariage', 'ev_pluie_meeting', 'ev_panne_micro', 'ev_doyen_assemblee', 'ev_ecole_fermeture', 'ev_perroquet', 'ev_coiffeur', 'ev_abstention_record']);
+  'ev_invitation_mariage', 'ev_pluie_meeting', 'ev_panne_micro', 'ev_doyen_assemblee', 'ev_ecole_fermeture', 'ev_perroquet', 'ev_coiffeur', 'ev_abstention_record',
+  'courrier_deborde', 'chien', 'ev_boulangerie_derniere', 'ev_chat_viral', 'ev_recomptage']);
 import { GRAND_EVENTS } from './grand-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
@@ -87,7 +89,8 @@ const GATEWAY_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'emissaire_royaliste', weight: 2,
-    eligible: d => !d.crown && !d.player.flags['closed_crown'],
+    // Le prétendant ne démarche ni un chef d'État, ni un souverain déjà sur le trône
+    eligible: d => !d.crown && !d.kingdom && !highOffice(d) && !d.player.flags['closed_crown'],
     build: d => ({
       title: 'Un émissaire du prétendant',
       context: 'Un homme en loden vous attend à la sortie de votre permanence. Le prince Louis-Amaury de Valmont cherche « une voix politique » pour porter la cause de la Couronne. Il a lu vos discours.',
@@ -108,7 +111,7 @@ const GATEWAY_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'bal_legitimiste', weight: 1, minRank: 'conseiller_municipal',
-    eligible: d => !d.crown && !d.player.flags['closed_crown'],
+    eligible: d => !d.crown && !d.kingdom && !highOffice(d) && !d.player.flags['closed_crown'],
     build: () => ({
       title: 'Invitation au bal du château de Montfaucon',
       context: 'Carton gravé, dress code « tenue de soirée, décorations ». Toute la noblesse légitimiste sera là… et le prétendant compte vous parler entre deux valses.',
@@ -1447,6 +1450,15 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
   if (!ev && room && canFire(APOC_GATE, 12) && rng.chance(0.006)) ev = APOC_GATE;
   if (!ev && d.apocalypse && d.apocalypse.phase < 4 && rng.chance(0.45)) {
     const pool = APOC_EVENTS.filter(e => canFire(e, 5));
+    if (pool.length) ev = pick(pool);
+  }
+  // Les grandes sagas : une porte d'entrée rare, puis des rebondissements presque chaque mois
+  if (!ev && room && !d.saga && d.week > 20 && rng.chance(0.01)) {
+    const pool = SAGA_GATES.filter(e => canFire(e, 12));
+    if (pool.length) ev = pick(pool);
+  }
+  if (!ev && d.saga && !d.saga.outcome && rng.chance(0.6)) {
+    const pool = SAGA_EVENTS.filter(e => canFire(e, 4));
     if (pool.length) ev = pick(pool);
   }
   if (!ev && d.zombie && rng.chance(0.45)) {

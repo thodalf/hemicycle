@@ -5,7 +5,7 @@ import { accountability, segmentRows } from '../engine/country';
 import { annexedEnemies } from '../engine/annex';
 import { SEGMENTS } from './programme';
 import { freshDeparture } from '../engine/npc-life';
-import { highOffice } from '../engine/office';
+import { highOffice, inPower } from '../engine/office';
 
 /* ============================================================
  *  Rendez-vous du calendrier (Euro et Coupe du monde, Tour de
@@ -112,9 +112,9 @@ export const CALENDAR_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'rentree_scolaire', weight: 3, minRank: atLeastCouncil, eligible: d => monthIndex(d.week) === 8,
-    build: () => ({
+    build: d => ({
       title: 'Rentrée : des classes sans professeur',
-      context: 'Trois mille postes non pourvus, des classes à trente-cinq, une école de votre circonscription sans maître en CM2.',
+      context: `Trois mille postes non pourvus, des classes à trente-cinq, ${inPower(d) ? 'une école de Seine-Saint-Denis' : 'une école de votre circonscription'} sans maître en CM2.`,
       choices: [
         c('ecole', 'Passer la matinée dans l’école concernée', [{ kind: 'dossier', domain: 'education', delta: 3 }, seg('jeunes', 2), s('energy', -4)], 'Les enfants vous posent plus de questions qu’un journaliste.'),
         c('interpeller', 'Interpeller publiquement le ministre', [s('influence', 1), s('credibility', 1), seg('populaires', 1)], 'Une lettre ouverte reprise par la presse régionale.'),

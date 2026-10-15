@@ -23,6 +23,7 @@ import { PresidentialPollsComponent } from '../presidential-polls/presidential-p
 import { SchemesPanelComponent } from '../schemes-panel/schemes-panel.component';
 import { ZombiePanelComponent } from '../zombie-panel/zombie-panel.component';
 import { ApocalypsePanelComponent } from '../apocalypse-panel/apocalypse-panel.component';
+import { SagaPanelComponent } from '../saga-panel/saga-panel.component';
 import { TutorialComponent } from '../tutorial/tutorial.component';
 import { blockingOverlay } from '../week-planner/week-planner.component';
 import { JournalComponent } from '../journal/journal.component';
@@ -70,7 +71,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
     DecimalPipe,
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
-    DebateArenaComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ApocalypsePanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
+    DebateArenaComponent, TeamPanelComponent, ProgramBuilderComponent, ProtestComponent, BudgetComponent, SceneComponent, BoosterComponent, ScenarioPanelComponent, PatrimoineComponent, VitalsComponent, FxLayerComponent, ElectionNightComponent, PresidentialPollsComponent, SchemesPanelComponent, ApocalypsePanelComponent, SagaPanelComponent, ZombiePanelComponent, TutorialComponent, CrisisPanelComponent, TerritoryPanelComponent, JournalComponent,
     LifePanelComponent, PresidencyPanelComponent, GovernmentPanelComponent, CountryPanelComponent, WorldPanelComponent,
     WarPanelComponent, ContactPanelComponent, PhoneComponent, PlotPanelComponent, AssemblyVoteComponent, BankComponent, MinigameComponent, ArcadePanelComponent, GrandPanelComponent, ActivityComponent,
   ],
@@ -143,6 +144,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
         <app-crisis-panel />
         <app-zombie-panel />
         <app-apocalypse-panel />
+        <app-saga-panel />
         <app-plot-panel />
         <app-schemes-panel />
         <app-grand-panel />
@@ -353,7 +355,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
       /* L'agenda d'abord : décisions et actions du mois avant les tableaux de bord */
       .col-main > app-decision-panel { order: -2; }
       .col-main > app-week-planner { order: -1; }
-      .col-main > :is(app-crisis-panel, app-zombie-panel, app-apocalypse-panel, app-war-panel) { order: -3; }
+      .col-main > :is(app-crisis-panel, app-zombie-panel, app-apocalypse-panel, app-saga-panel, app-war-panel) { order: -3; }
       /* Une colonne à la fois */
       .grid[data-tab='agenda'] .col-left, .grid[data-tab='agenda'] .col-right,
       .grid[data-tab='moi'] .col-main, .grid[data-tab='moi'] .col-right,

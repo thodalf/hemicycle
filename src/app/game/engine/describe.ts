@@ -1,3 +1,4 @@
+import { SAGA_BY_ID } from '../data/saga-defs';
 import { DOMAIN_LABELS, Effect, STAT_LABELS } from '../models/game.models';
 import { frSigned } from './rng';
 import { TRAITS, TraitId } from '../data/traits';
@@ -66,6 +67,14 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'coalition': return e.open ? [{ text: 'Ouvre des négociations de coalition', tone: 'neutral' }]
       : e.mood ? [{ text: `Humeur du partenaire ${frSigned(e.mood)}`, tone: e.mood > 0 ? 'good' : 'bad' }]
       : e.leave ? [{ text: 'Rompt la coalition', tone: 'bad' }] : [{ text: 'Forme une coalition', tone: 'good' }];
+    case 'saga': {
+      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      if (e.start) out.push({ text: `Déclenche la saga « ${SAGA_BY_ID.get(e.start)?.label ?? e.start} »`, tone: 'neutral' });
+      if (e.a) out.push({ text: `Votre camp ${frSigned(e.a)}`, tone: e.a > 0 ? 'good' : 'bad' });
+      if (e.b) out.push({ text: `Menace ${frSigned(e.b)}`, tone: e.b < 0 ? 'good' : 'bad' });
+      if (e.c) out.push({ text: `Opinion ${frSigned(e.c)}`, tone: e.c > 0 ? 'good' : 'bad' });
+      return out;
+    }
     case 'apocalypse': {
       const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
       if (e.start) out.push({ text: 'Déclenche la fin du monde', tone: 'bad' });

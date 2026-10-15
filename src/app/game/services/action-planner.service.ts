@@ -1,3 +1,4 @@
+import { sagaRunning } from '../engine/saga';
 import { natCrisis } from '../data/national-crises';
 import { onAction } from '../engine/character';
 import { RENOWN_TIERS, renownTier } from '../data/lifestyles';
@@ -116,6 +117,7 @@ export class ActionPlannerService {
       if (a.category === 'securite') return !!s.plot;
       if (a.category === 'zombie') return !!s.zombie;
       if (a.category === 'apocalypse') return !!s.apocalypse && s.apocalypse.phase < 4;
+      if (a.category === 'saga') return sagaRunning(s) && s.saga!.id === a.requires?.saga;
       if (a.requires?.arc && !s.crises?.[a.requires.arc]) return false;
       // La caisse du parti : réservée à sa direction (les autres ne voient pas ces actions)
       if (a.partyOnly && s.party.leaderNpcId !== 'player') return false;
@@ -174,6 +176,7 @@ export class ActionPlannerService {
       if (req.appoint) { const why = canAppoint(s); if (why) return { ok: false, reason: why }; }
       if (req.coalition && !s.coalition) return { ok: false, reason: 'Aucune coalition en cours' };
       if (req.kingdom && !s.kingdom) return { ok: false, reason: 'Réservé au souverain' };
+      if (req.sagaPhase && !(s.saga && req.sagaPhase.includes(s.saga.phase))) return { ok: false, reason: 'Pas à ce stade de la saga' };
       if (req.natCrisis && natCrisis(s) !== req.natCrisis) return { ok: false, reason: 'La crise est passée' };
       if (req.partyLeader && (s.party.leaderNpcId !== 'player' || !s.partyFinance)) return { ok: false, reason: 'Réservé à la direction du parti' };
       if (req.treasury !== undefined && (s.partyFinance?.treasury ?? 0) < req.treasury) return { ok: false, reason: `Trésorerie du parti sous ${req.treasury} k€` };
