@@ -115,7 +115,6 @@ const AUTO: L[] = ['1', '4', '14'];
 /** Couleurs des lignes, pour la pastille */
 const LINE_COLORS: Record<string, string> = { '1': '#FFCD00', '2': '#003CA6', '3': '#837902', '4': '#CF009E', '5': '#FF7E2E', '6': '#6ECA97', '7': '#FA9ABA',
   '8': '#E19BDF', '9': '#B6BD00', '10': '#C9910D', '11': '#704B1C', '12': '#007852', '13': '#6EC4E8', '14': '#62259D' };
-const even = (l: L) => parseInt(l, 10) % 2 === 0;
 const metro: GridSet = {
   id: 'metro', corner: 'Ⓜ', placeholder: 'Nom de la station', noun: 'station',
   items: STATIONS.map(x => ({ key: x.name, name: x.name, tag: '', search: [normalize(x.name)], data: x, fame: (x.lines.length + x.rer.length) ** 2 + (TERMINI.has(x.name) ? 2 : 0) + 1 })),
@@ -131,8 +130,6 @@ const metro: GridSet = {
     { id: 'banlieue', label: 'Hors de Paris intra-muros', group: 'where', test: x => BANLIEUE.has(st(x).name) },
     { id: 'gare', label: 'Dessert une grande gare parisienne', group: 'gare', test: x => GRANDES_GARES.has(st(x).name) || /^Gare\b/.test(st(x).name) },
     { id: 'auto', label: 'Sur une ligne automatique, sans conducteur', group: 'auto', test: x => st(x).lines.some(l => AUTO.includes(l)) },
-    { id: 'pairs', label: 'Toutes ses lignes ont un numéro pair', group: 'parity', test: x => st(x).lines.every(even) },
-    { id: 'impairs', label: 'Toutes ses lignes ont un numéro impair', group: 'parity', test: x => st(x).lines.every(l => !even(l)) },
     { id: 'perso', label: 'Porte le nom d’une personnalité (hors saints)', group: 'words', test: x => PERSONNES.test(st(x).name) },
     { id: 'bataille', label: 'Évoque une bataille, une victoire ou un traité', group: 'words', test: x => BATAILLES.test(st(x).name) },
     { id: 'porte', label: 'Une « Porte » de Paris', group: 'words', test: x => /^Porte\b/.test(st(x).name) },
@@ -189,6 +186,23 @@ function solvable(answers: GridItem[][][]): boolean {
 }
 
 /** Une grille 3 × 3 jouable */
+/**
+ * Un critère qui découle presque de l'autre ne pose aucune vraie question
+ * (« ligne 1 » × « ligne automatique », « Grand Est » × « loin de la mer ») : on écarte la grille.
+ */
+const REDUNDANT = 0.8;
+function redundant(set: GridSet, rows: GridCrit[], cols: GridCrit[]): boolean {
+  for (const r of rows) {
+    const ri = set.items.filter(x => r.test(x));
+    for (const c of cols) {
+      const both = ri.filter(x => c.test(x)).length;
+      const ci = set.items.filter(x => c.test(x)).length;
+      if (both / Math.max(1, ri.length) >= REDUNDANT || both / Math.max(1, ci) >= REDUNDANT) return true;
+    }
+  }
+  return false;
+}
+
 export function makeGrid(id: GridSetId, rand: () => number = Math.random): Grid {
   const set = GRID_SETS[id];
   const shuffle = <T,>(a: T[]) => [...a].sort(() => rand() - 0.5);
@@ -200,6 +214,7 @@ export function makeGrid(id: GridSetId, rand: () => number = Math.random): Grid 
     if (cols.length < 3) continue;
     const answers = rows.map(r => cols.map(c => set.items.filter(x => r.test(x) && c.test(x))));
     if (answers.some(row => row.some(cell => cell.length < set.minPerCell))) continue;
+    if (redundant(set, rows, cols)) continue;
     if (!solvable(answers)) continue;
     const grid = { set, rows, cols, answers };
     // Préférer des grilles variées : au moins une case plus difficile
@@ -217,7 +232,7 @@ export function makeGrid(id: GridSetId, rand: () => number = Math.random): Grid 
       const cols = [pool[a], pool[b], pool[c]];
       if (new Set(cols.map(x => x.group)).size < 3) continue;
       const answers = rows.map(r => cols.map(col => set.items.filter(x => r.test(x) && col.test(x))));
-      if (answers.some(row => row.some(cell => cell.length < set.minPerCell)) || !solvable(answers)) continue;
+      if (answers.some(row => row.some(cell => cell.length < set.minPerCell)) || redundant(set, rows, cols) || !solvable(answers)) continue;
       return { set, rows, cols, answers };
     }
   }

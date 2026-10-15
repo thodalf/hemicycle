@@ -13,6 +13,7 @@ import { ofParty } from '../data/world';
 import { applyEffects, partySupport, pushNews } from './effects';
 import { addMilestone } from './life';
 import { fallFromMatignon } from './government';
+import { regionShares } from './country';
 import { Rng, clamp, nextId, fr, frSigned } from './rng';
 
 /* ============================================================
@@ -188,16 +189,44 @@ export function incumbentBonus(d: GameState, id: string): number {
   return id === d.presidential.incumbentId ? 4 : 0;
 }
 
-/** Scrutin sans le joueur */
+/** Intentions de vote nationales par parti : la moyenne des régions (celles du journal) */
+export function nationalShares(d: GameState): Record<string, number> {
+  const regions = Object.values(regionShares(d));
+  const out: Record<string, number> = {};
+  for (const p of [d.party, ...d.otherParties]) out[p.id] = regions.reduce((t, r) => t + (r[p.id] ?? 0), 0) / Math.max(1, regions.length);
+  return out;
+}
+
+/**
+ * Scrutin sans le joueur : un vrai premier tour, porté d'abord par les intentions de vote
+ * du parti (un candidat par parti), puis un second tour entre les deux premiers.
+ */
 function npcPresidential(d: GameState, rng: Rng): void {
   const c = d.presidential;
   const parties = [d.party, ...d.otherParties];
+  const shares = nationalShares(d);
   const pool = d.npcs.filter(n => n.rankId === 'chef_parti' || (n.id === c.incumbentId && c.incumbentMandates < 2));
-  const scored = pool.map(n => {
-    const governing = n.partyId === c.incumbentPartyId ? 4 : 0;
-    const center = Math.abs(parties.find(p => p.id === n.partyId)?.position ?? 0) * 0.08;
-    return { n, score: Math.max(1, n.popularity * 0.55 + n.influence * 0.25 + governing + incumbentBonus(d, n.id) - center) ** 2 * rng.range(0.85, 1.15) };
+  // Un seul candidat par parti : le sortant d'abord, sinon le plus influent
+  const byParty = new Map<string, typeof pool[number]>();
+  for (const n of [...pool].sort((a, b) => Number(b.id === c.incumbentId) - Number(a.id === c.incumbentId) || b.influence - a.influence)) if (!byParty.has(n.partyId)) byParty.set(n.partyId, n);
+  const firstRound = [...byParty.values()].map(n => {
+    const share = shares[n.partyId] ?? 5;
+    const personal = (n.popularity - 50) * 0.12 + (n.influence - 50) * 0.06;
+    const governing = n.partyId === c.incumbentPartyId ? 1.5 : 0;
+    return { n, score: Math.max(0.5, share + personal + governing + incumbentBonus(d, n.id) * 0.5 + rng.range(-2.5, 2.5)) };
   }).sort((a, b) => b.score - a.score);
+  // Second tour : les reports se font selon la proximité politique
+  const [a1, a2] = firstRound;
+  const pos = (id: string) => parties.find(p => p.id === id)?.position ?? 0;
+  let s1 = a1?.score ?? 0, s2 = a2?.score ?? 0;
+  for (const o of firstRound.slice(2)) {
+    const d1 = Math.abs(pos(o.n.partyId) - pos(a1.n.partyId)), d2 = Math.abs(pos(o.n.partyId) - pos(a2.n.partyId));
+    const toFirst = d1 + d2 === 0 ? 0.5 : d2 / (d1 + d2);
+    s1 += o.score * 0.75 * toFirst; s2 += o.score * 0.75 * (1 - toFirst);
+  }
+  const scored = a2 && s2 * rng.range(0.9, 1.1) > s1 ? [a2, a1] : [a1, a2].filter(Boolean);
+  const finalScore = a2 ? Math.round((Math.max(s1, s2) / (s1 + s2)) * 1000) / 10 : 100;
+  const runnerUp = scored[1]?.n;
   const winner = scored[0]?.n;
   const wasPlayer = !!d.presidency;
   if (wasPlayer) endPresidency(d, 'fin');
@@ -215,7 +244,7 @@ function npcPresidential(d: GameState, rng: Rng): void {
   const party = parties.find(p => p.id === winner.partyId);
   pushNews(d, 'election', winner.partyId === d.party.id ? 'positive' : 'neutral',
     `${winner.name} ${again ? 'réélu·e' : 'élu·e'} président·e de la République`,
-    `${party ? `Victoire ${ofParty(party.name)}. ` : ''}Prochaine élection présidentielle ${inMonth(c.nextWeek)}.`);
+    `${party ? `Victoire ${ofParty(party.name)}` : 'Victoire'} avec ${fr(finalScore)} % au second tour${runnerUp ? ` face à ${runnerUp.name}` : ''}. Prochaine élection présidentielle ${inMonth(c.nextWeek)}.`);
   alternance(d, formerParty);
 }
 

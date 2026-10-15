@@ -14,7 +14,8 @@ import { renownTier } from '../data/lifestyles';
  * ============================================================ */
 
 export type ArtTheme = 'hemicycle' | 'urne' | 'foule' | 'courbe' | 'loupe' | 'drapeau' | 'croix' | 'couronne' | 'monument' | 'micro' | 'globe' | 'nature'
-  | 'tribunal' | 'ecole' | 'usine' | 'ferme' | 'ville' | 'aeroport' | 'port' | 'stade' | 'labo' | 'plateau' | 'gare' | 'police';
+  | 'tribunal' | 'ecole' | 'usine' | 'ferme' | 'ville' | 'aeroport' | 'port' | 'stade' | 'labo' | 'plateau' | 'gare' | 'police'
+  | 'mer' | 'montagne' | 'pont' | 'musee' | 'marche' | 'route' | 'concert' | 'espace' | 'chantier' | 'bureau';
 
 export interface Article {
   id: string;
@@ -54,37 +55,58 @@ const THEMES: [RegExp, ArtTheme][] = [
   [/procès|tribunal|\bjuges?\b|magistrat|justice|condamn|avocat|relaxe|cour d’appel|cassation/i, 'tribunal'],
   [/scandale|affaire|enquête|révél|secret|chantage|fuite|parjure|mis en examen/i, 'loupe'],
   [/\broi\b|\breine\b|couronne|palais|royal|souverain|prince/i, 'couronne'],
-  [/police|policier|attentat|émeute|violences|commissariat|gendarm|sécurité publique/i, 'police'],
+  [/police|policier|attentat|émeute|violences|commissariat|gendarm|sécurité publique|cambriol|braquage|\bcasse\b/i, 'police'],
+  [/fusée|spatial|satellite|comète|astéro|météorite|éclipse|planète mars|sur mars|cosmonaute|astronaute/i, 'espace'],
+  [/\bponts?\b|viaduc|ouvrage d’art/i, 'pont'],
   [/\bgares?\b|\btrains?\b(?! de)|sncf|\btgv\b|cheminot|ferroviaire/i, 'gare'],
-  [/aéroport|\bavions?\b|aérien|compagnie aérienne|décoll/i, 'aeroport'],
+  [/aéroport|\bavions?\b|aérien|compagnie aérienne|décoll|contrôleurs aériens/i, 'aeroport'],
   [/\bports?\b|dockers|portuaire|cargo|\bbateaux?\b|\bpêche|pêcheurs|maritime/i, 'port'],
-  [/\bstades?\b|\bmatch|coupe du monde|olympiques|\bjo\b|\bsport|les bleus|finale|e-sport|esport/i, 'stade'],
+  [/plage|littoral|\bmer\b|\bbaie\b|algues|marée|océan|bord de mer|vacanciers|baleine/i, 'mer'],
+  [/montagne|\bski\b|station de ski|\bneige|avalanche|glacier|\balpes\b|pyrénées|vague de froid|froid record|grand hiver/i, 'montagne'],
+  [/\bstades?\b|\bmatch|coupe du monde|olympiques|\bjo\b|\bsport|les bleus|finale|e-sport|esport|tour de france/i, 'stade'],
+  [/concert|chanteu|festival|musique|eurovision|spectacle|théâtre|artiste|chanson/i, 'concert'],
+  [/musée|tableau|exposition|œuvre|archéolog|trésor|fouilles|patrimoine culturel/i, 'musee'],
   [/école|lycée|collège|élèves|enseign|professeur|\bbac\b|\bclasses?\b|étudiant|universit|campus|rentrée/i, 'ecole'],
-  [/recherche|laboratoire|scientifique|vaccin|fusion nucléaire|nobel|chercheu|intelligence artificielle|satellite|spatial|nucléaire/i, 'labo'],
+  [/recherche|laboratoire|scientifique|vaccin|fusion nucléaire|nobel|chercheu|intelligence artificielle|nucléaire/i, 'labo'],
   [/\btélé\b|télévis|plateau|matinale|émission|interview|débat télévisé|journal de 20/i, 'plateau'],
   [/censure|\bvote|\bloi\b|\blois\b|assembl|scrutin|amendement|49\.3|obstruction|hémicycle|réforme/i, 'hemicycle'],
   [/élection|présidentielle|législatives|municipales|candidat|urne|second tour/i, 'urne'],
+  [/conseil des ministres|remaniement|premier ministre|matignon|élysée|décret|nomination|ministre|gouvernement/i, 'bureau'],
   [/agricult|\bfermes?\b|paysan|tracteur|récolte|vigne|vendange|éleveur|ruraux|\bblé\b/i, 'ferme'],
-  [/\busines?\b|industri|ouvrier|fermeture d|chantier|relocalis|sidérurg|licenciement/i, 'usine'],
+  [/chantier|travaux|\bgrues?\b|\bbtp\b|construction|logements? neufs?|reconstru/i, 'chantier'],
+  [/\busines?\b|industri|ouvrier|fermeture d|relocalis|sidérurg|licenciement|plan social/i, 'usine'],
+  [/marché|boulanger|commerçant|commerces|pouvoir d’achat|moutarde|pénurie|supermarch|\bprix\b|courses/i, 'marche'],
+  [/(?<!feuille de )\broutes?\b|autoroute|embouteillage|bouchon|carburant|essence|péage|radar|périphérique|\btaxis?\b|automobil/i, 'route'],
   [/grève|manif|colère|cortège|révolte|blocage|rond-point|syndicat/i, 'foule'],
   [/économ|chômage|croissance|budget|déficit|dette|bourse|krach|inflation|milliard|entreprise/i, 'courbe'],
   [/guerre|armée|militaire|frégate|défense|soldat|navire de guerre/i, 'drapeau'],
   [/santé|hôpital|épidémie|virus|soignant|urgences|punaise/i, 'croix'],
-  [/tour eiffel|cathédrale|château|patrimoine|monument|musée/i, 'monument'],
+  [/tour eiffel|cathédrale|château|patrimoine|monument/i, 'monument'],
   [/sommet|ambassad|diplomat|international|étranger|visite d’état|chef d’état/i, 'globe'],
-  [/climat|canicule|baleine|forêt|feux|\beau\b|ours|écolog|inondation|tempête/i, 'nature'],
+  [/climat|canicule|forêt|feux|\beau\b|ours|écolog|inondation|tempête/i, 'nature'],
   [/\bvilles?\b|quartier|banlieue|municip|\bcommunes?\b|métro|logement|immobilier|loyer|maire/i, 'ville'],
 ];
 
-export function themeOf(text: string, kind?: NewsKind, title?: string): ArtTheme {
-  if (kind === 'scandale') return 'loupe';
-  if (kind === 'election') return 'urne';
+/** Les décors de repli, quand la dépêche ne donne aucun indice (ou que tous ses décors sont pris) */
+const FALLBACK: ArtTheme[] = ['micro', 'plateau', 'ville', 'bureau', 'foule', 'hemicycle', 'globe', 'courbe', 'marche', 'route'];
+
+/** Tous les décors possibles d'une dépêche, du plus pertinent au moins pertinent */
+export function themesOf(text: string, kind?: NewsKind, title?: string): ArtTheme[] {
+  const out: ArtTheme[] = [];
+  const add = (t: ArtTheme) => { if (!out.includes(t)) out.push(t); };
+  if (kind === 'scandale') add('loupe');
+  if (kind === 'election') add('urne');
   // Le titre d'abord, le corps ensuite
-  for (const src of [title, text]) if (src) for (const [re, t] of THEMES) if (re.test(src)) return t;
+  for (const src of [title, text]) if (src) for (const [re, t] of THEMES) if (re.test(src)) add(t);
   // Sans indice : on varie le décor d'une dépêche à l'autre
   let h = 0;
   for (const ch of (title ?? '') + text) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return (['micro', 'micro', 'plateau', 'ville'] as ArtTheme[])[h % 4];
+  for (let i = 0; i < FALLBACK.length; i++) add(FALLBACK[(h + i) % FALLBACK.length]);
+  return out;
+}
+
+export function themeOf(text: string, kind?: NewsKind, title?: string): ArtTheme {
+  return themesOf(text, kind, title)[0];
 }
 
 /** L'importance d'une dépêche pour la une */
@@ -153,11 +175,18 @@ function prose(body = ''): string {
   return body.split(' — ').filter(part => !/^([A-ZÉ][\wÀ-ÿ’' -]+ [+−-]\d[\d,]*( %)?( · |$))+/.test(part.trim())).join(' — ').trim();
 }
 
-function toArticle(d: GameState, n: NewsItem, page: number): Article {
+function toArticle(d: GameState, n: NewsItem, page: number, used?: Set<ArtTheme>): Article {
   const text = `${n.title} ${n.body ?? ''}`;
   const title = n.title.replace(/^Coup d’éclat : /, '').replace(/^Raté : /, 'Raté : ');
   const body = prose(n.body) || (n.tone === 'negative' ? 'Un mois difficile, commentent les observateurs.' : 'Les observateurs saluent l’initiative.');
-  return { id: n.id, kicker: n.title.startsWith('Coup d’éclat') ? 'Le coup d’éclat' : n.title.startsWith('Raté') ? 'Fait divers' : KICKER[n.kind], title, body, tone: n.tone, theme: themeOf(text, n.kind, n.title), byline: byline(d, n.id), page };
+  return { id: n.id, kicker: n.title.startsWith('Coup d’éclat') ? 'Le coup d’éclat' : n.title.startsWith('Raté') ? 'Fait divers' : KICKER[n.kind], title, body, tone: n.tone, theme: pickTheme(themesOf(text, n.kind, n.title), used), byline: byline(d, n.id), page };
+}
+
+/** Deux articles d'un même numéro n'ont jamais la même photo */
+function pickTheme(options: ArtTheme[], used?: Set<ArtTheme>): ArtTheme {
+  const t = options.find(o => !used?.has(o)) ?? options[0];
+  used?.add(t);
+  return t;
 }
 
 /** Les cotes de popularité successives (pour la courbe du baromètre) */
@@ -177,10 +206,11 @@ export function edition(d: GameState, week: number): Edition {
   const fallback: NewsItem = { id: `calme-${week}`, week, kind: 'actu', tone: 'neutral', title: office(d) === 'base' ? 'Un mois sans fracas' : `Calme plat ${seat(d)}`,
     body: 'Pas de crise, pas de scandale : le pays respire, et la classe politique prépare la suite. Les éditorialistes s’ennuient ferme.' };
   const head = ranked[0] ?? fallback;
-  const headline = toArticle(d, head, 1);
+  const used = new Set<ArtTheme>();
+  const headline = toArticle(d, head, 1, used);
   const rest = ranked.slice(1);
-  const articles = rest.slice(0, 4).map((n, i) => toArticle(d, n, 2 + i));
-  const briefs = [...rest.slice(4), ...items.filter(routine)].slice(0, 8).map((n, i) => toArticle(d, n, 6 + Math.floor(i / 2)));
+  const articles = rest.slice(0, 4).map((n, i) => toArticle(d, n, 2 + i, used));
+  const briefs = [...rest.slice(4), ...items.filter(routine)].slice(0, 8).map((n, i) => toArticle(d, n, 6 + Math.floor(i / 2), used));
   const hist = (star ? d.barometre : d.barometreNat) ?? [];
   const cote = star ? Math.round(d.player.stats.popularity) : nationalMood(d);
   const prev = hist.length >= 2 ? hist[hist.length - 2] : cote;

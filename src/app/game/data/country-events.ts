@@ -1455,6 +1455,94 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'ev_pont_fete', weight: 0.25,
+    build: () => ({
+      title: 'Un pont de mai qui fâche',
+      context: 'Avec deux jours fériés un jeudi, le pays s’apprête à « faire le pont ». Les patrons s’inquiètent pour la productivité, les salariés pour leurs vacances.',
+      choices: [
+        c('profiter', 'Souhaiter à tous un bon week-end prolongé', [s('popularity', 1), { kind: 'segment', segment: 'populaires', delta: 1 }], 'Les routes sont bondées, les terrasses aussi.'),
+        c('travailler', 'Rappeler que le pays a besoin de travailler', [s('credibility', 1), { kind: 'segment', segment: 'cadres', delta: 1 }, { kind: 'segment', segment: 'populaires', delta: -1 }], 'La phrase est mal reçue un jeudi de pont.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_robot_chirurgien', weight: 0.25,
+    build: () => ({
+      title: 'Un robot opère seul',
+      context: 'Un hôpital universitaire annonce la première opération entièrement réalisée par un robot, sans chirurgien aux commandes. Le patient va bien.',
+      choices: [
+        c('saluer', 'Saluer une prouesse française', [{ kind: 'dossier', domain: 'sante', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: 1 }], 'Les chercheurs sont reçus en héros.'),
+        c('encadrer', 'Demander un cadre éthique avant d’aller plus loin', [s('credibility', 2)], 'Le comité d’éthique est saisi. Les soignants approuvent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_profs_rythmes', weight: 0.3,
+    build: () => ({
+      title: 'Les profs dans la rue',
+      context: 'Un professeur sur deux est en grève contre la réforme des rythmes scolaires. Les parents cherchent des solutions de garde.',
+      choices: [
+        c('ecouter', 'Recevoir les syndicats enseignants', [{ kind: 'dossier', domain: 'education', delta: 2 }, s('politicalCapital', -2), { kind: 'segment', segment: 'jeunes', delta: 1 }], 'Deux heures de discussion franche, et un calendrier revu.'),
+        c('maintenir', 'Maintenir la réforme', [s('credibility', 1), { kind: 'segment', segment: 'jeunes', delta: -1 }], 'La grève reconductible est votée.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_record_loto', weight: 0.25,
+    build: () => ({
+      title: 'Un village gagne au loto',
+      context: 'Les habitants d’un village de 300 âmes, qui jouaient ensemble depuis vingt ans, remportent la cagnotte record. Ils veulent rénover l’école et l’église.',
+      choices: [
+        c('feliciter', 'Aller les féliciter sur place', [s('popularity', 2), { kind: 'segment', segment: 'ruraux', delta: 2 }, s('energy', -3)], 'Un vin d’honneur mémorable sur la place du village.'),
+        c('message', 'Un message chaleureux', [s('popularity', 1)], 'Le maire lit votre message devant la mairie.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_cyber_mairie', weight: 0.3, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Une mairie prise en otage',
+      context: 'Des pirates ont chiffré tous les fichiers d’une grande mairie : état civil, paie, écoles. Ils réclament une rançon en cryptomonnaie.',
+      choices: [
+        c('refuser', 'Refuser de payer et tout reconstruire', [s('credibility', 2), { kind: 'dossier', domain: 'numerique', delta: 2 }, s('stress', 2)], 'Trois semaines de papier et de crayons, mais pas un euro aux pirates.'),
+        c('negocier', 'Laisser la mairie négocier discrètement', [s('credibility', -1)], 'Les fichiers reviennent. La rumeur du paiement aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_vague_chaleur_ecoles', weight: 0.3,
+    build: () => ({
+      title: '38 °C dans les classes',
+      context: 'En pleine vague de chaleur de juin, les salles de classe dépassent 38 °C. Des parents gardent leurs enfants à la maison.',
+      choices: [
+        c('plan', 'Lancer un plan de rénovation thermique des écoles', [{ kind: 'dossier', domain: 'education', delta: 2 }, { kind: 'dossier', domain: 'ecologie', delta: 2 }, s('politicalCapital', -3)], 'Dix mille écoles rénovées en cinq ans : le plan est salué.'),
+        c('horaires', 'Autoriser les écoles à finir à midi', [s('popularity', 1)], 'Les enfants rentrent plus tôt. Les parents, eux, jonglent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_ambassadeur_gaffe', weight: 0.3, eligible: atTop,
+    build: () => ({
+      title: 'La gaffe de l’ambassadeur',
+      context: 'Notre ambassadeur dans un pays allié a été enregistré en train de se moquer de ses dirigeants. L’enregistrement est partout.',
+      choices: [
+        c('rappeler', 'Le rappeler à Paris sur-le-champ', [{ kind: 'intl', prestige: 1 }, s('credibility', 1)], 'L’incident est clos en quarante-huit heures.'),
+        c('soutenir', 'Le soutenir : c’était une conversation privée', [{ kind: 'intl', prestige: -2 }], 'Le pays allié convoque notre chargé d’affaires.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_tempete_vignes', weight: 0.3,
+    build: () => ({
+      title: 'La grêle ravage les vignes',
+      context: 'Un orage de grêle a détruit en vingt minutes 80 % des vignes d’une appellation célèbre. Les vignerons parlent d’une année perdue.',
+      choices: [
+        c('calamite', 'Déclarer l’état de calamité agricole', [{ kind: 'segment', segment: 'ruraux', delta: 2 }, s('politicalCapital', -2)], 'Les indemnisations sont débloquées en dix jours.'),
+        c('assurance', 'Rappeler l’importance de s’assurer', [s('credibility', 1), { kind: 'segment', segment: 'ruraux', delta: -2 }], 'Les vignerons non assurés ne l’oublieront pas.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

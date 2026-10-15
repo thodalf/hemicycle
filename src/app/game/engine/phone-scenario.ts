@@ -523,6 +523,33 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Les nitrates baissent dans deux rivières sur cinq. C’est un début. Ne lâchez pas les éleveurs, ils jouent le jeu.', effects: [{ kind: 'crisis', arc: 'algues', gauge: 3, risk: -3 }] }) },
     ],
   },
+  // ── Le barrage ──
+  {
+    key: 'sc:barrage', icon: '🌊', when: d => !!d.crises?.barrage,
+    name: () => 'Hervé Castagnet', role: () => 'Ingénieur en chef du barrage',
+    options: () => [
+      { id: 'sc_barrage_point', label: 'Demander l’état du barrage', hint: 'Il n’a pas quitté l’ouvrage depuis des semaines.', ask: 'Hervé, le barrage tient ?', cooldown: 1,
+        run: () => ({ answer: 'Les fuites diminuent depuis qu’on a injecté du béton. Le lac baisse d’un mètre par jour. On tient.', effects: [{ kind: 'crisis', arc: 'barrage', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── La grippe aviaire ──
+  {
+    key: 'sc:aviaire', icon: '🐔', when: d => !!d.crises?.aviaire,
+    name: () => 'Dr Claire Darrigade', role: () => 'Vétérinaire, cheffe de la cellule de crise',
+    options: () => [
+      { id: 'sc_aviaire_point', label: 'Faire le point sur les foyers', hint: 'Elle connaît chaque élevage du département.', ask: 'Docteure, combien de foyers aujourd’hui ?', cooldown: 1,
+        run: () => ({ answer: 'Trois nouveaux, mais tous dans la zone déjà bouclée. Si on vaccine la semaine prochaine, on le tient.', effects: [{ kind: 'crisis', arc: 'aviaire', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── Le skipper ──
+  {
+    key: 'sc:skipper', icon: '⛵', when: d => !!d.crises?.skipper,
+    name: () => 'Yann Kerhervé', role: () => 'Directeur de la course autour du monde',
+    options: () => [
+      { id: 'sc_skipper_point', label: 'Demander des nouvelles des recherches', hint: 'Ancien marin, il connaît ces mers mieux que personne.', ask: 'Yann, une piste ?', cooldown: 1,
+        run: () => ({ answer: 'Un avion a cru voir un reflet orange ce matin. Ça peut être son radeau. On envoie le cargo le plus proche.', effects: [{ kind: 'crisis', arc: 'skipper', gauge: 4, risk: -3 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -606,7 +633,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

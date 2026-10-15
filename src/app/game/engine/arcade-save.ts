@@ -15,9 +15,9 @@ const key = (id: string) => `hemicycle.arcade.${id}`;
 
 /**
  * Version des règles des grilles : la changer relance la grille du jour pour tout le monde
- * (nouvelle graine, parties et résultats du jour effacés). v3 : au moins trois réponses par case.
+ * (nouvelle graine, parties et résultats du jour effacés). v3 : au moins trois réponses par case ; v4 : plus de critères redondants.
  */
-const GRID_RULES = 'r3';
+const GRID_RULES = 'r4';
 const isGrid = (id: string) => id !== 'sutom' && id !== 'mot_du_jour';
 /** L'étiquette du jour d'une partie : la date, plus la version des règles pour les grilles */
 export const dayTag = (id: string) => (isGrid(id) ? `${todayKey()}#${GRID_RULES}` : todayKey());

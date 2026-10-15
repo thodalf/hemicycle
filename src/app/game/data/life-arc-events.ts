@@ -748,6 +748,39 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'barrage_gate', weight: 0.3, minRank: 'conseiller_municipal', eligible: d => !d.crises?.barrage && !d.player.flags['barrageDone'] && d.week > 20,
+    build: () => ({
+      title: 'Des fuites sous le barrage',
+      context: 'Le directeur du barrage vous appelle à minuit : des fuites sont apparues au pied de l’ouvrage. « Pas de danger immédiat », dit-il. Sa voix dit le contraire.',
+      choices: [
+        c('alerter', 'Prévenir la population et préparer l’évacuation', [cr('barrage', 6, 5, true), { kind: 'flag', key: 'barrageDone', value: true }, s('credibility', 2)], 'Les sirènes sont testées le lendemain. La vallée est inquiète, mais informée.'),
+        c('discret', 'Vider le lac discrètement, sans alarmer', [cr('barrage', 3, 6, true), { kind: 'flag', key: 'barrageDone', value: true }], 'Le niveau baisse. Les pêcheurs remarquent tout de suite.'),
+      ],
+    }),
+  },
+  {
+    tag: 'aviaire_gate', weight: 0.3, minRank: 'conseiller_municipal', eligible: d => !d.crises?.aviaire && !d.player.flags['aviaireDone'] && d.week > 16,
+    build: () => ({
+      title: 'Grippe aviaire dans le Sud-Ouest',
+      context: 'Les services vétérinaires confirment un foyer de grippe aviaire dans un élevage de canards. Le préfet propose d’abattre tous les élevages dans un rayon de dix kilomètres.',
+      choices: [
+        c('abattre', 'Suivre le préfet : il faut stopper le virus', [cr('aviaire', 6, 5, true), { kind: 'flag', key: 'aviaireDone', value: true }, { kind: 'segment', segment: 'ruraux', delta: -1 }], 'Les camions arrivent à l’aube. Les éleveurs pleurent devant leurs hangars.'),
+        c('cibler', 'N’abattre que les élevages touchés, et tester partout', [cr('aviaire', 3, 4, true), { kind: 'flag', key: 'aviaireDone', value: true }, { kind: 'segment', segment: 'ruraux', delta: 1 }], 'Les tests s’enchaînent. Le virus, lui, avance.'),
+      ],
+    }),
+  },
+  {
+    tag: 'skipper_gate', weight: 0.25, minRank: 'militant', eligible: d => !d.crises?.skipper && !d.player.flags['skipperDone'] && d.week > 12,
+    build: () => ({
+      title: 'Plus de nouvelles de la navigatrice',
+      context: 'La balise de Marion Le Gall, en tête de la course autour du monde, ne répond plus depuis six heures. La dernière position la situe en plein océan Austral.',
+      choices: [
+        c('mobiliser', 'Demander que tous les moyens soient engagés', [cr('skipper', 6, 4, true), { kind: 'flag', key: 'skipperDone', value: true }, s('popularity', 1)], 'Un avion de patrouille maritime décolle de La Réunion.'),
+        c('attendre', 'Attendre les consignes de la direction de course', [cr('skipper', 3, 6, true), { kind: 'flag', key: 'skipperDone', value: true }], 'Les heures passent. Le pays retient son souffle.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1998,6 +2031,72 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('aide', 'Aide d’urgence et grand ramassage quotidien', [cr('algues', 3, -4), s('politicalCapital', -3)], 'Les plages sont propres chaque matin. Les touristes reviennent, prudemment.'),
         c('campagne', 'Une campagne « La baie est belle »', [cr('algues', 1, 4), s('credibility', -1)], 'La campagne est moquée : les photos montrent des algues.'),
+      ],
+    }),
+  },
+  {
+    tag: 'barrage_rumeur', weight: 1, eligible: d => !!d.crises?.barrage,
+    build: () => ({
+      title: '« Le barrage va céder cette nuit »',
+      context: 'Un message viral annonce la rupture du barrage pour cette nuit. Des embouteillages se forment sur les routes qui quittent la vallée.',
+      choices: [
+        c('dementir', 'Démentir en direct, avec l’ingénieur en chef à vos côtés', [cr('barrage', 3, -5), s('credibility', 1)], 'Les images de l’ingénieur, calme et précis, font retomber la panique.'),
+        c('ignorer', 'Ne pas donner d’écho à une rumeur', [cr('barrage', 1, 5)], 'La rumeur court toute la nuit. Trois accidents sur la route.'),
+      ],
+    }),
+  },
+  {
+    tag: 'barrage_electricite', weight: 0.9, eligible: d => !!d.crises?.barrage,
+    build: () => ({
+      title: 'Et l’électricité ?',
+      context: 'Le barrage produit l’électricité de trois départements. Le vider, c’est importer du courant cher tout l’hiver.',
+      choices: [
+        c('securite', 'La sécurité d’abord, quel qu’en soit le prix', [cr('barrage', 5, -2), { kind: 'economy', deficit: 0.02 }], 'Le lac est vidé. La facture d’électricité, elle, monte.'),
+        c('partiel', 'Ne vider qu’à moitié pour garder une production', [cr('barrage', 2, 3), { kind: 'economy', growth: 0.02 }], 'Les turbines tournent. Les ingénieurs dorment mal.'),
+      ],
+    }),
+  },
+  {
+    tag: 'aviaire_eleveurs', weight: 1, eligible: d => !!d.crises?.aviaire,
+    build: () => ({
+      title: 'Les éleveurs à bout',
+      context: 'Un éleveur de canards s’enchaîne devant ses bâtiments pour empêcher l’abattage. Ses voisins forment une chaîne humaine.',
+      choices: [
+        c('indemniser', 'Promettre une indemnisation intégrale sous un mois', [cr('aviaire', 3, -5), s('politicalCapital', -4), { kind: 'segment', segment: 'ruraux', delta: 2 }], 'L’éleveur se détache. Les camions passent, sous les applaudissements tristes.'),
+        c('forcer', 'Faire appliquer l’abattage', [cr('aviaire', 4, 4), { kind: 'segment', segment: 'ruraux', delta: -2 }], 'Les images de gendarmes dans la cour de la ferme font le tour du pays.'),
+      ],
+    }),
+  },
+  {
+    tag: 'aviaire_vaccin', weight: 0.9, eligible: d => !!d.crises?.aviaire,
+    build: () => ({
+      title: 'Vacciner les canards ?',
+      context: 'Un vaccin pour les volailles existe. Mais certains pays menacent de refuser nos exportations si les animaux sont vaccinés.',
+      choices: [
+        c('vacciner', 'Vacciner massivement et négocier avec les importateurs', [cr('aviaire', 7, -2), { kind: 'economy', deficit: 0.01 }, { kind: 'intl', prestige: -1 }], 'Soixante millions de canards vaccinés en trois mois.'),
+        c('exports', 'Protéger les exportations : pas de vaccin', [cr('aviaire', 1, 4), { kind: 'economy', growth: 0.02 }], 'Les exportations continuent. Les foyers aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'skipper_famille', weight: 1, eligible: d => !!d.crises?.skipper,
+    build: () => ({
+      title: 'La famille de la navigatrice',
+      context: 'Les parents de Marion Le Gall, depuis leur maison du Finistère, demandent à être reçus. Ils veulent savoir que tout est fait.',
+      choices: [
+        c('recevoir', 'Les recevoir, sans caméras', [cr('skipper', 2, -5), s('stress', 3)], 'Une heure de silence, de mains serrées et de cartes marines.'),
+        c('telephoner', 'Les appeler longuement', [cr('skipper', 1, -2)], 'Ils vous remercient. Leur voix tremble.'),
+      ],
+    }),
+  },
+  {
+    tag: 'skipper_marine', weight: 0.9, eligible: d => !!d.crises?.skipper,
+    build: () => ({
+      title: 'Dérouter une frégate ?',
+      context: 'Une frégate de la Marine nationale est à quatre jours de navigation de la zone. La dérouter coûte cher, et l’éloigne de sa mission.',
+      choices: [
+        c('derouter', 'La dérouter : on ne laisse personne en mer', [cr('skipper', 6, -2), { kind: 'economy', deficit: 0.005 }], 'La frégate met le cap au sud, à pleine vitesse.'),
+        c('allies', 'Demander l’aide des marines alliées plus proches', [cr('skipper', 4, 1), { kind: 'intl', prestige: 1 }], 'L’Australie envoie un avion. Le monde entier cherche avec vous.'),
       ],
     }),
   },

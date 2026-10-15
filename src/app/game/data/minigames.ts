@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms' | 'agenda' | 'prompteur';
 
 export interface TriItem {
   text: string;
@@ -564,6 +564,14 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'bain_de_foule', kind: 'prenoms', icon: '🤝', title: 'Le bain de foule',
     rule: 'Retenez les prénoms et les métiers des gens que vous croisez, puis saluez chacun par son prénom.',
+  },
+  {
+    id: 'agenda_impossible', kind: 'agenda', icon: '🗓️', title: 'L’agenda impossible',
+    rule: 'Casez chaque rendez-vous sur un créneau en respectant sa contrainte (le matin, après tel autre rendez-vous…).',
+  },
+  {
+    id: 'prompteur_sabote', kind: 'prompteur', icon: '📜', title: 'Le prompteur saboté',
+    rule: 'Un mot a été changé dans chaque phrase du prompteur : touchez-le avant de le prononcer en direct.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',

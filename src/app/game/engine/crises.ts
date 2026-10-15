@@ -121,6 +121,12 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Sous un chantier de tramway, une pelleteuse met au jour des milliers de pièces d’or romaines. Le chantier s’arrête net.', 'Des détectoristes rôdent la nuit, des pièces apparaissent sur des sites de vente, la mairie veut relancer les travaux.', 'Les fouilles s’achèvent : musée, vente ou dispersion ?'] },
   algues: { id: 'algues', icon: '🌿', label: 'Les algues vertes', gaugeLabel: 'Plan de reconquête', riskLabel: 'Colère du littoral', months: 6, drift: { gauge: 3, risk: 5 },
     stages: ['Les algues vertes envahissent les plages de la baie ; un joggeur fait un malaise, les plages ferment en plein été.', 'Les agriculteurs se sentent accusés, les hôteliers comptent les annulations, les riverains réclament des comptes.', 'Les premières mesures de l’eau tombent : le plan a-t-il changé quelque chose ?'] },
+  barrage: { id: 'barrage', icon: '🌊', label: 'Le barrage qui fuit', gaugeLabel: 'Sécurisation', riskLabel: 'Panique dans la vallée', months: 4, drift: { gauge: 3, risk: 5 },
+    stages: ['Des fuites inquiétantes au pied d’un grand barrage hydroélectrique : en aval, quarante mille habitants dorment sous des millions de mètres cubes d’eau.', 'Le lac est vidé lentement, les rumeurs de rupture enflent, des familles quittent la vallée d’elles-mêmes.', 'Les experts rendent leur verdict : réparer, reconstruire ou vider pour de bon.'] },
+  aviaire: { id: 'aviaire', icon: '🐔', label: 'La grippe aviaire', gaugeLabel: 'Contrôle sanitaire', riskLabel: 'Colère des éleveurs', months: 5, drift: { gauge: 3, risk: 5 },
+    stages: ['Un foyer de grippe aviaire hautement pathogène dans un élevage du Sud-Ouest : les services vétérinaires bouclent la zone.', 'Les foyers se multiplient, les abattages préventifs aussi ; les éleveurs de canards voient vingt ans de travail disparaître.', 'La vaccination des volailles, enfin possible, change la donne… si elle est financée.'] },
+  skipper: { id: 'skipper', icon: '⛵', label: 'Le skipper disparu', gaugeLabel: 'Recherches', riskLabel: 'Désespoir', months: 3, drift: { gauge: 3, risk: 6 },
+    stages: ['La balise d’une navigatrice française, en tête de la course autour du monde, s’est tue dans les mers du Sud, à trois mille kilomètres de toute côte.', 'Les avions de reconnaissance survolent une mer démontée ; tout le pays guette la moindre nouvelle.', 'Les chances s’amenuisent. Il faut décider : continuer, coûte que coûte, ou arrêter les recherches.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -658,6 +664,33 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         s.popularity = clamp(s.popularity - 3); s.credibility = clamp(s.credibility - 3);
         lose('La marée verte', 'Les algues reviennent chaque été, plus nombreuses. Le littoral ne croit plus aux plans.');
+      }
+      break;
+    case 'barrage':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 4); s.popularity = clamp(s.popularity + 2);
+        win('La vallée rassurée', 'Le barrage est conforté, le lac remonte doucement sous surveillance permanente : les habitants rentrent chez eux.');
+      } else {
+        s.popularity = clamp(s.popularity - 3); s.credibility = clamp(s.credibility - 3);
+        lose('La vallée vidée', 'Faute de confiance, des milliers d’habitants sont partis pour de bon. Le barrage tient, mais la vallée se meurt.');
+      }
+      break;
+    case 'aviaire':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 3); s.popularity = clamp(s.popularity + 1);
+        win('L’épizootie enrayée', 'Vaccination massive, éleveurs indemnisés, plus un seul foyer : la filière repart, et l’Europe copie le modèle.');
+      } else {
+        s.popularity = clamp(s.popularity - 3); s.credibility = clamp(s.credibility - 2);
+        lose('Les élevages ruinés', 'Des millions de volailles abattues, des éleveurs qui jettent l’éponge : la filière met des années à s’en remettre.');
+      }
+      break;
+    case 'skipper':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5); p.renown = (p.renown ?? 0) + 20;
+        win('Retrouvée vivante', 'Un cargo la repère, accrochée à son radeau de survie après onze jours en mer. Le pays tout entier pleure de joie.');
+      } else {
+        s.popularity = clamp(s.popularity - 1);
+        lose('La mer a gardé son secret', 'Les recherches sont arrêtées. Un hommage national lui est rendu, et son nom sera donné à une promotion de l’École navale.');
       }
       break;
     case 'tempete_solaire':

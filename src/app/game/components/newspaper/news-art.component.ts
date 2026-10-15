@@ -302,6 +302,112 @@ type Bust = [number, number, number, number];
           <rect x="0" y="140" width="320" height="60" [attr.fill]="'url(#' + id('floor') + ')'" />
           @for (b of officers; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" /> <rect [attr.x]="b[0] - b[2] * 14" [attr.y]="b[1] + b[2] * 14" [attr.width]="b[2] * 22" [attr.height]="b[2] * 30" rx="4" [attr.fill]="p().k3" opacity=".35" [attr.stroke]="p().k4" stroke-width="1" /> }
         }
+        @case ('mer') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <circle cx="220" cy="78" r="30" [attr.fill]="p().k4" [attr.filter]="'url(#' + id('soft') + ')'" />
+          <path d="M0 96 H320 V140 H0Z" [attr.fill]="p().k2" />
+          @for (r of waves; track $index) { <path [attr.d]="'M' + r[0] + ' ' + r[1] + ' q' + r[2] / 4 + ' -3 ' + r[2] / 2 + ' 0 t' + r[2] / 2 + ' 0'" [attr.stroke]="p().k4" stroke-width="1.2" fill="none" [attr.opacity]="r[3]" /> }
+          <path d="M0 136 Q80 128 160 134 T320 130 V200 H0Z" [attr.fill]="p().k3" />
+          <path d="M0 150 Q100 140 200 150 T320 146 V200 H0Z" [attr.fill]="p().k2" opacity=".5" />
+          <g [attr.filter]="'url(#' + id('mid') + ')'">@for (b of beachgoers; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" [attr.opacity]="b[3]" /> }</g>
+          <path d="M70 170 L76 108" [attr.stroke]="p().k0" stroke-width="2" /><path d="M46 112 Q76 86 106 112Z" [attr.fill]="accent()" opacity=".85" />
+        }
+        @case ('montagne') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'">
+            <path d="M0 120 L60 50 L110 100 L170 30 L240 104 L290 60 L320 90 V140 H0Z" [attr.fill]="p().k2" />
+            <path d="M48 64 L60 50 L74 66 L64 62Z M156 46 L170 30 L186 48 L172 42Z M280 70 L290 60 L300 72Z" [attr.fill]="p().k4" />
+          </g>
+          <g [attr.filter]="'url(#' + id('mid') + ')'"><path d="M0 150 L80 96 L150 140 L230 90 L320 140 V200 H0Z" [attr.fill]="p().k1" /></g>
+          <path d="M0 170 Q160 150 320 172 V200 H0Z" [attr.fill]="p().k4" opacity=".85" />
+          @for (t of pines; track $index) { <path [attr.d]="'M' + t[0] + ' ' + (t[1] - t[2] * 3) + ' l' + t[2] + ' ' + t[2] * 3 + ' h-' + t[2] * 2 + 'z'" [attr.fill]="p().k0" /> }
+          <path d="M210 150 L232 136 L254 150 V172 H210Z" [attr.fill]="p().k0" /><rect x="226" y="158" width="10" height="10" [attr.fill]="night() ? '#f3d58a' : p().k3" />
+        }
+        @case ('pont') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'"><path d="M0 110 Q80 84 160 100 T320 92 V150 H0Z" [attr.fill]="p().k2" /></g>
+          <path d="M0 150 H320 V200 H0Z" [attr.fill]="p().k1" />
+          @for (r of [0, 1, 2]; track r) { <path [attr.d]="'M0 ' + (162 + r * 12) + ' q40 -3 80 0 t80 0 t80 0 t80 0'" [attr.stroke]="p().k3" stroke-width="1" fill="none" opacity=".35" /> }
+          <rect x="0" y="70" width="320" height="10" [attr.fill]="p().k0" />
+          @for (x of piers; track x) { <path [attr.d]="'M' + (x - 7) + ' 80 L' + (x - 10) + ' 156 L' + (x + 10) + ' 156 L' + (x + 7) + ' 80Z'" [attr.fill]="p().k0" /> <path [attr.d]="'M' + (x + 10) + ' 82 Q' + (x + 40) + ' 116 ' + (x + 70) + ' 82'" [attr.stroke]="p().k0" stroke-width="2" fill="none" opacity=".6" /> }
+          <path d="M150 70 l6 10 l-4 4 l7 10" [attr.stroke]="accent()" stroke-width="2.2" fill="none" />
+          @for (k of [30, 96, 230]; track k) { <rect [attr.x]="k" y="62" width="18" height="8" rx="2" [attr.fill]="p().k1" /> }
+        }
+        @case ('musee') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('wall') + ')'" />
+          @for (f of frames; track $index) { <rect [attr.x]="f[0]" [attr.y]="f[1]" [attr.width]="f[2]" [attr.height]="f[3]" [attr.fill]="$index === 1 && tone() === 'negative' ? p().k1 : p().k2" [attr.stroke]="p().k3" stroke-width="4" />
+            @if (!($index === 1 && tone() === 'negative')) { <path [attr.d]="'M' + (f[0] + 6) + ' ' + (f[1] + f[3] - 8) + ' l' + f[2] * .3 + ' -' + f[3] * .4 + ' l' + f[2] * .25 + ' ' + f[3] * .2 + ' l' + (f[2] * .45 - 12) + ' ' + f[3] * .2" [attr.stroke]="p().k4" stroke-width="2" fill="none" opacity=".6" /> }
+            <circle [attr.cx]="f[0] + f[2] / 2" [attr.cy]="f[1] - 14" r="16" [attr.fill]="'url(#' + id('glow') + ')'" opacity=".5" /> }
+          <rect x="0" y="150" width="320" height="50" [attr.fill]="'url(#' + id('floor') + ')'" />
+          <rect x="120" y="150" width="80" height="10" [attr.fill]="p().k0" /><rect x="126" y="160" width="4" height="12" [attr.fill]="p().k0" /><rect x="190" y="160" width="4" height="12" [attr.fill]="p().k0" />
+          <path [attr.d]="bust([60, 120, 2, 1])" [attr.fill]="p().k0" /><path [attr.d]="bust([270, 126, 1.8, .95])" [attr.fill]="p().k0" />
+        }
+        @case ('marche') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'"><rect x="0" y="40" width="320" height="70" [attr.fill]="p().k2" />@for (w of [20, 70, 120, 170, 220, 270]; track w) { <rect [attr.x]="w" y="52" width="22" height="30" [attr.fill]="p().k1" /> }</g>
+          @for (st of stalls; track $index) {
+            @for (k of [0, 1, 2, 3, 4]; track k) { <path [attr.d]="'M' + (st + k * 16) + ' 96 L' + (st + k * 16 + 16) + ' 96 L' + (st + k * 16 + 18) + ' 114 L' + (st + k * 16 - 2) + ' 114Z'" [attr.fill]="k % 2 ? p().k4 : accent()" opacity=".85" /> }
+            <rect [attr.x]="st" y="130" width="80" height="22" [attr.fill]="p().k1" />
+            @for (k of [0, 1, 2, 3, 4, 5, 6]; track k) { <circle [attr.cx]="st + 6 + k * 11" cy="128" r="5" [attr.fill]="k % 3 ? p().k3 : p().k4" /> }
+          }
+          <rect x="0" y="152" width="320" height="48" [attr.fill]="'url(#' + id('floor') + ')'" />
+          @for (b of shoppers; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" [attr.opacity]="b[3]" /> }
+        }
+        @case ('route') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'"><path d="M0 100 Q100 88 200 98 T320 94 V110 H0Z" [attr.fill]="p().k2" /></g>
+          <path d="M150 100 L170 100 L320 200 L0 200Z" [attr.fill]="p().k1" />
+          @for (k of [0, 1, 2, 3, 4]; track k) { <path [attr.d]="'M' + (160) + ' ' + (106 + k * k * 4) + ' L160 ' + (110 + k * k * 4 + k * 3)" [attr.stroke]="p().k4" [attr.stroke-width]="1 + k" opacity=".7" /> }
+          <rect x="60" y="56" width="200" height="6" [attr.fill]="p().k0" /><rect x="60" y="62" width="4" height="60" [attr.fill]="p().k0" /><rect x="256" y="62" width="4" height="60" [attr.fill]="p().k0" />
+          <rect x="90" y="40" width="60" height="18" [attr.fill]="accent()" opacity=".85" /><rect x="170" y="40" width="60" height="18" [attr.fill]="p().k1" />
+          @for (cr of jam; track $index) { <rect [attr.x]="cr[0]" [attr.y]="cr[1]" [attr.width]="cr[2]" [attr.height]="cr[2] * .55" rx="3" [attr.fill]="p().k0" /> <circle [attr.cx]="cr[0] + cr[2] * .15" [attr.cy]="cr[1] + cr[2] * .35" [attr.r]="cr[2] * .07" fill="#e53935" [attr.opacity]="night() ? .95 : .6" /> <circle [attr.cx]="cr[0] + cr[2] * .85" [attr.cy]="cr[1] + cr[2] * .35" [attr.r]="cr[2] * .07" fill="#e53935" [attr.opacity]="night() ? .95 : .6" /> }
+        }
+        @case ('concert') {
+          <rect width="320" height="200" [attr.fill]="p().k0" />
+          @for (bm of beams; track $index) { <path [attr.d]="'M' + bm[0] + ' 0 L' + (bm[1] - 22) + ' 112 L' + (bm[1] + 22) + ' 112Z'" [attr.fill]="$index % 2 ? p().k4 : accent()" opacity=".2" /> }
+          <circle cx="160" cy="86" r="50" [attr.fill]="'url(#' + id('glow') + ')'" opacity=".3" />
+          <rect x="30" y="112" width="260" height="22" [attr.fill]="p().k1" />
+          <rect x="60" y="88" width="26" height="24" [attr.fill]="p().k1" /><rect x="234" y="88" width="26" height="24" [attr.fill]="p().k1" />
+          <path [attr.d]="bust([160, 78, 1, 1])" [attr.fill]="p().k3" /><rect x="152" y="96" width="16" height="16" [attr.fill]="p().k3" />
+          <path d="M168 112 L172 84" [attr.stroke]="p().k2" stroke-width="1.5" /><circle cx="172" cy="83" r="2.2" [attr.fill]="p().k2" />
+          <path d="M0 150 Q160 136 320 150 V200 H0Z" [attr.fill]="p().k0" />
+          <g [attr.filter]="'url(#' + id('mid') + ')'">@for (h of fans; track $index) { <circle [attr.cx]="h[0]" [attr.cy]="h[1]" [attr.r]="h[2]" [attr.fill]="p().k1" /> @if ($index % 4 === 0) { <path [attr.d]="'M' + h[0] + ' ' + h[1] + ' l' + ($index % 8 ? 6 : -6) + ' -24'" [attr.stroke]="p().k1" stroke-width="4" stroke-linecap="round" /> } }</g>
+          @for (b of [[50, 186, 2, 1], [140, 190, 2.2, 1], [250, 186, 2.1, 1]]; track $index) { <path [attr.d]="bust($any(b))" [attr.fill]="p().k0" /> }
+        }
+        @case ('espace') {
+          <rect width="320" height="200" [attr.fill]="p().k0" />
+          @for (st of stars; track $index) { <circle [attr.cx]="st[0]" [attr.cy]="st[1] * 1.6" [attr.r]="st[2]" fill="#fff" opacity=".75" /> }
+          <path d="M0 170 H320 V200 H0Z" [attr.fill]="p().k1" />
+          <path d="M196 170 V40 M210 170 V40 M196 60 H210 M196 90 H210 M196 120 H210 M196 150 H210 M196 60 L210 90 M196 90 L210 120 M196 120 L210 150" [attr.stroke]="p().k2" stroke-width="2" />
+          <path d="M150 54 Q160 20 170 54 V140 H150Z" [attr.fill]="p().k4" /><rect x="150" y="80" width="20" height="6" [attr.fill]="accent()" />
+          <path d="M150 120 L138 146 L150 140Z M170 120 L182 146 L170 140Z" [attr.fill]="p().k3" />
+          <circle cx="160" cy="160" r="40" [attr.fill]="'url(#' + id('glow') + ')'" />
+          <g [attr.filter]="'url(#' + id('soft') + ')'">@for (sm of smoke; track $index) { <circle [attr.cx]="sm[0]" cy="172" [attr.r]="sm[1]" [attr.fill]="p().k3" opacity=".7" /> }</g>
+        }
+        @case ('chantier') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'">
+            @for (fl of [0, 1, 2, 3]; track fl) { <rect x="150" [attr.y]="150 - fl * 26" width="130" height="3" [attr.fill]="p().k1" /> }
+            @for (c of [150, 192, 234, 277]; track c) { <rect [attr.x]="c" y="72" width="3" height="80" [attr.fill]="p().k1" /> }
+          </g>
+          <path d="M60 170 V30 M66 170 V30" [attr.stroke]="p().k0" stroke-width="2" />
+          @for (k of lattice; track k) { <path [attr.d]="'M60 ' + (170 - k * 17) + ' L66 ' + (161 - k * 17)" [attr.stroke]="p().k0" stroke-width="1.2" /> }
+          <path d="M30 34 H280 M30 34 L63 22 L280 34" [attr.stroke]="p().k0" stroke-width="3" fill="none" />
+          <path d="M220 34 V84" [attr.stroke]="p().k0" stroke-width="1" /><rect x="210" y="84" width="22" height="12" [attr.fill]="accent()" opacity=".85" />
+          <rect x="0" y="170" width="320" height="30" [attr.fill]="'url(#' + id('floor') + ')'" />
+          @for (k of [0, 1, 2, 3, 4, 5, 6, 7]; track k) { <rect [attr.x]="10 + k * 18" y="160" width="9" height="8" [attr.fill]="k % 2 ? p().k4 : accent()" /> }
+          @for (b of workers; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" /> <path [attr.d]="'M' + (b[0] - b[2] * 10) + ' ' + (b[1] - b[2] * 6) + ' q' + (b[2] * 10) + ' ' + (-b[2] * 9) + ' ' + (b[2] * 20) + ' 0z'" fill="#e8b23a" opacity=".9" /> }
+        }
+        @case ('bureau') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('wall') + ')'" />
+          <rect x="110" y="10" width="100" height="120" [attr.fill]="p().k4" opacity=".75" /><path d="M160 10 V130 M110 50 H210 M110 90 H210" [attr.stroke]="p().k2" stroke-width="3" />
+          <path d="M96 0 Q112 70 100 140 L90 140 Q96 70 86 0Z M224 0 Q208 70 220 140 L230 140 Q224 70 234 0Z" [attr.fill]="p().k1" />
+          <rect x="0" y="0" width="320" height="8" [attr.fill]="p().k3" opacity=".6" />
+          <g [attr.filter]="'url(#' + id('mid') + ')'"><path d="M40 30 V140" [attr.stroke]="p().k0" stroke-width="2" /><path d="M42 32 h22 v34 h-22z" [attr.fill]="'#2d4b78'" opacity=".85" /><path d="M64 32 h22 v34 h-22z" [attr.fill]="p().k4" /><path d="M86 32 h22 v34 h-22z" [attr.fill]="'#9e2a22'" opacity=".85" /></g>
+          <path [attr.d]="bust([160, 112, 2, 1])" [attr.fill]="p().k0" />
+          <path d="M60 150 H260 L276 200 H44Z" [attr.fill]="p().k1" /><rect x="60" y="144" width="200" height="8" [attr.fill]="p().k2" />
+          <rect x="190" y="136" width="30" height="8" [attr.fill]="p().k4" opacity=".8" /><circle cx="110" cy="138" r="6" [attr.fill]="p().k3" />
+        }
         @default {
           <rect width="320" height="200" [attr.fill]="'url(#' + id('wall') + ')'" />
           <g [attr.filter]="'url(#' + id('far') + ')'">
@@ -350,7 +456,7 @@ export class NewsArtComponent {
   protected readonly label = computed(() => `Photo : ${this.theme()}`);
   /** Variantes : la même scène, cadrée autrement (miroir) ou de nuit */
   protected readonly mirror = computed(() => this.seedNum() % 2 === 1 && this.theme() !== 'loupe');
-  protected readonly outdoor = computed(() => ['foule', 'monument', 'nature', 'couronne', 'drapeau', 'ville', 'port', 'stade', 'ferme', 'aeroport'].includes(this.theme()));
+  protected readonly outdoor = computed(() => ['foule', 'monument', 'nature', 'couronne', 'drapeau', 'ville', 'port', 'stade', 'ferme', 'aeroport', 'mer', 'montagne', 'pont', 'marche', 'route', 'chantier'].includes(this.theme()));
   protected readonly night = computed(() => this.outdoor() && this.seedNum() % 3 === 0);
   protected id(name: string) { return `${name}-${this.seed()}`; }
 
@@ -419,5 +525,16 @@ export class NewsArtComponent {
   protected readonly arches = [0, 80, 160, 240];
   protected readonly travelers: Bust[] = [[40, 150, 1.8, 1], [96, 140, 1.3, .9], [240, 146, 1.5, .95], [292, 152, 1.9, 1]];
   protected readonly officers: Bust[] = [[70, 128, 1.4, 1], [130, 124, 1.5, 1], [190, 124, 1.5, 1], [250, 128, 1.4, 1]];
+  protected readonly waves = Array.from({ length: 12 }, (_, i) => [(i * 71) % 300, 102 + (i % 4) * 9, 30 + (i % 3) * 14, .25 + (i % 3) * .15]);
+  protected readonly beachgoers: Bust[] = [[150, 140, .8, .8], [196, 138, .7, .7], [250, 142, .85, .8]];
+  protected readonly pines: [number, number, number][] = [[20, 176, 7], [36, 182, 9], [282, 178, 8], [300, 184, 10], [120, 168, 5]];
+  protected readonly piers = [40, 110, 180, 250];
+  protected readonly frames: [number, number, number, number][] = [[24, 40, 70, 54], [124, 30, 72, 90], [226, 44, 70, 52]];
+  protected readonly stalls = [10, 120, 230];
+  protected readonly shoppers: Bust[] = [[40, 168, 1.6, 1], [150, 172, 1.8, 1], [262, 166, 1.5, .95]];
+  protected readonly jam: [number, number, number][] = [[146, 118, 14], [170, 122, 16], [120, 134, 22], [176, 140, 24], [90, 160, 34], [190, 166, 38]];
+  protected readonly beams = [[40, 110], [100, 150], [220, 170], [280, 210]];
+  protected readonly fans: [number, number, number][] = Array.from({ length: 28 }, (_, i) => [6 + (i * 23) % 316, 148 + (i % 3) * 8, 6 + (i % 3) * 1.5]);
+  protected readonly smoke: [number, number][] = [[110, 18], [140, 24], [180, 26], [212, 20], [240, 14]];
   protected readonly pressRow: Bust[] = [[30, 170, 1.6, 1], [86, 176, 1.7, 1], [236, 174, 1.7, 1], [292, 170, 1.6, 1]];
 }
