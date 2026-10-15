@@ -50,7 +50,8 @@ import { GameStateService } from '../../services/game-state.service';
           <p>{{ label(r.type) }} : {{ r.result!.winnerId === 'player' ? 'victoire' : 'défaite' }}
             ({{ (r.result!.secondRound ?? r.result!.firstRound)['player'] | number: '1.0-1' }} %).</p>
         }
-        <p class="muted">Aucun scrutin programmé. Remplissez les conditions du prochain palier pour obtenir l’investiture. La présidentielle, elle, suit son calendrier : tous les cinq ans.</p>
+        @if (game.s().kingdom) { <p class="muted">Aucun scrutin à l’horizon : sous la Couronne, le trône ne se remet pas en jeu. Seules les législatives rythment encore la vie du royaume.</p> }
+        @else { <p class="muted">Aucun scrutin programmé. Remplissez les conditions du prochain palier pour obtenir l’investiture. La présidentielle, elle, suit son calendrier : tous les cinq ans.</p> }
       }
     </section>
   `,

@@ -1,3 +1,4 @@
+import { RoyalPipe } from '../shared/royal.pipe';
 import { DecimalPipe } from '@angular/common';
 import { TraitsComponent } from '../traits/traits.component';
 import { traitProgress } from '../../engine/traits';
@@ -26,7 +27,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
 /** Profil, jauges, finances, prochain palier, dossiers & arbre de compétences */
 @Component({
   selector: 'app-profile-panel',
-  imports: [DecimalPipe, TraitsComponent, LifestyleModalComponent],
+  imports: [DecimalPipe, TraitsComponent, LifestyleModalComponent, RoyalPipe],
   template: `
     <section class="card">
       <div class="eyebrow">{{ game.s().party.name }}</div>
@@ -96,7 +97,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
         <ul class="pay-lines">
           @for (l of r.lines; track l.label) {
             <li [class.off]="!l.amount">
-              <span class="lbl">{{ l.label }}@if (l.note) { <small class="muted">{{ l.note }}</small> }
+              <span class="lbl">{{ l.label | royal: game.kingFem() }}@if (l.note) { <small class="muted">{{ l.note }}</small> }
                 @if (l.edit) { <button type="button" class="link-btn" (click)="openEdit(l.edit)">Fixer mon salaire</button> }</span>
               <span class="mono">{{ l.amount ? (l.amount | number: '1.0-0') + ' €' : '—' }}</span>
             </li>
@@ -104,7 +105,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
               <li class="editor">
                 @let chk = payCheck(l.edit);
                 <label>
-                  <span>{{ l.edit === 'party' ? 'Salaire de chef·fe de parti' : 'Traitement présidentiel' }} : <b class="mono">{{ draft() > 0 ? '+' : '' }}{{ draft() }} %</b></span>
+                  <span>{{ l.edit === 'party' ? 'Salaire de chef·fe de parti' : (game.s().kingdom ? 'Liste civile' : 'Traitement présidentiel') }} : <b class="mono">{{ draft() > 0 ? '+' : '' }}{{ draft() }} %</b></span>
                   <input type="range" [min]="limits[l.edit].min" [max]="limits[l.edit].max" step="10" [value]="draft()" (input)="draft.set($any($event.target).valueAsNumber)" [disabled]="!chk.ok" />
                 </label>
                 <small class="muted">{{ chk.ok ? preview(l.edit) : chk.reason }}</small>

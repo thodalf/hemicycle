@@ -69,7 +69,7 @@
       <nav class="tabs" role="tablist">
         @for (c of categories(); track c[0]) {
           <button role="tab" [class.active]="category() === c[0]" [attr.aria-selected]="category() === c[0]" [attr.data-cat]="c[0]"
-                  (click)="category.set(c[0])">{{ c[1] }}</button>
+                  (click)="category.set(c[0])">{{ c[1] | royal: game.kingFem() }}</button>
         }
       </nav>
 
@@ -84,7 +84,7 @@
                   <strong>{{ p.def.label }}</strong>
                   @if (p.def.risk) { <span class="chip warn">risque</span> }
                 </div>
-                <p class="muted">{{ p.def.description }}</p>
+                <p class="muted">{{ p.def.description | royal: game.kingFem() }}</p>
                 <div class="costs mono">
                   <span class="cost ap">{{ p.duration }}</span>
                   <span class="cost" [class.heavy]="p.big">{{ p.load }}</span>
@@ -114,11 +114,11 @@
           <li class="action" [class.disabled]="!av.ok">
             <div class="action-main">
               <div class="action-title">
-                <strong>{{ a.label }}</strong>
+                <strong>{{ a.label | royal: game.kingFem() }}</strong>
                 @if (a.risk) { <span class="chip warn" [title]="failText(a)">risque</span> }
                 @if (a.minigame) { <span class="chip accent game-chip" title="Les gains dépendent de votre score au mini-jeu (joué en début de mois prochain). Vous pouvez aussi laisser faire l’équipe.">🎮 mini-jeu</span> }
               </div>
-              <p class="muted">{{ a.description }}</p>
+              <p class="muted">{{ a.description | royal: game.kingFem() }}</p>
               <div class="costs mono">
                 <span class="cost ap">{{ a.cost.ap }} PA</span>
                 @if (a.cost.energy) { <span class="cost">⚡ {{ a.cost.energy }}</span> }
@@ -171,7 +171,7 @@
             @for (a of lockedActions(); track a.id) {
               <li class="action locked">
                 <div class="action-main">
-                  <strong>{{ a.label }}</strong>
+                  <strong>{{ a.label | royal: game.kingFem() }}</strong>
                   <p class="muted">Se débloque au rang {{ rankLabel(a) }}.</p>
                 </div>
               </li>
@@ -197,7 +197,7 @@
           <li>
             <span class="mono ap-tag">{{ info.ap }}</span>
             <span class="plan-label">
-              {{ info.label }}
+              {{ info.label | royal: game.kingFem() }}
               @if (info.target) { <small class="muted">→ {{ info.target }}</small> }
               @if (info.party) { <small class="party-tag">payé par le parti</small> }
             </span>

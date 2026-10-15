@@ -1,6 +1,8 @@
+import { choiceGame } from '../../data/decision-games';
+import { RoyalPipe } from '../shared/royal.pipe';
 import { LinkedTextComponent } from '../person-link/person-link.component';
 import { Component, computed, inject } from '@angular/core';
-import { DOMAIN_LABELS, Decision } from '../../models/game.models';
+import { DOMAIN_LABELS, Decision, DecisionChoice } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { TurnService } from '../../services/turn.service';
 import { FxService, toneOfSummary } from '../../services/fx.service';
@@ -17,7 +19,7 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
  */
 @Component({
   selector: 'app-decision-panel',
-  imports: [LinkedTextComponent, EmblemComponent],
+  imports: [LinkedTextComponent, EmblemComponent, RoyalPipe],
   template: `
     @if (turn.lastOutcome(); as o) {
       <div class="outcome" [class.bad]="o.tone === 'negative'" role="status">
@@ -27,8 +29,8 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
         </svg>
         <div class="o-text">
           <div class="eyebrow">{{ o.title }}</div>
-          <strong>{{ o.text }}</strong>
-          @if (o.summary.length) { <div class="summary">{{ o.summary.join(' · ') }}</div> }
+          <strong>{{ o.text | royal: game.kingFem() }}</strong>
+          @if (o.summary.length) { <div class="summary">{{ o.summary.join(' · ') | royal: game.kingFem() }}</div> }
         </div>
         <button class="btn small" (click)="turn.lastOutcome.set(null)">OK</button>
       </div>
@@ -47,15 +49,16 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
             <span class="chip">Avant {{ game.month(d.deadlineWeek) }}</span>
           }
         </header>
-        <h3>{{ d.title }}</h3>
-        <p class="context"><app-linked-text [text]="d.context" /></p>
+        <h3>{{ d.title | royal: game.kingFem() }}</h3>
+        <p class="context"><app-linked-text [text]="d.context | royal: game.kingFem()" /></p>
         <div class="choices">
           @for (c of d.choices; track c.id) {
             @let available = turn.isChoiceAvailable(d, c);
             @let chance = turn.successChance(d, c);
             <button class="choice" [disabled]="!available" (click)="choose($event, d.id, c.id)">
-              <span class="choice-label">{{ c.label }}</span>
-              @if (c.hint) { <span class="choice-hint">{{ c.hint }}</span> }
+              <span class="choice-label">{{ c.label | royal: game.kingFem() }}</span>
+              @if (c.hint) { <span class="choice-hint">{{ c.hint | royal: game.kingFem() }}</span> }
+              @if (playOf(d, c); as g) { <span class="choice-play" [title]="g.rule">🎮 Se joue : {{ g.title }}</span> }
               <span class="choice-meta">
                 @if (isGame(c)) {
                   <span class="chip accent">🎮 À vous de jouer</span>
@@ -79,6 +82,7 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
     }
   `,
   styles: `
+    .choice-play { display: inline-flex; align-items: center; gap: 4px; width: fit-content; margin-top: 3px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); }
     :host { display: grid; gap: 12px; }
     .outcome {
       display: flex; gap: 12px; align-items: center; animation: outcome-in .45s cubic-bezier(.2,.9,.3,1.3) both;
@@ -124,6 +128,8 @@ export class DecisionPanelComponent {
   protected isGame(c: { effects: { kind: string }[] }): boolean { return c.effects.some(e => e.kind === 'minigame'); }
 
   protected readonly game = inject(GameStateService);
+  /** Le mini-jeu que lance ce choix */
+  protected playOf(d: Decision, c: DecisionChoice) { return choiceGame(d, c); }
   protected readonly turn = inject(TurnService);
   private readonly fx = inject(FxService);
 

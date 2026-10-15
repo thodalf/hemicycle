@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Decision, DecisionChoice, Effect, GameState, STAT_LABELS, StatKey, Tone } from '../models/game.models';
 import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } from '../engine/effects';
+import { choiceGame } from '../data/decision-games';
 import { retire, settleEndings, weeklyLife } from '../engine/life';
 import { weeklyGovernment } from '../engine/government';
 import { weeklyIntl } from '../engine/intl';
@@ -335,8 +336,12 @@ export class TurnService {
       const ctx = { domain: decision.domain, targetId: decision.targetId, reason: decision.title };
       d.pendingDecisions = d.pendingDecisions.filter(x => x.id !== decisionId);
       const failed = rollRisk(d, choice.risk, ctx, rng);
-      const summary = applyEffects(d, failed ? choice.risk!.onFailure : choice.effects, ctx, rng);
-      const text = failed ? choice.risk!.failureNews ?? 'Ça tourne mal.' : choice.outcome ?? 'C’est fait.';
+      // Certains choix se jouent : le mini-jeu décide de l'ampleur des effets
+      const game = failed ? null : choiceGame(decision, choice);
+      const effects: Effect[] = failed ? choice.risk!.onFailure
+        : game ? [{ kind: 'minigame', gameId: game.id, reward: choice.effects, title: `${game.title} · ${choice.label}` }] : choice.effects;
+      const summary = applyEffects(d, effects, ctx, rng);
+      const text = failed ? choice.risk!.failureNews ?? 'Ça tourne mal.' : game ? `${choice.outcome ?? 'C’est parti.'} À vous de jouer : ${game.title.toLowerCase()}.` : choice.outcome ?? 'C’est fait.';
       const tone: Tone = failed ? 'negative' : 'positive';
       pushNews(d, 'decision', tone, `${decision.title} — ${choice.label}`, text);
       refreshObjectives(d, rng);

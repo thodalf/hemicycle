@@ -1,5 +1,5 @@
 import { ContactType, Effect, GameState, PhoneMessage, PhoneReply, PhoneState, StaffRole } from '../models/game.models';
-import { highOffice, honorific, inPower, office, seat } from './office';
+import { highOffice, honorific, inPower, office, royal, seat } from './office';
 import { STAFF_BY_ROLE, STAFF_ICONS } from '../data/staff';
 import { RANKS } from '../data/ranks';
 import { DOMAINS } from '../models/game.models';
@@ -301,6 +301,12 @@ export function callOptions(d: GameState, key: string): CallOption[] {
 export function addMessage(d: GameState, m: Omit<PhoneMessage, 'id' | 'week'>): PhoneMessage {
   const ph = phone(d);
   const msg: PhoneMessage = { id: nextId(d, 'tel'), week: d.week, ...m };
+  // Sous la Couronne, on parle au souverain, pas au président
+  if (d.kingdom) {
+    msg.text = royal(d, msg.text);
+    msg.role = royal(d, msg.role);
+    if (msg.replies) msg.replies = msg.replies.map(r => ({ ...r, label: royal(d, r.label), ...(r.answer ? { answer: royal(d, r.answer) } : {}) }));
+  }
   ph.messages.unshift(msg);
   if (ph.messages.length > MAX_MESSAGES) ph.messages.length = MAX_MESSAGES;
   return msg;

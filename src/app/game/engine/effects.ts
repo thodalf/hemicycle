@@ -10,6 +10,7 @@ import {
   STAT_LABELS, StatKey, Tone,
 } from '../models/game.models';
 import { RANKS } from '../data/ranks';
+import { royal } from './office';
 import { createDecision } from '../data/decisions';
 import { createDebate } from './debate';
 import { createProtest } from './protest';
@@ -55,7 +56,7 @@ import { adjustQuote } from './legacy';
  * ============================================================ */
 
 export function pushNews(d: GameState, kind: NewsKind, tone: Tone, title: string, body?: string): void {
-  d.news.unshift({ id: nextId(d, 'news'), week: d.week, kind, tone, title, body });
+  d.news.unshift({ id: nextId(d, 'news'), week: d.week, kind, tone, title: royal(d, title), body: body && royal(d, body) });
   if (d.news.length > 150) d.news.length = 150;
   if (kind === 'scandale' && tone === 'negative') d.player.flags['scandals'] = Number(d.player.flags['scandals'] ?? 0) + 1;
 }

@@ -781,6 +781,39 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'drones_gate', weight: 0.3, minRank: 'conseiller_municipal', eligible: d => !d.crises?.drones && !d.player.flags['dronesDone'] && d.week > 18,
+    build: () => ({
+      title: 'Des drones au-dessus des centrales',
+      context: 'Cette nuit, des drones non identifiés ont survolé trois centrales nucléaires. Les militaires n’ont rien pu faire. La presse est déjà au courant.',
+      choices: [
+        c('transparence', 'Tout dire : ce qu’on sait, et ce qu’on ignore', [cr('drones', 5, 4, true), { kind: 'flag', key: 'dronesDone', value: true }, s('credibility', 2)], 'La conférence de presse est sobre. Les questions, elles, pleuvent.'),
+        c('minimiser', 'Minimiser : « des amateurs, sans doute »', [cr('drones', 3, 6, true), { kind: 'flag', key: 'dronesDone', value: true }], 'Le soir même, des drones survolent une base aérienne.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cyclone_gate', weight: 0.3, minRank: 'conseiller_municipal', eligible: d => !d.crises?.cyclone && !d.player.flags['cycloneDone'] && d.week > 14,
+    build: () => ({
+      title: 'Un cyclone sur la Guadeloupe',
+      context: 'Le cyclone est passé cette nuit. Les premières images montrent des quartiers entiers sans toit. Le préfet réclame des renforts.',
+      choices: [
+        c('partir', 'Partir sur place dès ce soir', [cr('cyclone', 6, 3, true), { kind: 'flag', key: 'cycloneDone', value: true }, s('energy', -6), s('popularity', 1)], 'Vous atterrissez à Pointe-à-Pitre au petit matin, avec les premiers renforts.'),
+        c('pilotage', 'Piloter les secours depuis Paris', [cr('cyclone', 4, 6, true), { kind: 'flag', key: 'cycloneDone', value: true }], 'La cellule de crise tourne jour et nuit. Sur place, on attend de vous voir.'),
+      ],
+    }),
+  },
+  {
+    tag: 'lithium_gate', weight: 0.3, minRank: 'depute', eligible: d => !d.crises?.lithium && !d.player.flags['lithiumDone'] && d.week > 26,
+    build: () => ({
+      title: 'Un trésor sous l’Alsace',
+      context: 'Le Bureau de recherches géologiques confirme un gisement de lithium parmi les plus grands d’Europe. Trois industriels demandent déjà des permis.',
+      choices: [
+        c('national', 'Un grand projet national, avec un débat public', [cr('lithium', 6, 3, true), { kind: 'flag', key: 'lithiumDone', value: true }, { kind: 'dossier', domain: 'economie', delta: 2 }], 'Le débat public s’ouvre à Strasbourg. La salle est comble.'),
+        c('vite', 'Accorder les permis au plus vite', [cr('lithium', 5, 6, true), { kind: 'flag', key: 'lithiumDone', value: true }, { kind: 'segment', segment: 'cadres', delta: 2 }], 'Les industriels applaudissent. Les riverains découvrent l’affaire dans le journal.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -2097,6 +2130,72 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('derouter', 'La dérouter : on ne laisse personne en mer', [cr('skipper', 6, -2), { kind: 'economy', deficit: 0.005 }], 'La frégate met le cap au sud, à pleine vitesse.'),
         c('allies', 'Demander l’aide des marines alliées plus proches', [cr('skipper', 4, 1), { kind: 'intl', prestige: 1 }], 'L’Australie envoie un avion. Le monde entier cherche avec vous.'),
+      ],
+    }),
+  },
+  {
+    tag: 'drones_complot', weight: 1, eligible: d => !!d.crises?.drones,
+    build: () => ({
+      title: '« Les drones sont extraterrestres »',
+      context: 'Une vidéo virale affirme que les drones sont d’origine extraterrestre et que l’État le cache. Vingt millions de vues en deux jours.',
+      choices: [
+        { ...c('verifier', 'Répondre point par point en direct', [cr('drones', 2, -5), s('credibility', 1)], 'Les arguments sont imparables. Ou presque.'), play: 'factcheck_direct' },
+        c('ignorer', 'Ne pas nourrir le complot', [cr('drones', 1, 4)], 'La vidéo atteint cinquante millions de vues.'),
+      ],
+    }),
+  },
+  {
+    tag: 'drones_brouilleurs', weight: 0.9, eligible: d => !!d.crises?.drones,
+    build: () => ({
+      title: 'Des brouilleurs anti-drones',
+      context: 'L’armée propose d’installer des brouilleurs autour de tous les sites sensibles. Les opérateurs mobiles préviennent : cela coupera aussi les téléphones des riverains.',
+      choices: [
+        c('installer', 'Installer les brouilleurs', [cr('drones', 6, 2), { kind: 'economy', deficit: 0.01 }], 'Les survols cessent autour des centrales. Les riverains n’ont plus de réseau.'),
+        c('chasse', 'Former des unités de chasse aux drones', [cr('drones', 4, -2), s('politicalCapital', -3)], 'Les premières unités sont opérationnelles en un mois.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cyclone_eau', weight: 1, eligible: d => !!d.crises?.cyclone,
+    build: () => ({
+      title: 'L’eau potable manque',
+      context: 'Dix jours après le cyclone, des communes entières n’ont toujours pas d’eau courante. Des files se forment devant les rares camions-citernes.',
+      choices: [
+        c('pont', 'Un pont aérien de bouteilles et d’unités de potabilisation', [cr('cyclone', 4, -5), { kind: 'economy', deficit: 0.01 }], 'Les avions militaires se succèdent sur la piste de Pointe-à-Pitre.'),
+        c('local', 'Réquisitionner les usines d’embouteillage locales', [cr('cyclone', 3, -2), s('credibility', 1)], 'Les usines tournent jour et nuit.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cyclone_reconstruire', weight: 0.9, eligible: d => !!d.crises?.cyclone,
+    build: () => ({
+      title: 'Reconstruire comment ?',
+      context: 'Le plan de reconstruction doit être chiffré cette semaine. Reconstruire à l’identique coûte moins cher ; reconstruire aux normes anticycloniques coûte deux fois plus.',
+      choices: [
+        { ...c('normes', 'Aux normes anticycloniques, et chiffrer chaque poste', [cr('cyclone', 7, -2), { kind: 'economy', deficit: 0.02 }], 'Un plan sérieux, saisi par la Cour des comptes comme exemple.'), play: 'chiffrage' },
+        c('vite', 'À l’identique, mais vite', [cr('cyclone', 3, 2)], 'Les toits reviennent vite. Le prochain cyclone les arrachera aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'lithium_nappe', weight: 1, eligible: d => !!d.crises?.lithium,
+    build: () => ({
+      title: 'Et la nappe phréatique ?',
+      context: 'La nappe d’Alsace, l’une des plus grandes d’Europe, est juste au-dessus du gisement. Les hydrogéologues sont divisés.',
+      choices: [
+        c('etude', 'Exiger une étude indépendante avant tout forage', [cr('lithium', 3, -5), s('credibility', 1)], 'Un an d’étude : les industriels grincent, les riverains respirent.'),
+        c('confiance', 'Faire confiance aux industriels et à leurs garanties', [cr('lithium', 5, 4)], 'Les garanties tiennent sur trois pages.'),
+      ],
+    }),
+  },
+  {
+    tag: 'lithium_reunion', weight: 0.9, eligible: d => !!d.crises?.lithium,
+    build: () => ({
+      title: 'La réunion publique de Haguenau',
+      context: 'Huit cents personnes vous attendent dans une salle des fêtes prévue pour trois cents. Beaucoup sont venues pour dire non.',
+      choices: [
+        { ...c('convaincre', 'Monter sur l’estrade et convaincre', [cr('lithium', 4, -4), s('popularity', 1)], 'Deux heures de questions, et une salle qui finit par écouter.'), play: 'eloquence' },
+        c('experts', 'Laisser parler les experts', [cr('lithium', 2, 1)], 'Les experts parlent. La salle, elle, a décroché.'),
       ],
     }),
   },

@@ -25,7 +25,7 @@ import { canPush, dropPledge as dropPledgeFn, pledges, pushCost, pushPledge as p
             <span class="chip accent">Règne</span>
           } @else {
             <span class="seal-title"><span class="seal" aria-hidden="true"></span>Palais de l’Élysée</span>
-            <span class="chip accent">{{ pr.mandates > 1 ? 'Second mandat' : 'Premier mandat' }}</span>
+            <span class="chip accent">{{ game.s().kingdom ? 'Règne' : pr.mandates > 1 ? 'Second mandat' : 'Premier mandat' }}</span>
           }
         </div>
         <p class="muted small">Premier ministre : <strong><app-person [name]="pr.primeMinister" /></strong>

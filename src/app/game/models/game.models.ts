@@ -485,6 +485,8 @@ export interface DecisionChoice {
   effects: Effect[];
   risk?: RiskProfile;
   outcome?: string;
+  /** Ce choix se joue : un mini-jeu décide de l'ampleur de ses effets */
+  play?: string;
 }
 
 export interface Decision {
@@ -1603,7 +1605,7 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
-  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours' | 'penurie_essence' | 'capitale_culture' | 'canicule' | 'hacker' | 'barons' | 'grand_debat' | 'tour_eiffel' | 'baleine' | 'mariage_princier' | 'cathedrale' | 'punaises' | 'esport' | 'satellite' | 'casse' | 'vin' | 'nuage' | 'taxis' | 'fusion' | 'viaduc' | 'tresor' | 'algues' | 'barrage' | 'aviaire' | 'skipper';
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours' | 'penurie_essence' | 'capitale_culture' | 'canicule' | 'hacker' | 'barons' | 'grand_debat' | 'tour_eiffel' | 'baleine' | 'mariage_princier' | 'cathedrale' | 'punaises' | 'esport' | 'satellite' | 'casse' | 'vin' | 'nuage' | 'taxis' | 'fusion' | 'viaduc' | 'tresor' | 'algues' | 'barrage' | 'aviaire' | 'skipper' | 'drones' | 'cyclone' | 'lithium';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

@@ -1,3 +1,4 @@
+import { RoyalPipe } from '../shared/royal.pipe';
 import { tierOdds } from '../../engine/outcomes';
 import { ObjectivesPanelComponent } from '../objectives-panel/objectives-panel.component';
 import { DecimalPipe } from '@angular/common';
@@ -58,7 +59,7 @@ import { voteRole } from '../../engine/assembly';
 
 @Component({
   selector: 'app-week-planner',
-  imports: [DecimalPipe, BillComposerComponent, ObjectivesPanelComponent],
+  imports: [DecimalPipe, BillComposerComponent, ObjectivesPanelComponent, RoyalPipe],
   templateUrl: './week-planner.component.html',
   styleUrl: './week-planner.component.scss',
 })

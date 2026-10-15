@@ -68,3 +68,39 @@ export function seat(d: GameState): string {
     default: return 'à la permanence';
   }
 }
+
+/* ── Le vocabulaire du trône ───────────────────────────────── */
+
+/** Sous la Couronne, l'exécutif se dit en termes royaux : président → roi, Élysée → Palais… */
+export function royalize(text: string, fem: boolean): string {
+  if (!text) return text;
+  const roi = fem ? 'reine' : 'roi', Roi = fem ? 'Reine' : 'Roi';
+  const end = '(?![\\wà-ÿ·])(?![\\s\\u00a0]+(?:(?:de|du|des)(?![\\wà-ÿ])|d’|d\'))';
+  const name = '(?:président·e|présidente|président)';
+  const withArt = (art: string) => {
+    const a = art.toLowerCase(), cap = art[0] !== a[0];
+    const out = a === 'au' ? (fem ? 'à la reine' : 'au roi') : a === 'du' ? (fem ? 'de la reine' : 'du roi') : `${fem ? 'la' : 'le'} ${roi}`;
+    return cap ? out[0].toUpperCase() + out.slice(1) : out;
+  };
+  return text
+    .replace(/Monsieur le Président|Madame la Présidente/g, fem ? 'Votre Majesté' : 'Sire')
+    .replace(/présidentielles/g, 'royales').replace(/présidentiels/g, 'royaux')
+    .replace(/(à|À) la présidentielle(?![\wà-ÿ])/g, (_, a: string) => `${a} l’élection`)
+    .replace(/(la|La) présidentielle(?![\wà-ÿ])/g, (_, a: string) => (a === 'La' ? 'L’élection' : 'l’élection'))
+    .replace(/présidentielle/g, 'royale').replace(/présidentiel/g, 'royal').replace(/Présidentielle/g, 'Royale').replace(/Présidentiel/g, 'Royal')
+    .replace(/Présidence de la République/g, 'Maison royale')
+    .replace(/\b(le|la|Le|La|au|du|Au|Du)\s+(?:présidente?|président·e) de la République/g, (_, art: string) => withArt(art))
+    .replace(/(?:présidente?|président·e) de la République/g, roi)
+    .replace(/(?:Présidente?|Président·e) de la République/g, Roi)
+    .replace(new RegExp(`\\b(le|la|Le|La|au|du|Au|Du)\\s+${name}${end}`, 'g'), (_, art: string) => withArt(art))
+    .replace(new RegExp(`président·e${end}`, 'g'), fem ? 'souveraine' : 'souverain')
+    .replace(new RegExp(`Président·e${end}`, 'g'), fem ? 'Souveraine' : 'Souverain')
+    .replace(new RegExp(`(la|La) présidence${end}`, 'g'), (_, a: string) => `${a} Couronne`)
+    .replace(/à l’Élysée/g, 'au Palais').replace(/de l’Élysée/g, 'du Palais').replace(/l’Élysée/g, 'le Palais').replace(/L’Élysée/g, 'Le Palais').replace(/Élysée/g, 'Palais')
+    .replace(/quinquennat/g, 'règne');
+}
+
+/** Le texte tel qu'il doit se lire maintenant (sous la Couronne : en termes royaux) */
+export function royal(d: GameState, text: string): string {
+  return d.kingdom ? royalize(text, d.player.gender === 'femme') : text;
+}

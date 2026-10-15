@@ -1543,6 +1543,94 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'ev_recomptage', weight: 0.3, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Recomptage dans un bureau de vote',
+      context: 'Une élection municipale partielle se joue à trois voix. Le tribunal administratif ordonne un recomptage, et on vous demande d’y assister.',
+      choices: [
+        { ...c('compter', 'Compter vous-même, bulletin par bulletin', [s('credibility', 2), { kind: 'cohesion', delta: 1 }], 'Le procès-verbal porte votre signature.'), play: 'depouillement' },
+        c('observer', 'Observer de loin, sans s’en mêler', [s('credibility', 1)], 'Le recomptage confirme le résultat. On ne vous a pas vu.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_promesse_chiffree', weight: 0.35,
+    build: () => ({
+      title: '« Combien ça coûte ? »',
+      context: 'En direct, un journaliste vous demande de chiffrer votre dernière proposition. Votre conseiller économique est coincé dans un taxi.',
+      choices: [
+        { ...c('chiffrer', 'Chiffrer de tête, en direct', [s('credibility', 3), { kind: 'dossier', domain: 'economie', delta: 1 }], 'Les chiffres tombent, nets et précis.'), play: 'chiffrage' },
+        c('renvoyer', 'Promettre un chiffrage détaillé demain', [s('credibility', -1)], '« Il ne sait pas », titre un site d’info.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_greve_routiers', weight: 0.3,
+    build: () => ({
+      title: 'Les routiers bloquent les dépôts',
+      context: 'Les chauffeurs routiers bloquent les dépôts pétroliers contre la hausse du gazole. Les stations-service commencent à manquer de carburant.',
+      choices: [
+        { ...c('negocier', 'Recevoir les fédérations et négocier', [s('popularity', 1), { kind: 'segment', segment: 'populaires', delta: 1 }, s('politicalCapital', -2)], 'Une baisse temporaire des taxes, et les camions repartent.'), play: 'negociation_syndicale' },
+        c('requisitionner', 'Faire lever les blocages par les forces de l’ordre', [s('credibility', 1), { kind: 'segment', segment: 'populaires', delta: -2 }], 'Les dépôts sont dégagés à l’aube. La colère, elle, reste.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_chat_viral', weight: 0.25,
+    build: () => ({
+      title: 'Un chat star des réseaux',
+      context: 'Un chat roux s’est faufilé dans votre réunion publique et s’est endormi sur le pupitre. La photo a fait le tour d’Internet.',
+      choices: [
+        c('adopter', 'L’adopter : il a choisi son camp', [s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Il a désormais son propre compte. Plus suivi que le vôtre.'),
+        c('proprietaire', 'Retrouver sa propriétaire', [s('popularity', 1)], 'Elle s’appelle Josiane, et elle votera pour vous.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_eboulement_route', weight: 0.25,
+    build: () => ({
+      title: 'Un éboulement coupe une vallée',
+      context: 'Un pan de montagne s’est effondré sur la seule route d’une vallée des Pyrénées. Deux mille habitants sont isolés.',
+      choices: [
+        c('helico', 'Organiser un pont par hélicoptère', [s('popularity', 2), s('politicalCapital', -2), { kind: 'segment', segment: 'ruraux', delta: 2 }], 'Médecins, courses, écoliers : les rotations s’enchaînent.'),
+        c('travaux', 'Accélérer les travaux de déblaiement', [{ kind: 'dossier', domain: 'territoires', delta: 2 }], 'La route rouvre en trois semaines, sur une voie.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_hopital_rouvre', weight: 0.25, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Des urgences fermées la nuit',
+      context: 'Faute de médecins, les urgences d’un hôpital de sous-préfecture fermeront la nuit à partir du mois prochain. Une pétition réunit vingt mille signatures.',
+      choices: [
+        c('medecins', 'Faire venir des médecins volontaires de toute la région', [{ kind: 'dossier', domain: 'sante', delta: 3 }, s('politicalCapital', -3)], 'Les urgences restent ouvertes. Fragiles, mais ouvertes.'),
+        c('regulation', 'Accepter, avec une régulation par le 15', [s('credibility', 1), { kind: 'segment', segment: 'ruraux', delta: -2 }], 'La nuit, il faut désormais appeler avant de venir.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_jo_jeunesse', weight: 0.25,
+    build: () => ({
+      title: 'Le champion du monde du village',
+      context: 'Un jeune de dix-neuf ans, issu d’un village de mille habitants, devient champion du monde de canoë. Le village entier l’attend à la gare.',
+      choices: [
+        c('gare', 'Être à la gare pour l’accueillir', [s('popularity', 2), s('energy', -3), { kind: 'segment', segment: 'jeunes', delta: 1 }], 'Fanfare, banderoles, et un champion ému aux larmes.'),
+        c('message', 'Un message de félicitations', [s('popularity', 1)], 'Il le lit à voix haute devant la foule.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_sommet_ue_nuit', weight: 0.3, eligible: atTop,
+    build: () => ({
+      title: 'Le budget européen se joue cette nuit',
+      context: 'À Bruxelles, la négociation sur le budget européen dure depuis trente heures. Les agriculteurs français jouent gros.',
+      choices: [
+        { ...c('negocier', 'Négocier vous-même jusqu’au bout de la nuit', [{ kind: 'intl', prestige: 2 }, { kind: 'segment', segment: 'ruraux', delta: 2 }, s('energy', -5)], 'À l’aube, la politique agricole est sauvée.'), play: 'sommet_ue' },
+        c('compromis', 'Accepter le compromis sur la table', [s('credibility', 1)], 'Un accord moyen. Personne n’est content, personne n’est furieux.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

@@ -223,6 +223,8 @@ export class GameStateService {
   readonly rank = computed(() => RANKS[this.s().player.rankId]);
   /** Intitulé complet : « Ministre de la Santé », « Premier·e ministre »… */
   readonly roleLabel = computed(() => roleLabel(this.s()));
+  /** Sous la Couronne : true pour une reine, false pour un roi ; null en République (vocabulaire royal) */
+  readonly kingFem = computed(() => (this.s().kingdom ? this.s().player.gender === 'femme' : null));
   readonly funds = computed(() => availableFunds(this.s()));
   readonly partySupport = computed(() => Math.round(partySupport(this.s())));
   /** « mars 2029 » */

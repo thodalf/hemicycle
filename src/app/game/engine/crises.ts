@@ -127,6 +127,12 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Un foyer de grippe aviaire hautement pathogène dans un élevage du Sud-Ouest : les services vétérinaires bouclent la zone.', 'Les foyers se multiplient, les abattages préventifs aussi ; les éleveurs de canards voient vingt ans de travail disparaître.', 'La vaccination des volailles, enfin possible, change la donne… si elle est financée.'] },
   skipper: { id: 'skipper', icon: '⛵', label: 'Le skipper disparu', gaugeLabel: 'Recherches', riskLabel: 'Désespoir', months: 3, drift: { gauge: 3, risk: 6 },
     stages: ['La balise d’une navigatrice française, en tête de la course autour du monde, s’est tue dans les mers du Sud, à trois mille kilomètres de toute côte.', 'Les avions de reconnaissance survolent une mer démontée ; tout le pays guette la moindre nouvelle.', 'Les chances s’amenuisent. Il faut décider : continuer, coûte que coûte, ou arrêter les recherches.'] },
+  drones: { id: 'drones', icon: '🛸', label: 'Les drones mystérieux', gaugeLabel: 'Enquête', riskLabel: 'Psychose', months: 4, drift: { gauge: 3, risk: 5 },
+    stages: ['Des drones non identifiés survolent trois centrales nucléaires en une nuit. Personne ne sait qui les pilote.', 'Les survols se multiplient : bases militaires, ports, prisons. Les réseaux parlent d’espions, d’extraterrestres, de complot.', 'Les enquêteurs approchent du but. Faut-il tout révéler ?'] },
+  cyclone: { id: 'cyclone', icon: '🌀', label: 'Le cyclone', gaugeLabel: 'Reconstruction', riskLabel: 'Sentiment d’abandon', months: 5, drift: { gauge: 3, risk: 5 },
+    stages: ['Un cyclone de catégorie 5 a frappé la Guadeloupe : toits arrachés, routes coupées, l’électricité ne reviendra pas avant des semaines.', 'Les secours arrivent, mais lentement ; l’eau potable manque, la colère gronde contre « Paris qui oublie l’outre-mer ».', 'Reconstruire à l’identique, ou reconstruire mieux et plus solide ?'] },
+  lithium: { id: 'lithium', icon: '🔋', label: 'Le lithium d’Alsace', gaugeLabel: 'Projet minier', riskLabel: 'Opposition locale', months: 6, drift: { gauge: 3, risk: 4 },
+    stages: ['Des géologues confirment un gisement de lithium géant sous l’Alsace : de quoi équiper des millions de voitures électriques.', 'Les industriels se pressent, les riverains s’inquiètent pour leurs nappes phréatiques, les écologistes se divisent.', 'Le permis d’exploitation doit être tranché : extraire, encadrer ou renoncer.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -691,6 +697,33 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         s.popularity = clamp(s.popularity - 1);
         lose('La mer a gardé son secret', 'Les recherches sont arrêtées. Un hommage national lui est rendu, et son nom sera donné à une promotion de l’École navale.');
+      }
+      break;
+    case 'drones':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 4); d.intl.prestige = clamp(d.intl.prestige + 1);
+        win('Les pilotes démasqués', 'Un réseau d’espionnage étranger est démantelé, ses drones saisis : la France se dote d’une défense anti-drones exemplaire.');
+      } else {
+        s.credibility = clamp(s.credibility - 4); s.popularity = clamp(s.popularity - 1);
+        lose('Le mystère reste entier', 'Les survols cessent sans explication. Les théories du complot, elles, prospèrent.');
+      }
+      break;
+    case 'cyclone':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 3); s.credibility = clamp(s.credibility + 3);
+        win('L’île debout', 'Écoles, hôpital et réseau électrique reconstruits aux normes anticycloniques : la Guadeloupe salue un État enfin présent.');
+      } else {
+        s.popularity = clamp(s.popularity - 4); s.credibility = clamp(s.credibility - 2);
+        lose('L’outre-mer oublié', 'Des mois après, des familles vivent encore sous des bâches. La rancœur durera longtemps.');
+      }
+      break;
+    case 'lithium':
+      if (a.gauge >= a.risk) {
+        economy(d).growth += 0.1; s.credibility = clamp(s.credibility + 3); d.intl.prestige = clamp(d.intl.prestige + 2);
+        win('La vallée du lithium', 'Une mine exemplaire, des nappes protégées, une usine de batteries et quatre mille emplois : l’Alsace devient le cœur électrique de l’Europe.');
+      } else {
+        s.popularity = clamp(s.popularity - 2); s.credibility = clamp(s.credibility - 2);
+        lose('Le gisement endormi', 'Recours, manifestations, investisseurs partis : le lithium reste sous terre, et les batteries viendront d’ailleurs.');
       }
       break;
     case 'tempete_solaire':

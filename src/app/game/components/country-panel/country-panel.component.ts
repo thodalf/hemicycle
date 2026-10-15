@@ -139,6 +139,7 @@ export class CountryPanelComponent {
     const acc = accountability(s);
     const b = Math.round(econBonus(s, 'presidentielle') * 10) / 10 || 0;
     const sign = `${b >= 0 ? '+' : '−'}${Math.abs(b).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}`;
+    if (s.kingdom) return `Vous régnez : la conjoncture est votre bilan (${sign} pts de confiance au souverain).`;
     return acc >= 0.4 ? `Vous gouvernez : la conjoncture est votre bilan (${sign} pts à une présidentielle).`
       : acc > 0 ? `Votre camp gouverne : la conjoncture pèse un peu sur vous (${sign} pts à une présidentielle).`
       : `Dans l’opposition, une économie en berne vous profite (${sign} pts à une présidentielle).`;

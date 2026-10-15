@@ -550,6 +550,33 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Un avion a cru voir un reflet orange ce matin. Ça peut être son radeau. On envoie le cargo le plus proche.', effects: [{ kind: 'crisis', arc: 'skipper', gauge: 4, risk: -3 }] }) },
     ],
   },
+  // ── Les drones ──
+  {
+    key: 'sc:drones', icon: '🛸', when: d => !!d.crises?.drones,
+    name: () => 'Colonel Sophie Marchetti', role: () => 'Commandante de la défense aérienne',
+    options: () => [
+      { id: 'sc_drones_point', label: 'Demander où en est l’enquête', hint: 'Elle ne dit jamais un mot de trop.', ask: 'Colonel, on sait qui les pilote ?', cooldown: 1,
+        run: () => ({ answer: 'Nous avons récupéré un appareil intact cette nuit. Les composants parlent. Donnez-moi deux semaines.', effects: [{ kind: 'crisis', arc: 'drones', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── Le cyclone ──
+  {
+    key: 'sc:cyclone', icon: '🌀', when: d => !!d.crises?.cyclone,
+    name: () => 'Josette Lamothe', role: () => 'Maire de Sainte-Rose, en Guadeloupe',
+    options: () => [
+      { id: 'sc_cyclone_point', label: 'Prendre des nouvelles de la commune', hint: 'Elle dort dans sa mairie depuis le cyclone.', ask: 'Madame la maire, de quoi avez-vous besoin ?', cooldown: 1,
+        run: () => ({ answer: 'L’eau revient dans le bourg. Il nous faut des couvreurs, beaucoup de couvreurs. Et que vous reveniez.', effects: [{ kind: 'crisis', arc: 'cyclone', gauge: 3, risk: -3 }] }) },
+    ],
+  },
+  // ── Le lithium ──
+  {
+    key: 'sc:lithium', icon: '🔋', when: d => !!d.crises?.lithium,
+    name: () => 'Dr Mathilde Ehrhart', role: () => 'Géologue, découvreuse du gisement',
+    options: () => [
+      { id: 'sc_lithium_point', label: 'Faire le point sur le gisement', hint: 'Elle a passé dix ans à le chercher.', ask: 'Mathilde, la nappe est-elle menacée ?', cooldown: 1,
+        run: () => ({ answer: 'Pas si on extrait par géothermie, en circuit fermé. C’est plus lent, mais c’est propre. Je peux le prouver.', effects: [{ kind: 'crisis', arc: 'lithium', gauge: 4, risk: -2 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -633,7 +660,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44,
 };
 
 export function scenarioAge(d: GameState, key: string): string {
