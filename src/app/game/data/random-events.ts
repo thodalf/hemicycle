@@ -16,6 +16,12 @@ import { CRISIS_EVENTS, CRISIS_GATES, FAMILY_EVENTS, MISC_ARC_EVENTS } from './l
 import { PHONE_EVENTS } from './phone-events';
 import { CALENDAR_EVENTS, COUNTRY_EVENTS, PHRASE_EVENT } from './country-events';
 import { REVOLUTION_EVENTS } from './royal-events';
+import { highOffice } from '../engine/office';
+
+/** Des histoires de terrain qui n'arrivent pas à un chef d'État */
+const LOCAL_TAGS = new Set(['circo_rival_local', 'ev_chat_mairie', 'ev_metro_panne', 'ev_metro_mot', 'ev_greve_sncf_tournee', 'ev_standard_sature', 'ev_jumeaux_conseil',
+  'ev_stage_lyceen', 'ev_tracteurs_permanence', 'ev_village_sans_eau', 'ev_cantine_greve', 'ev_robot_mairie', 'ev_tournoi_boules', 'ev_inondation_cave',
+  'ev_invitation_mariage', 'ev_pluie_meeting', 'ev_panne_micro', 'ev_doyen_assemblee', 'ev_ecole_fermeture', 'ev_perroquet', 'ev_coiffeur', 'ev_abstention_record']);
 import { GRAND_EVENTS } from './grand-events';
 import { ALIEN_EVENTS, ALIEN_GATE } from './alien-events';
 import { HOSTILE_EVENTS, INVASION_EVENT, PEACE_EVENTS, WAR_EVENTS } from './war-events';
@@ -1393,6 +1399,7 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
   const out: { decision?: Decision; news?: typeof NEWS_EVENTS[number] } = {};
   const canFire = (e: RandomEvent, cooldown: number) =>
     (!e.minRank || rankOrder(d.player.rankId) >= rankOrder(e.minRank))
+    && !(highOffice(d) && LOCAL_TAGS.has(e.tag))
     && (!e.eligible || e.eligible(d))
     && d.week - Number(d.player.flags[`ev_${e.tag}`] ?? -99) >= cooldown
     && !d.pendingDecisions.some(x => x.tag === `ev_${e.tag}`);

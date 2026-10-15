@@ -1,4 +1,5 @@
 import { Effect, GameState, NetworkContact as Contact, Npc } from '../models/game.models';
+import { highOffice } from './office';
 import type { CallOption, PhoneEntry } from './phone';
 import { addMessage } from './phone';
 import { SCHEMES, joinScheme, schemeToJoin, schemes } from './schemes';
@@ -77,7 +78,8 @@ export function askOptions(d: GameState, e: PhoneEntry, block?: string): CallOpt
   }
 
   // ── Argent (pour ceux à qui l'on ne pouvait pas encore en demander) ──
-  if (e.kind === 'collegue' && n) {
+  if (highOffice(d)) { /* au sommet de l'État, on ne quémande pas */ }
+  else if (e.kind === 'collegue' && n) {
     const owed = debtTo(d, n.id);
     out.push({ id: 'argent', label: '💸 Lui emprunter de l’argent', hint: 'Un prêt entre collègues, sans intérêts. Il faudra rembourser, et on s’en souviendra.',
       ok: !block && !owed, reason: block ?? (owed ? `Vous lui devez déjà ${eur(owed)}` : undefined) });

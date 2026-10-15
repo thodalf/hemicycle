@@ -103,6 +103,12 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Des punaises de lit dans les trains, les cinémas, les hôpitaux : la psychose gagne le pays.', 'Les vidéos se multiplient, les désinsectiseurs sont débordés, les touristes annulent.', 'Le pic semble passé… ou pas. Une dernière offensive s’impose.'] },
   esport: { id: 'esport', icon: '🎮', label: 'La finale mondiale d’e-sport', gaugeLabel: 'Engouement', riskLabel: 'Fiasco technique', months: 5, drift: { gauge: 3, risk: 4 },
     stages: ['La France décroche la finale mondiale d’un jeu vidéo culte : 40 000 spectateurs à Bercy, 200 millions en ligne.', 'Serveurs à tester, billetterie prise d’assaut, et un débat qui enflamme les plateaux : « le jeu vidéo, est-ce du sport ? »', 'La grande finale approche, et l’équipe de France est qualifiée.'] },
+  satellite: { id: 'satellite', icon: '🛰️', label: 'Le satellite qui tombe', gaugeLabel: 'Préparation', riskLabel: 'Panique', months: 3, drift: { gauge: 4, risk: 5 },
+    stages: ['Un vieux satellite de dix tonnes perd le contrôle : il retombera quelque part sur l’Europe dans les semaines qui viennent.', 'Les trajectoires se précisent : une zone de rentrée traverse la France. Les ventes de casques explosent.', 'J-7 : la zone se resserre, et les regards se tournent vers vous.'] },
+  casse: { id: 'casse', icon: '💰', label: 'Le casse du siècle', gaugeLabel: 'Enquête', riskLabel: 'Ridicule', months: 4, drift: { gauge: 3, risk: 5 },
+    stages: ['Six tonnes d’or ont disparu des coffres de la Banque de France. Aucune effraction, aucune alarme.', 'Les enquêteurs remontent une piste internationale ; la presse du monde entier se moque de la France.', 'Le cerveau du casse serait sur le point d’être identifié… ou de s’envoler.'] },
+  vin: { id: 'vin', icon: '🍷', label: 'La guerre du vin', gaugeLabel: 'Débouchés', riskLabel: 'Colère des vignerons', months: 5, drift: { gauge: 3, risk: 5 },
+    stages: ['Une grande puissance taxe à 100 % les vins français. Les exportations s’effondrent du jour au lendemain.', 'Les cuves débordent, les vignerons bloquent les routes, Bordeaux et la Bourgogne grondent.', 'Une négociation de la dernière chance s’ouvre : un accord, ou des arrachages massifs.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -559,6 +565,33 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         s.popularity = clamp(s.popularity - 3); s.credibility = clamp(s.credibility - 2);
         lose('Le grand bug', 'Les serveurs tombent en pleine finale. Deux cents millions de spectateurs fixent un écran noir, et le mot-dièse #FranceBug fait le tour du monde.');
+      }
+      break;
+    case 'satellite':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 4); s.popularity = clamp(s.popularity + 2); p.renown = (p.renown ?? 0) + 15;
+        win('Le satellite tombe dans l’océan', 'Rentrée atmosphérique au-dessus de l’Atlantique, à 900 kilomètres des côtes : aucune victime, et une France qui s’était préparée sans s’affoler.');
+      } else {
+        s.credibility = clamp(s.credibility - 4); s.popularity = clamp(s.popularity - 2);
+        lose('La panique pour rien', 'Le satellite tombe en mer… après des évacuations chaotiques, des pillages de supermarchés et des écoles fermées pour rien.');
+      }
+      break;
+    case 'casse':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 4); d.intl.prestige = clamp(d.intl.prestige + 2); p.renown = (p.renown ?? 0) + 20;
+        win('L’or retrouvé', 'Arrêté dans un port du Nord, le cerveau du casse avouait tout. Les lingots retrouvent leurs coffres sous les caméras du monde entier.');
+      } else {
+        s.credibility = clamp(s.credibility - 5); d.intl.prestige = clamp(d.intl.prestige - 3); economy(d).confidence -= 2;
+        lose('L’or envolé', 'Le dossier est classé, l’or jamais retrouvé. Les humoristes étrangers tiennent leur sketch de l’année.');
+      }
+      break;
+    case 'vin':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); economy(d).growth += 0.1; economy(d).confidence += 2;
+        win('La paix des vignes', 'Un accord commercial lève les taxes ; de nouveaux marchés s’ouvrent en Asie. Les vignerons trinquent à votre santé.');
+      } else {
+        s.popularity = clamp(s.popularity - 4); economy(d).growth -= 0.1; economy(d).unemployment += 0.1;
+        lose('Les vignes arrachées', 'Faute d’accord, des milliers d’hectares sont arrachés. Les régions viticoles ne vous le pardonneront pas.');
       }
       break;
     case 'tempete_solaire':

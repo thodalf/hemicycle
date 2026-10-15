@@ -649,6 +649,39 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'satellite_gate', weight: 0.35, minRank: 'conseiller_municipal', eligible: d => !d.crises?.satellite && !d.player.flags['satelliteDone'] && d.week > 14,
+    build: () => ({
+      title: 'Un satellite hors de contrôle',
+      context: 'L’agence spatiale vous alerte : un satellite de dix tonnes va retomber sur l’Europe dans quelques semaines. La France est dans la zone possible.',
+      choices: [
+        c('informer', 'Informer le pays, calmement, avec un plan', [cr('satellite', 6, 3, true), { kind: 'flag', key: 'satelliteDone', value: true }, s('credibility', 2)], 'Un numéro vert, des consignes claires : le pays écoute.'),
+        c('secret', 'Garder l’information secrète pour éviter la panique', [cr('satellite', 2, 7, true), { kind: 'flag', key: 'satelliteDone', value: true }], 'Le secret tient trois jours. Puis un astronome amateur publie tout.'),
+      ],
+    }),
+  },
+  {
+    tag: 'casse_gate', weight: 0.3, minRank: 'depute', eligible: d => !d.crises?.casse && !d.player.flags['casseDone'] && d.week > 24,
+    build: () => ({
+      title: 'Six tonnes d’or envolées',
+      context: 'Le gouverneur de la Banque de France vous appelle à 5 heures du matin : une partie des réserves d’or a disparu des coffres. Personne ne comprend comment.',
+      choices: [
+        c('enquete', 'Créer une cellule d’enquête d’élite', [cr('casse', 6, 3, true), { kind: 'flag', key: 'casseDone', value: true }, s('politicalCapital', -4)], 'Les meilleurs enquêteurs du pays sont sur l’affaire.'),
+        c('discret', 'Étouffer l’affaire le temps de l’enquête', [cr('casse', 3, 6, true), { kind: 'flag', key: 'casseDone', value: true }, { kind: 'exposure', delta: 3 }], 'Discrétion absolue… jusqu’à la fuite.'),
+      ],
+    }),
+  },
+  {
+    tag: 'vin_gate', weight: 0.35, minRank: 'conseiller_municipal', eligible: d => !d.crises?.vin && !d.player.flags['vinDone'] && d.week > 18,
+    build: () => ({
+      title: 'La guerre du vin est déclarée',
+      context: 'En représailles à une taxe numérique, une grande puissance frappe les vins français d’un droit de douane de 100 %. Les vignerons attendent une réponse.',
+      choices: [
+        c('negocier', 'Ouvrir aussitôt une négociation', [cr('vin', 6, 3, true), { kind: 'flag', key: 'vinDone', value: true }, { kind: 'intl', prestige: 1 }], 'Les diplomates s’envolent dès ce soir.'),
+        c('riposter', 'Riposter par des taxes symétriques', [cr('vin', 3, 5, true), { kind: 'flag', key: 'vinDone', value: true }, s('popularity', 2), { kind: 'economy', confidence: -1 }], 'Les vignerons applaudissent. Les industriels s’inquiètent.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1701,6 +1734,72 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('defendre', 'Défendre les joueurs', [cr('esport', 4), { kind: 'segment', segment: 'jeunes', delta: 3 }, { kind: 'segment', segment: 'retraites', delta: -2 }], 'Le mot-dièse #AussiUnSport vous remercie.'),
         c('neutre', 'Botter en touche', [cr('esport', 1, 2)], 'Personne n’est fâché, personne n’est convaincu.'),
+      ],
+    }),
+  },
+  {
+    tag: 'satellite_casques', weight: 1, eligible: d => !!d.crises?.satellite,
+    build: () => ({
+      title: 'La ruée sur les abris',
+      context: 'Des marchands vendent des « kits de survie anti-satellite » à 500 euros. Des files se forment devant les magasins de bricolage.',
+      choices: [
+        c('dgccrf', 'Lancer des contrôles contre les arnaques', [cr('satellite', 4, -3), s('credibility', 1)], 'Les kits disparaissent des étals. La panique retombe.'),
+        c('laisser', 'Laisser faire : chacun se rassure comme il peut', [cr('satellite', 0, 5)], 'Le prix d’un casque de chantier atteint 80 euros.'),
+      ],
+    }),
+  },
+  {
+    tag: 'satellite_ecoles', weight: 0.9, eligible: d => !!d.crises?.satellite,
+    build: () => ({
+      title: 'Fermer les écoles ?',
+      context: 'La zone de rentrée couvre douze départements. Des parents exigent la fermeture des écoles le jour J.',
+      choices: [
+        c('fermer', 'Fermer les écoles des zones concernées', [cr('satellite', 3, -2), { kind: 'segment', segment: 'retraites', delta: 1 }, { kind: 'segment', segment: 'populaires', delta: -1 }], 'Une journée blanche, organisée et sans drame.'),
+        c('ouvrir', 'Garder les écoles ouvertes : le risque est infime', [cr('satellite', 2, 3), s('credibility', 1)], 'Rationnel. Les parents, eux, gardent leurs enfants à la maison.'),
+      ],
+    }),
+  },
+  {
+    tag: 'casse_complice', weight: 1, eligible: d => !!d.crises?.casse,
+    build: () => ({
+      title: 'Un complice à l’intérieur',
+      context: 'Les enquêteurs soupçonnent un haut responsable de la sécurité de la Banque de France. Il est protégé par de puissants amis.',
+      choices: [
+        c('arreter', 'Le faire arrêter, quoi qu’il en coûte', [cr('casse', 6, -2), s('influence', -2)], 'Il parle dès la première nuit de garde à vue.'),
+        c('surveiller', 'Le laisser filer pour remonter la piste', [cr('casse', 4, 3)], 'Une filature risquée : il part en week-end à Genève.'),
+      ],
+    }),
+  },
+  {
+    tag: 'casse_humour', weight: 0.8, eligible: d => !!d.crises?.casse,
+    build: () => ({
+      title: 'Le monde entier se moque',
+      context: 'Une émission satirique étrangère imagine des « visites guidées des coffres vides de la France ». La séquence fait 50 millions de vues.',
+      choices: [
+        c('humour', 'Répondre avec humour', [cr('casse', 2, -4), s('popularity', 2)], 'Votre réponse fait encore plus de vues que le sketch.'),
+        c('ignorer', 'Ignorer et travailler', [cr('casse', 3, 2)], 'Sérieux, mais le ridicule colle.'),
+      ],
+    }),
+  },
+  {
+    tag: 'vin_barrages', weight: 1, eligible: d => !!d.crises?.vin,
+    build: () => ({
+      title: 'Les vignerons bloquent l’autoroute',
+      context: 'Des tracteurs et des cuves renversées bloquent l’A9. Des milliers de litres de vin coulent sur la chaussée.',
+      choices: [
+        c('aide', 'Débloquer une aide d’urgence aux viticulteurs', [cr('vin', 3, -5), { kind: 'economy', deficit: 0.02 }, { kind: 'segment', segment: 'ruraux', delta: 2 }], 'Les barrages sont levés le soir même.'),
+        c('evacuer', 'Faire évacuer l’autoroute', [cr('vin', 1, 5), s('credibility', 1), { kind: 'segment', segment: 'ruraux', delta: -3 }], 'L’autoroute rouvre. La colère, elle, s’étend.'),
+      ],
+    }),
+  },
+  {
+    tag: 'vin_distiller', weight: 0.9, eligible: d => !!d.crises?.vin,
+    build: () => ({
+      title: 'Distiller les excédents ?',
+      context: 'Cent millions de litres de vin invendus : la filière propose de les distiller en alcool industriel, aux frais de l’État.',
+      choices: [
+        c('distiller', 'Financer la distillation', [cr('vin', 5, -3), { kind: 'economy', deficit: 0.03 }], 'Les cuves se vident. Le vin devient du gel hydroalcoolique.'),
+        c('export', 'Chercher de nouveaux marchés à l’export', [cr('vin', 6, 2), { kind: 'intl', prestige: 1 }, s('energy', -4)], 'Une tournée en Asie : prometteuse, mais lente.'),
       ],
     }),
   },

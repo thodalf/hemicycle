@@ -132,6 +132,7 @@
                   @for (c of f.losses; track c.text) { <span class="fx-chip bad">{{ c.text }}</span> }
                   @for (c of f.other; track c.text) { <span class="fx-chip">{{ c.text }}</span> }
                   @if (a.risk) { <span class="fx-chip risk" [title]="failText(a)">{{ failText(a) }}</span> }
+                  @if (odds(a); as o) { <span class="fx-chip dice" title="Chaque action peut rater ou faire un coup d’éclat : la forme, la réputation et l’équipe font pencher la balance.">🎲 {{ o.eclat }} % éclat · {{ o.rate }} % raté</span> }
                   @if (wear(a) < 1) { <span class="fx-chip bad" title="Répéter la même action d’un mois sur l’autre lasse : les gains diminuent.">Lassitude : gains −{{ 100 - wear(a) * 100 | number: '1.0-0' }} %</span> }
                 </div>
               }

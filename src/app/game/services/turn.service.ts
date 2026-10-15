@@ -29,6 +29,8 @@ import { monthlyCharacter } from '../engine/character';
 import { monthlyCouncil } from '../engine/council';
 import { monthlyFrondes } from '../engine/frondes';
 import { monthlyDecisions, monthlyStruggle } from '../engine/grand';
+import { monthlyDesk } from '../engine/desk';
+import { recordBarometre } from '../engine/newspaper';
 import { checkAchievements } from '../data/achievements';
 import { autoVote, monthlyAssembly } from '../engine/assembly';
 import { abandonProject, startProject, weeklyProject } from '../engine/projects';
@@ -148,6 +150,8 @@ export class TurnService {
     monthlyFrondes(d, rng);
     monthlyStruggle(d, rng);
     monthlyDecisions(d, rng);
+    monthlyDesk(d, rng);
+    recordBarometre(d);
     monthlyPlot(d, rng);
     monthlySchemes(d, rng);
     monthlyFamily(d, rng);

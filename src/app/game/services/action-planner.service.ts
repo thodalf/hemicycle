@@ -30,6 +30,8 @@ import { reservedAp } from '../engine/projects';
 import { ASSETS_BY_ID } from '../data/assets';
 import { Rng } from '../engine/rng';
 import { checkCharte } from '../engine/grand';
+import { hiddenForOffice } from '../engine/office';
+import { rollTier, tierEffects, tierStory } from '../engine/outcomes';
 import { GREAT_INFO_BY_ID, decisionActive } from '../data/great-decisions';
 import { recordObjectiveEvent } from '../engine/objectives';
 import { GameStateService } from './game-state.service';
@@ -101,6 +103,8 @@ export class ActionPlannerService {
       if (a.category === 'lutte') return !!s.struggle && (!a.requires?.struggle || a.requires.struggle === s.struggle.id);
       // Actions d'éclat : seulement quand la renommée les ouvre
       if (a.category === 'eclat') return renownTier(s.player.renown ?? 0) >= (a.requires?.renownTier ?? 1);
+      // Un président ne colle pas d'affiches ; une ministre ne pose pas de question au gouvernement
+      if (hiddenForOffice(s, a)) return false;
       // Actions nées d'une grande décision : seulement tant qu'elle tient
       if (a.requires?.decision && !decisionActive(s, a.requires.decision)) return false;
       if (a.category === 'redaction') return !!s.press;
@@ -270,9 +274,17 @@ export class ActionPlannerService {
           record();
           continue;
         }
-        const summary = applyEffects(d, scaleGains(effects, wear), ctx, rng);
+        // Raté, comme prévu, ou coup d'éclat : le hasard du terrain
+        const tier = rollTier(d, action, rng);
+        const summary = applyEffects(d, tierEffects(scaleGains(effects, wear), tier), ctx, rng);
         if (wear < 1) summary.push(`lassitude −${Math.round((1 - wear) * 100)} %`);
-        if (summary.length) pushNews(d, 'action', 'positive', action.label, summary.join(' · '));
+        if (tier === 'eclat') {
+          d.player.renown = (d.player.renown ?? 0) + 3;
+          pushNews(d, 'actu', 'positive', `Coup d’éclat : ${action.label}`, [tierStory(action, tier, rng), summary.join(' · ')].filter(Boolean).join(' — '));
+          d.news[0].une = true;
+        } else if (tier === 'rate') {
+          pushNews(d, 'action', 'negative', `Raté : ${action.label}`, [tierStory(action, tier, rng), summary.join(' · ')].filter(Boolean).join(' — '));
+        } else if (summary.length) pushNews(d, 'action', 'positive', action.label, summary.join(' · '));
       }
       record();
     }

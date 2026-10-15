@@ -186,3 +186,5 @@
 .catalog.swipe-r > :not(nav) { animation: cat-from-l .28s cubic-bezier(.2,.8,.3,1); }
 @keyframes cat-from-r { from { transform: translateX(32px); opacity: .35; } }
 @keyframes cat-from-l { from { transform: translateX(-32px); opacity: .35; } }
+
+.fx-chip.dice { background: color-mix(in srgb, #e3b341 18%, var(--surface)); border-color: color-mix(in srgb, #e3b341 50%, var(--line)); }

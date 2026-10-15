@@ -76,7 +76,8 @@ export function assemblyGroups(d: GameState): AssemblyGroup[] {
 function groupScore(d: GameState, v: AssemblyVote, g: AssemblyGroup, knowMood = true): number {
   // +0,5 pour un texte au cœur de sa ligne, 0 à 40 points d'écart, −0,5 à 80
   const ideology = (40 - Math.abs(v.lean - g.position)) / 80;
-  let camp = v.origin === 'opposition' ? (g.majority ? -0.5 : 0.25) : (g.majority ? 0.62 : -0.4);
+  // La majorité suit moins aveuglément qu'avant, l'opposition fait bloc
+  let camp = v.origin === 'opposition' ? (g.majority ? -0.5 : 0.25) : (g.majority ? 0.57 : -0.45);
   // Avis du gouvernement sur une proposition de loi : la majorité suit
   if (v.role === 'gouvernement' && v.origin !== 'gouvernement' && v.playerBallot && g.majority) {
     camp = v.playerBallot === 'pour' ? 0.5 : v.playerBallot === 'contre' ? -0.5 : 0;
@@ -90,7 +91,31 @@ function groupScore(d: GameState, v: AssemblyVote, g: AssemblyGroup, knowMood = 
   if (v.own && g.partyId === d.party.id) camp += 0.5;
   const opinion = (v.opinion - 50) / 100;
   const mood = g.majority && knowMood ? v.mood ?? 0 : 0;
-  return ideology * 0.9 + camp + opinion * 0.5 + mood + v.swing / 100;
+  return ideology * 0.9 + camp + opinion * 0.5 + mood + v.swing / 100 - majorityStrain(d, v, g);
+}
+
+/**
+ * Les tensions qui rongent une majorité : un exécutif impopulaire, un parti divisé,
+ * un partenaire de coalition fâché, trop de réformes à la suite, un texte loin de la ligne du groupe.
+ */
+export function majorityStrain(d: GameState, v: AssemblyVote, g: AssemblyGroup): number {
+  if (!g.majority || v.origin === 'opposition') return 0;
+  const pop = Math.max(0, 45 - d.player.stats.popularity) / 170;
+  const coh = g.partyId === d.party.id ? Math.max(0, 55 - d.party.cohesion) / 200
+    : d.coalition && g.partyId === d.coalition.partyId ? Math.max(0, 55 - d.coalition.mood) / 140 : 0;
+  const recent = (d.voteHistory ?? []).filter(h => h.adopted && d.week - h.week <= 10).length;
+  const fatigue = Math.max(0, recent - 2) * 0.04;
+  const far = Math.max(0, Math.abs(v.lean - g.position) - 30) / 200;
+  return pop + coh + fatigue + far;
+}
+
+/** Le Conseil constitutionnel : un texte clivant ou ambitieux peut être censuré, en partie ou en totalité */
+export function censureRisk(d: GameState, lean: number, scale = 1): number {
+  // Un avis du Conseil d'État ignoré pèse aussi
+  const base = 0.06 + Math.max(0, Math.abs(lean) - 35) / 260 + (scale - 1) * 0.04 + Number(d.player.flags['ccRisk'] ?? 0) * 0.08;
+  // Une plume juridique relit le texte avant le dépôt
+  const juriste = d.player.staff.includes('juriste') ? 0.6 : 1;
+  return clamp(base * juriste, 0.02, 0.35);
 }
 
 function probs(score: number): VoteTally {
@@ -176,6 +201,11 @@ export function scheduleVote(d: GameState, rng: Rng, billId?: string, forcedOrig
     mood: Math.round(rng.range(-0.4, 0.3) * 100) / 100, ...(own ? { own: true } : {}),
   };
   v.partyLine = own ? 'pour' : ownGroup ? lineOf(probs(groupScore(d, v, ownGroup))) : 'abstention';
+  if (origin === 'gouvernement' && !v.warEnemy && rng.chance(0.55)) {
+    const n = Math.round(rng.range(2, 5));
+    v.swing -= n;
+    pushNews(d, 'actu', 'negative', `Obstruction sur « ${bill.title} »`, `L’opposition dépose ${(n * 900).toLocaleString('fr-FR')} amendements : les débats s’enlisent et des voix vacillent.`);
+  }
   // Les voix promises au téléphone se reportent sur un texte de votre camp
   const promised = Number(d.player.flags['billSupport'] ?? 0);
   if (promised && (own || mine)) {
@@ -405,9 +435,24 @@ function consequences(d: GameState, v: AssemblyVote, ballot: Ballot, adopted: bo
   if (won && margin <= 6) effects.push({ kind: 'stat', stat: 'influence', delta: 2 });
   out.push(...applyEffects(d, effects.filter(e => !('delta' in e) || e.delta !== 0), { domain: v.domain }, rng));
 
+  // Le Conseil constitutionnel : censure partielle (le texte s'applique, écorné) ou totale (il ne s'applique pas)
+  const custom0 = (d.customBills ?? []).find(b => b.id === v.billId);
+  const reviewed = adopted && !v.warEnemy && (v.own || (v.origin === 'gouvernement' && v.role === 'gouvernement'));
+  let struck = false;
+  if (reviewed && rng.chance(censureRisk(d, v.lean, custom0?.scale ?? 1))) {
+    struck = rng.chance(0.3);
+    out.push(...applyEffects(d, struck
+      ? [{ kind: 'stat', stat: 'credibility', delta: -5 }, { kind: 'stat', stat: 'popularity', delta: -2 }, { kind: 'stat', stat: 'influence', delta: -2 }]
+      : [{ kind: 'stat', stat: 'credibility', delta: -2 }, { kind: 'stat', stat: 'influence', delta: -1 }], {}, rng));
+    out.push(struck ? 'Le Conseil constitutionnel censure tout le texte' : 'Censure partielle du Conseil constitutionnel');
+    pushNews(d, 'actu', 'negative', struck ? `Censure totale : ${v.title}` : `Censure partielle : ${v.title}`,
+      struck ? 'Le Conseil constitutionnel juge le texte contraire à la Constitution : il ne s’appliquera pas.' : 'Plusieurs articles sont censurés : le texte s’applique, amputé.');
+    d.news[0].une = true;
+  }
+  if (reviewed) d.player.flags['ccRisk'] = 0;
   // Texte du gouvernement : succès ou camouflet
   if (v.role === 'gouvernement' && v.origin === 'gouvernement') {
-    if (adopted) out.push(...adoptedEffects(d, v, rng));
+    if (adopted && !struck) out.push(...adoptedEffects(d, v, rng));
     else {
       const fail: Effect[] = [
         { kind: 'stat', stat: 'credibility', delta: v.warEnemy ? -6 : -4 }, { kind: 'stat', stat: 'influence', delta: -3 }, { kind: 'stat', stat: 'popularity', delta: -1 },
@@ -420,9 +465,9 @@ function consequences(d: GameState, v: AssemblyVote, ballot: Ballot, adopted: bo
   // Guerre autorisée à l'initiative du parti du joueur (chef de parti)
   if (v.warEnemy && v.role === 'chef' && adopted) startWar(d, v.warEnemy, true);
 
-  if (adopted && (v.own || (v.origin === 'gouvernement' && v.role === 'gouvernement')) && !v.warEnemy) recordLaw(d, v.title, v.domain);
-  // Un texte rédigé sur mesure : son coût et ses effets s'appliquent
-  const custom = adopted ? (d.customBills ?? []).find(b => b.id === v.billId) : undefined;
+  if (adopted && !struck && (v.own || (v.origin === 'gouvernement' && v.role === 'gouvernement')) && !v.warEnemy) recordLaw(d, v.title, v.domain);
+  // Un texte rédigé sur mesure : son coût et ses effets s'appliquent (sauf censure totale)
+  const custom = adopted && !struck ? custom0 : undefined;
   if (custom) {
     out.push(...applyCustomBill(d, custom, rng));
     d.player.flags['customLaws'] = Number(d.player.flags['customLaws'] ?? 0) + 1;

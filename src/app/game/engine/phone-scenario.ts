@@ -442,6 +442,33 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'On s’entraîne douze heures par jour. Venez nous voir, ça motiverait tout le monde !', effects: [{ kind: 'crisis', arc: 'esport', gauge: 4 }, { kind: 'segment', segment: 'jeunes', delta: 1 }] }) },
     ],
   },
+  // ── Le satellite ──
+  {
+    key: 'sc:satellite', icon: '🛰️', when: d => !!d.crises?.satellite,
+    name: () => 'Dr Inès Valcourt', role: () => 'Directrice des opérations spatiales',
+    options: () => [
+      { id: 'sc_sat_point', label: 'Demander la trajectoire du jour', hint: 'Elle dort au centre de contrôle.', ask: 'Docteure, où va-t-il tomber ?', cooldown: 1,
+        run: () => ({ answer: 'La fenêtre se resserre : 60 % de chances que ce soit en mer. Je vous rappelle dès que j’en sais plus.', effects: [{ kind: 'crisis', arc: 'satellite', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── Le casse ──
+  {
+    key: 'sc:casse', icon: '💰', when: d => !!d.crises?.casse,
+    name: () => 'Commissaire Paul Mercadier', role: () => 'Chef de l’enquête sur le casse de la Banque de France',
+    options: () => [
+      { id: 'sc_casse_point', label: 'Faire le point sur l’enquête', hint: 'Trente ans de grand banditisme.', ask: 'Commissaire, des nouvelles de l’or ?', cooldown: 1,
+        run: () => ({ answer: 'On a une piste : un camion frigorifique, un port du Nord, et un homme qui adore l’opéra. Laissez-moi deux semaines.', effects: [{ kind: 'crisis', arc: 'casse', gauge: 4, risk: -1 }] }) },
+    ],
+  },
+  // ── Le vin ──
+  {
+    key: 'sc:vin', icon: '🍷', when: d => !!d.crises?.vin,
+    name: () => 'Marie-Hélène Castel', role: () => 'Présidente de la fédération des vignerons',
+    options: () => [
+      { id: 'sc_vin_point', label: 'Prendre le pouls des vignobles', hint: 'Vigneronne en Gironde depuis quatre générations.', ask: 'Marie-Hélène, comment ça tient ?', cooldown: 1,
+        run: () => ({ answer: 'Les cuves sont pleines et les banques s’impatientent. Mais si vous tenez bon, on tiendra aussi.', effects: [{ kind: 'crisis', arc: 'vin', gauge: 3, risk: -3 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -525,7 +552,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

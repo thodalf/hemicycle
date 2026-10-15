@@ -1,5 +1,5 @@
 import { AssemblyVote, CustomBill, DOMAIN_LABELS, Decision, Domain, Effect, GameState, Segment } from '../models/game.models';
-import { assemblyGroups, forecast, governingIds, ownOrigin, scheduleVote, voteRole } from './assembly';
+import { assemblyGroups, censureRisk, forecast, governingIds, ownOrigin, scheduleVote, voteRole } from './assembly';
 import { applyEffects, pushNews } from './effects';
 import { economy } from './country';
 import { decisionActive } from '../data/great-decisions';
@@ -171,6 +171,8 @@ export function quoteBill(d: GameState, b: BillDraft): BillQuote {
   const wl = winnersLosers(b.lean, b.domain);
   if (cl >= 55) notes.push(`Texte ${cleavageLabel(cl)} : risque de mobilisation dans la rue après l’adoption.`);
   if (budget < 0) notes.push(`Des économies : ${fr(-budget)} Md€ par an, au prix de quelques mécontents.`);
+  const cc = Math.round(censureRisk(d, b.lean, b.scale) * 100);
+  if (cc >= 8) notes.push(`Risque de censure par le Conseil constitutionnel : ${cc} %.`);
   return {
     ap: b.scale, energy: 4 + 4 * b.scale, politicalCapital: Math.round(Math.max(6, pc)) + (decisionActive(d, 'pacte_courants') ? 5 : 0),
     budget, deficit: Math.round((budget / 28) * 100) / 100, opinion, adoptedChance, role, partyGap: Math.round(partyGap), notes,

@@ -5,6 +5,7 @@ import { accountability, segmentRows } from '../engine/country';
 import { annexedEnemies } from '../engine/annex';
 import { SEGMENTS } from './programme';
 import { freshDeparture } from '../engine/npc-life';
+import { highOffice } from '../engine/office';
 
 /* ============================================================
  *  Rendez-vous du calendrier (Euro et Coupe du monde, Tour de
@@ -22,6 +23,7 @@ const eco = (x: Omit<Extract<Effect, { kind: 'economy' }>, 'kind'>): Effect => (
 const mood = (delta: number): Effect => ({ kind: 'coalition', mood: delta });
 const kg = (x: Omit<Extract<Effect, { kind: 'kingdom' }>, 'kind'>): Effect => ({ kind: 'kingdom', ...x });
 const atLeastCouncil = 'conseiller_municipal' as const;
+const atTop = (d: GameState) => highOffice(d);
 const st2 = (stat: 'popularity' | 'influence' | 'credibility' | 'politicalCapital' | 'stress' | 'energy', delta: number): Effect => ({ kind: 'stat', stat, delta });
 
 /** Les années paires : l'Euro (2028, 2032…) ou la Coupe du monde (2030, 2034…) */
@@ -1182,6 +1184,97 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
       choices: [
         c('renvoyer', 'La renvoyer avec une lettre polie', [s('credibility', 2)], 'L’industriel comprend le message.'),
         c('garder', 'La garder : « C’est un cadeau entre amis »', [{ kind: 'exposure', delta: 6 }, s('stress', -2)], 'Elle est très belle. Elle pourrait coûter très cher.'),
+      ],
+    }),
+  },
+  // ── Au sommet de l'État ──
+  {
+    tag: 'ev_chef_cuisinier', weight: 0.5, eligible: atTop,
+    build: () => ({
+      title: 'Le chef des cuisines démissionne',
+      context: 'Le chef des cuisines du Palais, trente ans de maison, claque la porte : « On me demande des plateaux-repas pour les chefs d’État. »',
+      choices: [
+        c('retenir', 'Le recevoir et lui donner carte blanche', [s('popularity', 1), { kind: 'intl', prestige: 1 }, { kind: 'funds', account: 'personal', delta: -3000 }], 'Il reste. Le prochain dîner d’État sera mémorable.'),
+        c('remplacer', 'Le remplacer par une jeune cheffe étoilée', [{ kind: 'segment', segment: 'jeunes', delta: 2 }, s('credibility', 1)], 'Une cuisine audacieuse, saluée par la critique.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_drone_palais', weight: 0.45, eligible: atTop,
+    build: () => ({
+      title: 'Un drone au-dessus du Palais',
+      context: 'Un drone non identifié a survolé vos appartements privés pendant vingt minutes cette nuit. La sécurité est sur les dents.',
+      choices: [
+        c('renforcer', 'Renforcer la protection aérienne', [{ kind: 'funds', account: 'campaign', delta: -2000 }, s('stress', -2)], 'Un brouilleur et deux tireurs d’élite sur le toit.'),
+        c('relativiser', 'Relativiser : sans doute un curieux', [s('stress', 3), s('popularity', 1)], 'C’était un étudiant en cinéma. Son court-métrage fait le buzz.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_portrait_officiel', weight: 0.4, eligible: atTop,
+    build: () => ({
+      title: 'Le portrait officiel',
+      context: 'Votre portrait officiel va être accroché dans toutes les mairies de France. Deux photographes proposent leur version.',
+      choices: [
+        c('classique', 'Le portrait classique, dans la bibliothèque', [s('credibility', 1), { kind: 'segment', segment: 'retraites', delta: 1 }], 'Solennel, sans surprise.'),
+        c('moderne', 'Une photo prise sur le terrain, en mouvement', [{ kind: 'segment', segment: 'jeunes', delta: 2 }, s('popularity', 1)], 'Le portrait le plus commenté depuis des décennies.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_chien_refuge', weight: 0.35, eligible: atTop,
+    build: () => ({
+      title: 'Un chien pour le Palais ?',
+      context: 'Une association propose que vous adoptiez un chien de refuge. Elle a déjà choisi : un vieux labrador borgne nommé Gaston.',
+      choices: [
+        c('adopter', 'Adopter Gaston', [s('popularity', 3), s('stress', -4)], 'Gaston a désormais plus d’abonnés que vous.'),
+        c('decliner', 'Décliner gentiment', [s('popularity', -1)], 'Gaston trouve une autre famille. La France vous en veut un peu.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_garden_party', weight: 0.6, eligible: d => highOffice(d) && monthIndex(d.week) === 6,
+    build: () => ({
+      title: 'La garden-party du 14 Juillet',
+      context: 'Huit mille invités sont attendus dans les jardins après le défilé. Certains trouvent la fête trop coûteuse en ces temps difficiles.',
+      choices: [
+        c('maintenir', 'Maintenir la tradition', [{ kind: 'intl', prestige: 1 }, s('popularity', -1)], 'Petits fours, fanfare et ministres sous les tilleuls.'),
+        c('ouvrir', 'L’ouvrir aux héros du quotidien', [s('popularity', 3), { kind: 'segment', segment: 'populaires', delta: 2 }], 'Infirmières, pompiers et caissières à l’honneur : la photo de l’année.'),
+        c('annuler', 'L’annuler par sobriété', [s('credibility', 2), { kind: 'intl', prestige: -1 }], 'Économie symbolique, saluée par les uns, moquée par les autres.'),
+      ],
+    }),
+  },
+  // ── Partout ──
+  {
+    tag: 'ev_poubelles_rats', weight: 0.4,
+    build: () => ({
+      title: 'Les poubelles débordent',
+      context: 'Depuis dix jours, les poubelles s’entassent sur les trottoirs des grandes villes. Les rats sont de sortie.',
+      choices: [
+        c('soutenir', 'Soutenir les revendications des éboueurs', [{ kind: 'segment', segment: 'populaires', delta: 3 }, { kind: 'segment', segment: 'cadres', delta: -1 }], 'Ils obtiennent une prime de pénibilité. Les rues redeviennent propres.'),
+        c('requisitionner', 'Demander des réquisitions', [s('credibility', 1), { kind: 'segment', segment: 'populaires', delta: -2 }], 'Les camions repartent, la colère reste.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_nobel_francais', weight: 0.3,
+    build: () => ({
+      title: 'Un prix Nobel pour une Française',
+      context: 'Une chercheuse française reçoit le prix Nobel de chimie. Elle a fait toute sa carrière à l’étranger, faute de moyens en France.',
+      choices: [
+        c('feliciter', 'La féliciter et promettre un plan pour la recherche', [s('credibility', 2), { kind: 'dossier', domain: 'education', delta: 2 }, s('politicalCapital', -3)], 'Elle accepte de parrainer le plan. Un beau symbole.'),
+        c('tweet', 'Un message de félicitations, simplement', [s('popularity', 1)], 'Elle répond poliment, en rappelant pourquoi elle est partie.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_cyclone_outremer', weight: 0.35,
+    build: () => ({
+      title: 'Un cyclone frappe les Antilles',
+      context: 'Un cyclone de catégorie 4 ravage la Guadeloupe : toits arrachés, routes coupées, eau potable coupée.',
+      choices: [
+        c('partir', 'Partir sur place avec les secours', [s('popularity', 3), s('energy', -8), { kind: 'dossier', domain: 'territoires', delta: 2 }], 'Vous arrivez avec le premier avion de secours. On ne l’oubliera pas.'),
+        c('pont', 'Organiser un pont aérien depuis Paris', [s('credibility', 2), { kind: 'funds', account: 'campaign', delta: -2000 }], 'Efficace, mais on regrette votre absence sur place.'),
       ],
     }),
   },

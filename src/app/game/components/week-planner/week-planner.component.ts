@@ -1,3 +1,4 @@
+import { tierOdds } from '../../engine/outcomes';
 import { ObjectivesPanelComponent } from '../objectives-panel/objectives-panel.component';
 import { DecimalPipe } from '@angular/common';
 import { Component, DestroyRef, ElementRef, afterNextRender, effect, computed, inject, signal } from '@angular/core';
@@ -161,6 +162,13 @@ export class WeekPlannerComponent {
       host.querySelector(`nav.tabs [data-cat="${ids[j]}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     });
     this.catTimer = setTimeout(() => this.catAnim.set(null), 320);
+  }
+
+  /** Chances de coup d'éclat et de raté, affichées sur chaque action */
+  protected odds(a: ActionDefinition): { eclat: number; rate: number } | null {
+    if (['repos', 'sante', 'argent'].includes(a.category) || a.minigame) return null;
+    const o = tierOdds(this.game.s(), a);
+    return { eclat: Math.round(o.eclat * 100), rate: Math.round(o.rate * 100) };
   }
 
   /** Objectifs : un volet repliable, ouvert ou fermé selon votre dernier choix */
@@ -425,6 +433,12 @@ export class WeekPlannerComponent {
       const freshNews = after.news.filter(n => n.week === after.week);
       const flash = freshNews.find(n => n.kind === 'scandale' || (n.kind === 'actu' && n.tone === 'negative'));
       if (flash) setTimeout(() => this.anim.ticker(`${flash.title}${flash.body ? ' — ' + flash.body : ''}`), 900);
+
+      // Coups d'éclat et ratés du mois : un tampon, une petite secousse
+      const eclats = freshNews.filter(n => n.title.startsWith('Coup d’éclat'));
+      const rates = freshNews.filter(n => n.title.startsWith('Raté : '));
+      if (eclats.length) setTimeout(() => this.anim.stamp(eclats.length > 1 ? `${eclats.length} coups d’éclat` : 'Coup d’éclat', 'good', eclats[0].title.replace('Coup d’éclat : ', '')), 1400);
+      else if (rates.length) setTimeout(() => this.anim.stamp(rates.length > 1 ? `${rates.length} ratés` : 'Raté', 'bad', rates[0].title.replace('Raté : ', '')), 1400);
 
       // Objectifs atteints : gerbe de confettis sur le panneau
       const done = freshNews.filter(n => n.title.startsWith('Objectif atteint'));

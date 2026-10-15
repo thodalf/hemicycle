@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite';
 
 export interface TriItem {
   text: string;
@@ -540,6 +540,14 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'qui_a_dit', kind: 'citations', icon: '💬', title: 'Qui a dit ça ?',
     rule: 'Reliez chaque citation historique à son auteur. Un auteur est en trop, et chaque erreur coûte des points.',
+  },
+  {
+    id: 'decrypter_sondage', kind: 'lecture', icon: '📊', title: 'Décrypter un sondage',
+    rule: 'Un sondage tombe en direct : lisez les chiffres, la marge d’erreur et les électorats avant de les commenter.',
+  },
+  {
+    id: 'plan_securite', kind: 'securite', icon: '👮', title: 'Le plan de sécurité',
+    rule: 'Placez vos équipes sur le parcours : chacune couvre sa case et les cases voisines. Couvrez le plus de risque possible.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',

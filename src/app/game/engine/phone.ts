@@ -1,4 +1,5 @@
 import { ContactType, Effect, GameState, PhoneMessage, PhoneReply, PhoneState, StaffRole } from '../models/game.models';
+import { highOffice, honorific, inPower, office, seat } from './office';
 import { STAFF_BY_ROLE, STAFF_ICONS } from '../data/staff';
 import { RANKS } from '../data/ranks';
 import { DOMAINS } from '../models/game.models';
@@ -228,7 +229,7 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       const camp = campaignOpen(d);
       const lastMoney = Number(d.player.flags['phoneMoneyChef'] ?? -99);
       opts.push({ id: 'soutien', label: supportLabel, hint: 'Une consigne de vote du parti : des dizaines de voix si la relation est bonne.', ok: !block && !!target, reason: block ?? supportReason });
-      opts.push({ id: 'argent', label: 'Demander une aide financière du parti', hint: camp ? 'Une avance sur le compte de campagne, selon votre soutien interne.' : 'Hors campagne : le parti prend en charge vos frais de déplacement et de permanence.',
+      if (!inPower(d)) opts.push({ id: 'argent', label: 'Demander une aide financière du parti', hint: camp ? 'Une avance sur le compte de campagne, selon votre soutien interne.' : 'Hors campagne : le parti prend en charge vos frais de déplacement et de permanence.',
         ok: !block && d.week - lastMoney >= 6, reason: block ?? (d.week - lastMoney < 6 ? 'Le trésorier vous a déjà dépanné·e récemment' : undefined) });
       opts.push({ id: 'numero', label: 'Demander le numéro d’une personnalité', hint: 'Le chef a le carnet d’adresses le plus épais du parti.', ok: !block && unknownPersonalities(d).length > 0, reason: block ?? (unknownPersonalities(d).length ? undefined : 'Vous avez déjà tous les numéros') });
       opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Entretenir la relation.', ok: !block, reason: block });
@@ -287,7 +288,7 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       const lastMoney = Number(d.player.flags['phoneMoneyFamily'] ?? -99);
       opts.push({ id: 'nouvelles', label: 'Prendre des nouvelles', hint: 'Une demi-heure loin de la politique.', ok: !block, reason: block });
       opts.push({ id: 'conseil', label: 'Demander conseil', hint: 'Un regard extérieur, sans arrière-pensée.', ok: !block, reason: block });
-      opts.push({ id: 'argent', label: 'Demander un coup de main financier', hint: 'Une fois par an, et ça coûte un peu d’amour-propre.', ok: !block && d.week - lastMoney >= 12, reason: block ?? (d.week - lastMoney < 12 ? 'Vous avez déjà demandé cette année' : undefined) });
+      if (!highOffice(d)) opts.push({ id: 'argent', label: 'Demander un coup de main financier', hint: 'Une fois par an, et ça coûte un peu d’amour-propre.', ok: !block && d.week - lastMoney >= 12, reason: block ?? (d.week - lastMoney < 12 ? 'Vous avez déjà demandé cette année' : undefined) });
       break;
     }
   }
@@ -676,6 +677,7 @@ const GENERIC_TEAM: Incoming[] = [
 
 function chiefSms(d: GameState, rng: Rng): Incoming {
   const chief = leader(d)!;
+  if (inPower(d) && d.player.rankId !== 'ministre') return highChiefSms(d, chief.id, rng);
   const vote = d.vote?.status === 'debat';
   if (vote && rng.chance(0.7)) {
     return { text: `Consigne du groupe sur « ${d.vote!.title} » : ${d.vote!.partyLine}. Je compte sur toi.`, replies: [
@@ -697,6 +699,24 @@ function chiefSms(d: GameState, rng: Rng): Incoming {
   ]);
 }
 
+/** Le chef du parti écrit au Président (ou au Premier ministre) : vouvoiement, et d'autres sujets */
+function highChiefSms(d: GameState, chiefId: string, rng: Rng): Incoming {
+  const h = honorific(d);
+  return rng.pick<Incoming>([
+    { text: `${h}, les députés du groupe grognent : ils se sentent tenus à l’écart. Un déjeuner avec eux calmerait les esprits.`, replies: [
+      rep('dejeuner', 'Les recevoir à déjeuner', [{ kind: 'cohesion', delta: 3 }, st('energy', -3), { kind: 'npcRelation', npcId: chiefId, delta: 2 }], 'Merci. Ils en avaient besoin.'),
+      rep('non', 'Ils ont un gouvernement pour ça', [{ kind: 'cohesion', delta: -2 }, { kind: 'npcRelation', npcId: chiefId, delta: -2 }], 'Je transmettrai. Avec diplomatie.')] },
+    { text: `${h}, le parti prépare son congrès. Un message de vous en ouverture serait très attendu.`, replies: [
+      rep('video', 'Enregistrer un message vidéo', [{ kind: 'faction', factionId: '*', delta: 2 }, { kind: 'npcRelation', npcId: chiefId, delta: 2 }], 'Parfait. Standing ovation garantie.'),
+      rep('distance', 'Rester au-dessus des partis', [st('credibility', 1), { kind: 'faction', factionId: '*', delta: -1 }], 'Je comprends. Certains ne comprendront pas.')] },
+    { text: `${h}, les sondages du parti sont mauvais dans les régions. Il nous faudrait un geste pour les élus locaux.`, replies: [
+      rep('geste', 'Recevoir les présidents de région', [{ kind: 'segment', segment: 'ruraux', delta: 1 }, st('energy', -3), { kind: 'npcRelation', npcId: chiefId, delta: 2 }], 'Je préviens tout le monde.'),
+      rep('plus_tard', 'Après les réformes', [{ kind: 'npcRelation', npcId: chiefId, delta: -1 }], 'Les élections, elles, n’attendront pas.')] },
+    { text: `${h}, bravo pour l’intervention d’hier soir. Les militants sont regonflés.`, replies: [
+      rep('merci', 'Merci, transmettez-leur ma gratitude', [{ kind: 'npcRelation', npcId: chiefId, delta: 2 }, { kind: 'cohesion', delta: 1 }])] },
+  ]);
+}
+
 function personalitySms(d: GameState, id: string, rel: number, rng: Rng): Incoming {
   if (rel <= -25) return rng.pick<Incoming>([
     { text: 'J’ai vu votre sortie d’hier. Vous me le paierez.', replies: [
@@ -705,10 +725,15 @@ function personalitySms(d: GameState, id: string, rel: number, rng: Rng): Incomi
   ]);
   return rng.pick<Incoming>([
     { text: 'Un café discret, loin des caméras ? J’ai une idée qui pourrait nous servir tous les deux.', replies: [
-      rep('oui', 'Avec plaisir', [{ kind: 'npcRelation', npcId: id, delta: 5 }, st('influence', 1), st('energy', -2)], 'Mardi, 8 h, au bistrot derrière l’Assemblée.'),
+      rep('oui', 'Avec plaisir', [{ kind: 'npcRelation', npcId: id, delta: 5 }, st('influence', 1), st('energy', -2)], highOffice(d) ? 'Un dîner discret, alors. Votre secrétariat m’appellera.' : 'Mardi, 8 h, au bistrot derrière l’Assemblée.'),
       rep('non', 'Pas maintenant', [{ kind: 'npcRelation', npcId: id, delta: -1 }])] },
-    { text: 'Entre nous : votre amendement est bon. Je ne le dirai pas en séance, mais je ne voterai pas contre.', replies: [
-      rep('merci', 'Merci, je m’en souviendrai', [{ kind: 'npcRelation', npcId: id, delta: 3 }, { kind: 'flagAdd', key: 'billSupport', delta: 2 }])] },
+    office(d) === 'couronne'
+      ? { text: 'Votre discours d’hier m’a touché·e, je dois l’avouer. Même un républicain peut le reconnaître.', replies: [
+        rep('merci', 'Merci, cela me touche', [{ kind: 'npcRelation', npcId: id, delta: 3 }, st('stress', -1)])] }
+      : { text: office(d) === 'depute' || office(d) === 'base'
+          ? 'Entre nous : votre amendement est bon. Je ne le dirai pas en séance, mais je ne voterai pas contre.'
+          : 'Entre nous : votre réforme tient la route. Je ne le dirai pas en public, mais je ne voterai pas contre.', replies: [
+        rep('merci', 'Merci, je m’en souviendrai', [{ kind: 'npcRelation', npcId: id, delta: 3 }, { kind: 'flagAdd', key: 'billSupport', delta: 2 }])] },
     { text: 'On dit que vous visez plus haut. Prudence : certains vous attendent au tournant.', replies: [
       rep('merci', 'Merci du conseil', [{ kind: 'npcRelation', npcId: id, delta: 2 }, st('stress', 1)])] },
   ]);
@@ -724,7 +749,7 @@ function contactSms(d: GameState, rng: Rng): { who: string; from: string; role: 
       rep('oui', 'Voici ma citation…', [st('popularity', 1), { kind: 'contact', contactId: c.id, trust: 3 }], 'Merci, vous serez en tête d’article.'),
       rep('off', 'En off seulement', [st('influence', 1), { kind: 'contact', contactId: c.id, trust: 2 }], 'Bien noté, « un proche du dossier ».'),
       rep('non', 'Pas aujourd’hui', [{ kind: 'contact', contactId: c.id, trust: -2 }])] } };
-    case 'syndicat': return { ...base, msg: { text: 'La base gronde sur les salaires. Vous viendrez à notre assemblée générale ?', replies: [
+    case 'syndicat': return { ...base, msg: { text: inPower(d) ? `La base gronde sur les salaires. Vous nous recevez ${seat(d)} cette semaine ?` : 'La base gronde sur les salaires. Vous viendrez à notre assemblée générale ?', replies: [
       rep('oui', 'J’y serai', [{ kind: 'contact', contactId: c.id, trust: 5 }, st('energy', -4), { kind: 'dossier', domain: 'social', delta: 2 }], 'Merci, ça comptera.'),
       rep('non', 'Je vous enverrai un message de soutien', [{ kind: 'contact', contactId: c.id, trust: -1 }])] } };
     case 'association': return { ...base, msg: { text: 'Notre gala annuel a lieu le 12. Vous nous feriez l’honneur ?', replies: [
@@ -787,9 +812,11 @@ export function monthlyPhone(d: GameState, rng: Rng): void {
     let ok = false;
     if (roll < 0.35 && team.length) {
       const r = rng.pick(team);
-      const pool = [...(TEAM_SMS[r.role] ?? []), ...GENERIC_TEAM];
+      // Pas d'amendement à cosigner hors de l'Assemblée, pas de tractage pour un chef d'État
+      const own = (TEAM_SMS[r.role] ?? []).filter(() => !(r.role === 'assistant_parlementaire' && office(d) !== 'depute') && !(r.role === 'directeur_campagne' && highOffice(d)));
+      const pool = [...own, ...GENERIC_TEAM];
       if (!sent.has(`equipe:${r.id}`)) ok = send({ kind: 'sms', who: `equipe:${r.id}`, from: r.name, role: STAFF_BY_ROLE.get(r.role)?.title ?? r.role, ...rng.pick(pool) });
-    } else if (roll < 0.6 && leader(d)) {
+    } else if (roll < 0.6 && leader(d) && office(d) !== 'couronne') {
       const chief = leader(d)!;
       if (!sent.has('chef')) ok = send({ kind: 'sms', who: 'chef', from: chief.name, role: 'Chef·fe du parti', ...chiefSms(d, rng) });
     } else if (roll < 0.7 && (d.player.phoneBook ?? []).length) {
