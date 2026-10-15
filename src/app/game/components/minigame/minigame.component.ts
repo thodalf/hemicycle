@@ -28,6 +28,8 @@ import { ArbitrageGameComponent } from './games/arbitrage-game.component';
 import { CitationsGameComponent } from './games/citations-game.component';
 import { LectureGameComponent } from './games/lecture-game.component';
 import { SecuriteGameComponent } from './games/securite-game.component';
+import { InterpreteGameComponent } from './games/interprete-game.component';
+import { FrondeursGameComponent } from './games/frondeurs-game.component';
 
 type Phase = 'intro' | 'play' | 'over';
 
@@ -57,7 +59,7 @@ const DURATION = 15000;
  */
 @Component({
   selector: 'app-minigame',
-  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent, ProtocoleGameComponent, TableGameComponent, InterceptionGameComponent, DeminageGameComponent, InterviewGameComponent, CmpGameComponent, SommetGameComponent, VisiteGameComponent, TrainGameComponent, CortegeGameComponent, ValiseGameComponent, MajoriteGameComponent, StandardGameComponent, PlumeGameComponent, FactcheckGameComponent, InvestituresGameComponent, ArbitrageGameComponent, CitationsGameComponent, LectureGameComponent, SecuriteGameComponent],
+  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent, ProtocoleGameComponent, TableGameComponent, InterceptionGameComponent, DeminageGameComponent, InterviewGameComponent, CmpGameComponent, SommetGameComponent, VisiteGameComponent, TrainGameComponent, CortegeGameComponent, ValiseGameComponent, MajoriteGameComponent, StandardGameComponent, PlumeGameComponent, FactcheckGameComponent, InvestituresGameComponent, ArbitrageGameComponent, CitationsGameComponent, LectureGameComponent, SecuriteGameComponent, InterpreteGameComponent, FrondeursGameComponent],
   templateUrl: './minigame.component.html',
   styleUrl: './minigame.component.scss',
 })
@@ -73,7 +75,7 @@ export class MinigameComponent {
   protected readonly shake = signal(false);
   protected readonly tierLabels = TIER_LABELS;
   /** Jeux qui affichent eux-mêmes leur progression */
-  protected readonly selfScored = new Set(['tournee', 'mot', 'quiz', 'grille', 'protocole', 'table', 'interception', 'deminage', 'interview', 'cmp', 'sommet', 'visite', 'train', 'cortege', 'valise', 'majorite', 'standard', 'plume', 'factcheck', 'investitures', 'arbitrage', 'citations', 'lecture', 'securite']);
+  protected readonly selfScored = new Set(['tournee', 'mot', 'quiz', 'grille', 'protocole', 'table', 'interception', 'deminage', 'interview', 'cmp', 'sommet', 'visite', 'train', 'cortege', 'valise', 'majorite', 'standard', 'plume', 'factcheck', 'investitures', 'arbitrage', 'citations', 'lecture', 'securite', 'interprete', 'frondeurs']);
   private timer: ReturnType<typeof setInterval> | null = null;
   private started = 0;
   private seq = 0;

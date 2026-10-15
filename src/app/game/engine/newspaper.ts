@@ -49,7 +49,7 @@ const KICKER: Record<NewsKind, string> = {
 const THEMES: [RegExp, ArtTheme][] = [
   [/scandale|affaire|enquête|révél|secret|chantage|fuite|procès|parjure|mis en examen/i, 'loupe'],
   [/\broi\b|\breine\b|couronne|palais|royal|souverain|prince/i, 'couronne'],
-  [/censure|\bvote|\bloi\b|\blois\b|assembl|scrutin|amendement|49\.3|texte|obstruction|hémicycle|réforme/i, 'hemicycle'],
+  [/censure|\bvote|\bloi\b|\blois\b|assembl|scrutin|amendement|49\.3|obstruction|hémicycle|réforme/i, 'hemicycle'],
   [/élection|présidentielle|législatives|municipales|candidat|urne|second tour/i, 'urne'],
   [/grève|manif|colère|cortège|révolte|blocage|émeute|rond-point|tracteur|syndicat/i, 'foule'],
   [/économ|chômage|croissance|budget|déficit|dette|bourse|krach|inflation|milliard|entreprise|usine/i, 'courbe'],
@@ -60,10 +60,11 @@ const THEMES: [RegExp, ArtTheme][] = [
   [/climat|canicule|baleine|forêt|feux|eau|ours|écolog/i, 'nature'],
 ];
 
-export function themeOf(text: string, kind?: NewsKind): ArtTheme {
+export function themeOf(text: string, kind?: NewsKind, title?: string): ArtTheme {
   if (kind === 'scandale') return 'loupe';
   if (kind === 'election') return 'urne';
-  for (const [re, t] of THEMES) if (re.test(text)) return t;
+  // Le titre d'abord, le corps ensuite
+  for (const src of [title, text]) if (src) for (const [re, t] of THEMES) if (re.test(src)) return t;
   return 'micro';
 }
 
@@ -75,6 +76,20 @@ function weight(n: NewsItem): number {
   if (/^(Raté|Coup d’éclat)/.test(n.title)) w += n.title.startsWith('Coup') ? 30 : 6;
   w += Math.min(15, (n.body?.length ?? 0) / 20);
   return w;
+}
+
+/** La vie privée ne regarde pas les journaux : famille, santé, argent personnel, téléphone, loge, secrets, objectifs… */
+const PRIVATE = /appel manqué|message ignoré|votre caractère|mariage|marier|un enfant \?|fonder une famille|une rencontre|vous font la cour|amour|couple|divorce|conjoint|votre famille|en famille|maman|anniversaire|naissance de|décès de votre|votre santé|stress|vous craquez|exutoire|initiation|initié|\bloge\b|un frère|vénérable|émissaire du prétendant|rumeur sur|creuser discrètement|chantage|\bsecrets?\b|levier|vos dettes|votre dette|emprunt|épargne|fonds perso|salaire|rémunération|héritage|objectif|style de vie|nouvel avantage|nouveau trait|renommée :|crainte|vélo volé|flashé|vacances|nouvel onglet|mini-jeu|lassitude|complot|détective|maîtresse|amant/i;
+/** Une dépêche peut-elle paraître dans le journal ? */
+export function isPublic(d: GameState, n: NewsItem): boolean {
+  if (n.kind === 'systeme' || n.kind === 'reseau') return false;
+  // On juge le texte rédigé, pas les chiffres de jeu qui l'accompagnent (« Stress +3 »)
+  if (PRIVATE.test(`${n.title} ${prose(n.body)}`)) return false;
+  // Les petits boulots et la carte du parti du joueur : sa vie à lui
+  const me = d.player.name;
+  if (me && new RegExp(`^${me.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} (rejoint|prend sa carte|quitte)`).test(n.title)) return false;
+  if (/se sépare de vous|vous quitte/.test(n.title)) return false;
+  return true;
 }
 
 /** Les dépêches de « routine » (une action et ses gains) ne font pas un article */
@@ -93,7 +108,7 @@ function toArticle(d: GameState, n: NewsItem, page: number): Article {
   const text = `${n.title} ${n.body ?? ''}`;
   const title = n.title.replace(/^Coup d’éclat : /, '').replace(/^Raté : /, 'Raté : ');
   const body = prose(n.body) || (n.tone === 'negative' ? 'Un mois difficile, commentent les observateurs.' : 'Les observateurs saluent l’initiative.');
-  return { id: n.id, kicker: n.title.startsWith('Coup d’éclat') ? 'Le coup d’éclat' : n.title.startsWith('Raté') ? 'Fait divers' : KICKER[n.kind], title, body, tone: n.tone, theme: themeOf(text, n.kind), byline: byline(d, n.id), page };
+  return { id: n.id, kicker: n.title.startsWith('Coup d’éclat') ? 'Le coup d’éclat' : n.title.startsWith('Raté') ? 'Fait divers' : KICKER[n.kind], title, body, tone: n.tone, theme: themeOf(text, n.kind, n.title), byline: byline(d, n.id), page };
 }
 
 /** Les cotes de popularité successives (pour la courbe du baromètre) */
@@ -104,7 +119,7 @@ export function recordBarometre(d: GameState): void {
 }
 
 export function edition(d: GameState, week: number): Edition {
-  const items = d.news.filter(n => n.week === week);
+  const items = d.news.filter(n => n.week === week && isPublic(d, n));
   const ranked = [...items].filter(n => !routine(n)).sort((a, b) => weight(b) - weight(a));
   const fallback: NewsItem = { id: `calme-${week}`, week, kind: 'actu', tone: 'neutral', title: office(d) === 'base' ? 'Un mois sans fracas' : `Calme plat ${seat(d)}`,
     body: 'Pas de crise, pas de scandale : le pays respire, et la classe politique prépare la suite. Les éditorialistes s’ennuient ferme.' };
@@ -148,6 +163,6 @@ export function edition(d: GameState, week: number): Edition {
 
 /** Les mois qui ont une édition (les douze derniers) */
 export function editionWeeks(d: GameState): number[] {
-  const weeks = [...new Set(d.news.map(n => n.week))].sort((a, b) => b - a);
+  const weeks = [...new Set(d.news.filter(n => isPublic(d, n)).map(n => n.week))].sort((a, b) => b - a);
   return weeks.slice(0, 12);
 }

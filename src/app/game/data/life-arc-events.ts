@@ -682,6 +682,39 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'nuage_gate', weight: 0.35, minRank: 'conseiller_municipal', eligible: d => !d.crises?.nuage && !d.player.flags['nuageDone'] && d.week > 16,
+    build: () => ({
+      title: 'Une usine chimique en feu',
+      context: 'Il est 3 heures du matin. L’usine chimique de Saint-Aubin-sur-Seine brûle, et un panache noir dérive vers les villes voisines.',
+      choices: [
+        c('tout_dire', 'Tout dire, tout de suite, même ce qu’on ignore', [cr('nuage', 6, 3, true), { kind: 'flag', key: 'nuageDone', value: true }, s('credibility', 2)], '« Nous ne savons pas encore tout » : une phrase rare, et appréciée.'),
+        c('rassurer', 'Rassurer : « Aucun danger pour la population »', [cr('nuage', 2, 7, true), { kind: 'flag', key: 'nuageDone', value: true }], 'La phrase sera reprise. Souvent. Contre vous.'),
+      ],
+    }),
+  },
+  {
+    tag: 'taxis_gate', weight: 0.35, minRank: 'conseiller_municipal', eligible: d => !d.crises?.taxis && !d.player.flags['taxisDone'] && d.week > 20,
+    build: () => ({
+      title: 'Mille taxis sans chauffeur',
+      context: 'Une entreprise étrangère lance mille taxis autonomes dans Paris, sans autorisation définitive. Les chauffeurs menacent de tout bloquer.',
+      choices: [
+        c('encadrer', 'Suspendre et ouvrir une concertation', [cr('taxis', 6, 3, true), { kind: 'flag', key: 'taxisDone', value: true }, { kind: 'segment', segment: 'populaires', delta: 2 }], 'Les voitures s’arrêtent, la discussion commence.'),
+        c('laisser', 'Laisser rouler : c’est l’avenir', [cr('taxis', 4, 6, true), { kind: 'flag', key: 'taxisDone', value: true }, { kind: 'segment', segment: 'cadres', delta: 2 }, { kind: 'segment', segment: 'populaires', delta: -2 }], 'Les cadres applaudissent ; les aéroports sont bloqués le lendemain.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fusion_gate', weight: 0.3, minRank: 'depute', eligible: d => !d.crises?.fusion && !d.player.flags['fusionDone'] && d.week > 30,
+    build: () => ({
+      title: 'Une percée historique',
+      context: 'La directrice d’un laboratoire de Provence vous appelle, la voix tremblante : la fusion nucléaire a produit plus d’énergie qu’elle n’en consomme.',
+      choices: [
+        c('annoncer', 'L’annoncer au monde, avec elle, dès demain', [cr('fusion', 6, 3, true), { kind: 'flag', key: 'fusionDone', value: true }, { kind: 'intl', prestige: 2 }], 'La conférence de presse est retransmise sur tous les continents.'),
+        c('discretion', 'Garder le secret le temps de protéger les brevets', [cr('fusion', 4, 5, true), { kind: 'flag', key: 'fusionDone', value: true }, s('credibility', 1)], 'Les juristes travaillent jour et nuit. Les rumeurs, elles, courent.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1800,6 +1833,72 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('distiller', 'Financer la distillation', [cr('vin', 5, -3), { kind: 'economy', deficit: 0.03 }], 'Les cuves se vident. Le vin devient du gel hydroalcoolique.'),
         c('export', 'Chercher de nouveaux marchés à l’export', [cr('vin', 6, 2), { kind: 'intl', prestige: 1 }, s('energy', -4)], 'Une tournée en Asie : prometteuse, mais lente.'),
+      ],
+    }),
+  },
+  {
+    tag: 'nuage_potagers', weight: 1, eligible: d => !!d.crises?.nuage,
+    build: () => ({
+      title: 'Des suies dans les potagers',
+      context: 'Des traces noires recouvrent les potagers sur trente kilomètres. Les maraîchers ne savent pas s’ils peuvent vendre leurs légumes.',
+      choices: [
+        c('interdire', 'Interdire la vente le temps des analyses, et indemniser', [cr('nuage', 5, -3), { kind: 'economy', deficit: 0.01 }, { kind: 'segment', segment: 'ruraux', delta: 1 }], 'Les maraîchers sont indemnisés en dix jours.'),
+        c('autoriser', 'Autoriser la vente : les premiers tests sont rassurants', [cr('nuage', 1, 6), { kind: 'segment', segment: 'ruraux', delta: 1 }], 'Les clients, eux, n’achètent plus rien.'),
+      ],
+    }),
+  },
+  {
+    tag: 'nuage_liste', weight: 0.9, eligible: d => !!d.crises?.nuage,
+    build: () => ({
+      title: 'La liste des produits brûlés',
+      context: 'Une association exige la liste complète des 9 000 tonnes de produits partis en fumée. L’industriel invoque le secret des affaires.',
+      choices: [
+        c('publier', 'Exiger la publication intégrale', [cr('nuage', 6, -2), s('credibility', 2), { kind: 'economy', confidence: -1 }], 'La liste est publiée. Longue, inquiétante, mais publique.'),
+        c('secret', 'Respecter le secret des affaires', [cr('nuage', 1, 6), s('credibility', -2)], 'L’association porte plainte.'),
+      ],
+    }),
+  },
+  {
+    tag: 'taxis_accident', weight: 1, eligible: d => !!d.crises?.taxis,
+    build: () => ({
+      title: 'Un taxi autonome frôle une piétonne',
+      context: 'Une vidéo montre un taxi sans chauffeur freiner à trente centimètres d’une piétonne, à Montparnasse. Elle fait le tour du pays.',
+      choices: [
+        c('suspendre', 'Suspendre la flotte pendant l’enquête', [cr('taxis', 3, -4), s('credibility', 1)], 'Les voitures rentrent au dépôt. L’entreprise proteste.'),
+        c('maintenir', 'Maintenir : aucun accident n’a eu lieu', [cr('taxis', 2, 5)], 'La phrase « aucun accident » ne passe pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'taxis_reconversion', weight: 0.9, eligible: d => !!d.crises?.taxis,
+    build: () => ({
+      title: 'Que deviennent les chauffeurs ?',
+      context: 'Trente mille chauffeurs de taxi craignent pour leur métier. Leur syndicat demande un plan.',
+      choices: [
+        c('plan', 'Un plan de reconversion financé par l’entreprise', [cr('taxis', 6, -3), { kind: 'segment', segment: 'populaires', delta: 2 }], 'L’entreprise accepte de payer, à contrecœur.'),
+        c('marche', 'Laisser le marché s’adapter', [cr('taxis', 2, 4), { kind: 'segment', segment: 'populaires', delta: -2 }], 'Les chauffeurs reviennent bloquer le périphérique.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fusion_rachat', weight: 1, eligible: d => !!d.crises?.fusion,
+    build: () => ({
+      title: 'Un milliard pour l’équipe',
+      context: 'Un géant américain propose un milliard de dollars pour racheter le laboratoire, ses brevets et ses quarante chercheurs.',
+      choices: [
+        c('bloquer', 'Bloquer la vente et financer l’équipe', [cr('fusion', 5, -3), { kind: 'economy', deficit: 0.04 }], 'L’État devient actionnaire. Les chercheurs restent.'),
+        c('partenariat', 'Proposer un partenariat à parts égales', [cr('fusion', 4, 1), { kind: 'intl', prestige: 1 }], 'Les négociations s’annoncent longues.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fusion_chercheurs', weight: 0.9, eligible: d => !!d.crises?.fusion,
+    build: () => ({
+      title: 'Les chercheurs rentrent au pays ?',
+      context: 'Des dizaines de physiciens français installés à l’étranger écrivent qu’ils rentreraient… si les salaires suivaient.',
+      choices: [
+        c('rappeler', 'Lancer un grand programme de retour des talents', [cr('fusion', 6, -2), s('politicalCapital', -6), { kind: 'dossier', domain: 'education', delta: 3 }], 'Les premiers arrivent à la rentrée.'),
+        c('patience', 'Promettre de « regarder la question »', [cr('fusion', 1, 4)], 'Ils restent où ils sont.'),
       ],
     }),
   },

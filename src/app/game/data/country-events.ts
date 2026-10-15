@@ -1279,6 +1279,94 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'ev_metro_inonde', weight: 0.35,
+    build: () => ({
+      title: 'Le métro sous les eaux',
+      context: 'Un orage d’une violence inouïe inonde douze stations de métro en une heure. Les images de quais transformés en piscines font le tour du monde.',
+      choices: [
+        c('plan', 'Annoncer un plan d’adaptation des transports au climat', [s('credibility', 2), { kind: 'dossier', domain: 'ecologie', delta: 2 }, s('politicalCapital', -3)], 'Un plan chiffré, salué par les experts.'),
+        c('terrain', 'Descendre dans les stations avec les agents', [s('popularity', 2), s('energy', -4)], 'Bottes aux pieds, au milieu des pompes : la photo parle d’elle-même.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_bac_correction', weight: 0.35,
+    build: () => ({
+      title: 'Les copies du bac en otage',
+      context: 'Des correcteurs menacent de ne pas rendre les notes du bac pour protester contre leurs conditions de travail. Les résultats tombent dans dix jours.',
+      choices: [
+        c('dialogue', 'Recevoir les correcteurs et leur donner des gages', [{ kind: 'dossier', domain: 'education', delta: 2 }, { kind: 'segment', segment: 'jeunes', delta: 1 }, s('politicalCapital', -3)], 'Les notes tombent à l’heure. Les profs ont été entendus.'),
+        c('fermete', 'Rappeler que les examens sont un service public', [s('credibility', 1), { kind: 'segment', segment: 'jeunes', delta: -1 }], 'Les notes arrivent avec trois jours de retard.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_eclipse', weight: 0.25,
+    build: () => ({
+      title: 'Une éclipse totale de Soleil',
+      context: 'Une éclipse totale traverse la France pour la première fois depuis un siècle. Des millions de personnes lèvent les yeux.',
+      choices: [
+        c('ecole', 'La regarder avec une classe d’enfants, lunettes sur le nez', [s('popularity', 2), s('stress', -3)], 'Les enfants hurlent de joie quand le jour revient. Vous aussi, un peu.'),
+        c('travail', 'Rester au travail : il y a plus urgent', [s('energy', 2)], 'Vous la verrez en photo.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_meteorite', weight: 0.25,
+    build: () => ({
+      title: 'Une météorite dans un champ',
+      context: 'Une météorite de quarante kilos s’est écrasée dans un champ de betteraves. L’agriculteur veut la vendre ; les scientifiques veulent l’étudier.',
+      choices: [
+        c('musee', 'Proposer que l’État l’achète pour le Muséum', [s('popularity', 1), s('credibility', 1), { kind: 'funds', account: 'campaign', delta: -1500 }], 'Elle rejoindra les collections nationales. L’agriculteur est ravi.'),
+        c('marche', 'Laisser l’agriculteur la vendre', [{ kind: 'segment', segment: 'ruraux', delta: 1 }], 'Un collectionneur étranger l’achète. Les scientifiques fulminent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_ministre_danse', weight: 0.35, eligible: d => d.player.rankId === 'president' || d.player.rankId === 'premier_ministre',
+    build: () => ({
+      title: 'Un ministre danse sur les réseaux',
+      context: 'Un de vos ministres publie une vidéo où il danse en costume dans son bureau. Elle cumule dix millions de vues… et autant de moqueries.',
+      choices: [
+        c('rire', 'En rire publiquement', [s('popularity', 1), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'La séquence humanise le gouvernement.'),
+        c('recadrer', 'Le recadrer en Conseil des ministres', [s('credibility', 1)], 'La vidéo disparaît. Les mèmes, eux, restent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_degat_eaux_palais', weight: 0.35, eligible: atTop,
+    build: () => ({
+      title: 'Dégât des eaux au Palais',
+      context: 'Une canalisation a cédé au-dessus du salon des ambassadeurs. Une tapisserie du XVIIIᵉ siècle est trempée, et un dîner d’État a lieu dans trois jours.',
+      choices: [
+        c('deplacer', 'Déplacer le dîner dans les jardins, sous une tente', [{ kind: 'intl', prestige: 1 }, s('stress', 2)], 'Un dîner aux chandelles sous les arbres : les invités sont enchantés.'),
+        c('restaurer', 'Tout faire restaurer en urgence', [{ kind: 'funds', account: 'campaign', delta: -3000 }, s('credibility', -1)], 'La facture fuite dans la presse. Elle aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_musee_sature', weight: 0.3,
+    build: () => ({
+      title: 'Le musée ferme : trop de monde',
+      context: 'Le plus grand musée du pays ferme ses portes deux heures : trop de visiteurs, des gardiens débordés, une bousculade devant un tableau célèbre.',
+      choices: [
+        c('reservation', 'Imposer la réservation et des créneaux', [s('credibility', 1), { kind: 'segment', segment: 'cadres', delta: 1 }], 'Plus calme, plus organisé… et un peu moins spontané.'),
+        c('gratuit', 'Ouvrir en nocturne gratuite chaque mois', [s('popularity', 2), { kind: 'segment', segment: 'jeunes', delta: 2 }], 'Les nocturnes font salle comble.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_festival_annule', weight: 0.3, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Un festival menacé d’annulation',
+      context: 'Le festival de théâtre de rue d’une petite ville annonce son annulation : la subvention régionale a été supprimée.',
+      choices: [
+        c('sauver', 'Trouver les fonds pour le sauver', [s('popularity', 1), { kind: 'segment', segment: 'jeunes', delta: 1 }, s('politicalCapital', -3)], 'Le festival aura lieu. Une compagnie joue en votre honneur.'),
+        c('mecenes', 'Appeler les entreprises locales au mécénat', [s('credibility', 1)], 'Trois PME répondent : le festival est sauvé, en version réduite.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

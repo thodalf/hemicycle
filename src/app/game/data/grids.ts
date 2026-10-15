@@ -77,7 +77,7 @@ const villes: GridSet = {
     { id: 'atol', label: 'Initiale de A à L', group: 'initial', test: x => initial(v(x).name) <= 'l' },
     { id: 'mtoz', label: 'Initiale de M à Z', group: 'initial', test: x => initial(v(x).name) >= 'm' },
   ],
-  minPerCell: 2,
+  minPerCell: 3,
 };
 
 /* ── Métro parisien ────────────────────────────────────────── */
@@ -154,7 +154,7 @@ const metro: GridSet = {
     { id: 'double', label: 'Double nom (avec un « – »)', group: 'dash', test: x => /–/.test(st(x).name) },
     { id: 'oneword', label: 'Nom en un seul mot', group: 'dash', test: x => !multiWord(st(x).name) },
   ],
-  minPerCell: 1,
+  minPerCell: 3,
 };
 
 /* ── Capitales du monde ────────────────────────────────────── */
@@ -178,7 +178,7 @@ const capitales: GridSet = {
     { id: 'multi', label: 'Capitale en plusieurs mots', group: 'words', test: x => multiWord(k(x).capital) },
     { id: 'samename', label: 'Même initiale que le pays', group: 'letter', test: x => initial(k(x).capital) === initial(k(x).country) },
   ],
-  minPerCell: 2,
+  minPerCell: 3,
 };
 
 export const GRID_SETS: Record<GridSetId, GridSet> = { villes, metro, capitales };
@@ -206,7 +206,7 @@ export function makeGrid(id: GridSetId, rand: () => number = Math.random): Grid 
   const set = GRID_SETS[id];
   const shuffle = <T,>(a: T[]) => [...a].sort(() => rand() - 0.5);
   let best: Grid | null = null;
-  for (let tries = 0; tries < 800; tries++) {
+  for (let tries = 0; tries < 4000; tries++) {
     const rows = shuffle(set.rows).slice(0, 3);
     const groups = new Set(rows.map(r => r.group));
     const cols = shuffle(set.cols).filter(c => (groups.has(c.group) ? false : (groups.add(c.group), true))).slice(0, 3);
@@ -216,11 +216,25 @@ export function makeGrid(id: GridSetId, rand: () => number = Math.random): Grid 
     if (!solvable(answers)) continue;
     const grid = { set, rows, cols, answers };
     // Préférer des grilles variées : au moins une case plus difficile
-    if (answers.flat().some(cell => cell.length <= 4) || tries > 400) return grid;
+    if (answers.flat().some(cell => cell.length <= 4) || tries > 1500) return grid;
     best ??= grid;
   }
   if (best) return best;
-  // Repli : les trois premières lignes et des critères simples
+  // Repli : la recherche exhaustive d'une grille où chaque case a au moins le minimum de réponses
+  for (const r1 of set.rows) for (const r2 of set.rows) for (const r3 of set.rows) {
+    const rows = [r1, r2, r3];
+    if (new Set(rows.map(r => r.id)).size < 3) continue;
+    const groups = new Set(rows.map(r => r.group));
+    const pool = set.cols.filter(c => !groups.has(c.group));
+    for (let a = 0; a < pool.length; a++) for (let b = a + 1; b < pool.length; b++) for (let c = b + 1; c < pool.length; c++) {
+      const cols = [pool[a], pool[b], pool[c]];
+      if (new Set(cols.map(x => x.group)).size < 3) continue;
+      const answers = rows.map(r => cols.map(col => set.items.filter(x => r.test(x) && col.test(x))));
+      if (answers.some(row => row.some(cell => cell.length < set.minPerCell)) || !solvable(answers)) continue;
+      return { set, rows, cols, answers };
+    }
+  }
+  // Dernier repli : les trois premières lignes et des critères simples
   const rows = set.rows.slice(0, 3);
   const cols = set.cols.filter((c, i, a) => a.findIndex(o => o.group === c.group) === i && !rows.some(r => r.group === c.group)).slice(0, 3);
   return { set, rows, cols, answers: rows.map(r => cols.map(c => set.items.filter(x => r.test(x) && c.test(x)))) };

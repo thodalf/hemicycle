@@ -109,6 +109,12 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Six tonnes d’or ont disparu des coffres de la Banque de France. Aucune effraction, aucune alarme.', 'Les enquêteurs remontent une piste internationale ; la presse du monde entier se moque de la France.', 'Le cerveau du casse serait sur le point d’être identifié… ou de s’envoler.'] },
   vin: { id: 'vin', icon: '🍷', label: 'La guerre du vin', gaugeLabel: 'Débouchés', riskLabel: 'Colère des vignerons', months: 5, drift: { gauge: 3, risk: 5 },
     stages: ['Une grande puissance taxe à 100 % les vins français. Les exportations s’effondrent du jour au lendemain.', 'Les cuves débordent, les vignerons bloquent les routes, Bordeaux et la Bourgogne grondent.', 'Une négociation de la dernière chance s’ouvre : un accord, ou des arrachages massifs.'] },
+  nuage: { id: 'nuage', icon: '☁️', label: 'Le nuage toxique', gaugeLabel: 'Transparence', riskLabel: 'Défiance sanitaire', months: 4, drift: { gauge: 3, risk: 5 },
+    stages: ['Une usine chimique de Saint-Aubin-sur-Seine brûle toute la nuit : un nuage noir de vingt kilomètres s’étire sur la région.', 'Des suies sur les potagers, une odeur persistante, des analyses contradictoires : la défiance monte.', 'Les résultats des grandes analyses tombent. Il faudra dire la vérité, toute la vérité.'] },
+  taxis: { id: 'taxis', icon: '🚕', label: 'Les taxis sans chauffeur', gaugeLabel: 'Acceptation', riskLabel: 'Colère des chauffeurs', months: 5, drift: { gauge: 3, risk: 4 },
+    stages: ['Une entreprise lance mille taxis sans chauffeur dans Paris, sans attendre d’autorisation définitive.', 'Les chauffeurs bloquent les aéroports ; une voiture autonome frôle un piéton à Montparnasse.', 'Le Conseil d’État doit trancher : encadrer, interdire ou laisser rouler.'] },
+  fusion: { id: 'fusion', icon: '⚛️', label: 'La percée de la fusion', gaugeLabel: 'Percée scientifique', riskLabel: 'Fuite des cerveaux', months: 6, drift: { gauge: 3, risk: 4 },
+    stages: ['Un laboratoire de Provence obtient, pour la première fois, plus d’énergie qu’il n’en consomme par fusion nucléaire.', 'Les géants américains et asiatiques veulent racheter l’équipe et ses brevets.', 'L’heure du choix : un grand programme national… ou laisser filer la découverte.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -592,6 +598,33 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         s.popularity = clamp(s.popularity - 4); economy(d).growth -= 0.1; economy(d).unemployment += 0.1;
         lose('Les vignes arrachées', 'Faute d’accord, des milliers d’hectares sont arrachés. Les régions viticoles ne vous le pardonneront pas.');
+      }
+      break;
+    case 'nuage':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 4); s.popularity = clamp(s.popularity + 2);
+        win('La vérité, enfin', 'Analyses publiées, indemnisations versées, usine reconstruite aux normes : les riverains saluent une transparence rare.');
+      } else {
+        s.credibility = clamp(s.credibility - 6); s.popularity = clamp(s.popularity - 2);
+        lose('Le nuage du soupçon', 'Des chiffres sortis au compte-gouttes, des potagers interdits trop tard : la région ne vous croit plus.');
+      }
+      break;
+    case 'taxis':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 3); economy(d).growth += 0.05; s.influence = clamp(s.influence + 2);
+        win('Une route partagée', 'Un cadre clair : taxis autonomes autorisés sur certaines lignes, chauffeurs reconvertis et indemnisés. Paris devient une vitrine.');
+      } else {
+        s.popularity = clamp(s.popularity - 3); s.credibility = clamp(s.credibility - 2);
+        lose('La guerre des taxis', 'Accident, blocages, recours : l’expérience tourne au fiasco et l’entreprise part s’installer ailleurs.');
+      }
+      break;
+    case 'fusion':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 4); d.intl.prestige = clamp(d.intl.prestige + 4); economy(d).confidence += 3; p.renown = (p.renown ?? 0) + 30;
+        win('L’étoile française', 'Un grand programme national, des chercheurs qui reviennent de l’étranger, un premier réacteur prototype annoncé : la France tient la tête de la course.');
+      } else {
+        d.intl.prestige = clamp(d.intl.prestige - 3); s.credibility = clamp(s.credibility - 3);
+        lose('La découverte envolée', 'L’équipe part en Californie avec ses brevets. La France regardera la suite de loin.');
       }
       break;
     case 'tempete_solaire':

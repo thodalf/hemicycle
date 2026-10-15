@@ -469,6 +469,33 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Les cuves sont pleines et les banques s’impatientent. Mais si vous tenez bon, on tiendra aussi.', effects: [{ kind: 'crisis', arc: 'vin', gauge: 3, risk: -3 }] }) },
     ],
   },
+  // ── Le nuage toxique ──
+  {
+    key: 'sc:nuage', icon: '☁️', when: d => !!d.crises?.nuage,
+    name: () => 'Dr Sylvie Arnoux', role: () => 'Toxicologue, présidente du comité d’experts',
+    options: () => [
+      { id: 'sc_nuage_point', label: 'Demander les derniers résultats', hint: 'Elle refuse de dire autre chose que ce qu’elle sait.', ask: 'Docteure, que disent les analyses ?', cooldown: 1,
+        run: () => ({ answer: 'L’air est redevenu normal. Les sols, il faudra des mois. Dites-le exactement comme ça.', effects: [{ kind: 'crisis', arc: 'nuage', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── Les taxis ──
+  {
+    key: 'sc:taxis', icon: '🚕', when: d => !!d.crises?.taxis,
+    name: () => 'Mourad Benhamou', role: () => 'Porte-parole des chauffeurs de taxi',
+    options: () => [
+      { id: 'sc_taxis_point', label: 'Prendre le pouls des chauffeurs', hint: 'Vingt-cinq ans de taxi, et une colère froide.', ask: 'Mourad, vous allez bloquer encore longtemps ?', cooldown: 1,
+        run: () => ({ answer: 'Tant qu’on n’aura pas de garanties. Mais votre appel compte : on lève le barrage de l’aéroport ce soir.', effects: [{ kind: 'crisis', arc: 'taxis', gauge: 3, risk: -3 }] }) },
+    ],
+  },
+  // ── La fusion ──
+  {
+    key: 'sc:fusion', icon: '⚛️', when: d => !!d.crises?.fusion,
+    name: () => 'Pr Laure Saint-Cyr', role: () => 'Directrice du laboratoire de fusion',
+    options: () => [
+      { id: 'sc_fusion_point', label: 'Prendre des nouvelles du réacteur', hint: 'Elle n’a pas dormi depuis la percée.', ask: 'Professeure, ça tient toujours ?', cooldown: 1,
+        run: () => ({ answer: 'Troisième essai réussi ce matin. Mais Boston nous a fait une offre. Mes chercheurs hésitent.', effects: [{ kind: 'crisis', arc: 'fusion', gauge: 4, risk: -1 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -552,7 +579,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

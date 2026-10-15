@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs';
 
 export interface TriItem {
   text: string;
@@ -548,6 +548,14 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'plan_securite', kind: 'securite', icon: '👮', title: 'Le plan de sécurité',
     rule: 'Placez vos équipes sur le parcours : chacune couvre sa case et les cases voisines. Couvrez le plus de risque possible.',
+  },
+  {
+    id: 'interprete', kind: 'interprete', icon: '🗣️', title: 'L’interprète',
+    rule: 'Votre homologue parle anglais, allemand, espagnol ou italien : choisissez la bonne traduction avant la fin du chrono.',
+  },
+  {
+    id: 'reperer_frondeurs', kind: 'frondeurs', icon: '🕵️', title: 'Repérer les frondeurs',
+    rule: 'Les votes défilent : touchez « Frondeur ! » quand un député de votre groupe vote contre ou s’abstient. Les fausses alertes coûtent cher.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',
