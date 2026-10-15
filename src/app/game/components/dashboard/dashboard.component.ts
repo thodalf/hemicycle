@@ -78,7 +78,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
     <header class="topbar">
       <div class="brand">Hémicycle</div>
       <div class="facts">
-        <span class="date"><span class="eyebrow">Date</span> <strong>{{ game.date() }}</strong></span>
+        <span class="date"><span class="eyebrow">Date</span> @for (dt of [game.date()]; track dt) { <strong class="flip">{{ dt }}</strong> }</span>
         <span><span class="eyebrow">À la une</span> <strong>{{ agenda() }}</strong></span>
         <span><span class="eyebrow">Rang</span> <strong>{{ game.roleLabel() }}</strong></span>
       </div>
@@ -296,7 +296,9 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
       > div { display: grid; gap: 2px; } strong { font-family: var(--font-display); font-size: 17px; } }
     .budget-card { display: grid; gap: 6px; .card-title { margin-bottom: 4px; } .btn { margin-top: 6px; justify-self: start; } }
     .row-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-    .date strong { text-transform: capitalize; }
+    .date strong { text-transform: capitalize; display: inline-block; }
+    @media (prefers-reduced-motion: no-preference) { .date .flip { animation: flip .6s cubic-bezier(.3,1.4,.5,1); transform-origin: 50% 0; } }
+    @keyframes flip { from { transform: perspective(300px) rotateX(-90deg); opacity: 0; } }
     .b-row { display: flex; justify-content: space-between; font-size: 13px; .neg { color: var(--bad); } }
     .col-left, .col-main, .col-right { display: grid; gap: 16px; align-content: start; min-width: 0; }
     .overlay { position: fixed; inset: 0; background: rgba(10, 12, 18, .55); display: grid; place-items: center; padding: 16px; z-index: 10; }

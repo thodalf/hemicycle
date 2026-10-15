@@ -38,7 +38,7 @@ export const ARCADE: ArcadeGame[] = [
   },
   {
     id: 'metro', gameId: 'metrodoku', icon: 'Ⓜ', label: 'Metrodoku', limit: 'jour',
-    blurb: 'Neuf stations du métro parisien, des lignes décrites par leur tracé : la grille que tout Paris fait entre deux correspondances.',
+    blurb: 'Neuf stations du métro parisien, des lignes sans leurs terminus : la grille que tout Paris fait entre deux correspondances.',
     gains: 'Influence, jeunes et cadres',
     reward: [{ kind: 'stat', stat: 'influence', delta: 2 }, { kind: 'segment', segment: 'jeunes', delta: 2 }, { kind: 'segment', segment: 'cadres', delta: 2 }, { kind: 'stat', stat: 'stress', delta: -2 }],
   },

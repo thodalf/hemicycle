@@ -115,6 +115,12 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Une entreprise lance mille taxis sans chauffeur dans Paris, sans attendre d’autorisation définitive.', 'Les chauffeurs bloquent les aéroports ; une voiture autonome frôle un piéton à Montparnasse.', 'Le Conseil d’État doit trancher : encadrer, interdire ou laisser rouler.'] },
   fusion: { id: 'fusion', icon: '⚛️', label: 'La percée de la fusion', gaugeLabel: 'Percée scientifique', riskLabel: 'Fuite des cerveaux', months: 6, drift: { gauge: 3, risk: 4 },
     stages: ['Un laboratoire de Provence obtient, pour la première fois, plus d’énergie qu’il n’en consomme par fusion nucléaire.', 'Les géants américains et asiatiques veulent racheter l’équipe et ses brevets.', 'L’heure du choix : un grand programme national… ou laisser filer la découverte.'] },
+  viaduc: { id: 'viaduc', icon: '🌉', label: 'Le viaduc fissuré', gaugeLabel: 'Sécurité des ouvrages', riskLabel: 'Isolement de la vallée', months: 5, drift: { gauge: 3, risk: 5 },
+    stages: ['Une fissure de quarante mètres sur le grand viaduc de la vallée : il est fermé dans la nuit, et cent mille habitants se retrouvent coupés en deux.', 'Détours de deux heures, commerces vides, ambulances retardées : la vallée s’impatiente, et l’on découvre que d’autres ponts vieillissent mal.', 'Réparer, reconstruire ou inspecter tout le pays : l’heure du choix.'] },
+  tresor: { id: 'tresor', icon: '🏺', label: 'Le trésor du chantier', gaugeLabel: 'Patrimoine préservé', riskLabel: 'Pillage', months: 4, drift: { gauge: 3, risk: 4 },
+    stages: ['Sous un chantier de tramway, une pelleteuse met au jour des milliers de pièces d’or romaines. Le chantier s’arrête net.', 'Des détectoristes rôdent la nuit, des pièces apparaissent sur des sites de vente, la mairie veut relancer les travaux.', 'Les fouilles s’achèvent : musée, vente ou dispersion ?'] },
+  algues: { id: 'algues', icon: '🌿', label: 'Les algues vertes', gaugeLabel: 'Plan de reconquête', riskLabel: 'Colère du littoral', months: 6, drift: { gauge: 3, risk: 5 },
+    stages: ['Les algues vertes envahissent les plages de la baie ; un joggeur fait un malaise, les plages ferment en plein été.', 'Les agriculteurs se sentent accusés, les hôteliers comptent les annulations, les riverains réclament des comptes.', 'Les premières mesures de l’eau tombent : le plan a-t-il changé quelque chose ?'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -625,6 +631,33 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         d.intl.prestige = clamp(d.intl.prestige - 3); s.credibility = clamp(s.credibility - 3);
         lose('La découverte envolée', 'L’équipe part en Californie avec ses brevets. La France regardera la suite de loin.');
+      }
+      break;
+    case 'viaduc':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 4); s.popularity = clamp(s.popularity + 2);
+        win('Le pont rouvert', 'Réparé en un temps record, et un grand plan d’inspection des ouvrages lancé dans tout le pays : la vallée respire.');
+      } else {
+        s.popularity = clamp(s.popularity - 4); s.credibility = clamp(s.credibility - 2);
+        lose('La vallée oubliée', 'Des mois de détours, des commerces fermés, des études qui s’empilent : le viaduc reste fermé et la vallée vous en veut.');
+      }
+      break;
+    case 'tresor':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 3); p.renown = (p.renown ?? 0) + 15; s.credibility = clamp(s.credibility + 2);
+        win('Le trésor au musée', 'Les pièces rejoignent un nouveau musée sur place : les files d’attente s’étirent dès l’ouverture.');
+      } else {
+        s.credibility = clamp(s.credibility - 4);
+        lose('Le trésor dispersé', 'Une partie des pièces a disparu, le reste dort dans des caisses. Les archéologues ne vous le pardonneront pas.');
+      }
+      break;
+    case 'algues':
+      if (a.gauge >= a.risk) {
+        s.credibility = clamp(s.credibility + 3); s.popularity = clamp(s.popularity + 2);
+        win('La baie reconquise', 'Moins de nitrates, des agriculteurs accompagnés, des plages rouvertes : la baie reprend des couleurs.');
+      } else {
+        s.popularity = clamp(s.popularity - 3); s.credibility = clamp(s.credibility - 3);
+        lose('La marée verte', 'Les algues reviennent chaque été, plus nombreuses. Le littoral ne croit plus aux plans.');
       }
       break;
     case 'tempete_solaire':

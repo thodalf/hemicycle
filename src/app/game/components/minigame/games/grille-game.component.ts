@@ -2,7 +2,7 @@ import { Component, DestroyRef, ElementRef, computed, inject, input, output, sig
 import { FxService } from '../../../services/fx.service';
 import { MinigameDef } from '../../../data/minigames';
 import { normalize } from '../../../data/departements';
-import { Grid, GridItem, gridFromIds, makeGrid } from '../../../data/grids';
+import { Grid, GridItem, gridFromIds, makeGrid, rarity } from '../../../data/grids';
 import { GridResult, GridSave, clearSave, dailyRand, loadSave, saveResult, writeSave } from '../../../engine/arcade-save';
 import { ArcadeResultComponent } from '../../arcade-panel/arcade-result.component';
 
@@ -19,6 +19,7 @@ import { todayKey } from '../../../engine/daily';
       <div class="head">
         <span class="lives" [attr.aria-label]="left() + ' erreur(s) encore permise(s)'">Erreurs permises
           @for (h of hearts(); track $index) { <i class="heart" [class.lost]="!h" aria-hidden="true">{{ h ? '❤️' : '🖤' }}</i> }</span>
+        <span class="pts-total" [class.bump]="bump()" title="Points de rareté : plus la réponse est rare, plus elle rapporte">⭐ <strong class="mono">{{ total() }}</strong> pts</span>
         <span><strong class="mono">{{ filled() }}</strong> / 9</span>
       </div>
       <div class="grid" role="grid" [attr.aria-label]="'Grille : ' + grid.set.noun + 's'">
@@ -30,7 +31,8 @@ import { todayKey } from '../../../engine/daily';
             @let v = cells()[ri][ci];
             <button type="button" class="cell" role="gridcell" [attr.data-cell]="ri * 3 + ci" [class.wrong]="wrong() === ri * 3 + ci" [class.sel]="sel()?.[0] === ri && sel()?.[1] === ci" [class.done]="!!v" [class.reveal]="!!revealed()[ri][ci]"
               (click)="choose(ri, ci)" [attr.aria-label]="v ? v.name : (r.label + ' et ' + c.label)">
-              @if (v) { <b>{{ v.name }}</b>@if (v.tag) { <small>{{ v.tag }}</small> } }
+              @if (v) { <b>{{ v.name }}</b>@if (v.tag) { <small>{{ v.tag }}</small> }
+                @if (pts()[ri * 3 + ci]; as pt) { <em class="pt" [class.rare]="pt >= 80" [class.vrare]="pt >= 95">+{{ pt }}</em> } }
               @else if (revealed()[ri][ci]; as x) { <b>{{ x.name }}</b>@if (x.tag) { <small>{{ x.tag }}</small> } }
               @else { <span class="plus">+</span><small class="n">{{ grid.answers[ri][ci].length }} possible{{ grid.answers[ri][ci].length > 1 ? 's' : '' }}</small> }
             </button>
@@ -65,7 +67,13 @@ import { todayKey } from '../../../engine/daily';
   styles: `
     :host { display: block; width: 100%; }
     .doku { display: grid; gap: 10px; }
-    .head { display: flex; justify-content: space-between; font-size: 13px; }
+    .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
+    .pts-total { padding: 2px 9px; border-radius: 999px; background: #fff4d6; color: #7a5300; font-weight: 600; }
+    .pts-total.bump { animation: bump .5s ease; }
+    @keyframes bump { 40% { transform: scale(1.18); } }
+    .cell { position: relative; }
+    .pt { position: absolute; top: 3px; right: 4px; font: 700 9.5px var(--font-body); font-style: normal; color: var(--ink-3); }
+    .pt.rare { color: #b07a00; } .pt.vrare { color: #8a3ffc; }
     .grid { display: grid; grid-template-columns: minmax(64px, .8fr) repeat(3, 1fr); gap: 5px; }
     .corner { display: grid; place-items: center; font-size: 22px; }
     .crit { display: grid; place-items: center; text-align: center; padding: 4px; font-size: 11.5px; font-weight: 600; line-height: 1.2;
@@ -127,6 +135,10 @@ export class GrilleGameComponent {
   /** Résultat de la partie du jour (salle de jeux) */
   protected readonly result = signal<GridResult | null>(null);
   protected readonly shaking = signal(false);
+  /** Points de rareté case par case */
+  protected readonly pts = signal<(number | null)[]>(Array(9).fill(null));
+  protected readonly total = computed(() => this.pts().reduce<number>((t, p) => t + (p ?? 0), 0));
+  protected readonly bump = signal(false);
   protected readonly wrong = signal<number | null>(null);
   protected readonly hearts = computed(() => Array.from({ length: MAX_MISTAKES }, (_, i) => i < this.left()));
   private readonly fx = inject(FxService);
@@ -153,6 +165,7 @@ export class GrilleGameComponent {
       const byKey = new Map(this.grid.set.items.map(x => [x.key, x]));
       this.cells.set([0, 1, 2].map(r => [0, 1, 2].map(c => byKey.get(saved.cells[r * 3 + c] ?? '') ?? null)));
       this.left.set(Math.min(MAX_MISTAKES, saved.left));
+      this.pts.set(this.cells().flat().map((x, i) => (x ? saved.pts?.[i] ?? rarity(this.grid.answers[Math.floor(i / 3)][i % 3], x).points : null)));
       this.message.set(`Partie reprise : ${this.filled()} case(s) déjà remplie(s).`);
     }
     this.persist();
@@ -173,7 +186,7 @@ export class GrilleGameComponent {
   private persist(): void {
     const key = this.saveKey();
     if (!key || this.over()) return;
-    writeSave(key, { kind: 'grille', rows: this.grid.rows.map(r => r.id), cols: this.grid.cols.map(c => c.id), cells: this.cells().flat().map(x => x?.key ?? null), left: this.left() });
+    writeSave(key, { kind: 'grille', rows: this.grid.rows.map(r => r.id), cols: this.grid.cols.map(c => c.id), cells: this.cells().flat().map(x => x?.key ?? null), left: this.left(), pts: this.pts() });
   }
 
   protected light(color?: string): boolean {
@@ -212,10 +225,13 @@ export class GrilleGameComponent {
     this.query.set('');
     if (row.test(x) && col.test(x)) {
       this.cells.update(g => g.map((line, i) => line.map((v, j) => (i === r && j === c ? x : v))));
-      this.message.set(`${x.name}${x.tag ? ` (${x.tag})` : ''} : bien vu !`);
+      const rar = rarity(this.grid.answers[r][c], x);
+      this.pts.update(p => p.map((v, i) => (i === r * 3 + c ? rar.points : v)));
+      this.bump.set(true); setTimeout(() => this.bump.set(false), 500);
+      this.message.set(`${x.name}${x.tag ? ` (${x.tag})` : ''} : bien vu ! ${rar.label} : +${rar.points} pts.`);
       const el = this.cellEl(r * 3 + c);
       this.fx.burstAt(el, 'good');
-      this.fx.floatAt(el, ['Bien vu !', 'Exact !', 'Bravo !', '+1'][this.filled() % 4], 'good');
+      this.fx.floatAt(el, `+${rar.points}${rar.points >= 95 ? ' 💎' : rar.points >= 80 ? ' ✨' : ''}`, 'good');
       this.sel.set(null);
       this.persist();
       if (this.filled() === 9) this.finish('Grille complète !');
@@ -270,7 +286,7 @@ export class GrilleGameComponent {
     } else {
       this.fx.stamp('Grille rendue', 'neutral', `${this.filled()}/9`);
     }
-    this.message.set(`${text} ${this.filled()} case(s) sur 9.`);
+    this.message.set(`${text} ${this.filled()} case(s) sur 9 · ${this.total()} points de rareté.`);
     this.progress.emit({ live: score, time: 0 });
     if (key) {
       const view = (c: { label: string; badge?: string; color?: string }) => ({ label: c.label, ...(c.badge ? { badge: c.badge, color: c.color } : {}) });
@@ -281,6 +297,7 @@ export class GrilleGameComponent {
         answers: this.grid.answers.flat().map(opts => opts.map(o => o.name)),
         found: this.filled(), mistakes: MAX_MISTAKES - this.left(), maxMistakes: MAX_MISTAKES,
         outcome: this.filled() === 9 ? 'complete' : this.left() <= 0 ? 'perdu' : 'abandon',
+        pts: this.pts(), points: this.total(),
       };
       saveResult(r);
       this.result.set({ ...r, day: todayKey() });

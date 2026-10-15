@@ -5,7 +5,7 @@ import { LIFESTYLES, LIFESTYLE_BY_ID, RENOWN_TIERS, XP_PER_PERK, renownTier } fr
 import { perksIn, stressLevel } from '../../engine/character';
 import { LifestyleModalComponent } from '../lifestyle-modal/lifestyle-modal.component';
 import { TRAITS, traitLabel } from '../../data/traits';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
 import { ProgressionService } from '../../services/progression.service';
@@ -73,8 +73,9 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
         @for (g of gauges; track g.key) {
           @let v = game.stats()[g.key];
           <li [title]="g.hint" [attr.data-stat]="g.key">
-            <div class="row"><span>{{ label(g.key) }}</span><span class="mono">{{ v | number: '1.0-0' }}</span></div>
-            <div class="bar"><span [style.width.%]="v" [style.background]="color(v, g.inverse)"></span></div>
+            @let dv = deltas()[g.key];
+            <div class="row"><span>{{ label(g.key) }}</span><span class="mono val">@if (dv) { <i class="dlt" [class.up]="dv > 0" [class.down]="dv < 0">{{ dv > 0 ? '+' + dv : '−' + (-dv) }}</i> }{{ v | number: '1.0-0' }}</span></div>
+            <div class="bar" [class.glow-up]="(dv ?? 0) > 0" [class.glow-down]="(dv ?? 0) < 0"><span [style.width.%]="v" [style.background]="color(v, g.inverse)"></span></div>
           </li>
         }
         <li title="Risque de fuite ou de scandale">
@@ -229,6 +230,14 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
   styles: `
     :host { display: grid; gap: 12px; align-content: start; }
     .name { font-size: 24px; margin-top: 4px; }
+    .val { display: inline-flex; align-items: center; gap: 6px; }
+    .dlt { font: 700 11px var(--font-body); font-style: normal; padding: 0 6px; border-radius: 999px; animation: dlt 4s ease forwards; }
+    .dlt.up { color: var(--good); background: var(--good-soft); } .dlt.down { color: var(--bad); background: var(--bad-soft); }
+    @keyframes dlt { 0% { opacity: 0; transform: translateY(6px) scale(.6); } 10% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+    .bar.glow-up span, .bar.glow-down span { position: relative; overflow: hidden; }
+    .bar.glow-up span::after, .bar.glow-down span::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent); transform: translateX(-100%); animation: sheen 1.1s .2s ease 2; }
+    @keyframes sheen { to { transform: translateX(100%); } }
+    @media (prefers-reduced-motion: reduce) { .dlt, .bar span::after { animation: none !important; } .dlt { opacity: 1; } }
     .rank { display: flex; align-items: center; gap: 6px; color: var(--ink-2); margin: 2px 0 14px; }
     .dot { width: 9px; height: 9px; border-radius: 50%; }
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -318,6 +327,24 @@ export class ProfilePanelComponent {
   });
   protected readonly progression = inject(ProgressionService);
   protected readonly gauges = GAUGES;
+  /** Variations du mois écoulé, affichées quelques secondes à côté des jauges */
+  protected readonly deltas = signal<Partial<Record<StatKey, number>>>({});
+  private snap: { week: number; stats: Record<string, number> } | null = null;
+  private deltaTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly trackDeltas = effect(() => {
+    const week = this.game.week();
+    const stats = { ...this.game.stats() } as Record<string, number>;
+    untracked(() => {
+      const prev = this.snap;
+      this.snap = { week, stats };
+      if (!prev || prev.week === week) return;
+      const d: Partial<Record<StatKey, number>> = {};
+      for (const g of GAUGES) { const x = Math.round((stats[g.key] ?? 0) - (prev.stats[g.key] ?? 0)); if (x) d[g.key] = x; }
+      this.deltas.set(d);
+      if (this.deltaTimer) clearTimeout(this.deltaTimer);
+      this.deltaTimer = setTimeout(() => this.deltas.set({}), 4200);
+    });
+  });
   protected readonly domains = DOMAINS;
   protected readonly levels = [0, 1, 2, 3, 4];
   protected readonly conversions = CONVERSIONS;

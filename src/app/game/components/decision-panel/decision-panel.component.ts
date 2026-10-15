@@ -34,8 +34,8 @@ const SOURCE_LABELS: Record<Decision['source'], string> = {
       </div>
     }
 
-    @for (d of decisions(); track d.id) {
-      <article class="card decision" [class.urgent]="d.deadlineWeek <= game.week()">
+    @for (d of decisions(); track d.id; let di = $index) {
+      <article class="card decision" [class.urgent]="d.deadlineWeek <= game.week()" [style.animation-delay.ms]="di * 90">
         <header>
           <app-emblem [decision]="d" />
           <span class="chip accent">{{ sourceLabel(d) }}</span>

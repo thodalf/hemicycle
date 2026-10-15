@@ -44,7 +44,7 @@ const LEVELS: { max: number; label: string; tone: string }[] = [
     </div>
     <div class="vital money" [class]="'h-' + health()" [title]="moneyTip()">
       <span class="eyebrow">Fonds</span>
-      <strong class="mono">{{ funds() | number: '1.0-0' }} €</strong>
+      @for (f of [funds()]; track f) { <strong class="mono pulse" [class.gain]="trend() > 0" [class.loss]="trend() < 0">{{ f | number: '1.0-0' }} €</strong> }
       @if (health() === 'decouvert') { <span class="tag">Découvert</span> }
       @if (health() === 'danger') { <span class="tag">Banqueroute</span> }
     </div>
@@ -62,6 +62,10 @@ const LEVELS: { max: number; label: string; tone: string }[] = [
     .health .lbl { color: var(--ink-2); font-weight: 400; }
     .lbl { color: var(--ink-2); }
     .alarm { border-color: var(--bad); animation: alarm 1.4s ease-in-out infinite; }
+    @media (prefers-reduced-motion: no-preference) { .pulse.gain { animation: gain .9s ease; } .pulse.loss { animation: loss .9s ease; } }
+    @keyframes gain { 30% { color: var(--good); transform: scale(1.12); } }
+    @keyframes loss { 30% { color: var(--bad); transform: translateX(-3px); } 50% { transform: translateX(3px); } }
+    .pulse { display: inline-block; }
     .money .tag { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--bad); color: var(--surface); }
     .h-tendu strong { color: var(--warn); }
     .h-decouvert strong, .h-danger strong { color: var(--bad); }
@@ -103,6 +107,14 @@ export class VitalsComponent {
   protected readonly healthTip = computed(() => `${this.healthInfo().label} · ${this.age()} ans · Sous 38, alertes médicales ; plus la santé est basse, plus le risque de mourir grimpe.`);
 
   protected readonly funds = computed(() => this.game.player().finances.personal);
+  private lastFunds: number | null = null;
+  /** Sens de la dernière variation des fonds (pour l'animation) */
+  protected readonly trend = computed(() => {
+    const f = this.funds();
+    const prev = this.lastFunds;
+    this.lastFunds = f;
+    return prev === null ? 0 : Math.sign(f - prev);
+  });
   protected readonly health = computed(() => moneyHealth(this.game.s()));
   protected readonly moneyTip = computed(() => {
     const debt = loanDebt(this.game.s());

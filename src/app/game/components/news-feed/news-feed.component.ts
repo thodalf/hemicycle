@@ -32,7 +32,7 @@ const KIND_LABELS: Record<NewsKind, string> = {
         </button>
         <div class="mini">
           <ol>@for (a of e.articles.slice(0, 3); track a.id) { <li><span class="k">{{ a.kicker }}</span> {{ a.title }}</li> }</ol>
-          <div class="baro"><b>{{ e.barometre.cote }} %</b><small>de bonnes opinions</small>
+          <div class="baro"><b>{{ e.barometre.cote }} %</b><small>{{ e.barometre.label }}</small>
             <span [class.up]="e.barometre.trend > 0" [class.down]="e.barometre.trend < 0">{{ e.barometre.trend > 0 ? '▲' : e.barometre.trend < 0 ? '▼' : '=' }} {{ e.barometre.trend !== 0 ? (e.barometre.trend > 0 ? '+' : '') + e.barometre.trend : '' }}</span></div>
         </div>
         <button type="button" class="btn primary small read" (click)="openPaper()">📰 Lire le journal</button>

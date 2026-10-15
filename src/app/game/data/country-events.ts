@@ -1367,6 +1367,94 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'ev_boulangerie_derniere', weight: 0.35,
+    build: () => ({
+      title: 'La dernière boulangerie du canton ferme',
+      context: 'Dans un canton rural, la dernière boulangerie baisse le rideau : le boulanger part à la retraite, personne ne reprend. Les habitants lancent une pétition.',
+      choices: [
+        c('aider', 'Proposer une aide à l’installation d’un jeune boulanger', [{ kind: 'segment', segment: 'ruraux', delta: 2 }, s('politicalCapital', -2), { kind: 'dossier', domain: 'territoires', delta: 2 }], 'Une jeune boulangère reprend le fournil au printemps.'),
+        c('depot', 'Suggérer un dépôt de pain au bar-tabac', [{ kind: 'segment', segment: 'ruraux', delta: -1 }], 'Le pain arrive en camionnette. Ce n’est plus pareil.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_record_froid', weight: 0.3,
+    build: () => ({
+      title: 'Vague de froid record',
+      context: 'Moins vingt dans l’Est, des sans-abri en danger, des réseaux électriques à la limite. Les associations appellent à l’aide.',
+      choices: [
+        c('gymnases', 'Ouvrir les gymnases et les bâtiments publics la nuit', [s('popularity', 2), { kind: 'dossier', domain: 'social', delta: 2 }, s('politicalCapital', -2)], 'Des milliers de lits de camp dans les gymnases : personne ne dort dehors.'),
+        c('sobriete', 'Appeler à la sobriété électrique', [s('credibility', 1), { kind: 'segment', segment: 'retraites', delta: -1 }], 'Le réseau tient. Les appartements, eux, sont glacés.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_chanteur_hommage', weight: 0.25,
+    build: () => ({
+      title: 'Un géant de la chanson s’éteint',
+      context: 'Le chanteur le plus populaire de sa génération est mort. Des milliers de fans se rassemblent spontanément devant sa maison.',
+      choices: [
+        c('hommage', 'Proposer un hommage national', [s('popularity', 2), { kind: 'segment', segment: 'retraites', delta: 2 }], 'Une foule immense chante ses refrains sous la pluie.'),
+        c('sobre', 'Un communiqué sobre, et du respect', [s('credibility', 1)], 'Un texte juste, salué pour sa retenue.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_vol_musee', weight: 0.25,
+    build: () => ({
+      title: 'Cambriolage dans un grand musée',
+      context: 'Des voleurs ont dérobé en sept minutes des bijoux historiques dans un grand musée parisien. Le monde entier se moque de la sécurité française.',
+      choices: [
+        c('audit', 'Exiger un audit de la sécurité de tous les musées', [s('credibility', 2), { kind: 'dossier', domain: 'securite', delta: 2 }], 'L’audit révèle des caméras en panne depuis des années.'),
+        c('enquete', 'Faire confiance aux enquêteurs, sans commentaire', [s('credibility', -1)], 'Le silence est interprété comme de l’embarras.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_greve_controleurs', weight: 0.3,
+    build: () => ({
+      title: 'Grève des contrôleurs aériens',
+      context: 'Les contrôleurs aériens cessent le travail en plein départ en vacances : deux mille vols annulés, des familles bloquées dans les aéroports.',
+      choices: [
+        c('service', 'Proposer une loi de service minimum', [s('credibility', 1), { kind: 'segment', segment: 'cadres', delta: 2 }, { kind: 'segment', segment: 'populaires', delta: -1 }], 'Le texte est déposé : les syndicats hurlent, les voyageurs applaudissent.'),
+        c('negocier', 'Envoyer un médiateur cette nuit', [s('popularity', 1), s('politicalCapital', -2)], 'Accord à l’aube : les avions redécollent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_eleve_genie', weight: 0.25, minRank: atLeastCouncil,
+    build: () => ({
+      title: 'Une lycéenne de génie',
+      context: 'Une lycéenne d’une cité de banlieue remporte l’olympiade internationale de mathématiques. Sa photo, médaille au cou, fait le tour des réseaux.',
+      choices: [
+        c('recevoir', 'La recevoir avec sa classe et ses professeurs', [s('popularity', 1), { kind: 'segment', segment: 'jeunes', delta: 2 }, { kind: 'dossier', domain: 'education', delta: 1 }], 'Elle parle de ses profs avec une telle fierté que la salle se lève.'),
+        c('tweet', 'La féliciter d’un message', [s('popularity', 1)], 'Un message parmi des milliers.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_penurie_moutarde', weight: 0.25,
+    build: () => ({
+      title: 'Plus de moutarde dans les rayons',
+      context: 'Une sécheresse au Canada a ruiné la récolte de graines : les rayons de moutarde sont vides, et le pays s’en émeut bien plus que prévu.',
+      choices: [
+        c('filiere', 'Relancer la culture de la graine de moutarde en Bourgogne', [{ kind: 'segment', segment: 'ruraux', delta: 2 }, s('credibility', 1)], 'Les champs jaunes refleurissent en Bourgogne.'),
+        c('humour', 'En plaisanter à la télévision', [s('popularity', 1), s('credibility', -1)], 'La blague fonctionne… jusqu’à la rupture de stock suivante.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_sommet_climat', weight: 0.3, eligible: atTop,
+    build: () => ({
+      title: 'Le sommet du climat bloque',
+      context: 'À la conférence mondiale sur le climat, les négociations sont dans l’impasse à minuit. Votre délégation peut débloquer la situation… en cédant sur un point.',
+      choices: [
+        c('ceder', 'Céder pour sauver l’accord', [{ kind: 'intl', prestige: 2 }, { kind: 'dossier', domain: 'ecologie', delta: 3 }, s('politicalCapital', -4)], 'Un accord à l’aube : vous êtes cité dans tous les journaux du monde.'),
+        c('tenir', 'Tenir bon : pas d’accord au rabais', [s('credibility', 1), { kind: 'intl', prestige: -1 }], 'Pas d’accord. Les ONG vous accusent d’avoir tout fait capoter.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

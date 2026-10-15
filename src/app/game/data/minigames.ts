@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms';
 
 export interface TriItem {
   text: string;
@@ -479,7 +479,7 @@ export const MINIGAMES: MinigameDef[] = [
   },
   {
     id: 'departodoku', kind: 'grille', icon: '🗺️', title: 'Villodoku', grid: 'villes',
-    rule: 'Remplissez la grille : chaque case attend une ville de France qui vérifie sa ligne et sa colonne. Une ville ne sert qu’une fois.',
+    rule: 'Remplissez la grille : chaque case attend une ville de France qui vérifie sa ligne et sa colonne. Une ville ne sert qu’une fois. Plus la réponse est rare, plus elle rapporte de points.',
   },
   {
     id: 'interro_carte', kind: 'grille', icon: '🎙️', title: 'L’interro surprise', grid: 'villes',
@@ -558,16 +558,24 @@ export const MINIGAMES: MinigameDef[] = [
     rule: 'Les votes défilent : touchez « Frondeur ! » quand un député de votre groupe vote contre ou s’abstient. Les fausses alertes coûtent cher.',
   },
   {
+    id: 'coup_de_rabot', kind: 'rabot', icon: '✂️', title: 'Le coup de rabot',
+    rule: 'Atteignez les économies demandées en choisissant les lignes à couper. Moins vous fâchez de monde, meilleur est le budget.',
+  },
+  {
+    id: 'bain_de_foule', kind: 'prenoms', icon: '🤝', title: 'Le bain de foule',
+    rule: 'Retenez les prénoms et les métiers des gens que vous croisez, puis saluez chacun par son prénom.',
+  },
+  {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',
     rule: 'Cadeau, menu, toast et programme : lisez la fiche du protocole et évitez le faux pas qui ferait un incident diplomatique.',
   },
   {
     id: 'metrodoku', kind: 'grille', icon: 'Ⓜ', title: 'Metrodoku', grid: 'metro',
-    rule: 'Chaque case attend une station du métro parisien qui vérifie sa ligne et sa colonne. Les lignes sont décrites par leur tracé, leur numéro rappelé dans la pastille de couleur ; les suggestions, elles, ne donnent jamais les lignes. Une station ne sert qu’une fois.',
+    rule: 'Chaque case attend une station du métro parisien qui vérifie sa ligne et sa colonne. Les lignes ne sont désignées que par leur numéro, sans leurs terminus ; les suggestions ne donnent jamais les lignes. Une station ne sert qu’une fois. Plus la réponse est rare, plus elle rapporte de points.',
   },
   {
     id: 'capitalodoku', kind: 'grille', icon: '🌍', title: 'Capitalodoku', grid: 'capitales',
-    rule: 'Chaque case attend une capitale du monde qui vérifie sa ligne et sa colonne. Tapez la capitale ou le pays. Une capitale ne sert qu’une fois.',
+    rule: 'Chaque case attend une capitale du monde qui vérifie sa ligne et sa colonne. Tapez la capitale ou le pays. Une capitale ne sert qu’une fois. Plus la réponse est rare, plus elle rapporte de points.',
   },
   {
     id: 'interview_piege', kind: 'interview', icon: '🎙️', title: 'L’interview piège',

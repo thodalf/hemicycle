@@ -21,13 +21,14 @@ type Bust = [number, number, number, number];
           <feComponentTransfer><feFuncA type="table" tableValues="0 .22" /></feComponentTransfer>
         </filter>
         <radialGradient [attr.id]="id('vig')" cx="50%" cy="48%" r="72%"><stop offset=".55" stop-color="#000" stop-opacity="0" /><stop offset="1" stop-color="#000" stop-opacity=".55" /></radialGradient>
-        <linearGradient [attr.id]="id('sky')" x1="0" y1="0" x2="0" y2="1"><stop offset="0" [attr.stop-color]="p().k3" /><stop offset="1" [attr.stop-color]="p().k4" /></linearGradient>
+        <linearGradient [attr.id]="id('sky')" x1="0" y1="0" x2="0" y2="1"><stop offset="0" [attr.stop-color]="night() ? p().k0 : p().k3" /><stop offset="1" [attr.stop-color]="night() ? p().k2 : p().k4" /></linearGradient>
         <linearGradient [attr.id]="id('wall')" x1="0" y1="0" x2="0" y2="1"><stop offset="0" [attr.stop-color]="p().k1" /><stop offset=".7" [attr.stop-color]="p().k2" /><stop offset="1" [attr.stop-color]="p().k1" /></linearGradient>
         <linearGradient [attr.id]="id('floor')" x1="0" y1="0" x2="0" y2="1"><stop offset="0" [attr.stop-color]="p().k2" /><stop offset="1" [attr.stop-color]="p().k0" /></linearGradient>
         <radialGradient [attr.id]="id('spot')" cx="50%" cy="0%" r="80%"><stop offset="0" [attr.stop-color]="p().k4" stop-opacity=".85" /><stop offset="1" [attr.stop-color]="p().k4" stop-opacity="0" /></radialGradient>
         <radialGradient [attr.id]="id('glow')" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".9" /><stop offset="1" stop-color="#fff" stop-opacity="0" /></radialGradient>
       </defs>
 
+      <g class="kb" [class.kb-alt]="seedNum() % 2 === 1"><g [attr.transform]="mirror() ? 'translate(320 0) scale(-1 1)' : null">
       @switch (theme()) {
         @case ('hemicycle') {
           <rect width="320" height="200" [attr.fill]="'url(#' + id('wall') + ')'" />
@@ -168,6 +169,139 @@ type Bust = [number, number, number, number];
           @for (r of [0, 1, 2, 3, 4, 5]; track r) { <path [attr.d]="'M0 ' + (160 + r * 8) + ' Q160 ' + (150 + r * 8) + ' 320 ' + (162 + r * 8)" [attr.stroke]="p().k0" stroke-width="2" fill="none" opacity=".35" /> }
           @for (t of trees; track $index) { <path [attr.d]="tree(t)" [attr.fill]="p().k0" /> <rect [attr.x]="t[0] - 1" [attr.y]="t[1] + t[2] * 2.2" width="2" [attr.height]="t[2]" [attr.fill]="p().k0" /> }
         }
+        @case ('tribunal') {
+          <rect width="320" height="200" [attr.fill]="p().k1" />
+          @for (x of panels; track x) { <rect [attr.x]="x" y="0" width="26" height="130" [attr.fill]="p().k2" opacity=".55" /> }
+          <g [attr.filter]="'url(#' + id('far') + ')'">
+            <rect x="60" y="70" width="200" height="40" [attr.fill]="p().k0" />
+            @for (b of judges; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" /> }
+            <circle cx="160" cy="26" r="14" [attr.fill]="p().k3" opacity=".7" />
+          </g>
+          <rect x="0" y="110" width="320" height="90" [attr.fill]="'url(#' + id('floor') + ')'" />
+          <rect x="0" y="0" width="320" height="200" [attr.fill]="'url(#' + id('spot') + ')'" opacity=".25" />
+          <path [attr.d]="bust([90, 112, 2.3, 1])" [attr.fill]="p().k0" />
+          <path d="M84 146 L96 146 L93 168 L87 168Z" [attr.fill]="p().k4" />
+          <path [attr.d]="bust([250, 118, 2, 1])" [attr.fill]="p().k0" opacity=".9" />
+        }
+        @case ('ecole') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('wall') + ')'" />
+          <rect x="70" y="26" width="180" height="70" [attr.fill]="p().k0" [attr.stroke]="p().k2" stroke-width="4" />
+          @for (l of [0, 1, 2]; track l) { <path [attr.d]="'M' + (86) + ' ' + (44 + l * 16) + ' q' + (40 + l * 10) + ' -6 ' + (90 - l * 20) + ' 0'" [attr.stroke]="p().k4" stroke-width="2" fill="none" opacity=".8" /> }
+          <g [attr.filter]="'url(#' + id('mid') + ')'">
+            @for (dsk of desks; track $index) { <rect [attr.x]="dsk[0]" [attr.y]="dsk[1]" [attr.width]="dsk[2]" [attr.height]="dsk[2] * .3" [attr.fill]="p().k2" /> <circle [attr.cx]="dsk[0] + dsk[2] / 2" [attr.cy]="dsk[1] - dsk[2] * .25" [attr.r]="dsk[2] * .2" [attr.fill]="p().k0" /> }
+          </g>
+          <path [attr.d]="bust([268, 100, 2.1, 1])" [attr.fill]="p().k0" />
+          <rect x="0" y="0" width="70" height="200" [attr.fill]="p().k4" opacity=".18" [attr.filter]="'url(#' + id('soft') + ')'" />
+        }
+        @case ('usine') {
+          <rect width="320" height="200" [attr.fill]="p().k1" />
+          @for (k of trusses; track k) { <path [attr.d]="'M' + k + ' 0 L' + (k + 40) + ' 40 L' + (k + 80) + ' 0'" [attr.stroke]="p().k2" stroke-width="3" fill="none" /> }
+          <rect x="0" y="38" width="320" height="4" [attr.fill]="p().k2" />
+          <g [attr.filter]="'url(#' + id('far') + ')'">
+            <rect x="30" y="80" width="90" height="70" [attr.fill]="p().k0" /><rect x="190" y="70" width="110" height="80" [attr.fill]="p().k0" />
+            <rect x="150" y="50" width="16" height="100" [attr.fill]="p().k0" />
+          </g>
+          <circle cx="156" cy="124" r="26" [attr.fill]="'url(#' + id('glow') + ')'" />
+          @for (sp of sparks; track $index) { <path [attr.d]="'M156 124 l' + sp[0] + ' ' + sp[1]" [attr.stroke]="p().k4" stroke-width="1.2" opacity=".8" /> }
+          <rect x="0" y="150" width="320" height="50" [attr.fill]="'url(#' + id('floor') + ')'" />
+          @for (b of workers; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" /> <path [attr.d]="'M' + (b[0] - b[2] * 10) + ' ' + (b[1] - b[2] * 6) + ' q' + (b[2] * 10) + ' ' + (-b[2] * 9) + ' ' + (b[2] * 20) + ' 0z'" [attr.fill]="accent()" opacity=".9" /> }
+        }
+        @case ('ferme') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'"><path d="M0 104 Q90 92 180 100 T320 96 V120 H0Z" [attr.fill]="p().k2" />
+            <path d="M236 64 L262 46 L288 64 V100 H236Z" [attr.fill]="p().k1" /><rect x="254" y="80" width="14" height="20" [attr.fill]="p().k0" /></g>
+          <path d="M0 110 H320 V200 H0Z" [attr.fill]="p().k2" />
+          @for (r of furrows; track r) { <path [attr.d]="'M160 110 L' + r + ' 200'" [attr.stroke]="p().k1" stroke-width="2" opacity=".6" /> }
+          <g transform="translate(70 120)">
+            <rect x="0" y="10" width="54" height="22" rx="3" [attr.fill]="p().k0" /><rect x="30" y="-8" width="22" height="20" [attr.fill]="p().k0" /><rect x="34" y="-4" width="14" height="10" [attr.fill]="p().k3" opacity=".5" />
+            <circle cx="12" cy="36" r="14" [attr.fill]="p().k0" /><circle cx="12" cy="36" r="6" [attr.fill]="p().k2" /><circle cx="48" cy="38" r="9" [attr.fill]="p().k0" />
+          </g>
+          <circle cx="60" cy="40" r="20" [attr.fill]="p().k4" opacity=".8" [attr.filter]="'url(#' + id('soft') + ')'" />
+        }
+        @case ('ville') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <path d="M0 0 L120 70 L120 150 L0 200Z" [attr.fill]="p().k1" /><path d="M320 0 L200 70 L200 150 L320 200Z" [attr.fill]="p().k1" />
+          @for (w of streetWindows; track $index) { <rect [attr.x]="w[0]" [attr.y]="w[1]" [attr.width]="w[2]" [attr.height]="w[2] * 1.4" [attr.fill]="night() ? '#f3d58a' : p().k2" [attr.opacity]="night() ? (($index % 3) ? .9 : .2) : .7" /> }
+          <path d="M120 150 L200 150 L320 200 L0 200Z" [attr.fill]="'url(#' + id('floor') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'"><rect x="120" y="70" width="80" height="80" [attr.fill]="p().k2" /></g>
+          @for (l of lamps; track $index) { <rect [attr.x]="l[0]" [attr.y]="l[1]" width="2" [attr.height]="l[2]" [attr.fill]="p().k0" /> <circle [attr.cx]="l[0] + 1" [attr.cy]="l[1]" [attr.r]="l[2] * .25" [attr.fill]="'url(#' + id('glow') + ')'" [attr.opacity]="night() ? 1 : .35" /> }
+          @for (cr of cars; track $index) { <rect [attr.x]="cr[0]" [attr.y]="cr[1]" [attr.width]="cr[2]" [attr.height]="cr[2] * .4" rx="3" [attr.fill]="p().k0" /> <circle [attr.cx]="cr[0] + 3" [attr.cy]="cr[1] + cr[2] * .2" r="3" fill="#fff" [attr.opacity]="night() ? .9 : .2" /> }
+        }
+        @case ('aeroport') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <path d="M0 130 H320 V200 H0Z" [attr.fill]="p().k2" />
+          <path d="M0 160 L320 150" [attr.stroke]="p().k4" stroke-width="2" stroke-dasharray="16 12" opacity=".6" />
+          <g [attr.filter]="'url(#' + id('mid') + ')'">
+            <path d="M40 104 Q40 90 64 88 L250 84 Q286 86 292 98 Q286 110 250 112 L64 114 Q40 114 40 104Z" [attr.fill]="p().k3" />
+            <path d="M140 100 L200 140 L222 140 L180 98Z M60 92 L46 66 L60 66 L84 90Z" [attr.fill]="p().k2" />
+            @for (k of [0, 1, 2, 3, 4, 5, 6, 7]; track k) { <circle [attr.cx]="100 + k * 18" cy="96" r="2.5" [attr.fill]="p().k0" /> }
+            <path d="M250 112 L262 140 L274 140 L262 112Z" [attr.fill]="p().k0" />
+          </g>
+          @for (b of officials; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" /> }
+          <rect x="0" y="182" width="320" height="18" [attr.fill]="accent()" opacity=".55" />
+        }
+        @case ('port') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('sky') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'">
+            @for (c of cranes; track $index) { <path [attr.d]="'M' + c + ' 120 V40 H' + (c + 60) + ' M' + c + ' 40 L' + (c - 20) + ' 52 M' + (c + 40) + ' 40 V70'" [attr.stroke]="p().k1" stroke-width="5" fill="none" /> }
+          </g>
+          @for (ct of containers; track $index) { <rect [attr.x]="ct[0]" [attr.y]="ct[1]" width="34" height="14" [attr.fill]="ct[2] ? accent() : p().k1" [attr.opacity]="ct[2] ? .8 : 1" [attr.stroke]="p().k0" stroke-width="1" /> }
+          <path d="M0 150 H320 V200 H0Z" [attr.fill]="p().k1" />
+          @for (r of [0, 1, 2, 3]; track r) { <path [attr.d]="'M0 ' + (160 + r * 10) + ' q40 -4 80 0 t80 0 t80 0 t80 0'" [attr.stroke]="p().k3" stroke-width="1.2" fill="none" opacity=".35" /> }
+          <path d="M150 140 L310 140 L296 166 L164 166Z" [attr.fill]="p().k0" /><rect x="250" y="112" width="34" height="28" [attr.fill]="p().k0" />
+        }
+        @case ('stade') {
+          <rect width="320" height="200" [attr.fill]="night() ? p().k0 : p().k1" />
+          <ellipse cx="160" cy="150" rx="210" ry="110" [attr.fill]="p().k1" />
+          <g [attr.filter]="'url(#' + id('far') + ')'">@for (h of stadiumCrowd; track $index) { <circle [attr.cx]="h[0]" [attr.cy]="h[1]" r="2.4" [attr.fill]="$index % 9 === 0 ? accent() : p().k3" opacity=".75" /> }</g>
+          <ellipse cx="160" cy="168" rx="150" ry="44" [attr.fill]="p().k2" />
+          @for (st of [0, 1, 2, 3, 4]; track st) { <path [attr.d]="'M' + (40 + st * 60) + ' 130 L' + (20 + st * 70) + ' 212'" [attr.stroke]="p().k3" stroke-width="10" opacity=".18" /> }
+          @for (f of floods; track $index) { <circle [attr.cx]="f" cy="18" r="16" [attr.fill]="'url(#' + id('glow') + ')'" /> <rect [attr.x]="f - 1" y="18" width="2" height="60" [attr.fill]="p().k0" /> }
+        }
+        @case ('labo') {
+          <rect width="320" height="200" [attr.fill]="'url(#' + id('wall') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'">
+            <rect x="200" y="30" width="100" height="64" [attr.fill]="p().k0" /><path d="M210 80 L230 60 L250 70 L270 44 L290 54" [attr.stroke]="p().k4" stroke-width="2" fill="none" />
+            @for (sh of [0, 1]; track sh) { <rect x="20" [attr.y]="40 + sh * 34" width="150" height="4" [attr.fill]="p().k2" /> }
+          </g>
+          <rect x="0" y="130" width="320" height="70" [attr.fill]="p().k2" />
+          @for (fl of flasks; track $index) { <path [attr.d]="'M' + fl[0] + ' ' + fl[1] + ' v12 l-' + fl[2] + ' ' + (fl[2] * 1.4) + ' h' + (fl[2] * 2 + 6) + ' l-' + fl[2] + ' -' + (fl[2] * 1.4) + ' v-12z'" [attr.fill]="$index === 1 ? accent() : p().k4" opacity=".8" [attr.stroke]="p().k0" stroke-width="1.5" /> }
+          <path [attr.d]="bust([200, 96, 2.2, 1])" [attr.fill]="p().k4" />
+          <circle cx="200" cy="92" r="16" [attr.fill]="p().k0" />
+          <rect x="186" y="88" width="28" height="8" rx="4" [attr.fill]="p().k3" opacity=".8" />
+        }
+        @case ('plateau') {
+          <rect width="320" height="200" [attr.fill]="p().k0" />
+          <g [attr.filter]="'url(#' + id('far') + ')'">
+            <rect x="40" y="20" width="240" height="100" [attr.fill]="p().k1" />
+            @for (k of [0, 1, 2, 3, 4, 5]; track k) { <rect [attr.x]="52 + k * 38" y="34" width="30" height="72" [attr.fill]="k % 2 ? p().k2 : accent()" opacity=".45" /> }
+          </g>
+          <path d="M50 150 Q160 120 270 150 L270 170 Q160 140 50 170Z" [attr.fill]="p().k3" />
+          <path [attr.d]="bust([116, 98, 1.6, 1])" [attr.fill]="p().k0" /><path [attr.d]="bust([210, 96, 1.65, 1])" [attr.fill]="p().k0" />
+          <path d="M0 200 L20 150 L60 150 L80 200Z M240 200 L260 150 L300 150 L320 200Z" [attr.fill]="p().k0" />
+          <rect x="22" y="132" width="36" height="22" rx="3" [attr.fill]="p().k0" /><rect x="262" y="132" width="36" height="22" rx="3" [attr.fill]="p().k0" />
+          <circle cx="58" cy="140" r="3" fill="#e53935" /><circle cx="160" cy="0" r="80" [attr.fill]="'url(#' + id('spot') + ')'" opacity=".5" />
+        }
+        @case ('gare') {
+          <rect width="320" height="200" [attr.fill]="p().k2" />
+          @for (a of arches; track a) { <path [attr.d]="'M' + a + ' 120 Q' + (a + 40) + ' 10 ' + (a + 80) + ' 120'" [attr.stroke]="p().k1" stroke-width="4" fill="none" /> }
+          <path d="M0 40 Q160 -30 320 40" [attr.stroke]="p().k1" stroke-width="6" fill="none" />
+          <rect x="0" y="0" width="320" height="120" [attr.fill]="'url(#' + id('spot') + ')'" opacity=".4" />
+          <path d="M0 200 L120 120 L200 120 L320 200Z" [attr.fill]="'url(#' + id('floor') + ')'" />
+          <g [attr.filter]="'url(#' + id('mid') + ')'"><path d="M126 80 Q160 64 194 80 L194 128 L126 128Z" [attr.fill]="p().k0" /><rect x="138" y="88" width="44" height="16" rx="3" [attr.fill]="p().k3" opacity=".7" />
+            <circle cx="140" cy="118" r="4" fill="#fff" opacity=".8" /><circle cx="180" cy="118" r="4" fill="#fff" opacity=".8" /></g>
+          <circle cx="160" cy="34" r="12" [attr.fill]="p().k4" [attr.stroke]="p().k0" stroke-width="2" /><path d="M160 34 V27 M160 34 L165 37" [attr.stroke]="p().k0" stroke-width="1.5" />
+          @for (b of travelers; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" [attr.opacity]="b[3]" /> }
+        }
+        @case ('police') {
+          <rect width="320" height="200" [attr.fill]="night() ? p().k0 : p().k1" />
+          <circle cx="70" cy="70" r="60" fill="#3a6fd8" opacity=".35" [attr.filter]="'url(#' + id('soft') + ')'" />
+          <circle cx="240" cy="64" r="50" fill="#3a6fd8" opacity=".25" [attr.filter]="'url(#' + id('soft') + ')'" />
+          <g [attr.filter]="'url(#' + id('far') + ')'"><rect x="20" y="80" width="110" height="50" rx="6" [attr.fill]="p().k2" /><rect x="200" y="76" width="110" height="54" rx="6" [attr.fill]="p().k2" />
+            <rect x="60" y="72" width="30" height="8" fill="#3a6fd8" /><rect x="240" y="68" width="30" height="8" fill="#3a6fd8" /></g>
+          <rect x="0" y="140" width="320" height="60" [attr.fill]="'url(#' + id('floor') + ')'" />
+          @for (b of officers; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" /> <rect [attr.x]="b[0] - b[2] * 14" [attr.y]="b[1] + b[2] * 14" [attr.width]="b[2] * 22" [attr.height]="b[2] * 30" rx="4" [attr.fill]="p().k3" opacity=".35" [attr.stroke]="p().k4" stroke-width="1" /> }
+        }
         @default {
           <rect width="320" height="200" [attr.fill]="'url(#' + id('wall') + ')'" />
           <g [attr.filter]="'url(#' + id('far') + ')'">
@@ -182,6 +316,8 @@ type Bust = [number, number, number, number];
           <g [attr.filter]="'url(#' + id('far') + ')'">@for (b of pressRow; track $index) { <path [attr.d]="bust(b)" [attr.fill]="p().k0" opacity=".9" /> <rect [attr.x]="b[0] - 8" [attr.y]="b[1] - 6" width="16" height="10" rx="2" [attr.fill]="p().k1" /> }</g>
         }
       }
+      @if (night() && outdoor()) { @for (st of stars; track $index) { <circle [attr.cx]="st[0]" [attr.cy]="st[1]" [attr.r]="st[2]" fill="#fff" opacity=".7" /> } }
+      </g></g>
       <rect width="320" height="200" [attr.fill]="'url(#' + id('vig') + ')'" />
       <rect width="320" height="200" [attr.filter]="'url(#' + id('grain') + ')'" />
     </svg>
@@ -189,6 +325,13 @@ type Bust = [number, number, number, number];
   styles: `
     :host { display: block; }
     svg { display: block; width: 100%; height: 100%; }
+    /* Un lent travelling, comme une caméra qui respire */
+    @media (prefers-reduced-motion: no-preference) {
+      .kb { transform-origin: 50% 50%; animation: kb 22s ease-in-out infinite alternate; }
+      .kb-alt { animation-name: kb-alt; }
+    }
+    @keyframes kb { from { transform: scale(1.02) translate(0, 0); } to { transform: scale(1.09) translate(-6px, -3px); } }
+    @keyframes kb-alt { from { transform: scale(1.08) translate(-5px, 2px); } to { transform: scale(1.02) translate(4px, -2px); } }
   `,
 })
 export class NewsArtComponent {
@@ -205,6 +348,10 @@ export class NewsArtComponent {
   protected readonly accent = computed(() => (this.tone() === 'negative' ? '#9e2a22' : this.tone() === 'positive' ? '#2d4b78' : '#7a2d26'));
   protected readonly seedNum = computed(() => [...this.seed()].reduce((t, c) => t + c.charCodeAt(0), 0) % 97);
   protected readonly label = computed(() => `Photo : ${this.theme()}`);
+  /** Variantes : la même scène, cadrée autrement (miroir) ou de nuit */
+  protected readonly mirror = computed(() => this.seedNum() % 2 === 1 && this.theme() !== 'loupe');
+  protected readonly outdoor = computed(() => ['foule', 'monument', 'nature', 'couronne', 'drapeau', 'ville', 'port', 'stade', 'ferme', 'aeroport'].includes(this.theme()));
+  protected readonly night = computed(() => this.outdoor() && this.seedNum() % 3 === 0);
   protected id(name: string) { return `${name}-${this.seed()}`; }
 
   /** Une silhouette en buste : tête, cou, épaules */
@@ -252,5 +399,25 @@ export class NewsArtComponent {
   protected readonly trees: [number, number, number][] = [[40, 112, 10], [62, 118, 8], [276, 110, 11], [296, 116, 9]];
   protected readonly mics = [[138, 112, 110], [150, 126, 104], [160, 160, 102], [170, 192, 104], [182, 206, 110]];
   protected readonly flashes = [[40, 120, 22], [286, 110, 18], [96, 150, 14]];
+  protected readonly stars = Array.from({ length: 26 }, (_, i) => [(i * 53) % 320, (i * 29) % 70, (i % 3) * .3 + .5]);
+  protected readonly panels = [10, 50, 90, 130, 170, 210, 250, 290];
+  protected readonly judges: Bust[] = [[110, 48, 1.1, 1], [160, 44, 1.2, 1], [210, 48, 1.1, 1]];
+  protected readonly desks = [[40, 150, 46], [110, 150, 46], [180, 150, 46], [70, 122, 34], [130, 122, 34], [190, 122, 34], [100, 104, 26], [150, 104, 26]];
+  protected readonly trusses = [0, 80, 160, 240];
+  protected readonly sparks = [[-18, -14], [14, -20], [22, -6], [-24, 2], [8, -24], [-10, -22]];
+  protected readonly workers: Bust[] = [[50, 150, 1.4, 1], [270, 146, 1.6, 1]];
+  protected readonly furrows = [-80, 0, 60, 110, 160, 210, 260, 320, 400];
+  protected readonly streetWindows: [number, number, number][] = [...[10, 40, 70, 96].flatMap(x => [30, 60, 90, 120].map(y => [x, y + (x > 60 ? 10 : 0), 12] as [number, number, number])), ...[214, 240, 270, 300].flatMap(x => [30, 60, 90, 120].map(y => [x, y + (x < 260 ? 10 : 0), 12] as [number, number, number]))];
+  protected readonly lamps: [number, number, number][] = [[110, 120, 50], [208, 120, 50], [60, 140, 60], [258, 140, 60]];
+  protected readonly cars: [number, number, number][] = [[130, 160, 26], [168, 152, 20], [196, 170, 30]];
+  protected readonly officials: Bust[] = [[120, 140, 1.2, 1], [160, 138, 1.3, 1], [200, 140, 1.2, 1]];
+  protected readonly cranes = [30, 140, 230];
+  protected readonly containers: [number, number, number][] = [[20, 136, 0], [56, 136, 1], [92, 136, 0], [38, 122, 0], [74, 122, 0], [56, 108, 1]];
+  protected readonly stadiumCrowd: [number, number][] = Array.from({ length: 90 }, (_, i) => { const a = Math.PI * (i % 30) / 29, r = 170 - Math.floor(i / 30) * 18; return [160 - Math.cos(a) * r, 150 - Math.sin(a) * r * .55]; });
+  protected readonly floods = [40, 120, 200, 280];
+  protected readonly flasks: [number, number, number][] = [[40, 108, 8], [76, 104, 10], [116, 110, 7]];
+  protected readonly arches = [0, 80, 160, 240];
+  protected readonly travelers: Bust[] = [[40, 150, 1.8, 1], [96, 140, 1.3, .9], [240, 146, 1.5, .95], [292, 152, 1.9, 1]];
+  protected readonly officers: Bust[] = [[70, 128, 1.4, 1], [130, 124, 1.5, 1], [190, 124, 1.5, 1], [250, 128, 1.4, 1]];
   protected readonly pressRow: Bust[] = [[30, 170, 1.6, 1], [86, 176, 1.7, 1], [236, 174, 1.7, 1], [292, 170, 1.6, 1]];
 }

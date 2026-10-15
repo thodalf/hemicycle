@@ -715,6 +715,39 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'viaduc_gate', weight: 0.35, minRank: 'conseiller_municipal', eligible: d => !d.crises?.viaduc && !d.player.flags['viaducDone'] && d.week > 18,
+    build: () => ({
+      title: 'Une fissure sur le viaduc',
+      context: 'Les ingénieurs sont formels : une fissure de quarante mètres court sous le grand viaduc de la vallée. Le fermer, c’est couper la région en deux.',
+      choices: [
+        c('fermer', 'Fermer immédiatement, et l’assumer', [cr('viaduc', 6, 4, true), { kind: 'flag', key: 'viaducDone', value: true }, s('credibility', 2)], 'Barrières posées à minuit. Personne ne passera sur un pont dangereux.'),
+        c('limiter', 'Limiter aux voitures, interdire les camions', [cr('viaduc', 2, 6, true), { kind: 'flag', key: 'viaducDone', value: true }, { kind: 'segment', segment: 'ruraux', delta: 1 }], 'Les camions font le détour. Les ingénieurs, eux, font la grimace.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tresor_gate', weight: 0.35, minRank: 'conseiller_municipal', eligible: d => !d.crises?.tresor && !d.player.flags['tresorDone'] && d.week > 14,
+    build: () => ({
+      title: 'De l’or sous la pelleteuse',
+      context: 'Un chef de chantier vous appelle, incrédule : sa pelleteuse vient de remonter un pot rempli de pièces d’or romaines. Il y en aurait des milliers.',
+      choices: [
+        c('fouilles', 'Arrêter le chantier et appeler les archéologues', [cr('tresor', 6, 3, true), { kind: 'flag', key: 'tresorDone', value: true }, s('credibility', 1)], 'Le chantier s’arrête. Les archéologues arrivent dans l’heure.'),
+        c('discret', 'Garder le secret le temps de sécuriser le site', [cr('tresor', 4, 5, true), { kind: 'flag', key: 'tresorDone', value: true }], 'Le secret tient… deux jours.'),
+      ],
+    }),
+  },
+  {
+    tag: 'algues_gate', weight: 0.3, minRank: 'conseiller_municipal', eligible: d => !d.crises?.algues && !d.player.flags['alguesDone'] && d.week > 22,
+    build: () => ({
+      title: 'La baie envahie',
+      context: 'Une marée d’algues vertes recouvre les plages de la baie. Un joggeur a fait un malaise ce matin. Les hôteliers appellent, les agriculteurs aussi.',
+      choices: [
+        c('fermer', 'Fermer les plages et lancer un grand plan', [cr('algues', 6, 4, true), { kind: 'flag', key: 'alguesDone', value: true }, { kind: 'dossier', domain: 'ecologie', delta: 2 }], 'Les plages ferment. Le plan, lui, reste à écrire.'),
+        c('ramasser', 'Ramasser vite et rouvrir avant le week-end', [cr('algues', 2, 7, true), { kind: 'flag', key: 'alguesDone', value: true }, { kind: 'segment', segment: 'ruraux', delta: 1 }], 'Les tractopelles tournent toute la nuit. Les algues reviendront.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -1899,6 +1932,72 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         c('rappeler', 'Lancer un grand programme de retour des talents', [cr('fusion', 6, -2), s('politicalCapital', -6), { kind: 'dossier', domain: 'education', delta: 3 }], 'Les premiers arrivent à la rentrée.'),
         c('patience', 'Promettre de « regarder la question »', [cr('fusion', 1, 4)], 'Ils restent où ils sont.'),
+      ],
+    }),
+  },
+  {
+    tag: 'viaduc_bac', weight: 1, eligible: d => !!d.crises?.viaduc,
+    build: () => ({
+      title: 'Un bac pour traverser',
+      context: 'Un ancien passeur propose de remettre en service le bac de la rivière, abandonné depuis cinquante ans, pour relier les deux rives.',
+      choices: [
+        c('bac', 'Financer le bac et des navettes gratuites', [cr('viaduc', 3, -5), s('popularity', 1), s('politicalCapital', -3)], 'Le bac reprend du service : la photo du passeur fait la une locale.'),
+        c('patience', 'Demander de la patience : les travaux avancent', [cr('viaduc', 1, 4)], 'La patience, c’est ce qui manque le plus.'),
+      ],
+    }),
+  },
+  {
+    tag: 'viaduc_ponts', weight: 0.9, eligible: d => !!d.crises?.viaduc,
+    build: () => ({
+      title: 'Et les autres ponts ?',
+      context: 'Un rapport révèle que huit cents ponts du pays sont « en mauvais état structurel ». La presse publie la carte.',
+      choices: [
+        c('inspection', 'Lancer l’inspection de tous les ouvrages', [cr('viaduc', 6, -2), { kind: 'economy', deficit: 0.02 }, { kind: 'dossier', domain: 'territoires', delta: 3 }], 'Mille ingénieurs mobilisés : le pays découvre ses ponts.'),
+        c('relativiser', 'Rappeler que « mauvais état » ne veut pas dire « danger »', [cr('viaduc', 1, 5), s('credibility', -1)], 'La nuance passe mal.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tresor_pillards', weight: 1, eligible: d => !!d.crises?.tresor,
+    build: () => ({
+      title: 'Des pillards sur le chantier',
+      context: 'Des détecteurs de métaux ont été aperçus la nuit sur le site. Des pièces apparaissent déjà sur des sites de vente en ligne.',
+      choices: [
+        c('garder', 'Faire garder le site jour et nuit', [cr('tresor', 3, -5), s('politicalCapital', -3)], 'Gendarmes et projecteurs : les pillards renoncent.'),
+        c('appel', 'Lancer un appel au civisme', [cr('tresor', 2, 3)], 'Trois pièces sont rendues. Les autres, non.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tresor_mairie', weight: 0.9, eligible: d => !!d.crises?.tresor,
+    build: () => ({
+      title: 'La ville veut son tramway',
+      context: 'Le maire réclame la reprise du chantier du tramway : chaque mois d’arrêt coûte deux millions. Les archéologues demandent six mois de plus.',
+      choices: [
+        c('fouiller', 'Laisser les archéologues finir', [cr('tresor', 6, -2), { kind: 'segment', segment: 'cadres', delta: 1 }, { kind: 'segment', segment: 'populaires', delta: -1 }], 'Six mois de plus. Le tramway attendra.'),
+        c('tramway', 'Fouilles accélérées, reprise dans deux mois', [cr('tresor', 2, 3), { kind: 'segment', segment: 'populaires', delta: 1 }], 'Les archéologues travaillent à la lampe frontale.'),
+      ],
+    }),
+  },
+  {
+    tag: 'algues_agriculteurs', weight: 1, eligible: d => !!d.crises?.algues,
+    build: () => ({
+      title: 'Les éleveurs se sentent accusés',
+      context: 'Les éleveurs de la baie défilent en tracteur : « On nous montre du doigt, mais personne ne nous aide à changer. »',
+      choices: [
+        c('accompagner', 'Financer la transition des élevages', [cr('algues', 6, -3), { kind: 'segment', segment: 'ruraux', delta: 2 }, { kind: 'economy', deficit: 0.02 }], 'Des contrats sur dix ans : les éleveurs signent.'),
+        c('normes', 'Durcir les normes d’épandage', [cr('algues', 5, 3), { kind: 'segment', segment: 'ruraux', delta: -2 }], 'Les normes sont strictes. Les tracteurs reviennent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'algues_tourisme', weight: 0.9, eligible: d => !!d.crises?.algues,
+    build: () => ({
+      title: 'Les hôtels se vident',
+      context: 'Les réservations s’effondrent sur toute la côte. Les hôteliers demandent une aide d’urgence et une campagne de communication.',
+      choices: [
+        c('aide', 'Aide d’urgence et grand ramassage quotidien', [cr('algues', 3, -4), s('politicalCapital', -3)], 'Les plages sont propres chaque matin. Les touristes reviennent, prudemment.'),
+        c('campagne', 'Une campagne « La baie est belle »', [cr('algues', 1, 4), s('credibility', -1)], 'La campagne est moquée : les photos montrent des algues.'),
       ],
     }),
   },

@@ -30,6 +30,8 @@ import { LectureGameComponent } from './games/lecture-game.component';
 import { SecuriteGameComponent } from './games/securite-game.component';
 import { InterpreteGameComponent } from './games/interprete-game.component';
 import { FrondeursGameComponent } from './games/frondeurs-game.component';
+import { RabotGameComponent } from './games/rabot-game.component';
+import { PrenomsGameComponent } from './games/prenoms-game.component';
 
 type Phase = 'intro' | 'play' | 'over';
 
@@ -59,7 +61,7 @@ const DURATION = 15000;
  */
 @Component({
   selector: 'app-minigame',
-  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent, ProtocoleGameComponent, TableGameComponent, InterceptionGameComponent, DeminageGameComponent, InterviewGameComponent, CmpGameComponent, SommetGameComponent, VisiteGameComponent, TrainGameComponent, CortegeGameComponent, ValiseGameComponent, MajoriteGameComponent, StandardGameComponent, PlumeGameComponent, FactcheckGameComponent, InvestituresGameComponent, ArbitrageGameComponent, CitationsGameComponent, LectureGameComponent, SecuriteGameComponent, InterpreteGameComponent, FrondeursGameComponent],
+  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent, ProtocoleGameComponent, TableGameComponent, InterceptionGameComponent, DeminageGameComponent, InterviewGameComponent, CmpGameComponent, SommetGameComponent, VisiteGameComponent, TrainGameComponent, CortegeGameComponent, ValiseGameComponent, MajoriteGameComponent, StandardGameComponent, PlumeGameComponent, FactcheckGameComponent, InvestituresGameComponent, ArbitrageGameComponent, CitationsGameComponent, LectureGameComponent, SecuriteGameComponent, InterpreteGameComponent, FrondeursGameComponent, RabotGameComponent, PrenomsGameComponent],
   templateUrl: './minigame.component.html',
   styleUrl: './minigame.component.scss',
 })
@@ -75,7 +77,7 @@ export class MinigameComponent {
   protected readonly shake = signal(false);
   protected readonly tierLabels = TIER_LABELS;
   /** Jeux qui affichent eux-mêmes leur progression */
-  protected readonly selfScored = new Set(['tournee', 'mot', 'quiz', 'grille', 'protocole', 'table', 'interception', 'deminage', 'interview', 'cmp', 'sommet', 'visite', 'train', 'cortege', 'valise', 'majorite', 'standard', 'plume', 'factcheck', 'investitures', 'arbitrage', 'citations', 'lecture', 'securite', 'interprete', 'frondeurs']);
+  protected readonly selfScored = new Set(['tournee', 'mot', 'quiz', 'grille', 'protocole', 'table', 'interception', 'deminage', 'interview', 'cmp', 'sommet', 'visite', 'train', 'cortege', 'valise', 'majorite', 'standard', 'plume', 'factcheck', 'investitures', 'arbitrage', 'citations', 'lecture', 'securite', 'interprete', 'frondeurs', 'rabot', 'prenoms']);
   private timer: ReturnType<typeof setInterval> | null = null;
   private started = 0;
   private seq = 0;

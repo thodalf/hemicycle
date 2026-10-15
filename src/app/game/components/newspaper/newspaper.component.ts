@@ -40,10 +40,10 @@ export const PAPER_NAME = 'L’Écho de la République';
                 <ol class="som">@for (s of e.sommaire; track $index) { <li><span>{{ s.title }}</span><b>{{ s.page }}</b></li> }</ol>
               </div>
               <div class="box baro">
-                <h3>Le baromètre</h3>
+                <h3>{{ e.barometre.title }}</h3>
                 <div class="cote"><b>{{ e.barometre.cote }}</b><small>%</small>
                   <span class="trend" [class.up]="e.barometre.trend > 0" [class.down]="e.barometre.trend < 0">{{ e.barometre.trend > 0 ? '▲ +' : e.barometre.trend < 0 ? '▼ ' : '= ' }}{{ e.barometre.trend !== 0 ? e.barometre.trend : '' }}</span></div>
-                <small>de bonnes opinions</small>
+                <small>{{ e.barometre.label }}</small>
                 @if (spark(e); as sp) { <svg viewBox="0 0 120 34" class="spark"><polyline [attr.points]="sp" /></svg> }
               </div>
               <div class="box meteo"><h3>Météo politique</h3><p>{{ e.meteo }}</p></div>
@@ -75,10 +75,11 @@ export const PAPER_NAME = 'L’Écho de la République';
               <h3>Intentions de vote</h3>
               <ul class="bars">@for (p of e.parties; track p.name) { <li [class.mine]="p.mine"><span>{{ p.name }}</span><i><em [style.width.%]="p.share * 2.2" [style.background]="p.color"></em></i><b>{{ p.share }} %</b></li> }</ul>
             </div>
+            @if (e.segments.length) {
             <div class="box">
               <h3>Votre cote par électorat</h3>
               <ul class="bars">@for (s of e.segments; track s.label) { <li><span>{{ s.label }}</span><i><em [style.width.%]="s.value"></em></i><b>{{ s.value }}</b></li> }</ul>
-            </div>
+            </div> }
             <div class="box eco">
               <h3>Les chiffres du mois</h3>
               <dl>@for (c of e.chiffres; track c.label) { <div><dt>{{ c.label }}</dt><dd [class.good]="c.good" [class.bad]="!c.good">{{ c.value }}</dd></div> }</dl>
@@ -98,9 +99,10 @@ export const PAPER_NAME = 'L’Écho de la République';
   styles: `
     .overlay { position: fixed; inset: 0; z-index: 25; background: rgba(20, 18, 14, .62); backdrop-filter: blur(3px); overflow-y: auto; padding: 24px 16px; display: grid; place-items: start center; }
     .paper { --paper: #f6f1e4; --pink: #2a2620; --rule: #2a2620; width: 100%; max-width: 1040px; background: var(--paper); color: var(--pink); padding: 20px 26px 30px; border-radius: 3px;
-      box-shadow: 0 30px 80px -20px rgba(0,0,0,.6), inset 0 0 120px rgba(120, 90, 40, .08); font-family: Georgia, 'Times New Roman', serif; animation: unfold .45s cubic-bezier(.2,.8,.3,1); display: grid; gap: 16px; position: relative; }
+      box-shadow: 0 30px 80px -20px rgba(0,0,0,.6), inset 0 0 120px rgba(120, 90, 40, .08); font-family: Georgia, 'Times New Roman', serif; animation: unfold .75s cubic-bezier(.25,.8,.3,1); display: grid; gap: 16px; position: relative; }
     .paper.turn { animation: turn .4s ease; }
-    @keyframes unfold { from { transform: perspective(1200px) rotateX(18deg) translateY(30px); opacity: 0; } }
+    @keyframes unfold { 0% { transform: scale(.06) rotate(-540deg); opacity: 0; } 65% { transform: scale(1.03) rotate(3deg); opacity: 1; } 100% { transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .paper, .paper.turn { animation: none !important; } }
     @keyframes turn { 40% { transform: perspective(1200px) rotateY(-8deg); opacity: .5; } }
     .mast { text-align: center; border-bottom: 4px double var(--rule); padding-bottom: 8px; position: relative;
       h1 { margin: 2px 0; font: 700 clamp(30px, 6vw, 60px)/1 var(--font-display); letter-spacing: -.01em; }

@@ -1132,6 +1132,8 @@ export interface GameState {
   polls: PollSnapshot[];
   /** Cote de popularité mois après mois, pour le baromètre du journal */
   barometre?: number[];
+  /** La confiance dans l'exécutif, mois après mois (baromètre du journal quand le joueur est inconnu) */
+  barometreNat?: number[];
   elections: ScheduledElection[];
   /** actionId → mois à partir duquel l'action redevient disponible */
   cooldowns: Record<string, number>;
@@ -1601,7 +1603,7 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
-  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours' | 'penurie_essence' | 'capitale_culture' | 'canicule' | 'hacker' | 'barons' | 'grand_debat' | 'tour_eiffel' | 'baleine' | 'mariage_princier' | 'cathedrale' | 'punaises' | 'esport' | 'satellite' | 'casse' | 'vin' | 'nuage' | 'taxis' | 'fusion';
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours' | 'penurie_essence' | 'capitale_culture' | 'canicule' | 'hacker' | 'barons' | 'grand_debat' | 'tour_eiffel' | 'baleine' | 'mariage_princier' | 'cathedrale' | 'punaises' | 'esport' | 'satellite' | 'casse' | 'vin' | 'nuage' | 'taxis' | 'fusion' | 'viaduc' | 'tresor' | 'algues';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

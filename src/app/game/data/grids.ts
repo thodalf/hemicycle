@@ -23,6 +23,8 @@ export interface GridItem {
   search: string[];
   /** Données d'origine, pour les critères */
   data: Ville | Station | Capitale;
+  /** Notoriété : plus elle est forte, plus la réponse est « évidente » (et rapporte peu) */
+  fame: number;
 }
 
 export interface GridCrit {
@@ -59,7 +61,7 @@ const multiWord = (s: string) => /[-\s’']/.test(s.trim());
 const v = (x: GridItem) => x.data as Ville;
 const villes: GridSet = {
   id: 'villes', corner: '🇫🇷', placeholder: 'Nom de la ville', noun: 'ville',
-  items: VILLES.map(x => ({ key: `${x.name}-${x.dep}`, name: x.name, tag: x.dep, search: [normalize(x.name)], data: x })),
+  items: VILLES.map(x => ({ key: `${x.name}-${x.dep}`, name: x.name, tag: x.dep, search: [normalize(x.name)], data: x, fame: x.pop * (x.regionCapital ? 2.5 : x.prefecture ? 1.5 : 1) })),
   rows: (Object.keys(REGION_NAMES) as RegionCode[]).map(r => ({ id: `r-${r}`, label: REGION_NAMES[r], group: 'region', test: (x: GridItem) => v(x).region === r })),
   cols: [
     { id: 'coast', label: 'Au bord de la mer', group: 'coast', test: x => v(x).coast },
@@ -84,23 +86,8 @@ const villes: GridSet = {
 
 const st = (x: GridItem) => x.data as Station;
 type L = Station['lines'][number];
-/** Les lignes décrites par leur tracé, sans jamais donner leur numéro */
-const LINE_LABELS: [L, string][] = [
-  ['1', 'Sur l’axe historique La Défense ↔ Château de Vincennes'],
-  ['2', 'Sur la ligne des boulevards du Nord, de Dauphine à Nation'],
-  ['3', 'Sur la ligne Pont de Levallois ↔ Gallieni'],
-  ['4', 'Sur l’axe nord-sud Clignancourt ↔ Bagneux'],
-  ['5', 'Sur la ligne Bobigny ↔ Place d’Italie'],
-  ['6', 'Sur la ligne aérienne de l’Étoile à Nation par le sud'],
-  ['7', 'Sur la ligne La Courneuve ↔ Villejuif / Ivry'],
-  ['8', 'Sur la ligne Balard ↔ Créteil'],
-  ['9', 'Sur la ligne Pont de Sèvres ↔ Montreuil'],
-  ['10', 'Sur la ligne rive gauche Boulogne ↔ Austerlitz'],
-  ['11', 'Sur la ligne Châtelet ↔ Rosny, par les Lilas'],
-  ['12', 'Sur la ligne Issy ↔ Aubervilliers, par Montmartre'],
-  ['13', 'Sur la ligne Châtillon ↔ Saint-Denis / Asnières'],
-  ['14', 'Sur la ligne sans conducteur Pleyel ↔ Orly'],
-];
+/** Les lignes, sans leurs terminus (ils donneraient des indices) */
+const LINE_LABELS: [L, string][] = (['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'] as L[]).map(l => [l, `Sur la ligne ${l}`]);
 const TERMINI = new Set(['La Défense', 'Château de Vincennes', 'Porte Dauphine', 'Nation', 'Pont de Levallois – Bécon', 'Gallieni',
   'Porte de Clignancourt', 'Bagneux – Lucie Aubrac', 'Bobigny – Pablo Picasso', 'Place d\'Italie', 'Charles de Gaulle – Étoile',
   'La Courneuve – 8 Mai 1945', 'Villejuif – Louis Aragon', 'Mairie d\'Ivry', 'Balard', 'Pointe du Lac', 'Pont de Sèvres',
@@ -131,7 +118,7 @@ const LINE_COLORS: Record<string, string> = { '1': '#FFCD00', '2': '#003CA6', '3
 const even = (l: L) => parseInt(l, 10) % 2 === 0;
 const metro: GridSet = {
   id: 'metro', corner: 'Ⓜ', placeholder: 'Nom de la station', noun: 'station',
-  items: STATIONS.map(x => ({ key: x.name, name: x.name, tag: '', search: [normalize(x.name)], data: x })),
+  items: STATIONS.map(x => ({ key: x.name, name: x.name, tag: '', search: [normalize(x.name)], data: x, fame: (x.lines.length + x.rer.length) ** 2 + (TERMINI.has(x.name) ? 2 : 0) + 1 })),
   rows: LINE_LABELS.map(([l, label]) => ({ id: `l-${l}`, label, badge: l, color: LINE_COLORS[l], group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) })),
   cols: [
     ...LINE_LABELS.map(([l, label]) => ({ id: `c-${l}`, label: label.replace(/^Sur /, 'Aussi sur '), badge: l, color: LINE_COLORS[l], group: `line-${l}`, test: (x: GridItem) => st(x).lines.includes(l) && st(x).lines.length >= 2 })),
@@ -163,7 +150,7 @@ const k = (x: GridItem) => x.data as Capitale;
 const CONTINENTS: Capitale['continent'][] = ['Europe', 'Afrique', 'Asie', 'Amérique du Nord', 'Amérique du Sud', 'Océanie'];
 const capitales: GridSet = {
   id: 'capitales', corner: '🌍', placeholder: 'Capitale (ou pays)', noun: 'capitale',
-  items: CAPITALES.map(x => ({ key: x.country, name: x.capital, tag: x.country, search: [normalize(x.capital), normalize(x.country)], data: x })),
+  items: CAPITALES.map(x => ({ key: x.country, name: x.capital, tag: x.country, search: [normalize(x.capital), normalize(x.country)], data: x, fame: x.pop * (x.continent === 'Europe' ? 3 : 1) * (x.french ? 2 : 1) })),
   rows: CONTINENTS.map(c => ({ id: `k-${c}`, label: c, group: 'continent', test: (x: GridItem) => k(x).continent === c })),
   cols: [
     { id: 'landlocked', label: 'Pays sans accès à la mer', group: 'sea', test: x => k(x).landlocked },
@@ -248,4 +235,29 @@ export function gridFromIds(id: GridSetId, rowIds: string[], colIds: string[]): 
   if (rows.some(r => !r) || cols.some(c => !c) || rows.length !== 3 || cols.length !== 3) return null;
   const R = rows as GridCrit[], C = cols as GridCrit[];
   return { set, rows: R, cols: C, answers: R.map(r => C.map(c => set.items.filter(x => r.test(x) && c.test(x)))) };
+}
+
+/* ── Rareté des réponses ───────────────────────────────────── */
+
+export interface Rarity { share: number; points: number; label: string }
+
+/**
+ * La rareté d'une réponse dans sa case : on estime la part des joueurs qui l'auraient
+ * choisie (loi de Zipf sur la notoriété : la plus connue est la plus jouée).
+ * Plus la réponse est rare, plus elle rapporte (5 à 100 points).
+ */
+export function rarity(cell: GridItem[], item: GridItem): Rarity {
+  // Les ex aequo partagent le même rang
+  const rankOf = (f: number) => {
+    const first = cell.filter(x => x.fame > f).length, same = cell.filter(x => x.fame === f).length;
+    return first + (same - 1) / 2;
+  };
+  const w = (x: GridItem) => (rankOf(x.fame) + 1) ** -1.3;
+  const total = cell.reduce((t, x) => t + w(x), 0) || 1;
+  const inCell = cell.some(x => x.key === item.key);
+  const share = inCell ? w(item) / total : 0;
+  // Relatif à la réponse la plus évidente de la case : elle rapporte 10, les raretés jusqu'à 100
+  const points = Math.round(10 + 90 * (inCell ? 1 - w(item) : 1));
+  const label = points >= 95 ? 'Très rare' : points >= 80 ? 'Rare' : points >= 60 ? 'Peu commune' : 'Classique';
+  return { share, points, label };
 }

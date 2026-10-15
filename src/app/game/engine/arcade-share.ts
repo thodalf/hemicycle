@@ -15,7 +15,7 @@ export function shareText(r: ArcadeResult): string {
   if (r.kind === 'grille') {
     const lines = [0, 1, 2].map(i => [0, 1, 2].map(j => (r.cells[i * 3 + j] ? '🟩' : '🟥')).join(''));
     const tail = r.outcome === 'complete' ? (r.mistakes ? `${r.mistakes} erreur${r.mistakes > 1 ? 's' : ''}` : 'sans faute !') : r.outcome === 'perdu' ? 'plus d’essais' : 'grille rendue';
-    return [`${r.icon} Hémicycle · ${r.title} du ${frDate(r.day)}`, `${r.found}/9 · ${tail}`, ...lines, '', `Jouez aussi : ${SHARE_URL}`].join('\n');
+    return [`${r.icon} Hémicycle · ${r.title} du ${frDate(r.day)}`, `${r.found}/9 · ${tail}${r.points !== undefined ? ` · ⭐ ${r.points} pts` : ''}`, ...lines, '', `Jouez aussi : ${SHARE_URL}`].join('\n');
   }
   const em = { ok: '🟥', mal: '🟨', non: '🟦' } as const;
   return [`${r.icon} Hémicycle · ${r.title} du ${frDate(r.day)}`, `${r.found ? r.guesses.length : 'X'}/6 · ${r.word.length} lettres`, ...r.guesses.map(g => g.marks.map(m => em[m]).join('')), '', `Jouez aussi : ${SHARE_URL}`].join('\n');
@@ -51,10 +51,12 @@ export async function shareImage(r: ArcadeResult): Promise<Blob | null> {
       roundRect(c, x0 + j * (size + gap), y0 + i * (size + gap), size, size, 26);
       c.fillStyle = ok ? '#2f9e5b' : '#b8402b'; c.fill();
       c.fillStyle = 'rgba(255,255,255,.92)'; c.font = '700 84px system-ui, sans-serif';
-      c.fillText(ok ? '✓' : '✗', x0 + j * (size + gap) + size / 2, y0 + i * (size + gap) + size / 2 + 30);
+      const pt = r.pts?.[i * 3 + j];
+      c.fillText(ok ? '✓' : '✗', x0 + j * (size + gap) + size / 2, y0 + i * (size + gap) + size / 2 + (pt ? 10 : 30));
+      if (ok && pt) { c.font = '700 34px system-ui, sans-serif'; c.fillText(`+${pt}`, x0 + j * (size + gap) + size / 2, y0 + i * (size + gap) + size - 28); }
     }
     c.fillStyle = '#ffffff'; c.font = '700 60px system-ui, sans-serif';
-    c.fillText(`${r.found}/9`, S / 2, 975);
+    c.fillText(r.points !== undefined ? `${r.found}/9 · ⭐ ${r.points} pts` : `${r.found}/9`, S / 2, 975);
     c.font = '500 30px system-ui, sans-serif'; c.fillStyle = '#c9d6ea';
     c.fillText(r.outcome === 'complete' ? (r.mistakes ? `${r.mistakes} erreur${r.mistakes > 1 ? 's' : ''} sur ${r.maxMistakes}` : 'Sans faute !') : r.outcome === 'perdu' ? 'Plus d’essais' : 'Grille rendue', S / 2, 1020);
   } else {

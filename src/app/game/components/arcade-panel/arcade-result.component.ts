@@ -9,7 +9,7 @@ import { copyText, downloadBlob, shareImage, shareText } from '../../engine/arca
     @if (result(); as r) {
       <div class="res">
         @if (r.kind === 'grille') {
-          <p class="score"><strong class="mono">{{ r.found }}/9</strong> · {{ outcomeLabel() }}</p>
+          <p class="score"><strong class="mono">{{ r.found }}/9</strong> · {{ outcomeLabel() }}@if (r.points !== undefined) { <span class="pts">⭐ {{ r.points }} pts de rareté</span> }</p>
           <div class="grid">
             <span class="corner" aria-hidden="true">{{ r.icon }}</span>
             @for (c of r.cols; track $index) { <span class="crit">@if (c.badge) { <i class="lb" [style.background]="c.color">{{ c.badge }}</i> }{{ c.label }}</span> }
@@ -18,7 +18,7 @@ import { copyText, downloadBlob, shareImage, shareText } from '../../engine/arca
               @for (c of r.cols; track $index; let j = $index) {
                 @let mine = r.cells[i * 3 + j];
                 <div class="cell" [class.ok]="!!mine" [style.animation-delay.ms]="(i * 3 + j) * 70">
-                  @if (mine) { <b>{{ mine }}</b> } @else { <b class="miss">—</b> }
+                  @if (mine) { <b>{{ mine }}</b>@if (r.pts?.[i * 3 + j]; as pt) { <em class="pt" [class.rare]="pt >= 80">+{{ pt }}</em> } } @else { <b class="miss">—</b> }
                   <small>{{ r.answers[i * 3 + j].length }} réponse{{ r.answers[i * 3 + j].length > 1 ? 's' : '' }}</small>
                 </div>
               }
@@ -80,6 +80,8 @@ import { copyText, downloadBlob, shareImage, shareText } from '../../engine/arca
     .row { display: grid; grid-template-columns: repeat(var(--n), 32px); gap: 4px; }
     .tile { display: grid; place-items: center; height: 32px; font: 700 15px var(--font-mono); color: #fff; border-radius: 4px; }
     .tile.ok { background: #d6453d; } .tile.mal { background: #e6b43c; border-radius: 50%; color: #1b2130; } .tile.non { background: #2f6cb0; }
+    .pts { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #fff4d6; color: #7a5300; font-size: 12px; font-weight: 600; }
+    .pt { font: 700 10px var(--font-body); font-style: normal; color: var(--ink-3); } .pt.rare { color: #b07a00; }
     .share { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
     .said { margin: 0; text-align: center; font-size: 12.5px; font-weight: 600; color: var(--good); }
     .preview { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); font: 12px/1.35 var(--font-mono); white-space: pre-wrap; text-align: center; }

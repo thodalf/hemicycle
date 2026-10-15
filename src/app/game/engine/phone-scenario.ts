@@ -496,6 +496,33 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Troisième essai réussi ce matin. Mais Boston nous a fait une offre. Mes chercheurs hésitent.', effects: [{ kind: 'crisis', arc: 'fusion', gauge: 4, risk: -1 }] }) },
     ],
   },
+  // ── Le viaduc ──
+  {
+    key: 'sc:viaduc', icon: '🌉', when: d => !!d.crises?.viaduc,
+    name: () => 'Agnès Ferrand', role: () => 'Ingénieure en chef des ouvrages d’art',
+    options: () => [
+      { id: 'sc_viaduc_point', label: 'Demander où en sont les travaux', hint: 'Trente ans de ponts, et pas une seule langue de bois.', ask: 'Agnès, on rouvre quand ?', cooldown: 1,
+        run: () => ({ answer: 'Les câbles de précontrainte sont posés. Encore trois semaines si la météo tient. Pas un jour de moins.', effects: [{ kind: 'crisis', arc: 'viaduc', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── Le trésor ──
+  {
+    key: 'sc:tresor', icon: '🏺', when: d => !!d.crises?.tresor,
+    name: () => 'Benoît Lacaze', role: () => 'Archéologue, responsable des fouilles',
+    options: () => [
+      { id: 'sc_tresor_point', label: 'Prendre des nouvelles des fouilles', hint: 'Il dort sous une tente, à côté du site.', ask: 'Benoît, combien de pièces ?', cooldown: 1,
+        run: () => ({ answer: 'Six mille deux cents. Et ce matin, un casque de légionnaire. Merci de nous laisser le temps.', effects: [{ kind: 'crisis', arc: 'tresor', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── Les algues ──
+  {
+    key: 'sc:algues', icon: '🌿', when: d => !!d.crises?.algues,
+    name: () => 'Gwenaëlle Le Bihan', role: () => 'Présidente de l’association de la baie',
+    options: () => [
+      { id: 'sc_algues_point', label: 'Faire le point sur la baie', hint: 'Elle se bat contre les algues depuis vingt ans.', ask: 'Gwenaëlle, la baie va mieux ?', cooldown: 1,
+        run: () => ({ answer: 'Les nitrates baissent dans deux rivières sur cinq. C’est un début. Ne lâchez pas les éleveurs, ils jouent le jeu.', effects: [{ kind: 'crisis', arc: 'algues', gauge: 3, risk: -3 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -579,7 +606,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51,
 };
 
 export function scenarioAge(d: GameState, key: string): string {
