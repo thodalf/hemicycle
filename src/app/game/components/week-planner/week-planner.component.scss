@@ -51,6 +51,7 @@
 .action-main { min-width: 0; flex: 1; }
 .action-title { display: flex; gap: 6px; align-items: center; }
 .costs { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--ink-2); }
+.payer.party-only { gap: 8px; span { font-weight: 600; color: var(--accent); } }
 .payer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; font-size: 12px;
   button { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 2px 9px; font: inherit; cursor: pointer; }
   button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }

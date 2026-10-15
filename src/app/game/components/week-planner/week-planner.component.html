@@ -136,7 +136,9 @@
                   @if (wear(a) < 1) { <span class="fx-chip bad" title="Répéter la même action d’un mois sur l’autre lasse : les gains diminuent.">Lassitude : gains −{{ 100 - wear(a) * 100 | number: '1.0-0' }} %</span> }
                 </div>
               }
-              @if (fundable(a)) {
+              @if (a.partyOnly) {
+                <div class="payer party-only"><span>🏦 Payé par la caisse du parti</span><small class="muted">{{ partyHint(a) }}</small></div>
+              } @else if (fundable(a)) {
                 <div class="payer" role="group" [attr.aria-label]="'Qui paie : ' + a.label">
                   <span class="muted">Payer :</span>
                   <button type="button" [class.on]="payer(a) === 'perso'" (click)="setPayer(a, 'perso')">Fonds perso</button>

@@ -9,6 +9,8 @@ import { TeamService } from '../../services/team.service';
 import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
 import { GameStateService } from '../../services/game-state.service';
 import { MISSIONS, MISSION_BY_ID, missionSkill, setMission } from '../../engine/council';
+import { onLeave } from '../../engine/recruits';
+import { LEAVE_MALUS } from '../../data/leave';
 
 /** Équipe recrutée, vivier de candidats et boosters à ouvrir */
 @Component({
@@ -38,6 +40,7 @@ import { MISSIONS, MISSION_BY_ID, missionSkill, setMission } from '../../engine/
       <div class="list">
         @for (r of team.team(); track r.id) {
           <app-recruit-card [recruit]="r" [compact]="true">
+            @if (leave(r); as lv) { <p class="leave" [class.soon]="lv.soon" [title]="lv.malus">🏖️ {{ lv.soon ? 'Congé le mois prochain' : 'En congé ce mois-ci' }} · {{ lv.malus }}</p> }
             <div class="pay">
               <div class="morale" [title]="'Moral ' + morale(r)">
                 <span class="m-lbl">{{ moraleLabel(morale(r)) }}</span>
@@ -130,6 +133,7 @@ import { MISSIONS, MISSION_BY_ID, missionSkill, setMission } from '../../engine/
     </section>
   `,
   styles: `
+    .leave { margin: 4px 0 0; padding: 4px 8px; border-radius: 8px; font-size: 11.5px; background: #fff2d6; color: #7a5300; &.soon { background: var(--surface-2); color: var(--ink-2); } }
     .mission { display: grid; gap: 3px; font-size: 12px; span { color: var(--ink-3); font-size: 11px; } select { font: 12px var(--font-body); padding: 3px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); max-width: 100%; } }
     .funding { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; margin: 0 0 10px; font-size: 12.5px; small { grid-column: 1 / -1; font-size: 11px; } }
     .payer { font-size: 11px; color: var(--ink-3); } .payer.party { color: var(--good); }
@@ -185,6 +189,13 @@ export class TeamPanelComponent {
   protected readonly answers = signal<Record<string, string>>({});
   protected ask(r: Recruit): number { return askOf(r); }
   protected morale(r: Recruit): number { return Math.round(moraleOf(r)); }
+  /** Congé en cours ou prévu, et ce qu'il coûte */
+  protected leave(r: Recruit): { soon: boolean; malus: string } | null {
+    const d = this.game.s();
+    if (onLeave(d, r)) return { soon: false, malus: LEAVE_MALUS[r.role].label };
+    if (r.leaveFrom !== undefined && r.leaveFrom > d.week) return { soon: true, malus: LEAVE_MALUS[r.role].label };
+    return null;
+  }
   protected moraleLabel(m: number): string { return moraleLabel(m); }
   protected offerOf(r: Recruit): number { return this.offers()[r.id] ?? askOf(r); }
   protected chance(r: Recruit): number { return offerChance(r, this.offerOf(r)); }

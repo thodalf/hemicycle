@@ -133,6 +133,12 @@ export const CRISES: Record<CrisisArcId, CrisisDef> = {
     stages: ['Un cyclone de catégorie 5 a frappé la Guadeloupe : toits arrachés, routes coupées, l’électricité ne reviendra pas avant des semaines.', 'Les secours arrivent, mais lentement ; l’eau potable manque, la colère gronde contre « Paris qui oublie l’outre-mer ».', 'Reconstruire à l’identique, ou reconstruire mieux et plus solide ?'] },
   lithium: { id: 'lithium', icon: '🔋', label: 'Le lithium d’Alsace', gaugeLabel: 'Projet minier', riskLabel: 'Opposition locale', months: 6, drift: { gauge: 3, risk: 4 },
     stages: ['Des géologues confirment un gisement de lithium géant sous l’Alsace : de quoi équiper des millions de voitures électriques.', 'Les industriels se pressent, les riverains s’inquiètent pour leurs nappes phréatiques, les écologistes se divisent.', 'Le permis d’exploitation doit être tranché : extraire, encadrer ou renoncer.'] },
+  sous_marin: { id: 'sous_marin', icon: '⚓', label: 'Le sous-marin en détresse', gaugeLabel: 'Sauvetage', riskLabel: 'Tension diplomatique', months: 3, drift: { gauge: 3, risk: 6 },
+    stages: ['Un sous-marin nucléaire d’attaque ne répond plus, quelque part en Atlantique Nord. Cent dix marins à bord.', 'Il est localisé par trois cents mètres de fond, près des eaux d’une puissance rivale qui envoie ses propres navires.', 'Les réserves d’oxygène s’épuisent : il faut tenter le sauvetage maintenant.'] },
+  joconde: { id: 'joconde', icon: '🖼️', label: 'Le vol de la Joconde', gaugeLabel: 'Enquête', riskLabel: 'Ridicule international', months: 4, drift: { gauge: 3, risk: 5 },
+    stages: ['La Joconde a disparu du Louvre pendant la nuit. Le cadre vide fait la une du monde entier.', 'Fausses pistes, rançon réclamée, copies qui surgissent partout : la France devient la risée des réseaux.', 'Les enquêteurs pensent savoir où elle est. Faut-il négocier ou intervenir ?'] },
+  quatre_jours: { id: 'quatre_jours', icon: '📆', label: 'La semaine de quatre jours', gaugeLabel: 'Adhésion', riskLabel: 'Désorganisation', months: 6, drift: { gauge: 3, risk: 4 },
+    stages: ['Une grande expérimentation de la semaine de quatre jours démarre dans mille entreprises et administrations volontaires.', 'Premiers bilans contrastés : des salariés ravis, des services publics fermés le vendredi, des patrons divisés.', 'L’heure du bilan : généraliser, encadrer ou abandonner.'] },
   tempete_solaire: { id: 'tempete_solaire', icon: '🌞', label: 'La tempête solaire', gaugeLabel: 'Résilience des réseaux', riskLabel: 'Paralysie', months: 4, drift: { gauge: 3, risk: 6 },
     stages: ['Une éruption solaire géante frappe la Terre : satellites aveugles, GPS en panne, réseaux électriques fragilisés.', 'Trains à l’arrêt, cartes bancaires refusées, avions cloués au sol : le pays redécouvre le papier.', 'Les satellites redémarrent un à un. Il faut tenir jusqu’au bout.'] },
   expo_universelle: { id: 'expo_universelle', icon: '🎡', label: 'L’Exposition universelle', gaugeLabel: 'Préparation', riskLabel: 'Retards et surcoûts', months: 12, drift: { gauge: 3, risk: 3 },
@@ -724,6 +730,33 @@ function resolve(d: GameState, id: CrisisArcId, a: CrisisArc, rng: Rng): void {
       } else {
         s.popularity = clamp(s.popularity - 2); s.credibility = clamp(s.credibility - 2);
         lose('Le gisement endormi', 'Recours, manifestations, investisseurs partis : le lithium reste sous terre, et les batteries viendront d’ailleurs.');
+      }
+      break;
+    case 'sous_marin':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 5); s.credibility = clamp(s.credibility + 3); d.intl.prestige = clamp(d.intl.prestige + 2);
+        win('Les cent dix marins sauvés', 'Le sous-marin est remonté à la surface, son équipage sain et sauf. Le pays entier accueille les marins à Brest.');
+      } else {
+        s.popularity = clamp(s.popularity - 3); d.intl.prestige = clamp(d.intl.prestige - 2); d.intl.tension = clamp(d.intl.tension + 6);
+        lose('Un sauvetage au goût amer', 'L’équipage est sauvé de justesse, mais l’incident avec la puissance rivale laissera des traces.');
+      }
+      break;
+    case 'joconde':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 4); p.renown = (p.renown ?? 0) + 20; d.intl.prestige = clamp(d.intl.prestige + 2);
+        win('Mona Lisa est rentrée', 'Retrouvée intacte dans un entrepôt de la banlieue de Naples, la Joconde retrouve sa vitrine sous les vivats d’une foule immense.');
+      } else {
+        s.credibility = clamp(s.credibility - 4); d.intl.prestige = clamp(d.intl.prestige - 3);
+        lose('Le sourire envolé', 'L’enquête s’enlise. Dans la salle des États, une copie fait office d’original. Le monde entier s’en amuse.');
+      }
+      break;
+    case 'quatre_jours':
+      if (a.gauge >= a.risk) {
+        s.popularity = clamp(s.popularity + 3); s.credibility = clamp(s.credibility + 2); economy(d).growth += 0.03;
+        win('Le vendredi libéré', 'Productivité maintenue, arrêts maladie en baisse, salariés ravis : l’expérience est étendue à tout volontaire.');
+      } else {
+        s.credibility = clamp(s.credibility - 3); s.popularity = clamp(s.popularity - 1);
+        lose('L’expérience avortée', 'Services fermés, heures sup en cascade, patrons furieux : l’expérimentation est abandonnée dans la confusion.');
       }
       break;
     case 'tempete_solaire':

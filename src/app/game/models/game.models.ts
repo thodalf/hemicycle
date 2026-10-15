@@ -265,7 +265,7 @@ export type Effect =
   | { kind: 'war'; front?: number; support?: number; losses?: number; ally?: string; peace?: boolean; declare?: string; invade?: string; total?: boolean; effort?: number; morale?: number }
   | { kind: 'hostile'; enemy: string; delta: number }
   | { kind: 'civil'; join?: CorpsId | 'classement' | 'sortie' | 'tour'; grade?: number; leave?: boolean; study?: number }
-  | { kind: 'team'; recruitId?: string; morale?: number; salaryPct?: number; all?: boolean; leave?: boolean }
+  | { kind: 'team'; recruitId?: string; morale?: number; salaryPct?: number; all?: boolean; leave?: boolean; vacation?: number }
   | { kind: 'side'; id: string; label: string; amount: number; months?: number; exposure?: number; scale?: StatKey; mult?: number; compatible?: boolean; stop?: boolean }
   | { kind: 'leaderPay'; party?: number; president?: number }
   | { kind: 'plot'; danger?: number; intel?: number; start?: boolean; vest?: boolean }
@@ -299,6 +299,7 @@ export type Effect =
   | { kind: 'sellAsset'; which: 'ostentatious' | 'any' | string; discount?: number }
   | { kind: 'leaveLodge' }
   | { kind: 'partyTreasury'; delta: number }
+  | { kind: 'partyMembers'; delta: number }
   | { kind: 'partyAllocation'; line: PartyLine; value: number }
   | { kind: 'rank'; rankId: RankId }
   | { kind: 'health'; delta: number }
@@ -363,11 +364,13 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean; renownTier?: number; dread?: number; struggle?: string; lifestyle?: string; knownSecret?: boolean; decision?: string };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean; renownTier?: number; dread?: number; struggle?: string; lifestyle?: string; knownSecret?: boolean; decision?: string; partyLeader?: boolean; treasury?: number; natCrisis?: string };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */
   personalOnly?: boolean;
+  /** Dépense réglée uniquement par la caisse du parti (réservée à sa direction) */
+  partyOnly?: boolean;
   cost: ActionCost;
   target?: 'domain' | 'npc' | 'contact' | 'faction' | 'partner' | 'enemy';
   targetCondition?: { minTrust?: number };
@@ -764,6 +767,9 @@ export interface Recruit {
   mission?: string;
   /** Cible de la mission (courant, personnalité) */
   missionTarget?: string;
+  /** Congés : absent·e du mois leaveFrom (inclus) au mois leaveUntil (exclu) */
+  leaveFrom?: number;
+  leaveUntil?: number;
 }
 
 // ── Scénarios spéciaux ──────────────────────────────────────
@@ -1049,6 +1055,8 @@ export interface GameState {
   agendaDomain: Domain;
   /** Mois jusqu'auquel l'agenda est verrouillé par une crise */
   agendaLockedUntil: number;
+  /** Crise nationale en cours (inondations, grève, krach…) */
+  nationalCrisis?: { id: string; since: number; until: number } | null;
   debate: DebateState | null;
   objectives: Objective[];
   program: ProgramState | null;
@@ -1605,7 +1613,7 @@ export interface RivalPlot { npcId: string; since: number; progress: number; kin
 /** Les arcs de crise génériques : cyberattaque, procès, Jeux olympiques, dissolution */
 export type CrisisArcId = 'cyber' | 'proces' | 'jo' | 'dissolution' | 'krach' | 'megafeux' | 'agriculteurs' | 'taupe'
   | 'blackout' | 'crue' | 'secheresse' | 'autonomie' | 'ia' | 'frelons'
-  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours' | 'penurie_essence' | 'capitale_culture' | 'canicule' | 'hacker' | 'barons' | 'grand_debat' | 'tour_eiffel' | 'baleine' | 'mariage_princier' | 'cathedrale' | 'punaises' | 'esport' | 'satellite' | 'casse' | 'vin' | 'nuage' | 'taxis' | 'fusion' | 'viaduc' | 'tresor' | 'algues' | 'barrage' | 'aviaire' | 'skipper' | 'drones' | 'cyclone' | 'lithium';
+  | 'mars' | 'napoleon' | 'atlantide' | 'ia_candidate' | 'grand_hiver' | 'sosie' | 'greve_generale' | 'templiers' | 'eurovision' | 'comete' | 'referendum' | 'seisme' | 'loto' | 'tempete_solaire' | 'expo_universelle' | 'penurie_medicaments' | 'train_futur' | 'pandas' | 'coupe_monde' | 'jubile' | 'diamants' | 'ours' | 'penurie_essence' | 'capitale_culture' | 'canicule' | 'hacker' | 'barons' | 'grand_debat' | 'tour_eiffel' | 'baleine' | 'mariage_princier' | 'cathedrale' | 'punaises' | 'esport' | 'satellite' | 'casse' | 'vin' | 'nuage' | 'taxis' | 'fusion' | 'viaduc' | 'tresor' | 'algues' | 'barrage' | 'aviaire' | 'skipper' | 'drones' | 'cyclone' | 'lithium' | 'sous_marin' | 'joconde' | 'quatre_jours';
 export interface CrisisArc { since: number; months: number; gauge: number; risk: number; meta?: string }
 
 /** Épidémie Z : un virus qui transforme les malades en morts-vivants */

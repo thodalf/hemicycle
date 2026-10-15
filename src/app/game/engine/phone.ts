@@ -1,4 +1,6 @@
-import { ContactType, Effect, GameState, PhoneMessage, PhoneReply, PhoneState, StaffRole } from '../models/game.models';
+import { ContactType, Effect, GameState, PhoneMessage, PhoneReply, PhoneState, Recruit, StaffRole } from '../models/game.models';
+import { LEAVE_MALUS } from '../data/leave';
+import { onLeave } from './recruits';
 import { highOffice, honorific, inPower, office, royal, seat } from './office';
 import { STAFF_BY_ROLE, STAFF_ICONS } from '../data/staff';
 import { RANKS } from '../data/ranks';
@@ -630,14 +632,14 @@ export const TEAM_TIPS: Partial<Record<StaffRole, { text: string; effects: Effec
   chauffeur: { text: 'La voiture est prête. Et j’ai trouvé un raccourci : vous gagnerez une heure demain.', effects: [st('energy', 4)] },
   coach: { text: 'Respirez par le ventre, regardez la caméra, phrases courtes. On répète ce soir ?', effects: [st('credibility', 1), st('stress', -1)] },
   plume: { text: 'J’ai une formule pour votre discours de jeudi. Elle va faire mouche.', effects: [st('influence', 1)] },
-  tresorier: { text: 'Les comptes sont propres. Évitez juste les notes de restaurant ce mois-ci.', effects: [{ kind: 'exposure', delta: -1 }] },
+  tresorier: { text: 'J’ai repéré une note de frais douteuse avant le contrôle des comptes. Rejetée.', effects: [{ kind: 'exposure', delta: -1 }] },
   attache_presse: { text: 'Trois journalistes veulent un portrait. J’en garde un, le plus sérieux.', effects: [st('popularity', 1), st('influence', 1)] },
   sondeur: { text: 'Les chiffres bougent dans le bon sens chez les retraités. On creuse ?', effects: [{ kind: 'momentum', delta: 2 }] },
   assistant_parlementaire: { text: 'J’ai préparé vos amendements et une note sur le texte de la semaine.', effects: [st('credibility', 1), st('stress', -1)] },
   directeur_campagne: { text: 'Le planning des déplacements est bouclé. On attaque le porte-à-porte samedi.', effects: [{ kind: 'momentum', delta: 3 }] },
   spin_doctor: { text: 'L’affaire de la semaine ? Je l’ai étouffée. On n’en parlera plus.', effects: [{ kind: 'exposure', delta: -2 }] },
   juriste: { text: 'J’ai relu le contrat de la mairie : il y avait un piège. Corrigé.', effects: [{ kind: 'exposure', delta: -2 }] },
-  garde_du_corps: { text: 'Itinéraire sécurisé pour demain. Rien à signaler, restez prudent·e.', effects: [{ kind: 'flagAdd', key: 'menace', delta: -3 }] },
+  garde_du_corps: { text: 'Un individu rôdait devant la permanence hier soir. J’ai changé votre itinéraire de demain.', effects: [{ kind: 'flagAdd', key: 'menace', delta: -3 }] },
   chef_cabinet: { text: 'Votre agenda est rationalisé : trois réunions inutiles supprimées.', effects: [st('energy', 5), st('stress', -2)] },
   sherpa: { text: 'Mon homologue allemand est d’accord sur l’essentiel. Le sommet sera un succès.', effects: [{ kind: 'intl', prestige: 1 }] },
 };
@@ -674,12 +676,12 @@ const TEAM_SMS: Partial<Record<StaffRole, Incoming[]>> = {
   ],
 };
 
-const GENERIC_TEAM: Incoming[] = [
-  { text: 'Petit point : tout roule de mon côté. Besoin de quelque chose ce mois-ci ?', replies: [rep('merci', 'Merci, continue comme ça', [st('stress', -1)])] },
-  { text: 'Je pose deux jours la semaine prochaine, c’est possible ?', replies: [
-    rep('oui', 'Bien sûr, repose-toi', [st('stress', -1)], 'Merci, vraiment !'),
-    rep('non', 'Pas maintenant, on a besoin de toi', [st('energy', 2)], 'D’accord… je reste.')] },
-];
+/** Une demande de congés : accepter, c'est se priver de sa spécialité un mois */
+function leaveRequest(r: Recruit): Incoming {
+  return { text: 'Je voudrais poser mes congés le mois prochain. Ça fait un moment que je n’ai pas soufflé. C’est possible ?', replies: [
+    rep('oui', 'Bien sûr, profite', [{ kind: 'team', recruitId: r.id, morale: 8, vacation: 1 }], `Merci, vraiment ! Attention : sans moi, ${LEAVE_MALUS[r.role].label}.`),
+    rep('non', 'Pas maintenant, on a besoin de toi', [{ kind: 'team', recruitId: r.id, morale: -8 }], 'D’accord… je reste.')] };
+}
 
 function chiefSms(d: GameState, rng: Rng): Incoming {
   const chief = leader(d)!;
@@ -697,8 +699,6 @@ function chiefSms(d: GameState, rng: Rng): Incoming {
     { text: 'On m’a dit que tu déjeunais avec des gens de l’autre camp. Je me trompe ?', replies: [
       rep('nier', 'Simple courtoisie républicaine', [{ kind: 'npcRelation', npcId: chief.id, delta: -1 }], 'Méfie-toi des courtoisies.'),
       rep('assumer', 'Je parle à tout le monde', [st('influence', 1), { kind: 'npcRelation', npcId: chief.id, delta: -3 }], 'On en reparlera.')] },
-    { text: 'Bravo pour ton passage télé hier. Continue comme ça.', replies: [
-      rep('merci', 'Merci, ça me touche', [{ kind: 'npcRelation', npcId: chief.id, delta: 2 }])] },
     { text: 'Il me faut des volontaires pour la tournée d’été. Tu en es ?', replies: [
       rep('oui', 'Avec plaisir', [{ kind: 'cohesion', delta: 2 }, st('energy', -4), { kind: 'npcRelation', npcId: chief.id, delta: 3 }], 'Je savais que je pouvais compter sur toi.'),
       rep('non', 'Mon agenda est plein', [{ kind: 'npcRelation', npcId: chief.id, delta: -2 }])] },
@@ -816,11 +816,14 @@ export function monthlyPhone(d: GameState, rng: Rng): void {
     const roll = rng.next();
     const team = d.player.team;
     let ok = false;
-    if (roll < 0.35 && team.length) {
-      const r = rng.pick(team);
+    const present = team.filter(x => !onLeave(d, x));
+    if (roll < 0.35 && present.length) {
+      const r = rng.pick(present);
       // Pas d'amendement à cosigner hors de l'Assemblée, pas de tractage pour un chef d'État
       const own = (TEAM_SMS[r.role] ?? []).filter(() => !(r.role === 'assistant_parlementaire' && office(d) !== 'depute') && !(r.role === 'directeur_campagne' && highOffice(d)));
-      const pool = [...own, ...GENERIC_TEAM];
+      // Une demande de congés de temps en temps (pas plus d'une fois tous les huit mois par personne)
+      const pool = [...own, ...((r.leaveFrom === undefined || d.week - r.leaveFrom > 8) && rng.chance(0.25) ? [leaveRequest(r)] : [])];
+      if (!pool.length) continue;
       if (!sent.has(`equipe:${r.id}`)) ok = send({ kind: 'sms', who: `equipe:${r.id}`, from: r.name, role: STAFF_BY_ROLE.get(r.role)?.title ?? r.role, ...rng.pick(pool) });
     } else if (roll < 0.6 && leader(d) && office(d) !== 'couronne') {
       const chief = leader(d)!;

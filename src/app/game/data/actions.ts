@@ -5,6 +5,7 @@ import { ActionCategory, ActionDefinition, Effect } from '../models/game.models'
  * risk.baseChance = probabilité d'échec avant modulation par la stat (ou la maîtrise du dossier).
  */
 import { EXTRA_ACTIONS } from './actions-extra';
+import { NAT_ACTIONS } from './national-crises';
 
 const RAW_ACTIONS: ActionDefinition[] = [
   // ── Terrain ───────────────────────────────────────────────
@@ -2122,6 +2123,7 @@ const RAW_ACTIONS: ActionDefinition[] = [
     target: 'domain',
   },
   ...EXTRA_ACTIONS,
+  ...NAT_ACTIONS,
 ];
 
 /* ── Contrepoids automatiques ────────────────────────────────

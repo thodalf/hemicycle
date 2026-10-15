@@ -1631,6 +1631,96 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'ev_don_liquide', weight: 0.35, eligible: d => d.party.leaderNpcId === 'player' && !!d.partyFinance,
+    build: () => ({
+      title: 'Une enveloppe au siège du parti',
+      context: 'Un généreux sympathisant dépose au siège une enveloppe de 40 000 € en liquide, « pour la cause ». Le trésorier est blême.',
+      choices: [
+        c('refuser', 'La refuser et la rendre devant témoins', [s('credibility', 2), { kind: 'exposure', delta: -1 }], 'L’enveloppe repart avec son propriétaire, un peu vexé.'),
+        c('encaisser', 'L’encaisser discrètement', [{ kind: 'partyTreasury', delta: 40 }, { kind: 'exposure', delta: 6 }], 'Quarante mille euros de plus en caisse. Et un risque de plus dans le placard.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_excedent_parti', weight: 0.3, eligible: d => d.party.leaderNpcId === 'player' && (d.partyFinance?.treasury ?? 0) > 400,
+    build: () => ({
+      title: 'Une trésorerie florissante',
+      context: 'Le trésorier vous annonce un excédent confortable. Les fédérations réclament leur part, les jeunes veulent une campagne, les élus un fonds de réserve.',
+      choices: [
+        c('federations', 'Redistribuer aux fédérations', [{ kind: 'partyTreasury', delta: -120 }, { kind: 'faction', factionId: '*', delta: 4 }, { kind: 'cohesion', delta: 3 }], 'Les fédérations repeignent leurs locaux et vous remercient.'),
+        c('reserve', 'Constituer une réserve pour la prochaine élection', [s('credibility', 1)], 'Une gestion prudente, saluée par les commissaires aux comptes.'),
+        c('jeunes', 'Financer une grande campagne jeunesse', [{ kind: 'partyTreasury', delta: -80 }, { kind: 'segment', segment: 'jeunes', delta: 3 }, { kind: 'partyMembers', delta: 1200 }], 'Les adhésions de moins de trente ans s’envolent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_audit_comptes', weight: 0.3, eligible: d => d.party.leaderNpcId === 'player' && !!d.partyFinance,
+    build: () => ({
+      title: 'La commission des comptes de campagne enquête',
+      context: 'La commission nationale des comptes de campagne s’interroge sur des factures de meeting. Elle demande tous les justificatifs sous quinze jours.',
+      choices: [
+        { ...c('transparence', 'Tout lui transmettre, pièce par pièce', [s('credibility', 2), { kind: 'exposure', delta: -2 }], 'Les comptes sont validés, avec une observation mineure.'), play: 'chiffrage' },
+        c('contester', 'Contester la procédure', [{ kind: 'exposure', delta: 3 }, s('credibility', -1)], 'La commission saisit le juge. L’affaire traînera.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_pret_banque_parti', weight: 0.25, eligible: d => d.party.leaderNpcId === 'player' && (d.partyFinance?.treasury ?? 0) < 300,
+    build: () => ({
+      title: 'Une banque propose un prêt au parti',
+      context: 'Une banque régionale propose 200 000 € au parti, à un taux raisonnable. Une autre, étrangère, offre le double, sans poser de questions.',
+      choices: [
+        c('regionale', 'Accepter la banque régionale', [{ kind: 'partyTreasury', delta: 200 }, s('credibility', 1)], 'Un prêt classique, remboursable sur cinq ans.'),
+        c('etrangere', 'Accepter la banque étrangère', [{ kind: 'partyTreasury', delta: 400 }, { kind: 'exposure', delta: 7 }], 'Quatre cent mille euros. Et une question que la presse finira par poser.'),
+        c('rien', 'Ne pas s’endetter', [s('stress', 2)], 'La trésorerie reste fragile.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_greve_permanents', weight: 0.25, eligible: d => d.party.leaderNpcId === 'player' && !!d.partyFinance,
+    build: () => ({
+      title: 'Les salariés du parti en grève',
+      context: 'Les permanents du siège se mettent en grève : salaires gelés depuis trois ans. La presse s’amuse d’un parti en grève contre lui-même.',
+      choices: [
+        { ...c('augmenter', 'Négocier une augmentation', [{ kind: 'partyTreasury', delta: -30 }, { kind: 'cohesion', delta: 2 }, s('popularity', 1)], 'Accord trouvé dans la nuit. Les militants applaudissent.'), play: 'negociation_syndicale' },
+        c('refuser', 'Refuser : les caisses ne le permettent pas', [{ kind: 'cohesion', delta: -3 }, s('credibility', -1)], 'La grève dure une semaine. Les photos du siège vide circulent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_tempete_neige', weight: 0.25,
+    build: () => ({
+      title: 'Bloqués par la neige sur l’autoroute',
+      context: 'Une tempête de neige piège des milliers d’automobilistes sur une autoroute. Certains y passent la nuit, sans chauffage.',
+      choices: [
+        c('requisition', 'Réquisitionner gymnases et chasse-neige', [s('popularity', 2), s('politicalCapital', -2)], 'Couvertures, soupe chaude, et des automobilistes reconnaissants.'),
+        c('concession', 'Exiger des comptes de la société d’autoroute', [s('credibility', 2)], 'La société promet des indemnités. Et un plan neige digne de ce nom.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_greve_faim', weight: 0.25,
+    build: () => ({
+      title: 'Une grève de la faim devant l’hôpital',
+      context: 'Un médecin urgentiste entame une grève de la faim devant son hôpital pour obtenir des postes. Il en est à son dixième jour.',
+      choices: [
+        c('recevoir', 'Le recevoir et obtenir des engagements', [{ kind: 'dossier', domain: 'sante', delta: 2 }, s('popularity', 2), s('politicalCapital', -2)], 'Six postes promis. Il accepte de s’alimenter à nouveau.'),
+        c('ars', 'Laisser l’agence régionale de santé gérer', [s('popularity', -1)], 'Il tient vingt jours. Le dossier devient national.'),
+      ],
+    }),
+  },
+  {
+    tag: 'ev_ecole_cours_ia', weight: 0.25,
+    build: () => ({
+      title: 'Les devoirs faits par l’IA',
+      context: 'Une enquête révèle que deux lycéens sur trois font leurs devoirs avec une intelligence artificielle. Les professeurs sont désemparés.',
+      choices: [
+        c('former', 'Former les professeurs à l’IA', [{ kind: 'dossier', domain: 'education', delta: 2 }, { kind: 'dossier', domain: 'numerique', delta: 1 }, { kind: 'segment', segment: 'jeunes', delta: 1 }], 'Un plan de formation pour tous les enseignants.'),
+        c('interdire', 'Interdire l’IA pour les devoirs', [s('credibility', 1), { kind: 'segment', segment: 'jeunes', delta: -2 }], 'Une interdiction difficile à contrôler.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

@@ -106,6 +106,7 @@ export function describeEffect(e: Effect): EffectChip[] {
       : e.key === 'e2t' ? [{ text: `${n(e.delta)} au second tour`, tone: tone(e.delta) }]
       : e.key === 'debatePrep' ? [{ text: 'Sang-froid au prochain débat', tone: 'good' }] : [];
     case 'skillPoints': return [{ text: `${n(e.delta)} pt de compétence`, tone: tone(e.delta) }];
+    case 'partyMembers': return [{ text: `${n(e.delta)} adhérents`, tone: tone(e.delta) }];
     case 'partyTreasury': return [{ text: `${n(e.delta)} k€ caisse du parti`, tone: tone(e.delta) }];
     case 'press': {
       const out: EffectChip[] = [];

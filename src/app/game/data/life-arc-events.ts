@@ -814,6 +814,39 @@ export const CRISIS_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'sous_marin_gate', weight: 0.25, minRank: 'depute', eligible: d => !d.crises?.sous_marin && !d.player.flags['sousMarinDone'] && d.week > 24,
+    build: () => ({
+      title: 'Un sous-marin ne répond plus',
+      context: 'Le chef d’état-major de la Marine vous réveille : un sous-marin nucléaire n’a pas fait surface au rendez-vous. Cent dix marins à bord.',
+      choices: [
+        c('tout', 'Engager tous les moyens, et le dire au pays', [cr('sous_marin', 6, 5, true), { kind: 'flag', key: 'sousMarinDone', value: true }, s('credibility', 1)], 'Frégates, avions, robots sous-marins : la flotte appareille.'),
+        c('discret', 'Rechercher dans la discrétion', [cr('sous_marin', 4, 3, true), { kind: 'flag', key: 'sousMarinDone', value: true }], 'Le secret tient trois jours. Puis les familles apprennent tout par la presse.'),
+      ],
+    }),
+  },
+  {
+    tag: 'joconde_gate', weight: 0.25, minRank: 'conseiller_municipal', eligible: d => !d.crises?.joconde && !d.player.flags['jocondeDone'] && d.week > 20,
+    build: () => ({
+      title: 'La Joconde a disparu',
+      context: 'À 6 heures du matin, un gardien du Louvre a découvert le cadre vide. L’alarme n’a pas sonné. Les télévisions du monde entier sont déjà devant la pyramide.',
+      choices: [
+        c('fermer', 'Fermer les frontières et lancer la plus grande traque de l’histoire', [cr('joconde', 6, 4, true), { kind: 'flag', key: 'jocondeDone', value: true }, s('credibility', 1)], 'Aéroports, gares, péages : tout est fouillé.'),
+        c('humour', 'Désamorcer avec humour : « Elle reviendra, elle sourit toujours »', [cr('joconde', 2, 6, true), { kind: 'flag', key: 'jocondeDone', value: true }, s('popularity', 1)], 'La phrase fait le tour du monde. Pas toujours en bien.'),
+      ],
+    }),
+  },
+  {
+    tag: 'quatre_jours_gate', weight: 0.3, minRank: 'conseiller_municipal', eligible: d => !d.crises?.quatre_jours && !d.player.flags['quatreJoursDone'] && d.week > 16,
+    build: () => ({
+      title: 'Tester la semaine de quatre jours ?',
+      context: 'Mille entreprises et administrations se portent volontaires pour tester la semaine de quatre jours, sans baisse de salaire. On attend votre soutien.',
+      choices: [
+        c('soutenir', 'Soutenir et suivre l’expérience de près', [cr('quatre_jours', 6, 3, true), { kind: 'flag', key: 'quatreJoursDone', value: true }, { kind: 'segment', segment: 'jeunes', delta: 2 }], 'L’expérience démarre le lundi suivant. Enfin, le mardi.'),
+        c('reserve', 'Laisser faire, sans s’engager', [cr('quatre_jours', 3, 5, true), { kind: 'flag', key: 'quatreJoursDone', value: true }, { kind: 'segment', segment: 'cadres', delta: 1 }], 'L’expérience démarre sans vous. Elle finira peut-être sans vous aussi.'),
+      ],
+    }),
+  },
 ];
 
 // ── Rebondissements des crises ──────────────────────────────
@@ -2196,6 +2229,72 @@ export const CRISIS_EVENTS: RandomEvent[] = [
       choices: [
         { ...c('convaincre', 'Monter sur l’estrade et convaincre', [cr('lithium', 4, -4), s('popularity', 1)], 'Deux heures de questions, et une salle qui finit par écouter.'), play: 'eloquence' },
         c('experts', 'Laisser parler les experts', [cr('lithium', 2, 1)], 'Les experts parlent. La salle, elle, a décroché.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sous_marin_rival', weight: 1, eligible: d => !!d.crises?.sous_marin,
+    build: () => ({
+      title: 'Des navires rivaux sur zone',
+      context: 'Deux navires d’une puissance rivale croisent au-dessus de l’épave. Ils proposent leur aide… et pourraient en profiter pour inspecter le sous-marin.',
+      choices: [
+        { ...c('accepter', 'Accepter leur aide, sous conditions strictes', [cr('sous_marin', 5, 3), { kind: 'intl', prestige: 1 }], 'Un accord est trouvé, la nuit, par téléphone rouge.'), play: 'negociation_alliance' },
+        c('refuser', 'Refuser et éloigner leurs navires', [cr('sous_marin', 3, -2), { kind: 'intl', tension: 3 }], 'Nos frégates s’interposent. La tension monte d’un cran.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sous_marin_familles', weight: 0.9, eligible: d => !!d.crises?.sous_marin,
+    build: () => ({
+      title: 'Les familles à Brest',
+      context: 'Les familles des marins attendent sur le quai, jour et nuit. Elles veulent des nouvelles, pas des communiqués.',
+      choices: [
+        c('aller', 'Aller les voir, sans caméras', [cr('sous_marin', 1, -5), s('stress', 3)], 'Une nuit sur le quai, à attendre avec elles.'),
+        c('point', 'Organiser un point quotidien avec la Marine', [cr('sous_marin', 2, -3), s('credibility', 1)], 'Chaque matin à 8 heures, un officier répond à toutes les questions.'),
+      ],
+    }),
+  },
+  {
+    tag: 'joconde_rancon', weight: 1, eligible: d => !!d.crises?.joconde,
+    build: () => ({
+      title: 'Une demande de rançon',
+      context: 'Une lettre anonyme réclame cinquante millions d’euros en cryptomonnaie pour rendre la Joconde. Une photo du tableau l’accompagne.',
+      choices: [
+        c('jamais', 'Refuser : la France ne paie pas de rançon', [cr('joconde', 4, 3), s('credibility', 2)], 'Les ravisseurs se taisent. Pour l’instant.'),
+        c('piege', 'Faire semblant de négocier pour les piéger', [cr('joconde', 6, 1)], 'Les enquêteurs tiennent enfin une piste numérique.'),
+      ],
+    }),
+  },
+  {
+    tag: 'joconde_copies', weight: 0.9, eligible: d => !!d.crises?.joconde,
+    build: () => ({
+      title: 'Des Joconde partout',
+      context: 'Des dizaines de « vraies Joconde » apparaissent sur les sites de vente, et un musée étranger affirme détenir l’original depuis toujours.',
+      choices: [
+        { ...c('dementir', 'Démonter chaque intox, preuves à l’appui', [cr('joconde', 3, -5), s('credibility', 1)], 'Une par une, les fausses Joconde tombent.'), play: 'factcheck_direct' },
+        c('rire', 'En rire : « Il n’y en a qu’une, et elle reviendra »', [cr('joconde', 1, 3), s('popularity', 1)], 'Les mèmes redoublent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'quatre_jours_services', weight: 1, eligible: d => !!d.crises?.quatre_jours,
+    build: () => ({
+      title: 'Les mairies fermées le vendredi',
+      context: 'Dans les villes volontaires, les mairies ferment désormais le vendredi. Les usagers se plaignent de files interminables le jeudi.',
+      choices: [
+        c('roulement', 'Imposer un roulement pour garder les services ouverts', [cr('quatre_jours', 4, -4), s('credibility', 1)], 'Les mairies rouvrent cinq jours sur cinq, avec des équipes tournantes.'),
+        c('assumer', 'Assumer : le changement demande un temps d’adaptation', [cr('quatre_jours', 2, 4)], 'Les files s’allongent. Les plaintes aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'quatre_jours_patrons', weight: 0.9, eligible: d => !!d.crises?.quatre_jours,
+    build: () => ({
+      title: 'Le patronat monte au créneau',
+      context: 'Le patronat publie une étude alarmante sur la productivité. Les entreprises volontaires publient la leur, enthousiaste.',
+      choices: [
+        { ...c('chiffres', 'Confronter les chiffres, point par point', [cr('quatre_jours', 5, -2), s('credibility', 2)], 'Les deux études sont décortiquées : la vérité est au milieu, plutôt favorable.'), play: 'chiffrage' },
+        c('rassurer', 'Rassurer les patrons : rien ne sera imposé', [cr('quatre_jours', 2, -1), { kind: 'segment', segment: 'cadres', delta: 1 }], 'Le patronat se calme. Les volontaires, eux, se sentent lâchés.'),
       ],
     }),
   },

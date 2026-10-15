@@ -577,6 +577,33 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Pas si on extrait par géothermie, en circuit fermé. C’est plus lent, mais c’est propre. Je peux le prouver.', effects: [{ kind: 'crisis', arc: 'lithium', gauge: 4, risk: -2 }] }) },
     ],
   },
+  // ── Le sous-marin ──
+  {
+    key: 'sc:sous_marin', icon: '⚓', when: d => !!d.crises?.sous_marin,
+    name: () => 'Amiral Hugues Le Roux', role: () => 'Chef d’état-major de la Marine',
+    options: () => [
+      { id: 'sc_sm_point', label: 'Faire le point sur le sauvetage', hint: 'Quarante ans de mer, une voix calme.', ask: 'Amiral, ils tiennent ?', cooldown: 1,
+        run: () => ({ answer: 'Ils frappent sur la coque toutes les heures : on les entend. Le robot sera sur zone demain à l’aube.', effects: [{ kind: 'crisis', arc: 'sous_marin', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── La Joconde ──
+  {
+    key: 'sc:joconde', icon: '🖼️', when: d => !!d.crises?.joconde,
+    name: () => 'Commissaire Agathe Morel', role: () => 'Office central des biens culturels',
+    options: () => [
+      { id: 'sc_jc_point', label: 'Demander où en est l’enquête', hint: 'Elle a déjà retrouvé un Picasso et deux Vermeer.', ask: 'Commissaire, une piste ?', cooldown: 1,
+        run: () => ({ answer: 'Un camion frigorifique, une immatriculation italienne, un antiquaire nerveux. On se rapproche.', effects: [{ kind: 'crisis', arc: 'joconde', gauge: 4, risk: -2 }] }) },
+    ],
+  },
+  // ── La semaine de quatre jours ──
+  {
+    key: 'sc:quatre_jours', icon: '📆', when: d => !!d.crises?.quatre_jours,
+    name: () => 'Nadège Fontaine', role: () => 'Économiste, pilote de l’expérimentation',
+    options: () => [
+      { id: 'sc_qj_point', label: 'Demander les premiers chiffres', hint: 'Elle ne croit qu’aux données.', ask: 'Nadège, alors, ça marche ?', cooldown: 1,
+        run: () => ({ answer: 'Productivité stable, absentéisme en baisse de 20 %. Le problème, ce sont les services publics le vendredi.', effects: [{ kind: 'crisis', arc: 'quatre_jours', gauge: 4, risk: -2 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -660,7 +687,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

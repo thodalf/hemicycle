@@ -1,7 +1,9 @@
 import { Effect, GameState, Recruit } from '../models/game.models';
+import { monthIndex } from './calendar';
+import { LEAVE_MALUS } from '../data/leave';
 import { STAFF_BY_ROLE } from '../data/staff';
 import { applyEffects, availableFunds, pushNews } from './effects';
-import { fireRecruit, hireRecruit } from './recruits';
+import { fireRecruit, hireRecruit, onLeave, syncStaff } from './recruits';
 import { TEAM_TIPS, addMessage } from './phone';
 import { Rng, clamp, frSigned } from './rng';
 
@@ -93,6 +95,13 @@ export function adjustTeam(d: GameState, e: Extract<Effect, { kind: 'team' }>): 
     for (const r of [...list]) { fireRecruit(d, r.id); out.push(`${r.name} quitte l’équipe`); }
     return out;
   }
+  if (e.vacation) {
+    for (const r of list) {
+      r.leaveFrom = d.week + 1;
+      r.leaveUntil = d.week + 1 + e.vacation;
+      out.push(`${r.name} en congé le mois prochain : ${LEAVE_MALUS[r.role].label}`);
+    }
+  }
   for (const r of list) {
     r.ask ??= r.salary;
     if (e.salaryPct) r.salary = round50(r.salary * (1 + e.salaryPct / 100));
@@ -105,8 +114,31 @@ export function adjustTeam(d: GameState, e: Extract<Effect, { kind: 'team' }>): 
   return out;
 }
 
+/** Les congés : départs d'été, retours, et ce que coûte chaque absence */
+function monthlyLeave(d: GameState, rng: Rng): void {
+  const summer = monthIndex(d.week) === 7;
+  for (const r of d.player.team) {
+    if (r.leaveUntil !== undefined && d.week >= r.leaveUntil) {
+      pushNews(d, 'systeme', 'neutral', `${r.name} est de retour`, 'Bronzé·e, reposé·e, et déjà plongé·e dans les dossiers en retard.');
+      delete r.leaveFrom; delete r.leaveUntil;
+    }
+    // En août, la moitié de l'équipe part (sauf si elle a déjà pris ses congés dans l'année)
+    if (summer && !onLeave(d, r) && (r.leaveFrom === undefined || d.week - r.leaveFrom > 8) && rng.chance(0.5)) {
+      r.leaveFrom = d.week; r.leaveUntil = d.week + 1;
+      r.morale = clamp(moraleOf(r) + 6);
+    }
+    if (onLeave(d, r)) {
+      const m = LEAVE_MALUS[r.role];
+      const summary = applyEffects(d, m.effects, {}, rng);
+      pushNews(d, 'systeme', 'negative', `${r.name} en congé`, `${STAFF_BY_ROLE.get(r.role)?.title ?? 'Votre collaborateur·rice'} absent·e ce mois-ci : ${m.label}. ${summary.join(' · ')}`);
+    }
+  }
+  syncStaff(d);
+}
+
 /** Chaque mois : le moral suit la paie, les prétentions suivent le marché */
 export function monthlyTeam(d: GameState, rng: Rng): void {
+  monthlyLeave(d, rng);
   for (const r of [...d.player.team]) {
     r.ask ??= r.salary;
     r.hiredWeek ??= d.week;
@@ -124,7 +156,7 @@ export function monthlyTeam(d: GameState, rng: Rng): void {
       pushNews(d, 'systeme', 'negative', `${r.name} démissionne`, `${STAFF_BY_ROLE.get(r.role)?.title ?? 'Votre collaborateur·rice'} vous avait prévenu·e : il ou elle trouve mieux ailleurs.`);
       continue;
     }
-    if (r.morale >= 80 && rng.chance(0.2)) {
+    if (r.morale >= 80 && !onLeave(d, r) && rng.chance(0.2)) {
       const tip = TEAM_TIPS[r.role];
       if (tip) {
         const summary = applyEffects(d, tip.effects, {}, rng);

@@ -285,6 +285,7 @@ export class WeekPlannerComponent {
   }
 
   protected payer(action: ActionDefinition): Payer {
+    if (action.partyOnly) return 'parti';
     return partyFundable(action) ? this.payers()[action.id] ?? 'perso' : 'perso';
   }
 

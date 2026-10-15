@@ -397,6 +397,12 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         if (d.scene) summary.push('Opération lancée');
         break;
       }
+      case 'partyMembers':
+        if (d.partyFinance) {
+          d.partyFinance.members = Math.max(0, d.partyFinance.members + e.delta);
+          summary.push(`${frSigned(e.delta)} adhérents`);
+        }
+        break;
       case 'partyTreasury':
         if (d.partyFinance) {
           d.partyFinance.treasury += e.delta;

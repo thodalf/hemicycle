@@ -1,3 +1,4 @@
+import { NAT_CHOICES, NatCrisisId } from './national-crises';
 import { formationDecision } from '../engine/government';
 import { coalitionDecision } from '../engine/coalition';
 import { canAppoint, castingDecision, pmDecision } from '../engine/cabinet';
@@ -56,17 +57,17 @@ const QUESTIONS: Record<Domain, string[]> = {
   ],
 };
 
-const CRISES: { domain: Domain; title: string; context: string; visit: string }[] = [
-  { domain: 'ecologie', title: 'Crise : inondations dans le Sud-Ouest', context: 'Des crues historiques ravagent plusieurs vallées.', visit: 'Bottes aux pieds, vous aidez à déblayer. Les images touchent.' },
-  { domain: 'social', title: 'Crise : grève des transports', context: 'Le pays est paralysé par une grève reconductible.', visit: 'Vous passez la nuit au dépôt avec les grévistes et les usagers.' },
-  { domain: 'economie', title: 'Crise : krach boursier', context: 'Les marchés dévissent, une grande banque vacille.', visit: 'Vous visitez une PME inquiète : votre écoute est saluée.' },
-  { domain: 'diplomatie', title: 'Crise : sommet européen de la dernière chance', context: 'Un sommet décisif s’ouvre sur fond de tensions commerciales.', visit: 'Vous multipliez les rencontres à Bruxelles : vous gagnez en stature.' },
-  { domain: 'sante', title: 'Crise : hôpitaux saturés par l’épidémie hivernale', context: 'Les urgences ferment la nuit dans plusieurs villes.', visit: 'Vous passez une nuit aux urgences aux côtés des soignants.' },
-  { domain: 'numerique', title: 'Crise : cyberattaque contre les hôpitaux', context: 'Un rançongiciel paralyse une dizaine d’hôpitaux.', visit: 'Vous rencontrez les équipes informatiques qui reconstruisent les systèmes.' },
-  { domain: 'education', title: 'Crise : une rentrée sans professeurs', context: 'Des milliers de classes n’ont pas d’enseignant.', visit: 'Vous assistez à une rentrée improvisée dans un collège de banlieue.' },
-  { domain: 'territoires', title: 'Crise : fermeture de la dernière usine de la vallée', context: '800 emplois menacés dans une ville moyenne.', visit: 'Vous passez la journée avec les salariés devant les grilles.' },
-  { domain: 'justice', title: 'Crise : une évasion spectaculaire', context: 'Un détenu dangereux s’évade lors d’un transfert.', visit: 'Vous visitez une prison surpeuplée : les images marquent.' },
-  { domain: 'securite', title: 'Crise : nuits de violences urbaines', context: 'Plusieurs villes connaissent des nuits de dégradations.', visit: 'Vous allez à la rencontre des habitants et des commerçants touchés.' },
+const CRISES: { id: NatCrisisId; domain: Domain; title: string; context: string; visit: string }[] = [
+  { id: 'inondations', domain: 'ecologie', title: 'Crise : inondations dans le Sud-Ouest', context: 'Des crues historiques ravagent plusieurs vallées.', visit: 'Bottes aux pieds, vous aidez à déblayer. Les images touchent.' },
+  { id: 'greve_transports', domain: 'social', title: 'Crise : grève des transports', context: 'Le pays est paralysé par une grève reconductible.', visit: 'Vous passez la nuit au dépôt avec les grévistes et les usagers.' },
+  { id: 'krach', domain: 'economie', title: 'Crise : krach boursier', context: 'Les marchés dévissent, une grande banque vacille.', visit: 'Vous visitez une PME inquiète : votre écoute est saluée.' },
+  { id: 'sommet_ue', domain: 'diplomatie', title: 'Crise : sommet européen de la dernière chance', context: 'Un sommet décisif s’ouvre sur fond de tensions commerciales.', visit: 'Vous multipliez les rencontres à Bruxelles : vous gagnez en stature.' },
+  { id: 'hopitaux', domain: 'sante', title: 'Crise : hôpitaux saturés par l’épidémie hivernale', context: 'Les urgences ferment la nuit dans plusieurs villes.', visit: 'Vous passez une nuit aux urgences aux côtés des soignants.' },
+  { id: 'cyber_hopitaux', domain: 'numerique', title: 'Crise : cyberattaque contre les hôpitaux', context: 'Un rançongiciel paralyse une dizaine d’hôpitaux.', visit: 'Vous rencontrez les équipes informatiques qui reconstruisent les systèmes.' },
+  { id: 'rentree', domain: 'education', title: 'Crise : une rentrée sans professeurs', context: 'Des milliers de classes n’ont pas d’enseignant.', visit: 'Vous assistez à une rentrée improvisée dans un collège de banlieue.' },
+  { id: 'usine', domain: 'territoires', title: 'Crise : fermeture de la dernière usine de la vallée', context: '800 emplois menacés dans une ville moyenne.', visit: 'Vous passez la journée avec les salariés devant les grilles.' },
+  { id: 'evasion', domain: 'justice', title: 'Crise : une évasion spectaculaire', context: 'Un détenu dangereux s’évade lors d’un transfert.', visit: 'Vous visitez une prison surpeuplée : les images marquent.' },
+  { id: 'violences', domain: 'securite', title: 'Crise : nuits de violences urbaines', context: 'Plusieurs villes connaissent des nuits de dégradations.', visit: 'Vous allez à la rencontre des habitants et des commerçants touchés.' },
 ];
 
 let localId = 0;
@@ -332,6 +333,7 @@ const TEMPLATES: Record<string, Template> = {
   crise: (d, rng) => {
     if (hasPending(d, 'crise')) return null;
     const crisis = rng.pick(CRISES);
+    d.nationalCrisis = { id: crisis.id, since: d.week, until: d.week + 2 };
     const debateStakes = rankOrder(d.player.rankId) >= rankOrder('depute') ? 'hemicycle' as const : 'face_a_face' as const;
     return {
       id: uid(d, 'dec'), tag: 'crise', week: d.week, deadlineWeek: d.week + 1, source: 'evenement', domain: crisis.domain,
@@ -360,6 +362,7 @@ const TEMPLATES: Record<string, Template> = {
           ],
           outcome: 'Votre plan est repris par plusieurs éditorialistes.',
         },
+        NAT_CHOICES[crisis.id],
         {
           id: 'debat', label: 'Porter le sujet en débat',
           hint: 'Un débat en direct, sur un sujet que tout le monde suit.',

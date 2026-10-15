@@ -1,3 +1,4 @@
+import { natCrisis } from '../data/national-crises';
 import { onAction } from '../engine/character';
 import { RENOWN_TIERS, renownTier } from '../data/lifestyles';
 import { rankAllowed } from '../data/ranks';
@@ -69,7 +70,7 @@ export class ActionPlannerService {
       totals.ap += a.cost.ap;
       totals.energy += a.cost.energy ?? 0;
       totals.politicalCapital += a.cost.politicalCapital ?? 0;
-      if (p.payer === 'parti') {
+      if (p.payer === 'parti' || a.partyOnly) {
         totals.partyMoney += a.cost.money ?? 0;
         totals.politicalCapital += partyCapitalCost(s, a.cost.money ?? 0);
       } else {
@@ -116,7 +117,9 @@ export class ActionPlannerService {
       if (a.category === 'zombie') return !!s.zombie;
       if (a.category === 'apocalypse') return !!s.apocalypse && s.apocalypse.phase < 4;
       if (a.requires?.arc && !s.crises?.[a.requires.arc]) return false;
-      if (a.category === 'crise') return Object.values(s.crises ?? {}).some(Boolean);
+      // La caisse du parti : réservée à sa direction (les autres ne voient pas ces actions)
+      if (a.partyOnly && s.party.leaderNpcId !== 'player') return false;
+      if (a.category === 'crise') return a.requires?.natCrisis ? natCrisis(s) === a.requires.natCrisis : Object.values(s.crises ?? {}).some(Boolean);
       if (a.category === 'administration') return civilActive(s);
       if (a.category === 'international' && !intlRelevant(s)) return false;
       if (a.category === 'international' && rankOrder(a.minRank) >= rankOrder('ministre') && rankOrder(s.player.rankId) >= rankOrder('ministre') && !intlPower(s)) return false;
@@ -171,6 +174,9 @@ export class ActionPlannerService {
       if (req.appoint) { const why = canAppoint(s); if (why) return { ok: false, reason: why }; }
       if (req.coalition && !s.coalition) return { ok: false, reason: 'Aucune coalition en cours' };
       if (req.kingdom && !s.kingdom) return { ok: false, reason: 'Réservé au souverain' };
+      if (req.natCrisis && natCrisis(s) !== req.natCrisis) return { ok: false, reason: 'La crise est passée' };
+      if (req.partyLeader && (s.party.leaderNpcId !== 'player' || !s.partyFinance)) return { ok: false, reason: 'Réservé à la direction du parti' };
+      if (req.treasury !== undefined && (s.partyFinance?.treasury ?? 0) < req.treasury) return { ok: false, reason: `Trésorerie du parti sous ${req.treasury} k€` };
       if (req.renownTier && renownTier(s.player.renown ?? 0) < req.renownTier) return { ok: false, reason: `Il faut être ${RENOWN_TIERS[req.renownTier].label.toLowerCase()}` };
       if (req.dread && (s.player.dread ?? 0) < req.dread) return { ok: false, reason: `Il faut inspirer de la crainte (${req.dread})` };
       if (req.struggle && s.struggle?.id !== req.struggle) return { ok: false, reason: 'Seulement pendant cette grande lutte' };
@@ -196,7 +202,7 @@ export class ActionPlannerService {
     if (this.apLeft() < cost.ap) return { ok: false, reason: 'Points d’action insuffisants' };
     if ((cost.energy ?? 0) + spent.energy > s.player.stats.energy) return { ok: false, reason: 'Trop épuisé·e' };
     if ((cost.renown ?? 0) > (s.player.renown ?? 0)) return { ok: false, reason: `Il faut ${cost.renown} de renommée` };
-    const party = payer === 'parti';
+    const party = payer === 'parti' || !!action.partyOnly;
     if (party) {
       if (!partyFundable(action)) return { ok: false, reason: 'Le parti ne paie pas ça' };
       if ((cost.money ?? 0) > this.envelopeLeft()) return { ok: false, reason: 'Enveloppe du parti épuisée' };
@@ -244,7 +250,7 @@ export class ActionPlannerService {
       d.player.stats.energy = Math.max(0, d.player.stats.energy - (cost.energy ?? 0));
       d.player.stats.stress = Math.min(100, d.player.stats.stress + (cost.energy ?? 0) / 3);
       d.player.stats.politicalCapital = Math.max(0, d.player.stats.politicalCapital - (cost.politicalCapital ?? 0));
-      if (planned.payer === 'parti') spendParty(d, cost.money ?? 0);
+      if (planned.payer === 'parti' || action.partyOnly) spendParty(d, cost.money ?? 0);
       else spend(d, cost.money ?? 0);
       if (action.cooldown) d.cooldowns[action.id] = d.week + action.cooldown;
 

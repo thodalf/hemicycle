@@ -12,8 +12,14 @@ import { Rng, clamp, nextId } from './rng';
 
 const POOL_MAX = 9;
 
+/** En congé ce mois-ci ? */
+export function onLeave(d: GameState, r: Recruit): boolean {
+  return r.leaveFrom !== undefined && r.leaveUntil !== undefined && d.week >= r.leaveFrom && d.week < r.leaveUntil;
+}
+
+/** Les postes réellement tenus : un·e collaborateur·rice en congé ne compte pas */
 export function syncStaff(d: GameState): void {
-  d.player.staff = [...new Set(d.player.team.map(r => r.role))];
+  d.player.staff = [...new Set(d.player.team.filter(r => !onLeave(d, r)).map(r => r.role))];
 }
 
 export function countTrait(d: GameState, t: TraitId): number {

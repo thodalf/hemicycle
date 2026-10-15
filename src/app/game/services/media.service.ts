@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, GameState } from '../models/game.models';
 import { rankOrder } from '../data/ranks';
 import { createDecision } from '../data/decisions';
+import { NAT_FOLLOWUPS, NatCrisisId } from '../data/national-crises';
 import { applyEffects, pushNews } from '../engine/effects';
 import { rollRandomEvents } from '../data/random-events';
 import { Rng, clamp } from '../engine/rng';
@@ -19,6 +20,16 @@ export class MediaService {
         d.agendaDomain = crisis.domain!;
         d.agendaLockedUntil = d.week + 2;
         pushNews(d, 'actu', 'negative', crisis.title, crisis.context);
+      }
+    }
+
+    // Un mois après le début d'une crise nationale : le rebondissement
+    const nc = d.nationalCrisis;
+    if (nc && d.week === nc.since + 1 && !d.pendingDecisions.some(x => x.tag === `crise_suite_${nc.id}`)) {
+      const f = NAT_FOLLOWUPS[nc.id as NatCrisisId];
+      if (f) {
+        d.pendingDecisions.push({ id: `dec-crise-${d.week}`, tag: `crise_suite_${nc.id}`, week: d.week, deadlineWeek: d.week + 1, source: 'evenement', title: f.title, context: f.context, choices: f.choices.map(c => ({ ...c })) });
+        pushNews(d, 'actu', 'negative', f.title, f.context);
       }
     }
 
