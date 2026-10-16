@@ -629,6 +629,86 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Les panneaux tiennent, l’équipage aussi. Dites aux enfants que la Terre est magnifique d’ici.', effects: [{ kind: 'saga', a: 2, b: -2, c: 3 }] }) },
     ],
   },
+  {
+    key: 'sc:saga_voyageur', icon: '🕰️', when: d => d.saga?.id === 'voyageur' && !d.saga.outcome,
+    name: () => 'Dr Salomé Kerjean', role: () => 'Physicienne, chargée d’interroger le voyageur',
+    options: () => [
+      { id: 'sc_voyageur_point', label: 'Demander ce qu’Élias a révélé', hint: 'Elle remplit un carnet par jour.', ask: 'Salomé, il dit vrai ?', cooldown: 1,
+        run: () => ({ answer: 'Il sait des choses qu’il ne peut pas savoir. Et il se trompe exprès sur des détails, comme pour ne pas trop changer l’histoire. Continuez de préparer le réseau.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_midi', icon: '☀️', when: d => d.saga?.id === 'midi' && !d.saga.outcome,
+    name: () => 'Margaux Peyrolle', role: () => 'Préfète de région, à Toulouse',
+    options: () => [
+      { id: 'sc_midi_point', label: 'Prendre le pouls de Toulouse', hint: 'Elle connaît chaque maire par son prénom.', ask: 'Madame la préfète, ça tient ?', cooldown: 1,
+        run: () => ({ answer: 'Les gens ne veulent pas partir, ils veulent qu’on les écoute. Venez au marché un dimanche, sans caméras, et vous verrez.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_somnolence', icon: '😴', when: d => d.saga?.id === 'somnolence' && !d.saga.outcome,
+    name: () => 'Dr Yannick Fourest', role: () => 'Mycologue au CHU de Limoges',
+    options: () => [
+      { id: 'sc_somnolence_point', label: 'Demander des nouvelles des dormeurs', hint: 'Il ne dort plus depuis trois semaines, ironie comprise.', ask: 'Yannick, on avance ?', cooldown: 1,
+        run: () => ({ answer: 'Les spores sont partout dans les vieux silos. Je cherche ce qui les tue sans tuer le blé. Donnez-moi encore un peu de temps, et du café.', effects: [{ kind: 'saga', a: 4, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_souterrain', icon: '🕯️', when: d => d.saga?.id === 'souterrain' && !d.saga.outcome,
+    name: () => 'Hugo Delmas', role: () => 'Spéléologue, premier à avoir franchi la porte',
+    options: () => [
+      { id: 'sc_souterrain_point', label: 'Prendre des nouvelles d’en bas', hint: 'Il passe plus de temps sous terre qu’à la surface.', ask: 'Hugo, comment vont-ils ?', cooldown: 1,
+        run: () => ({ answer: 'La doyenne a goûté du chocolat hier, elle a pleuré. Mais les étais du couloir nord bougent encore : il faut des ingénieurs, pas des caméras.', effects: [{ kind: 'saga', a: 3, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_maree', icon: '🌊', when: d => d.saga?.id === 'maree' && !d.saga.outcome,
+    name: () => 'Erwan Le Goff', role: () => 'Océanographe, chef de la cellule marégraphique',
+    options: () => [
+      { id: 'sc_maree_point', label: 'Demander les derniers relevés', hint: 'Il parle en centimètres, jamais en mètres.', ask: 'Erwan, ça monte encore ?', cooldown: 1,
+        run: () => ({ answer: 'Trois centimètres cette semaine, moins que la précédente : ça ralentit peut-être. Mais les digues de Charente doivent être prêtes avant l’équinoxe.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_pirates', icon: '🏴‍☠️', when: d => d.saga?.id === 'pirates' && !d.saga.outcome,
+    name: () => 'Vice-amirale Hélène Kerbrat', role: () => 'Commandante de la zone maritime Manche',
+    options: () => [
+      { id: 'sc_pirates_point', label: 'Demander où en est la traque', hint: 'Elle parle peu, et toujours en milles nautiques.', ask: 'Amirale, où sont-ils ?', cooldown: 1,
+        run: () => ({ answer: 'Dans les brumes au large des îles Anglo-Normandes, avec des yeux dans chaque port. Donnez-moi deux frégates de plus et je resserre le filet.', effects: [{ kind: 'saga', a: 3, b: -3 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_voyante', icon: '✨', when: d => d.saga?.id === 'voyante' && !d.saga.outcome,
+    name: () => 'Soazig Le Bihan', role: () => 'Gendarme chargée de la protection de Maëlle',
+    options: () => [
+      { id: 'sc_voyante_point', label: 'Prendre des nouvelles de Maëlle', hint: 'Elle est devenue la grande sœur de la famille.', ask: 'Soazig, comment va la petite ?', cooldown: 1,
+        run: () => ({ answer: 'Elle a fait ses devoirs et joué aux cartes avec moi. Elle va bien, tant qu’on la laisse être une enfant. Dehors, il y a encore deux cents personnes.', effects: [{ kind: 'saga', a: 3, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_silence', icon: '📵', when: d => d.saga?.id === 'silence' && !d.saga.outcome,
+    name: () => 'Lucas Tanguy', role: () => 'Ingénieur, chef des réparations des câbles',
+    options: () => [
+      { id: 'sc_silence_point', label: 'Demander où en sont les réparations', hint: 'Il appelle par liaison satellite, depuis le pont d’un navire câblier.', ask: 'Lucas, quand est-ce qu’on rebranche ?', cooldown: 1,
+        run: () => ({ answer: 'Deux câbles réparés sur huit. Le fond est mauvais au large de Penmarc’h, mais on y arrivera. D’ici là, gardez le pays debout.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_volcans', icon: '🌋', when: d => d.saga?.id === 'volcans' && !d.saga.outcome,
+    name: () => 'Dr Anaïs Chassaing', role: () => 'Volcanologue, observatoire de la Chaîne des Puys',
+    options: () => [
+      { id: 'sc_volcans_point', label: 'Demander l’état des volcans', hint: 'Elle dort à côté de ses sismographes.', ask: 'Anaïs, ils vont exploser ?', cooldown: 1,
+        run: () => ({ answer: 'Le magma monte, lentement. Pas d’explosion géante à mon avis, plutôt des fissures et des coulées. Mais il faut que les gens soient prêts à partir en deux heures.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_danse', icon: '💃', when: d => d.saga?.id === 'danse' && !d.saga.outcome,
+    name: () => 'Dr Odile Weisbecker', role: () => 'Neurologue à Strasbourg, au chevet des danseurs',
+    options: () => [
+      { id: 'sc_danse_point', label: 'Demander des nouvelles des danseurs', hint: 'Elle a appris à prendre un pouls en rythme.', ask: 'Odile, ça se calme ?', cooldown: 1,
+        run: () => ({ answer: 'Les nouveaux cas ralentissent quand la ville est calme et la musique douce. La peur, elle, est contagieuse. Gardez le pays tranquille.', effects: [{ kind: 'saga', a: 3, b: -2, c: 2 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -712,7 +792,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45, 'sc:saga_eveil': 54, 'sc:saga_parc': 47, 'sc:saga_lune': 39,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45, 'sc:saga_eveil': 54, 'sc:saga_parc': 47, 'sc:saga_lune': 39, 'sc:saga_voyageur': 41, 'sc:saga_midi': 52, 'sc:saga_somnolence': 47, 'sc:saga_souterrain': 34, 'sc:saga_maree': 49, 'sc:saga_pirates': 54, 'sc:saga_voyante': 38, 'sc:saga_silence': 44, 'sc:saga_volcans': 45, 'sc:saga_danse': 51,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

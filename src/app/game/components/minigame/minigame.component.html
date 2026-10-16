@@ -180,6 +180,8 @@
               @case ('prompteur') { <app-prompteur-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('chiffrage') { <app-chiffrage-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('depouillement') { <app-depouillement-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('tactique') { <app-tactique-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
+              @case ('portrait') { <app-portrait-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('investitures') { <app-investitures-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('cmp') { <app-cmp-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }
               @case ('deminage') { <app-deminage-game [def]="def" [diff]="g.difficulty ?? 1" (done)="end($event)" (progress)="onProgress($event)" (miss)="miss()" /> }

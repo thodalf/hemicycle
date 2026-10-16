@@ -51,7 +51,7 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'localProject': return [{ text: e.boost ? `Chantier local : ${e.boost} mois d’avance` : e.attachment ? `Attachement du territoire ${frSigned(e.attachment)}` : 'Lance un chantier local', tone: 'good' }];
     case 'rivalPlot': return [{ text: 'Déjoue les manœuvres des rivaux', tone: 'good' }];
     case 'economy': {
-      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      const out: EffectChip[] = [];
       const pt = (v: number) => `${v > 0 ? '+' : '−'}${Math.abs(v).toLocaleString('fr-FR')} pt`;
       if (e.growth) out.push({ text: `Croissance ${pt(e.growth)}`, tone: e.growth > 0 ? 'good' : 'bad' });
       if (e.unemployment) out.push({ text: `Chômage ${pt(e.unemployment)}`, tone: e.unemployment < 0 ? 'good' : 'bad' });
@@ -68,7 +68,7 @@ export function describeEffect(e: Effect): EffectChip[] {
       : e.mood ? [{ text: `Humeur du partenaire ${frSigned(e.mood)}`, tone: e.mood > 0 ? 'good' : 'bad' }]
       : e.leave ? [{ text: 'Rompt la coalition', tone: 'bad' }] : [{ text: 'Forme une coalition', tone: 'good' }];
     case 'saga': {
-      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      const out: EffectChip[] = [];
       if (e.start) out.push({ text: `Déclenche la saga « ${SAGA_BY_ID.get(e.start)?.label ?? e.start} »`, tone: 'neutral' });
       if (e.a) out.push({ text: `Votre camp ${frSigned(e.a)}`, tone: e.a > 0 ? 'good' : 'bad' });
       if (e.b) out.push({ text: `Menace ${frSigned(e.b)}`, tone: e.b < 0 ? 'good' : 'bad' });
@@ -76,7 +76,7 @@ export function describeEffect(e: Effect): EffectChip[] {
       return out;
     }
     case 'apocalypse': {
-      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      const out: EffectChip[] = [];
       if (e.start) out.push({ text: 'Déclenche la fin du monde', tone: 'bad' });
       if (e.darkness) out.push({ text: `Ténèbres ${frSigned(e.darkness)}`, tone: e.darkness < 0 ? 'good' : 'bad' });
       if (e.resistance) out.push({ text: `Résistance ${frSigned(e.resistance)}`, tone: e.resistance > 0 ? 'good' : 'bad' });
@@ -89,7 +89,7 @@ export function describeEffect(e: Effect): EffectChip[] {
     case 'annex': return [{ text: e.mode === 'liberer' ? 'Rendre l’indépendance : prestige +10' : e.mode === 'annex' ? 'Annexion : prestige −15, tension +20' : e.mode === 'protectorat' ? 'Protectorat : influence +3' : e.mode === 'reparations' ? 'Réparations : déficit −0,4 pt' : 'Paix magnanime : prestige +12', tone: e.mode === 'annex' ? 'neutral' : 'good' }];
     case 'circo': return [{ text: e.move === 'bastion' ? 'Parachutage dans un bastion' : e.move === 'mission' ? 'Parachutage en terre de mission' : 'Parachutage dans une circonscription disputée', tone: 'neutral' }];
     case 'crisis': {
-      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      const out: EffectChip[] = [];
       if (e.start) out.push({ text: 'Déclenche une crise', tone: 'bad' });
       if (e.gauge) out.push({ text: `Avancée ${frSigned(e.gauge)}`, tone: e.gauge > 0 ? 'good' : 'bad' });
       if (e.risk) out.push({ text: `Risque ${frSigned(e.risk)}`, tone: e.risk > 0 ? 'bad' : 'good' });
@@ -97,7 +97,7 @@ export function describeEffect(e: Effect): EffectChip[] {
     }
     case 'zombie': {
       if (e.start) return [{ text: 'Déclenche l’épidémie Z', tone: 'bad' }];
-      const out: { text: string; tone: 'good' | 'bad' | 'neutral' }[] = [];
+      const out: EffectChip[] = [];
       const sg = (v: number) => (v > 0 ? `+${v}` : `${v}`);
       if (e.infection) out.push({ text: `Infection ${sg(e.infection)}`, tone: e.infection > 0 ? 'bad' : 'good' });
       if (e.containment) out.push({ text: `Confinement ${sg(e.containment)}`, tone: e.containment > 0 ? 'good' : 'bad' });
@@ -241,6 +241,19 @@ export function describeEffect(e: Effect): EffectChip[] {
       return out;
     }
     case 'minigame': return [{ text: 'Mini-jeu', tone: 'neutral' }, ...e.reward.flatMap(describeEffect)];
+    case 'kingdom': {
+      if (e.restore) return [{ text: 'Rétablit la République', tone: 'neutral' }];
+      const out: EffectChip[] = [];
+      if (e.prestige) out.push({ text: `${n(e.prestige)} prestige du trône`, tone: tone(e.prestige) });
+      if (e.stabilite) out.push({ text: `${n(e.stabilite)} stabilité`, tone: tone(e.stabilite) });
+      if (e.opposition) out.push({ text: `${n(e.opposition)} front républicain`, tone: tone(e.opposition, true) });
+      if (e.regime) out.push({ text: e.regime > 0 ? `régime → absolu (${n(e.regime)})` : `régime → parlementaire (${n(e.regime)})`, tone: 'neutral' });
+      if (e.ordonnance) out.push({ text: 'ordonnance royale', tone: 'neutral' });
+      if (e.chantier === 'stop') out.push({ text: 'abandonne le chantier', tone: 'bad' });
+      else if (e.chantier) out.push({ text: 'lance un grand chantier', tone: 'good' });
+      if (e.progress) out.push({ text: `${n(e.progress)} % de chantier`, tone: tone(e.progress) });
+      return out;
+    }
     case 'loan': return [{ text: `Prêt de ${e.amount.toLocaleString('fr-FR')} €`, tone: 'neutral' }];
     default: return [];
   }

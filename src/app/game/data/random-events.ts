@@ -1428,7 +1428,7 @@ export function rollRandomEvents(d: GameState, rng: Rng): { decision?: Decision;
     else if (pressGates.length && rng.chance(0.045)) ev = pick(pressGates);
   }
   // Le règne : la rue et l'Assemblée mettent la Couronne à l'épreuve presque chaque mois
-  if (!ev && d.kingdom && rng.chance(0.5 + d.kingdom.opposition / 300)) {
+  if (!ev && d.kingdom && rng.chance(0.5 + d.kingdom.opposition / 300 + Math.max(0, d.kingdom.regime ?? 0) / 400)) {
     const pool = [...REVOLUTION_EVENTS, ...COUNTRY_EVENTS.filter(e => e.tag.startsWith('roy_'))].filter(e => canFire(e, 8));
     if (pool.length) ev = pick(pool);
   }

@@ -281,7 +281,7 @@ export type Effect =
   | { kind: 'dossierScale'; domain: DomainRef; factor: number }
   | { kind: 'booster'; count: number; reason: string }
   | { kind: 'crown'; soutien?: number; legitimite?: number; armee?: number }
-  | { kind: 'kingdom'; prestige?: number; stabilite?: number; opposition?: number; restore?: boolean; fall?: 'decheance' | 'revolution' }
+  | { kind: 'kingdom'; prestige?: number; stabilite?: number; opposition?: number; restore?: boolean; fall?: 'decheance' | 'revolution'; regime?: number; ordonnance?: boolean; deed?: string; chantier?: string; progress?: number }
   | { kind: 'lodge'; fraternite?: number; discretion?: number; planches?: number }
   | { kind: 'end'; status: 'victoire' | 'defaite'; reason: string; title: string }
   | { kind: 'grade'; delta: number }
@@ -366,7 +366,7 @@ export interface ActionDefinition {
   /** Action propre à un scénario (royauté, loge…) */
   scenario?: ScenarioId;
   /** Seuils propres aux scénarios */
-  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean; renownTier?: number; dread?: number; struggle?: string; lifestyle?: string; knownSecret?: boolean; decision?: string; partyLeader?: boolean; treasury?: number; natCrisis?: string; saga?: string; sagaPhase?: number[] };
+  requires?: { soutien?: number; legitimite?: number; armee?: number; grade?: number; asset?: string[]; pressGrade?: number; moleDelivered?: number; minAge?: number; maxHealth?: number; declared?: boolean; crisis?: boolean; government?: boolean; alienPhase?: number; war?: boolean; peace?: boolean; warPower?: boolean; staff?: StaffRole; civil?: boolean; homeFront?: boolean; totalWar?: boolean; noGovernment?: boolean; minFunds?: number; placement?: number; team?: boolean; secondRound?: boolean; schemes?: boolean; portfolio?: Domain; arc?: CrisisArcId; heir?: boolean; promises?: boolean; coalition?: boolean; governing?: boolean; appoint?: boolean; kingdom?: boolean; renownTier?: number; dread?: number; struggle?: string; lifestyle?: string; knownSecret?: boolean; decision?: string; partyLeader?: boolean; treasury?: number; natCrisis?: string; saga?: string; sagaPhase?: number[]; regimeMin?: number; regimeMax?: number; chantier?: boolean; noChantier?: boolean };
   /** Réservée à certains rangs exactement (ex. ancien·ne président·e) */
   onlyRanks?: RankId[];
   /** Dépense qui ne peut jamais être prise en charge par le parti */

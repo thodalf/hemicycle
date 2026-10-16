@@ -8,6 +8,9 @@ import { MINIGAMES_BY_ID, MinigameDef } from './minigames';
  */
 export const DECISION_GAMES: Record<string, Record<string, string>> = {
   micro_coupe: { improviser: 'discours' },
+  guerre_bilan: { intensifier: 'bataille' },
+  escalade: { tenir: 'bataille' },
+  z_horde: { tenir: 'defense_zombies' },
   voeux_janvier: { discours: 'plume_discours' },
   garden_party: { jardins: 'selfies' },
   greve_cantine: { negocier: 'negociation_syndicale' },

@@ -1831,6 +1831,12 @@ const RAW_ACTIONS: ActionDefinition[] = [
     cost: { ap: 1, energy: 12 }, cooldown: 2,
     effects: [{ kind: 'war', morale: 5, support: 3, front: 1 }, { kind: 'stat', stat: 'credibility', delta: 1 }],
   },
+  {
+    id: 'gt_bataille', minigame: 'bataille', label: 'Commander une bataille décisive', category: 'guerre', minRank: 'ministre', requires: { war: true },
+    description: 'Au poste de commandement, carte d’état-major sous les yeux : vous dirigez vous-même la manœuvre, unité par unité. Une victoire fait bouger le front.',
+    cost: { ap: 2, energy: 14 }, cooldown: 2,
+    effects: [{ kind: 'war', front: 6, morale: 5, support: 3 }, { kind: 'stat', stat: 'credibility', delta: 2 }, { kind: 'stat', stat: 'stress', delta: 3 }, { kind: 'kingdom', deed: 'guerre' }],
+  },
 
   // ── Guerre ──────────────────────────────────────────────
   {

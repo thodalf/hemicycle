@@ -150,6 +150,10 @@ export class ActionPlannerService {
     if (rankOrder(action.minRank) > rankOrder(s.player.rankId)) return { ok: false, reason: 'Rang insuffisant' };
     if ((s.cooldowns[action.id] ?? 0) > s.week) return { ok: false, reason: `De nouveau possible ${inMonth(s.cooldowns[action.id])}` };
     if (action.minigame && MINIGAMES_BY_ID.get(action.minigame)?.daily && dailyPlayed()) return { ok: false, reason: 'Déjà joué aujourd’hui : nouveau mot demain' };
+    // Monarchie d'apparat : le gouvernement décide sans le souverain
+    if (action.category === 'elysee' && s.kingdom && (s.kingdom.regime ?? 0) <= -60) return { ok: false, reason: 'Monarchie d’apparat : le gouvernement décide sans vous' };
+    // Un grand chantier ne se bâtit qu'une fois par règne
+    if (s.kingdom && action.effects.some(e => e.kind === 'kingdom' && e.chantier && e.chantier !== 'stop' && (s.kingdom!.legacy ?? []).includes(e.chantier))) return { ok: false, reason: 'Déjà bâti sous votre règne' };
     const req = action.requires;
     if (req) {
       const c = s.crown;
@@ -176,6 +180,10 @@ export class ActionPlannerService {
       if (req.appoint) { const why = canAppoint(s); if (why) return { ok: false, reason: why }; }
       if (req.coalition && !s.coalition) return { ok: false, reason: 'Aucune coalition en cours' };
       if (req.kingdom && !s.kingdom) return { ok: false, reason: 'Réservé au souverain' };
+      if (req.regimeMin !== undefined && (s.kingdom?.regime ?? 0) < req.regimeMin) return { ok: false, reason: `Il faut un régime plus absolu (${req.regimeMin} et plus)` };
+      if (req.regimeMax !== undefined && (s.kingdom?.regime ?? 0) > req.regimeMax) return { ok: false, reason: `Il faut un régime plus parlementaire (${req.regimeMax} et moins)` };
+      if (req.chantier && !s.kingdom?.chantier) return { ok: false, reason: 'Aucun grand chantier en cours' };
+      if (req.noChantier && s.kingdom?.chantier) return { ok: false, reason: 'Un grand chantier est déjà en cours' };
       if (req.sagaPhase && !(s.saga && req.sagaPhase.includes(s.saga.phase))) return { ok: false, reason: 'Pas à ce stade de la saga' };
       if (req.natCrisis && natCrisis(s) !== req.natCrisis) return { ok: false, reason: 'La crise est passée' };
       if (req.partyLeader && (s.party.leaderNpcId !== 'player' || !s.partyFinance)) return { ok: false, reason: 'Réservé à la direction du parti' };

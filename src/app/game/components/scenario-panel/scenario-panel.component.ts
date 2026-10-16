@@ -1,4 +1,5 @@
 import { COURT_AMENITIES, courtCost, courtGrandeur, kingdomGauges, restoreRepublic, setCourt } from '../../engine/kingdom';
+import { CHANTIER_BY_ID, nicknameRace, regimeLabel, regnalName, reignNickname } from '../../engine/reign';
 import { durationLabel } from '../../engine/calendar';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -100,7 +101,14 @@ import { MOLE_GOAL } from '../../engine/mole';
     @if (game.s().kingdom; as k) {
       <section class="card crown kingdom">
         <div class="card-title"><span>👑 Le Royaume</span><span class="chip warn">{{ k.title }}</span></div>
+        <p class="nick">{{ nick().regnal }} <em>« {{ nick().name }} »</em></p>
         <p class="muted small">Sur le trône depuis {{ reign() }}. Plus d’élections pour vous ; votre parti vous soutient, tous les autres font front.</p>
+        <div class="regime">
+          <div class="row"><span class="eyebrow">Le régime</span><b>{{ regime().label }}</b></div>
+          <div class="rtrack"><span class="mark" [style.left.%]="(regime().value + 100) / 2"></span></div>
+          <div class="ends"><span>Apparat · stable et aimé</span><span>Absolu · leviers et révolte</span></div>
+          <small class="muted">{{ regime().text }}</small>
+        </div>
         <div class="gauges">
           @for (g of kingdomGauges(); track g.label) {
             <div class="g">
@@ -108,6 +116,22 @@ import { MOLE_GOAL } from '../../engine/mole';
               <div class="track"><span class="fill" [style.width.%]="g.value" [class.ok]="g.good" [class.low]="!g.good"></span></div>
               <small class="muted">{{ g.hint }}</small>
             </div>
+          }
+        </div>
+        <div class="chantier">
+          <div class="row"><span class="eyebrow">Les grands chantiers</span>@if (legacy().length) { <span class="legacy">@for (l of legacy(); track l.id) { <span [title]="l.label">{{ l.icon }}</span> } </span> }</div>
+          @if (chantier(); as c) {
+            <div class="crow"><span>{{ c.icon }} {{ c.label }}</span><span class="mono">{{ c.progress | number: '1.0-0' }} %</span></div>
+            <div class="track"><span class="fill ok" [style.width.%]="c.progress"></span></div>
+            <small class="muted">Chaque mois, le chantier coûte du déficit et arme le front républicain. Achevé, il nourrit le prestige et votre héritage.</small>
+          } @else {
+            <small class="muted">Aucun chantier en cours : lancez-en un depuis l’onglet de la Couronne (Versailles du XXIᵉ siècle, Exposition universelle, ville nouvelle, canal…).</small>
+          }
+        </div>
+        <div class="race">
+          <span class="eyebrow">Le surnom pour l’histoire</span>
+          @for (r of race(); track r.id) {
+            <div class="rrow" [title]="r.hint"><span>{{ r.name }}</span><i><em [style.width.%]="r.score"></em></i><small class="muted">{{ r.hint }}</small></div>
           }
         </div>
         <div class="court">
@@ -201,6 +225,16 @@ import { MOLE_GOAL } from '../../engine/mole';
       .row { display: flex; justify-content: space-between; font-size: 12px; } }
     .amen { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; font-size: 12.5px;
       .lvl { color: var(--ink-3); font-size: 11.5px; } .st { display: inline-flex; gap: 2px; button { width: 24px; height: 22px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; } } }
+    .nick { margin: 0; font: 600 17px var(--font-display, Fraunces, serif); color: #7a5f22; em { font-style: italic; } }
+    .regime, .chantier, .race { display: grid; gap: 4px; padding: 8px 0 4px; border-top: 1px dashed var(--line); margin-top: 6px; font-size: 12.5px;
+      .row { display: flex; justify-content: space-between; align-items: center; } }
+    .rtrack { position: relative; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #4f8bc9, #d9d2bf 50%, #b0452f); .mark { position: absolute; top: -4px; width: 4px; height: 18px; margin-left: -2px; border-radius: 2px; background: var(--ink); transition: left .6s ease; } }
+    .ends { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-3); }
+    .crow { display: flex; justify-content: space-between; }
+    .legacy { font-size: 16px; letter-spacing: 2px; }
+    .rrow { display: grid; grid-template-columns: 120px 1fr; gap: 2px 8px; align-items: center;
+      i { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; } em { display: block; height: 100%; background: #c9a227; transition: width .6s; }
+      small { grid-column: 1 / -1; font-size: 10.5px; } }
     .kingdom { background: linear-gradient(135deg, color-mix(in srgb, #c9a227 10%, var(--surface)), var(--surface)); animation: royal-in .6s ease;
       .confirm { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; }
       .fill { transition: width .9s cubic-bezier(.3,1.3,.5,1); overflow: hidden; }
@@ -255,6 +289,11 @@ export class ScenarioPanelComponent {
   protected readonly courtCost = computed(() => { const k = this.game.s().kingdom; return k ? courtCost({ ...k, court: k.court ?? { table: 1, ceremonial: 1, mecenat: 0, garde: 1 } }) : 0; });
   protected courtLevel(id: string): number { const c = this.game.s().kingdom?.court ?? { table: 1, ceremonial: 1, mecenat: 0, garde: 1 }; return c[id] ?? 0; }
   protected setCourtLevel(id: string, delta: number): void { this.game.mutate(d => setCourt(d, id, this.courtLevel(id) + delta)); }
+  protected readonly nick = computed(() => { const d = this.game.s(); return { regnal: d.kingdom ? regnalName(d) : '', name: d.kingdom ? d.kingdom.nickname ?? reignNickname(d) : '' }; });
+  protected readonly regime = computed(() => { const v = this.game.s().kingdom?.regime ?? 0; return { value: v, ...regimeLabel(v) }; });
+  protected readonly chantier = computed(() => { const c = this.game.s().kingdom?.chantier; const def = c ? CHANTIER_BY_ID.get(c.id) : undefined; return c && def ? { ...def, progress: c.progress } : null; });
+  protected readonly legacy = computed(() => (this.game.s().kingdom?.legacy ?? []).map(id => CHANTIER_BY_ID.get(id)).filter(x => !!x));
+  protected readonly race = computed(() => nicknameRace(this.game.s()).slice(0, 4).map(r => ({ ...r, score: Math.min(100, r.score) })));
   protected readonly kingdomGauges = computed(() => { const k = this.game.s().kingdom; return k ? kingdomGauges(k) : []; });
   protected readonly reign = computed(() => { const k = this.game.s().kingdom; return k ? durationLabel(Math.max(1, this.game.s().week - k.since)) : ''; });
   protected readonly confirmRepublic = signal(false);

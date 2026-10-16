@@ -35,6 +35,8 @@ import { PrenomsGameComponent } from './games/prenoms-game.component';
 import { AgendaGameComponent } from './games/agenda-game.component';
 import { PrompteurGameComponent } from './games/prompteur-game.component';
 import { ChiffrageGameComponent } from './games/chiffrage-game.component';
+import { TactiqueGameComponent } from './games/tactique-game.component';
+import { PortraitGameComponent } from './games/portrait-game.component';
 import { DepouillementGameComponent } from './games/depouillement-game.component';
 
 type Phase = 'intro' | 'play' | 'over';
@@ -65,7 +67,7 @@ const DURATION = 15000;
  */
 @Component({
   selector: 'app-minigame',
-  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent, ProtocoleGameComponent, TableGameComponent, InterceptionGameComponent, DeminageGameComponent, InterviewGameComponent, CmpGameComponent, SommetGameComponent, VisiteGameComponent, TrainGameComponent, CortegeGameComponent, ValiseGameComponent, MajoriteGameComponent, StandardGameComponent, PlumeGameComponent, FactcheckGameComponent, InvestituresGameComponent, ArbitrageGameComponent, CitationsGameComponent, LectureGameComponent, SecuriteGameComponent, InterpreteGameComponent, FrondeursGameComponent, RabotGameComponent, PrenomsGameComponent, AgendaGameComponent, PrompteurGameComponent, ChiffrageGameComponent, DepouillementGameComponent],
+  imports: [DecimalPipe, MotGameComponent, GrilleGameComponent, QuizGameComponent, ProtocoleGameComponent, TableGameComponent, InterceptionGameComponent, DeminageGameComponent, InterviewGameComponent, CmpGameComponent, SommetGameComponent, VisiteGameComponent, TrainGameComponent, CortegeGameComponent, ValiseGameComponent, MajoriteGameComponent, StandardGameComponent, PlumeGameComponent, FactcheckGameComponent, InvestituresGameComponent, ArbitrageGameComponent, CitationsGameComponent, LectureGameComponent, SecuriteGameComponent, InterpreteGameComponent, FrondeursGameComponent, RabotGameComponent, PrenomsGameComponent, AgendaGameComponent, PrompteurGameComponent, ChiffrageGameComponent, DepouillementGameComponent, TactiqueGameComponent, PortraitGameComponent],
   templateUrl: './minigame.component.html',
   styleUrl: './minigame.component.scss',
 })
@@ -81,7 +83,7 @@ export class MinigameComponent {
   protected readonly shake = signal(false);
   protected readonly tierLabels = TIER_LABELS;
   /** Jeux qui affichent eux-mêmes leur progression */
-  protected readonly selfScored = new Set(['tournee', 'mot', 'quiz', 'grille', 'protocole', 'table', 'interception', 'deminage', 'interview', 'cmp', 'sommet', 'visite', 'train', 'cortege', 'valise', 'majorite', 'standard', 'plume', 'factcheck', 'investitures', 'arbitrage', 'citations', 'lecture', 'securite', 'interprete', 'frondeurs', 'rabot', 'prenoms', 'agenda', 'prompteur', 'chiffrage', 'depouillement']);
+  protected readonly selfScored = new Set(['tournee', 'mot', 'quiz', 'grille', 'protocole', 'table', 'interception', 'deminage', 'interview', 'cmp', 'sommet', 'visite', 'train', 'cortege', 'valise', 'majorite', 'standard', 'plume', 'factcheck', 'investitures', 'arbitrage', 'citations', 'lecture', 'securite', 'interprete', 'frondeurs', 'rabot', 'prenoms', 'agenda', 'prompteur', 'chiffrage', 'depouillement', 'tactique', 'portrait']);
   private timer: ReturnType<typeof setInterval> | null = null;
   private started = 0;
   private seq = 0;

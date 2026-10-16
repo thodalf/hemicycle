@@ -131,4 +131,95 @@ export const REVOLUTION_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  // ── Le règne : régime, chantiers, cérémonies ──
+  {
+    tag: 'reg_chambres_refusent', weight: 1.3, eligible: d => (d.kingdom?.regime ?? 0) >= 40,
+    build: () => ({
+      title: 'Les chambres refusent d’enregistrer vos ordonnances',
+      context: 'Pour la troisième fois ce mois-ci, l’Assemblée et le Sénat votent une motion contre le « gouvernement par ordonnances ». Les juristes parlent de coup de force.',
+      choices: [
+        c('passer', 'Passer outre : les ordonnances s’appliquent', [kg({ regime: 10, opposition: 6 }), s('politicalCapital', 5)], 'Le Journal officiel publie tout. Les chambres sont humiliées, la rue s’échauffe.'),
+        c('ceder', 'Retirer deux ordonnances et apaiser les chambres', [kg({ regime: -15, opposition: -6, prestige: -3 })], 'Un geste d’apaisement salué par les modérés, raillé par vos fidèles.'),
+        c('arbitrer', 'Soumettre la querelle au Conseil constitutionnel', [kg({ stabilite: 4, regime: -5 }), s('credibility', 2)], 'Les Sages tranchent : la moitié des ordonnances tombe, l’autre moitié tient.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reg_pm_emancipe', weight: 1.2, eligible: d => (d.kingdom?.regime ?? 0) <= -30,
+    build: () => ({
+      title: 'Le Premier ministre veut gouverner seul',
+      context: 'Dans une interview, le chef du gouvernement explique que le souverain « n’a pas à se mêler » de la réforme des retraites. Le Palais est piqué au vif.',
+      choices: [
+        c('accepter', 'Laisser dire : le souverain règne, il ne gouverne pas', [kg({ regime: -10, stabilite: 3 }), s('influence', -2)], 'Les éditorialistes saluent votre sagesse. Votre agenda, lui, se vide encore.'),
+        c('rappeler', 'Le convoquer pour lui rappeler qui règne', [kg({ regime: 15, opposition: 4 }), s('politicalCapital', 4)], 'Une heure d’entretien à huis clos. Il ressort pâle ; la presse parle de crise institutionnelle.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reg_zad_chantier', weight: 1.4, eligible: d => !!d.kingdom?.chantier,
+    build: () => ({
+      title: 'Une ZAD sur le grand chantier',
+      context: 'Trois cents opposants installent cabanes et potagers sur le chantier du règne. Les engins sont à l’arrêt.',
+      choices: [
+        c('negocier', 'Négocier : modifier le tracé, préserver une zone humide', [kg({ progress: -6, opposition: -5 }), s('credibility', 1)], 'Un compromis trouvé à la préfecture. Le chantier reprend, un peu plus vert.'),
+        c('evacuer', 'Faire évacuer le terrain', [kg({ progress: 4, opposition: 6 }), s('popularity', -2)], 'L’évacuation dure deux jours, sous les caméras. Le chantier repart.'),
+        c('attendre', 'Attendre que l’hiver les décourage', [kg({ progress: -10 })], 'Ils tiennent tout l’hiver. Le chantier prend trois mois de retard.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reg_mecene_chantier', weight: 1, eligible: d => !!d.kingdom?.chantier,
+    build: () => ({
+      title: 'Un milliardaire veut financer le chantier',
+      context: 'Le patron d’un empire du luxe propose de payer un tiers du grand chantier… à condition que son nom figure sur la façade.',
+      choices: [
+        c('accepter', 'Accepter : l’argent n’a pas d’odeur', [kg({ progress: 15 }), s('credibility', -2), { kind: 'exposure', delta: 3 }], 'Les travaux s’accélèrent. Le nom du mécène s’affiche en lettres d’or : la presse s’en donne à cœur joie.'),
+        c('refuser', 'Refuser : le règne ne se vend pas', [kg({ prestige: 2 }), s('credibility', 2)], 'Un refus élégant, très commenté. Le chantier avance à son rythme.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reg_bal_cour', weight: 0.9, eligible: d => !!d.kingdom,
+    build: () => ({
+      title: 'La saison du grand bal',
+      context: 'La noblesse attend son grand bal d’hiver. Le chambellan a déjà commandé les lustres ; reste le plan de table, véritable champ de mines.',
+      choices: [
+        c('ouvrir', 'Ouvrir le bal et composer vous-même le plan de table', [kg({ prestige: 5, stabilite: 2, deed: 'fete' }), s('influence', 2)], 'Valses, champagne et vieilles rancunes : le bal du règne restera dans les mémoires.', { play: 'grand_bal' }),
+        c('annuler', 'Annuler le bal : « les temps sont durs »', [kg({ prestige: -3, opposition: -3 }), s('popularity', 1)], 'La noblesse boude, le front républicain applaudit du bout des doigts.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reg_portrait', weight: 0.7, eligible: d => !!d.kingdom && d.week - d.kingdom.since >= 3,
+    build: () => ({
+      title: 'Le portrait officiel',
+      context: 'Le peintre de la Cour vous attend dans l’atelier. Ce portrait sera accroché dans chaque mairie du royaume pour des décennies.',
+      choices: [
+        c('poser', 'Poser et diriger le peintre', [kg({ prestige: 6, deed: 'fete' }), s('popularity', 2)], 'Le portrait est dévoilé au Louvre devant mille invités.', { play: 'portrait_officiel' }),
+        c('photo', 'Une simple photo, comme un président', [kg({ prestige: -2, opposition: -2 })], 'Une photo sobre, en noir et blanc. Moderne, disent les uns ; indigne d’un trône, disent les autres.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reg_doleances', weight: 1, eligible: d => !!d.kingdom,
+    build: () => ({
+      title: 'La file des doléances',
+      context: 'Ce jeudi, la file des sujets venus présenter leurs doléances fait le tour du Palais. Certains attendent depuis l’aube.',
+      choices: [
+        c('recevoir', 'Les recevoir un par un toute la journée', [kg({ prestige: 3, opposition: -3, deed: 'justice' }), s('popularity', 2), s('energy', -6)], 'Une journée entière d’audiences : la presse salue un souverain qui écoute.', { play: 'audiences_jeudi' }),
+        c('secretariat', 'Les confier au secrétariat', [kg({ prestige: -1 })], 'Des formulaires, des numéros d’attente : la magie du jeudi s’évapore.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reg_anniversaire_sacre', weight: 0.6, eligible: d => !!d.kingdom && d.week - d.kingdom.since >= 11,
+    build: () => ({
+      title: 'L’anniversaire du sacre',
+      context: 'Un an de règne : la cathédrale de Reims propose de rejouer la cérémonie pour la télévision, rite par rite.',
+      choices: [
+        c('rejouer', 'Rejouer la cérémonie, sans un faux pas', [kg({ prestige: 7, stabilite: 3, deed: 'fete' }), { kind: 'intl', prestige: 2 }], 'Douze millions de téléspectateurs : le sacre en direct bat tous les records.', { play: 'sacre' }),
+        c('sobre', 'Une messe sobre, sans caméras', [kg({ stabilite: 2 }), s('credibility', 1)], 'Une cérémonie intime. Le pays apprécie la retenue.'),
+      ],
+    }),
+  },
 ];

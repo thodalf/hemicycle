@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms' | 'agenda' | 'prompteur' | 'chiffrage' | 'depouillement';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms' | 'agenda' | 'prompteur' | 'chiffrage' | 'depouillement' | 'tactique' | 'portrait';
 
 export interface TriItem {
   text: string;
@@ -584,6 +584,59 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'depouillement', kind: 'depouillement', icon: '🗳️', title: 'Le dépouillement',
     rule: 'L’assesseur lit les bulletins un à un : comptez de tête ceux de votre liste, puis donnez votre total.',
+  },
+  {
+    id: 'bataille', kind: 'tactique', icon: '⚔️', title: 'La bataille',
+    rule: 'Au tour par tour : déplacez chaque unité puis attaquez. Forêts et villes protègent, la rivière ne se passe qu’aux gués, l’artillerie tire loin. Tenez les villes ou mettez l’ennemi en déroute en huit tours.',
+  },
+  {
+    id: 'bataille_navale', kind: 'tactique', icon: '🏴‍☠️', title: 'La bataille navale',
+    rule: 'Au tour par tour : frégates, patrouilleurs, hélicoptère et sous-marin contre la flottille pirate. Reprenez les ports et coulez les vedettes en huit tours.',
+  },
+  {
+    id: 'defense_zombies', kind: 'tactique', icon: '🧟', title: 'La nuit des refuges',
+    rule: 'Au tour par tour : gendarmes, pompiers et tireurs d’élite doivent tenir les refuges jusqu’à l’aube. Les morts-vivants sont lents, mais ils ne cessent d’affluer.',
+  },
+  {
+    id: 'sacre', kind: 'protocole', icon: '👑', title: 'Le sacre',
+    rule: 'Le grand maître des cérémonies vous montre l’ordre du sacre : retenez-le, puis accomplissez chaque rite sans faux pas, sous les yeux du monde entier.',
+    steps: [
+      { icon: '🚪', label: 'Entrée dans la cathédrale' }, { icon: '🙏', label: 'Le serment au peuple' }, { icon: '🫙', label: 'L’onction' },
+      { icon: '🗡️', label: 'La remise de l’épée' }, { icon: '⚜️', label: 'Le sceptre et la main de justice' }, { icon: '👑', label: 'Le couronnement' },
+      { icon: '🪑', label: 'L’intronisation' }, { icon: '🔔', label: 'Les cloches et le Te Deum' },
+    ],
+  },
+  {
+    id: 'grand_bal', kind: 'table', icon: '💃', title: 'Le grand bal de la Cour',
+    rule: 'Le plan de table du souper : la vieille noblesse, les nouveaux riches et les ambitieux. Rapprochez les alliés, séparez les familles brouillées depuis trois siècles.',
+    guests: [
+      { icon: '🦚', name: 'La duchesse douairière' }, { icon: '🏹', name: 'Le marquis légitimiste' }, { icon: '💎', name: 'La comtesse du CAC 40' },
+      { icon: '🎻', name: 'Le prince mélomane' }, { icon: '🐎', name: 'Le baron des haras' }, { icon: '📜', name: 'La vicomtesse historienne' },
+      { icon: '🍾', name: 'Le chevalier du champagne' }, { icon: '🎭', name: 'L’ambassadrice de Monaco' }, { icon: '⛪', name: 'Le cardinal' },
+      { icon: '🏰', name: 'Le châtelain ruiné' },
+    ],
+  },
+  {
+    id: 'audiences_jeudi', kind: 'tri', icon: '📜', title: 'Les audiences du jeudi',
+    rule: 'Chaque jeudi, les sujets présentent leurs doléances au souverain. Accordez votre attention aux causes justes, renvoyez les caprices et les intrigants.', left: 'Renvoyer', right: 'Entendre',
+    items: [
+      { text: 'Une infirmière réclame des renforts pour son service de nuit', side: 'droite' },
+      { text: 'Un baron exige le rétablissement du droit de chasse sur les terres voisines', side: 'gauche' },
+      { text: 'Un village de montagne n’a plus de médecin depuis deux ans', side: 'droite' },
+      { text: 'Une marquise souhaite un titre pour son caniche', side: 'gauche' },
+      { text: 'Des ouvriers d’une usine menacée de fermeture', side: 'droite' },
+      { text: 'Un courtisan demande la place de son rival à la Cour', side: 'gauche' },
+      { text: 'Une maire rurale plaide pour sa ligne de train', side: 'droite' },
+      { text: 'Un promoteur veut construire un golf dans un parc royal', side: 'gauche' },
+      { text: 'Une famille sinistrée par les inondations attend toujours ses indemnités', side: 'droite' },
+      { text: 'Un influenceur réclame un selfie au balcon', side: 'gauche' },
+      { text: 'Des lycéens présentent une pétition pour le climat', side: 'droite' },
+      { text: 'Un duc veut faire interdire la baguette industrielle', side: 'gauche' },
+    ],
+  },
+  {
+    id: 'portrait_officiel', kind: 'portrait', icon: '🖼️', title: 'Le portrait officiel',
+    rule: 'Le peintre de la Cour attend vos instructions : pose, costume, décor, regard, attribut. Lisez la commande du chambellan et composez le portrait que le pays attend.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',

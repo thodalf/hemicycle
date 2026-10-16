@@ -5,6 +5,7 @@ import { pmDecision } from './cabinet';
 import { addMilestone } from './life';
 import { pushNews } from './effects';
 import { Rng, clamp } from './rng';
+import { boostChantier, monthlyReign, reignEpitaph, startChantier, stopChantier } from './reign';
 
 /* ============================================================
  *  Le royaume : quand la monarchie est proclamée, c'est vous
@@ -27,6 +28,18 @@ export interface KingdomState {
   title: string;
   /** La cour : table, cérémonial, mécénat, garde (niveaux 0-3) */
   court?: Record<string, number>;
+  /** Le régime : −100 monarchie d'apparat … +100 monarchie absolue */
+  regime?: number;
+  /** Le grand chantier en cours */
+  chantier?: { id: string; since: number; progress: number } | null;
+  /** Les chantiers achevés : l'héritage du règne */
+  legacy?: string[];
+  /** Ordonnances royales signées */
+  ordonnances?: number;
+  /** Hauts faits comptés pour le surnom (fêtes, justice, peuple, guerre) */
+  deeds?: Record<string, number>;
+  /** Le surnom courant */
+  nickname?: string;
 }
 
 export const COURT_AMENITIES: { id: string; label: string; icon: string; levels: string[] }[] = [
@@ -92,6 +105,7 @@ export function restoreRepublic(d: GameState, forced: boolean, how: 'abdication'
   if (!k) return;
   const p = d.player;
   const months = d.week - k.since;
+  const epitaph = reignEpitaph(d);
   d.kingdom = null;
   d.crown = null;
   d.presidency = null;
@@ -123,6 +137,7 @@ export function restoreRepublic(d: GameState, forced: boolean, how: 'abdication'
     addMilestone(d, 'victoire', 'Le souverain qui rendit le trône', `Après ${months} mois de règne, vous rétablissez vous-même la République. L’histoire retiendra ce geste rare.`);
     pushNews(d, 'actu', 'positive', 'La République rétablie', 'Dans une allocution historique, vous rendez le pouvoir au peuple. Une présidentielle aura lieu dans un an ; vous pourrez vous y présenter.');
   }
+  if (epitaph) addMilestone(d, 'carriere', 'Le jugement de l’histoire', epitaph);
 }
 
 /** Les effets « kingdom » */
@@ -135,6 +150,15 @@ export function adjustKingdom(d: GameState, e: Extract<Effect, { kind: 'kingdom'
   if (e.prestige) { k.prestige = clamp(k.prestige + e.prestige); out.push(`Prestige du trône ${sg(e.prestige)}`); }
   if (e.stabilite) { k.stabilite = clamp(k.stabilite + e.stabilite); out.push(`Stabilité ${sg(e.stabilite)}`); }
   if (e.opposition) { k.opposition = clamp(k.opposition + e.opposition); out.push(`Front républicain ${sg(e.opposition)}`); }
+  if (e.regime) {
+    k.regime = Math.max(-100, Math.min(100, (k.regime ?? 0) + e.regime));
+    out.push(e.regime > 0 ? `Régime vers l’absolutisme (${sg(e.regime)})` : `Régime vers le parlementarisme (${sg(e.regime)})`);
+  }
+  if (e.ordonnance) { k.ordonnances = (k.ordonnances ?? 0) + 1; out.push('Ordonnance royale'); }
+  if (e.deed) (k.deeds ??= {})[e.deed] = (k.deeds[e.deed] ?? 0) + 1;
+  if (e.chantier === 'stop') out.push(...stopChantier(d));
+  else if (e.chantier) out.push(...startChantier(d, e.chantier));
+  if (e.progress) out.push(...boostChantier(d, e.progress));
   return out;
 }
 
@@ -154,7 +178,7 @@ export function monthlyKingdom(d: GameState, rng: Rng): void {
   k.opposition = clamp(k.opposition + Math.max(0, g - 50) / 30);
   if ((k.court['mecenat'] ?? 0) >= 2) d.player.renown = (d.player.renown ?? 0) + 1;
   // Des flambées révolutionnaires presque chaque mois
-  if (rng.chance(0.3 + k.opposition / 250)) {
+  if (rng.chance(Math.max(0.08, 0.3 + k.opposition / 250 + (k.regime ?? 0) / 500))) {
     const [title, text] = rng.pick(UNREST);
     k.stabilite = clamp(k.stabilite - 2);
     k.opposition = clamp(k.opposition + 1);
@@ -167,6 +191,9 @@ export function monthlyKingdom(d: GameState, rng: Rng): void {
     k.stabilite = clamp(k.stabilite - 4);
   }
   // Révolution : opposition écrasante et trône fragilisé, la rue peut l'emporter à tout moment
+  // Le règne : régime, grands chantiers, surnom
+  monthlyReign(d, rng);
+  if (!d.kingdom) return;
   if (k.opposition >= 92 && k.prestige < 35 && k.stabilite < 30) restoreRepublic(d, true);
   else if (k.opposition >= 82 && (k.prestige < 45 || k.stabilite < 35) && rng.chance(0.18)) restoreRepublic(d, true);
 }
