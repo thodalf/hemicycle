@@ -676,7 +676,8 @@ export class CelluleSim {
     for (const z of zones) {
       const c = cells[z];
       const kept = c.pop - c.lost;
-      if (!c.threat || kept <= c.pop * 0.5) continue;
+      // Épargné : peu de pertes (une ville évacuée compte, une épidémie installée non)
+      if (!c.threat || c.lost > c.pop * (s.v === 'epidemie' ? 0.12 : EVAC_LOSS)) continue;
       const helpers = s.actions.map((a, k) => ({ a, k })).filter(({ a }) =>
         a.tool === 'evac' ? a.i === z && c.hit > 0 : a.tool === 'bassin' ? c.hit === 0 : a.area.some(j => cheb(j, z) <= 1));
       for (const { a, k } of helpers) credit[k] += (a.tool === 'evac' ? c.pop * (1 - EVAC_LOSS) : a.tool === 'bassin' ? kept * 0.3 : kept) / helpers.length;
@@ -685,17 +686,17 @@ export class CelluleSim {
     const bk = credit.indexOf(Math.max(...credit));
     if (bk >= 0 && credit[bk] > 0) {
       const a = s.actions[bk], T = TOOLS[a.tool];
-      best = `${T.icon} ${T.name} ${this.place(a.i)} au tour ${a.turn} : environ ${fmtPop(credit[bk])} habitants épargnés.`;
+      best = `${T.icon} ${T.name} ${this.place(a.i)} au tour ${a.turn} : environ ${fmtPop(Math.round(credit[bk] / 100) * 100)} habitants épargnés.`;
     } else best = s.actions.length ? 'Aucune action n’a vraiment pesé sur le cours de la crise.' : 'Vous n’avez rien entrepris.';
     // La pire : la plus lourde perte
     const worstZ = zones.sort((a, b) => cells[b].lost - cells[a].lost)[0];
     const w = cells[worstZ];
     let worst: string;
-    if (w && w.lost >= Math.max(300, w.pop * 0.4)) {
+    if (w && w.lost >= Math.max(200, w.pop * 0.3)) {
       const name = s.v === 'epidemie' ? `Le district ${coord(worstZ)}` : w.name;
       const what = s.v === 'epidemie' ? `${fmtPop(w.lost)} personnes contaminées` : `${fmtPop(w.lost)} sinistrés sur ${fmtPop(w.pop)}`;
       const warn = w.fc && w.hit && w.fc < w.hit ? `, alors que les prévisions annonçaient la menace dès le tour ${w.fc}` : w.hit ? ` (premier impact au tour ${w.hit})` : '';
-      worst = `${name} : ${what}${warn}.`;
+      worst = `${name} : ${what}${warn}${w.evac ? ' ; les habitants avaient été évacués, seuls les biens sont perdus' : ''}.`;
     } else {
       const waste = s.actions.find(a => a.tool === 'evac' && !cells[a.i].hit);
       worst = waste ? `L’évacuation de ${cells[waste.i].name} au tour ${waste.turn} : deux PA pour un lieu jamais touché.` : s.malus >= 3 ? `${s.malus} points de popularité laissés en route.` : 'Aucune perte majeure : une gestion presque sans faute.';

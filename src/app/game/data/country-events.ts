@@ -1721,6 +1721,18 @@ export const COUNTRY_EVENTS: RandomEvent[] = [
     }),
   },
   {
+    tag: 'ev_vote_sabote', weight: 0.5, minRank: 'depute',
+    build: () => ({
+      title: 'Un vote saboté dans l’hémicycle',
+      context: 'Au moment du scrutin sur votre amendement, une rangée de boîtiers électroniques était débranchée et des consignes de vote falsifiées circulaient dans le groupe. L’amendement est tombé à trois voix près.',
+      choices: [
+        c('enqueter', 'Mener vous-même l’enquête', [s('credibility', 3), s('influence', 2), { kind: 'cohesion', delta: 3 }], 'Badges, témoignages, caméras des couloirs : l’affaire remonte jusqu’au coupable.'),
+        c('questure', 'Saisir les questeurs et attendre', [s('credibility', 1)], 'Une enquête administrative est ouverte. Elle durera des mois.'),
+        c('tourner_page', 'Tourner la page : « ce sont des choses qui arrivent »', [s('influence', -2), { kind: 'cohesion', delta: -2 }], 'Vos collègues retiennent que l’on peut vous faire perdre un vote impunément.'),
+      ],
+    }),
+  },
+  {
     tag: 'ev_lettre_ouverte', weight: 0.5, minRank: atLeastCouncil,
     build: () => ({
       title: 'Une lettre ouverte de cent maires',

@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms' | 'agenda' | 'prompteur' | 'chiffrage' | 'depouillement' | 'tactique' | 'portrait';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms' | 'agenda' | 'prompteur' | 'chiffrage' | 'depouillement' | 'tactique' | 'portrait' | 'cellule' | 'infiltration' | 'campagne' | 'enquete' | 'urbanisme';
 
 export interface TriItem {
   text: string;
@@ -637,6 +637,66 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'portrait_officiel', kind: 'portrait', icon: '🖼️', title: 'Le portrait officiel',
     rule: 'Le peintre de la Cour attend vos instructions : pose, costume, décor, regard, attribut. Lisez la commande du chambellan et composez le portrait que le pays attend.',
+  },
+  {
+    id: 'cellule_feux', kind: 'cellule', icon: '🔥', title: 'La cellule de crise : méga-feux',
+    rule: 'Au tour par tour, le feu avance avec le vent : pompiers, Canadair, coupe-feu et évacuations pour sauver un maximum de villages en neuf tours.',
+  },
+  {
+    id: 'cellule_crue', kind: 'cellule', icon: '🌊', title: 'La cellule de crise : la crue',
+    rule: 'La rivière déborde et l’eau gagne tout ce qui est plus bas que la cote : digues, pompes, bassins de rétention et évacuations pour protéger les villes.',
+  },
+  {
+    id: 'cellule_epidemie', kind: 'cellule', icon: '🦠', title: 'La cellule de crise : l’épidémie',
+    rule: 'Le virus progresse de district en district et le long des lignes de transport : testez, vaccinez, confinez et soignez pour épargner la population en dix tours.',
+  },
+  {
+    id: 'infiltration_ministere', kind: 'infiltration', icon: '🕵️', title: 'L’infiltration du ministère',
+    rule: 'Au tour par tour, traversez trois étages du ministère endormi sans croiser le regard des agents, récupérez le dossier et ressortez avant l’aube.',
+  },
+  {
+    id: 'infiltration_ambassade', kind: 'infiltration', icon: '✉️', title: 'La réception à l’ambassade',
+    rule: 'Pendant la réception, glissez-vous entre serveurs, gardes et invités pour déposer votre message sur le bureau de l’ambassadeur, sans éveiller les soupçons.',
+  },
+  {
+    id: 'infiltration_catacombes', kind: 'infiltration', icon: '🔦', title: 'Les galeries sous Paris',
+    rule: 'Dans les anciennes carrières, évitez les lampes de la patrouille et les cataphiles pour retrouver la salle oubliée, puis remontez à la surface.',
+  },
+  {
+    id: 'campagne_presidentielle', kind: 'campagne', icon: '🗺️', title: 'La carte de campagne',
+    rule: 'Huit semaines, région par région : placez meetings, porte-à-porte et affiches face au candidat adverse, et dépassez 50 % des voix au niveau national.',
+  },
+  {
+    id: 'campagne_legislatives', kind: 'campagne', icon: '🏘️', title: 'La campagne de circonscription',
+    rule: 'Huit semaines, canton par canton : ravissez la circonscription au député sortant en totalisant plus de voix que lui.',
+  },
+  {
+    id: 'campagne_referendum', kind: 'campagne', icon: '🗳️', title: 'La campagne du référendum',
+    rule: 'Menez le camp du Oui : convainquez les indécis et faites voter vos partisans, région par région, en huit semaines.',
+  },
+  {
+    id: 'enquete_fuite', kind: 'enquete', icon: '🕵️', title: 'La fuite',
+    rule: 'Une note confidentielle a fuité : interrogez le cabinet, fouillez, consultez caméras et badges, puis désignez la taupe et son mobile avant la fin de vos heures d’enquête.',
+  },
+  {
+    id: 'enquete_joyaux', kind: 'enquete', icon: '💎', title: 'Les joyaux du musée',
+    rule: 'Les joyaux ont disparu pendant la nocturne : recoupez les témoignages du personnel, traquez le menteur et confondez le voleur avant la fermeture du dossier.',
+  },
+  {
+    id: 'enquete_sabotage', kind: 'enquete', icon: '🗳️', title: 'Le vote saboté',
+    rule: 'Boîtiers débranchés, consignes falsifiées : remontez la piste jusqu’au saboteur de l’amendement, et à son complice si l’affaire est corsée.',
+  },
+  {
+    id: 'urbanisme_commune', kind: 'urbanisme', icon: '🏘️', title: 'Le plan d’urbanisme',
+    rule: 'Dix ans de mandat, deux chantiers par an : logements, écoles, parcs, usines… jouez des voisinages pour finir avec une satisfaction d’au moins 65 et des comptes positifs.',
+  },
+  {
+    id: 'urbanisme_ville_nouvelle', kind: 'urbanisme', icon: '🚋', title: 'La ville nouvelle sur la Loire',
+    rule: 'Bâtissez de zéro le grand chantier du règne : atteignez l’objectif de population et faites desservir au moins trois quartiers distincts par une même ligne de tram.',
+  },
+  {
+    id: 'urbanisme_reconstruction', kind: 'urbanisme', icon: '🧱', title: 'La reconstruction',
+    rule: 'Après la catastrophe, déblayez les ruines, relogez tous les sinistrés avant l’hiver et videz la zone inondable de ses décombres : on n’y reconstruit plus.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',

@@ -184,6 +184,8 @@ export class ActionPlannerService {
       if (req.regimeMax !== undefined && (s.kingdom?.regime ?? 0) > req.regimeMax) return { ok: false, reason: `Il faut un régime plus parlementaire (${req.regimeMax} et moins)` };
       if (req.chantier && !s.kingdom?.chantier) return { ok: false, reason: 'Aucun grand chantier en cours' };
       if (req.noChantier && s.kingdom?.chantier) return { ok: false, reason: 'Un grand chantier est déjà en cours' };
+      if (req.chantierId && s.kingdom?.chantier?.id !== req.chantierId) return { ok: false, reason: 'Seulement pendant ce grand chantier' };
+      if (req.campaign && !s.elections.some(e => !e.resolved && e.type === req.campaign && s.week >= e.campaignStartWeek)) return { ok: false, reason: 'Seulement pendant la campagne' };
       if (req.sagaPhase && !(s.saga && req.sagaPhase.includes(s.saga.phase))) return { ok: false, reason: 'Pas à ce stade de la saga' };
       if (req.natCrisis && natCrisis(s) !== req.natCrisis) return { ok: false, reason: 'La crise est passée' };
       if (req.partyLeader && (s.party.leaderNpcId !== 'player' || !s.partyFinance)) return { ok: false, reason: 'Réservé à la direction du parti' };
