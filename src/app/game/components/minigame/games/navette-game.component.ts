@@ -912,41 +912,86 @@ export function cmpConclude(G: Game, agree: boolean): { lines: Fx[]; check: CmpC
  *  Le composant
  * ============================================================ */
 
-/** L'hémicycle : sièges en arcs concentriques, ordonnés de gauche à droite */
-interface Geo { seats: { x: number; y: number }[]; r: number; rank: number[] }
+/** L'hémicycle : fauteuils en gradins concentriques, travées séparées par des allées, ordonnés de gauche à droite */
+interface Seat { x: number; y: number; t: string }
+interface Geo { seats: Seat[]; r: number; rank: number[]; table: boolean; rows: number[]; aisles: string[]; r0: number; floor: number }
 const GEO = new Map<number, Geo>();
+const deg = (a: number) => (a * 180) / Math.PI;
 function geometry(n: number): Geo {
   const hit = GEO.get(n);
   if (hit) return hit;
-  const rows = n <= 16 ? 1 : n <= 90 ? 4 : n <= 400 ? 9 : n <= 650 ? 12 : 15;
-  const r0 = n <= 16 ? 0.78 : n <= 90 ? 0.44 : 0.38;
+  // La commission mixte paritaire siège autour d'une table : députés d'un côté, sénateurs de l'autre
+  if (n <= 16) {
+    const half = Math.ceil(n / 2);
+    const seats: Seat[] = [];
+    for (let i = 0; i < n; i++) {
+      const top = i < half, k = top ? i : i - half, m = top ? half : n - half;
+      const x = 50 + (m === 1 ? 50 : (k * 100) / (m - 1)), y = top ? 39 : 75;
+      seats.push({ x, y, t: `translate(${x} ${y}) rotate(${top ? 180 : 0}) scale(11 9)` });
+    }
+    const g: Geo = { seats, r: 5, rank: seats.map((_, i) => i), table: true, rows: [], aisles: [], r0: 0, floor: 0 };
+    GEO.set(n, g);
+    return g;
+  }
+  const rows = n <= 90 ? 4 : n <= 400 ? 9 : n <= 650 ? 12 : 15;
+  const r0 = n <= 90 ? 0.46 : 0.38;
+  const S = n <= 90 ? 3 : n <= 400 ? 6 : n <= 650 ? 7 : 9;
+  const G = n <= 90 ? 0.07 : 0.042;
+  const usable = Math.PI - G * (S - 1), w = usable / S;
   const radii = Array.from({ length: rows }, (_, i) => r0 + ((1 - r0) * i) / Math.max(1, rows - 1));
   const counts = apportion(radii, n);
   const pts: { x: number; y: number; a: number; rr: number }[] = [];
   radii.forEach((R, i) => {
     const c = counts[i];
     for (let k = 0; k < c; k++) {
-      const a = Math.PI * (1 - (c === 1 ? 0.5 : k / (c - 1)));
-      pts.push({ x: 100 + 93 * R * Math.cos(a), y: 97 - 93 * R * Math.sin(a), a, rr: R });
+      const u = ((k + 0.5) / c) * usable;
+      const a = Math.PI - (u + Math.min(S - 1, Math.floor(u / w)) * G);
+      pts.push({ x: 100 + 91 * R * Math.cos(a), y: 97 - 91 * R * Math.sin(a), a, rr: R });
     }
   });
   pts.sort((p, q) => q.a - p.a || p.rr - q.rr);
-  const gap = (93 * (1 - r0)) / Math.max(1, rows - 1);
-  const arc = Math.min(...radii.map((R, i) => (counts[i] > 1 ? (Math.PI * 93 * R) / (counts[i] - 1) : 99)));
-  const r = Math.min(gap, arc) * (n <= 16 ? 0.4 : 0.45);
+  const gap = (91 * (1 - r0)) / Math.max(1, rows - 1);
+  const arc = Math.min(...radii.map((R, i) => (counts[i] > 1 ? (usable * 91 * R) / counts[i] : 99)));
+  const sw = Math.round(arc * 0.8 * 100) / 100, sd = Math.round(gap * 0.74 * 100) / 100;
   const order = shuffle(pts.map((_, i) => i), mulberry(n * 31 + 7));
   const rank = new Array<number>(n);
   order.forEach((s, k) => { rank[s] = k; });
-  const g: Geo = { seats: pts.map(p => ({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 })), r: Math.round(r * 100) / 100, rank };
+  const seats = pts.map(p => {
+    const x = Math.round(p.x * 10) / 10, y = Math.round(p.y * 10) / 10;
+    return { x, y, t: `translate(${x} ${y}) rotate(${deg(Math.atan2(-Math.cos(p.a), -Math.sin(p.a))).toFixed(1)}) scale(${sw} ${sd})` };
+  });
+  const rin = 91 * r0 - gap * 0.55, rout = 91 + gap * 0.55;
+  const aisles: string[] = [];
+  for (let j = 1; j < S; j++) {
+    const a = Math.PI - (j * w + (j - 1) * G + G / 2);
+    const c = Math.cos(a), s = Math.sin(a);
+    aisles.push(`M${(100 + rin * c).toFixed(1)} ${(97 - rin * s).toFixed(1)}L${(100 + rout * c).toFixed(1)} ${(97 - rout * s).toFixed(1)}`);
+  }
+  const g: Geo = { seats, r: Math.min(gap, arc) * 0.45, rank, table: false, rows: radii.map(R => Math.round((91 * R + gap / 2) * 10) / 10), aisles, r0: Math.round(rin * 10) / 10, floor: Math.round((rin - 1.2) * 10) / 10 };
   GEO.set(n, g);
   return g;
 }
+/** Un demi-disque centré sur le perchoir */
+const half = (r: number) => `M${100 - r} 97A${r} ${r} 0 0 1 ${100 + r} 97Z`;
 
 const LV = ['Supprimé', 'Réécrit', 'Intégral'];
 const fmt = (n: number, d = 0) => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const sgn = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n);
 const word = (S: number) => (S >= 1 ? 'Pour' : S === 0 ? 'Partagé' : S === -1 ? 'Abst.' : 'Contre');
 const tone = (S: number) => (S >= 1 ? 'p' : S >= -1 ? 'a' : 'c');
+/** Retire les pictogrammes (émojis) des messages : l'interface les dessine */
+const plain = (s: string) => s.replace(/\p{Extended_Pictographic}️?\s?/gu, '').trim();
+
+/** Petits pictogrammes au trait (repère 24 × 24) */
+const IC: Record<string, string> = {
+  temps: 'M12 3a9 9 0 1 1 0 18a9 9 0 0 1 0-18zM12 7v5.2l3.4 2.1',
+  capital: 'M12 2.8l2.8 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17l-5.7 3.1 1.2-6.3-4.6-4.4 6.3-.8z',
+  ambition: 'M12 3a9 9 0 1 1 0 18a9 9 0 0 1 0-18zM12 7.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 0 1 0-9zM12 11v2',
+  deficit: 'M17.5 6.2A7 7 0 1 0 17.5 17.8M4 10.5h9M4 13.5h9',
+  rue: 'M4 9.5h4l7-4.5v14l-7-4.5H4zM8 14.5l1.5 5h2.5l-1.4-5M18 9.5a3.5 3.5 0 0 1 0 5',
+  congres: 'M3 21h18M4 18h16M5 18V10M9 18V10M15 18V10M19 18V10M3 10h18L12 4z',
+};
+const STAGE_IC = ['M5 3.5h10l4 4V21H5zM15 3.5V8h4M8 12h8M8 15h8M8 18h5', 'M2.5 20h19M4 20a8 8 0 0 1 16 0M7.5 20a4.5 4.5 0 0 1 9 0M12 4v3', 'M3 21h18M5 21V10h14v11M3 10l9-6 9 6M9 21v-6h6v6', 'M4 7h16v10H4zM8 7V4M16 7V4M8 17v3M16 17v3', 'M5 3.5h14V21H5zM8 7.5h8M8 10.5h8M8 13.5h8M8 17.5h4'];
 
 interface Move { id: Gid; short: string; from: string; to: string; up: boolean }
 interface Prev { err: string | null; dAmb: number; t0: Tally; t1: Tally; moves: Move[]; notes: string[] }
@@ -956,18 +1001,23 @@ interface Flash { text: string; good: boolean; id: number }
 const BRIEF: Record<Variant, string> = {
   loi: 'Faites adopter le texte en préservant le plus d’ambition possible.',
   budget: 'Faites voter le budget en préservant vos priorités, sans dépasser la cible de déficit.',
-  reforme: 'Faites passer la réforme. Tant que son cœur ✊ reste intact, la mobilisation grossit à chaque étape.',
+  reforme: 'Faites passer la réforme. Tant que son cœur (articles marqués) reste intact, la mobilisation grossit à chaque étape.',
   constitution: 'Révisez la Constitution : ni 49.3 ni dernier mot de l’Assemblée, et le Congrès devra réunir les trois cinquièmes des suffrages exprimés.',
 };
 
 let flashId = 0;
+let navInstances = 0;
 
 @Component({
   selector: 'app-navette-game',
   template: `
     @let G = game();
     <div class="nav" [class]="'nav v-' + G.v">
-      <p class="bill">{{ billTitle }}</p>
+      <header class="doc">
+        <small class="rf">République française</small>
+        <p class="bill">{{ billTitle }}</p>
+        <small class="leg">{{ legLine() }}</small>
+      </header>
       <ol class="steps" aria-label="Étapes de la navette">
         @for (s of stepLabels; track $index; let i = $index) {
           <li [class.now]="i === G.stage && G.status === 'play'" [class.done]="i < G.stage || G.status === 'won'" [class.ko]="G.status !== 'play' && G.status !== 'won' && i === stopAt()"
@@ -977,34 +1027,58 @@ let flashId = 0;
 
       <div class="res" role="list" aria-label="Ressources">
         <span class="rs" role="listitem" [attr.aria-label]="'Temps de parole : ' + G.temps">
-          <i>⏱️</i><b class="mono">{{ G.temps }}</b><small>temps</small>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="IC['temps']" /></svg><b class="mono">{{ G.temps }}</b><small>temps</small>
         </span>
-        <span class="rs" role="listitem" [class.low]="G.capital < 2" [attr.aria-label]="'Capital politique : ' + G.capital"><i>★</i><b class="mono">{{ G.capital }}</b><small>capital</small></span>
-        <span class="rs" role="listitem" [attr.aria-label]="'Ambition préservée : ' + pct(ambNow())"><i>🎯</i><b class="mono">{{ pct(ambNow()) }}</b><small>ambition</small></span>
+        <span class="rs" role="listitem" [class.low]="G.capital < 2" [attr.aria-label]="'Capital politique : ' + G.capital"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="IC['capital']" /></svg><b class="mono">{{ G.capital }}</b><small>capital</small></span>
+        <span class="rs" role="listitem" [attr.aria-label]="'Ambition préservée : ' + pct(ambNow())"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="IC['ambition']" /></svg><b class="mono">{{ pct(ambNow()) }}</b><small>ambition</small></span>
         @if (G.v === 'budget') {
           <span class="rs" role="listitem" [class.bad]="defNow() > G.target + 0.001" [class.ok]="defNow() <= G.target + 0.001" [attr.aria-label]="'Déficit ' + fmt(defNow(), 2) + ' pour cent, cible ' + fmt(G.target, 1)">
-            <i>💶</i><b class="mono">{{ fmt(defNow(), 2) }} %</b><small>cible {{ fmt(G.target, 1) }}</small></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="IC['deficit']" /></svg><b class="mono">{{ fmt(defNow(), 2) }} %</b><small>cible {{ fmt(G.target, 1) }}</small></span>
         }
         @if (G.v === 'reforme') {
-          <span class="rs" role="listitem" [class.bad]="G.pressure >= 4" [attr.aria-label]="'Mobilisation ' + G.pressure + ' sur 6'"><i>✊</i><b class="mono">{{ G.pressure }}/6</b><small>la rue</small></span>
+          <span class="rs" role="listitem" [class.bad]="G.pressure >= 4" [attr.aria-label]="'Mobilisation ' + G.pressure + ' sur 6'"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="IC['rue']" /></svg><b class="mono">{{ G.pressure }}/6</b><small>la rue</small></span>
         }
         @if (G.v === 'constitution' && G.stage < 4) {
           @let cg = congresNow();
           <span class="rs" role="listitem" [class.bad]="!cg.ok" [class.ok]="cg.ok" [attr.aria-label]="'Projection du Congrès : ' + pct(cg.p / Math.max(1, cg.p + cg.c)) + ', trois cinquièmes requis'">
-            <i>🏰</i><b class="mono">{{ pct(cg.p / Math.max(1, cg.p + cg.c)) }}</b><small>Congrès/60</small></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="IC['congres']" /></svg><b class="mono">{{ pct(cg.p / Math.max(1, cg.p + cg.c)) }}</b><small>Congrès/60</small></span>
         }
       </div>
 
-      <div class="hemi">
+      <div class="hemi" [class.cmp]="hemi().geo.table">
         @let h = hemi();
-        <svg viewBox="0 0 200 101" role="img" [attr.aria-label]="hemiLabel()">
-          @for (a of ring(); track a.id) { <path [attr.d]="a.d" [attr.stroke]="a.color" class="ring" /> }
-          @for (s of h.geo.seats; track $index; let i = $index) {
-            <circle [attr.cx]="s.x" [attr.cy]="s.y" [attr.r]="h.geo.r" [attr.class]="'s ' + h.cls[i]" [attr.stroke]="h.strokes[i] ?? null" [attr.stroke-width]="h.strokes[i] ? 2.6 : null" />
+        <svg viewBox="0 0 200 101" role="img" [attr.aria-label]="hemiLabel()" [attr.class]="'ch ch-' + h.ch">
+          <defs>
+            <linearGradient [attr.id]="uid + '-wall'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="w0" /><stop offset="1" class="w1" /></linearGradient>
+            <radialGradient [attr.id]="uid + '-floor'" cx="50%" cy="100%" r="100%"><stop offset="0" class="f0" /><stop offset="1" class="f1" /></radialGradient>
+            <linearGradient [attr.id]="uid + '-wood'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a5a35" /><stop offset="1" stop-color="#5b3820" /></linearGradient>
+            <pattern [attr.id]="uid + '-panel'" width="16" height="101" patternUnits="userSpaceOnUse"><rect width="16" height="101" fill="none" /><path d="M0 0V101" class="pl" /></pattern>
+            <g [attr.id]="uid + '-seat'"><path d="M-.5 -.62h1v.82h-1z" fill="currentColor" /><path d="M-.56 .14h1.12v.42h-1.12z" fill="currentColor" /><path d="M-.56 .14h1.12v.42h-1.12z" fill="#000" fill-opacity=".32" /></g>
+          </defs>
+          <rect width="200" height="101" [attr.fill]="'url(#' + uid + '-wall)'" />
+          <rect width="200" height="101" [attr.fill]="'url(#' + uid + '-panel)'" />
+          @if (h.geo.table) {
+            <path d="M0 101V92H200V101Z" class="carpet" />
+            <rect x="40" y="47" width="120" height="20" rx="10" [attr.fill]="'url(#' + uid + '-wood)'" class="tbl" />
+            <path d="M52 57H148" class="tbl-l" />
+            <text x="10" y="41" class="lbl l">7 députés</text><text x="10" y="77" class="lbl l">7 sénateurs</text>
+          } @else {
+            <path [attr.d]="half(97)" class="tiers" />
+            @for (r of h.geo.rows; track $index) { <path [attr.d]="'M' + (100 - r) + ' 97A' + r + ' ' + r + ' 0 0 1 ' + (100 + r) + ' 97'" class="tier" /> }
+            @for (a of h.geo.aisles; track $index) { <path [attr.d]="a" class="aisle" /> }
+            <path [attr.d]="half(h.geo.floor + 1.2)" class="rail" />
+            <path [attr.d]="half(h.geo.floor)" [attr.fill]="'url(#' + uid + '-floor)'" />
+            <path [attr.d]="half(h.geo.floor * 0.62)" class="rug" />
+            @for (a of ring(); track a.id) { <path [attr.d]="a.d" [attr.stroke]="a.color" class="ring" /> }
           }
-          @if (cmpView()) {
-            <text x="66" y="60" class="lbl">7 députés</text><text x="134" y="60" class="lbl">7 sénateurs</text>
-            <line x1="100" y1="18" x2="100" y2="40" class="sep" />
+          @for (s of h.geo.seats; track $index; let i = $index) {
+            <use [attr.href]="'#' + uid + '-seat'" [attr.transform]="s.t" [attr.class]="'s ' + h.cls[i]" [attr.stroke]="h.strokes[i] ?? null" [attr.stroke-width]="h.strokes[i] ? 0.16 : null" />
+          }
+          @if (!h.geo.table) {
+            <g class="tribune" aria-hidden="true">
+              <rect x="82" y="95" width="36" height="6" rx=".8" class="perchoir" /><path d="M82.5 95.4H117.5" class="gold" />
+              <rect x="94.5" y="91" width="11" height="4.2" rx=".6" class="orateur" /><path d="M95 91.3H105" class="gold" />
+            </g>
           }
         </svg>
         <div class="hc">
@@ -1014,17 +1088,18 @@ let flashId = 0;
         @for (f of flashes(); track f.id) { <span class="flash" [class.good]="f.good">{{ f.text }}</span> }
       </div>
       @if (tallyLine(); as tl) {
-        <p class="tl" aria-live="polite">
-          <span class="p">Pour <b class="mono">{{ tl.p }}</b></span>
-          <span class="c">Contre <b class="mono">{{ tl.c }}</b></span>
-          <span class="a">Abst. <b class="mono">{{ tl.a }}</b></span>
+        <div class="tl board" aria-live="polite">
+          <span class="p"><small>Pour</small><b class="mono">{{ tl.p }}</b></span>
+          <span class="c"><small>{{ tl.kind === 'censure' ? 'Requis' : 'Contre' }}</small><b class="mono">{{ tl.kind === 'censure' ? tl.need : tl.c }}</b></span>
+          <span class="a"><small>Abst.</small><b class="mono">{{ tl.kind === 'censure' ? '—' : tl.a }}</b></span>
+          <span class="meta mono">@if (tl.kind !== 'censure') { Votants {{ tl.p + tl.c + tl.a }} · Exprimés {{ tl.p + tl.c }} · {{ tl.kind === 'tpf' ? '3/5 : ' : 'Majorité abs. ' }}{{ tl.need }} } @else { Motion de censure · majorité des membres }</span>
           <span class="verdict" [class.ok]="tl.ok">{{ tl.label }}</span>
-        </p>
+        </div>
       }
 
       @if (cmpNow(); as ck) {
         @if (phase() === 'play') {
-          <p class="tl cmpl">
+          <p class="tl cmpl board">
             @if (G.v !== 'constitution') { <span [class]="ck.yes >= 8 ? 'okc' : 'koc'">CMP <b class="mono">{{ ck.yes }}/14</b></span> }
             <span [class]="ck.an.ok ? 'okc' : 'koc'">Assemblée <b class="mono">{{ ck.an.p }}–{{ ck.an.c }}</b> {{ ck.an.ok ? '✓' : '✗' }}</span>
             <span [class]="ck.sen.ok ? 'okc' : 'koc'">Sénat <b class="mono">{{ ck.sen.p }}–{{ ck.sen.c }}</b> {{ ck.sen.ok ? '✓' : '✗' }}</span>
@@ -1037,12 +1112,13 @@ let flashId = 0;
           @case ('intro') {
             @if (intro(); as it) {
               <div class="card intro" role="dialog" [attr.aria-label]="it.title">
-                <p class="it-t"><span class="it-i">{{ stageIcon() }}</span> <b>{{ it.title }}</b></p>
+                <p class="eyebrow">Ordre du jour</p>
+                <p class="it-t"><svg class="it-i" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="stageIcon()" /></svg> <b>{{ it.title }}</b></p>
                 @if (G.stage === 0) {
                   <p class="small">{{ brief }}@if (G.v === 'budget') { Cible : {{ fmt(G.target, 1) }} % du PIB. }</p>
                   <p class="small muted">Chaque groupe vote selon son <b>soutien</b> : +1 et plus, pour ; 0, partagé ; −1, abstention ; −2 et moins, contre. Réécrire un article divise ses effets par deux, le supprimer les annule. Consultez les groupes pour découvrir leurs lignes rouges et ce qu’ils demandent.</p>
                 }
-                <ul class="lines">@for (l of it.lines; track $index) { <li [class.bad]="l.bad">{{ l.msg }}</li> }</ul>
+                <ul class="lines">@for (l of it.lines; track $index) { <li [class.bad]="l.bad">{{ plain(l.msg) }}</li> }</ul>
                 <p class="small muted">{{ stageHelp() }}</p>
                 <button type="button" class="btn primary go" (click)="play()">{{ G.stage === 0 ? 'Déposer le texte' : 'À l’ouvrage' }} →</button>
               </div>
@@ -1050,14 +1126,16 @@ let flashId = 0;
           }
           @case ('play') {
             <div class="tabs" role="tablist" aria-label="Vues">
-              <button type="button" role="tab" [attr.aria-selected]="tab() === 'texte'" [class.on]="tab() === 'texte'" (click)="tab.set('texte')">📜 Texte</button>
-              <button type="button" role="tab" [attr.aria-selected]="tab() === 'groupes'" [class.on]="tab() === 'groupes'" (click)="tab.set('groupes')">👥 Groupes@if (unknown()) { <small>{{ unknown() }}?</small> }</button>
+              <button type="button" role="tab" [attr.aria-selected]="tab() === 'texte'" [class.on]="tab() === 'texte'" (click)="tab.set('texte')">Texte</button>
+              <button type="button" role="tab" [attr.aria-selected]="tab() === 'groupes'" [class.on]="tab() === 'groupes'" (click)="tab.set('groupes')">Groupes@if (unknown()) { <small>{{ unknown() }}?</small> }</button>
               @if (G.mode !== 'cmp') {
-                <button type="button" role="tab" [attr.aria-selected]="tab() === 'amdts'" [class.on]="tab() === 'amdts'" (click)="tab.set('amdts')">✂️ Amend.@if (G.pending.length) { <small class="warn">{{ G.pending.length }}</small> }</button>
+                <button type="button" role="tab" [attr.aria-selected]="tab() === 'amdts'" [class.on]="tab() === 'amdts'" (click)="tab.set('amdts')">Amend.@if (G.pending.length) { <small class="warn">{{ G.pending.length }}</small> }</button>
               }
             </div>
 
             @if (tab() === 'texte') {
+              <div class="paper">
+              <p class="ph"><span>{{ G.v === 'constitution' ? 'Projet de loi constitutionnelle' : G.v === 'budget' ? 'Projet de loi de finances' : 'Projet de loi' }}</span><small>{{ textState() }}</small></p>
               @if (G.mode === 'cmp') {
                 <p class="hint">{{ G.v === 'constitution' ? 'Choisissez, article par article, une rédaction que les deux chambres voteront.' : 'Choisissez, article par article, entre la version de l’Assemblée, celle du Sénat ou un compromis : il faut 8 voix sur 14.' }}</p>
               } @else if (textFixed(G)) {
@@ -1068,22 +1146,22 @@ let flashId = 0;
                   @if (a.level > 0 || !a.extra || G.mode === 'cmp') {
                     @let open = selArt() === a.id;
                     <li>
-                      <button type="button" class="art" [class.open]="open" [class.gone]="a.level === 0" (click)="toggleArt(a.id)" [attr.aria-expanded]="open"
+                      <button type="button" class="art" [class.open]="open" [class.gone]="a.level === 0" [class.half]="a.level === 1" (click)="toggleArt(a.id)" [attr.aria-expanded]="open"
                               [attr.aria-label]="'Article ' + a.n + ' : ' + a.title + ', ' + LV[a.level]">
-                        <span class="an mono">{{ a.extra ? 'Add.' : 'Art. ' + a.n }}</span>
-                        <span class="at">{{ a.title }}@if (a.core) { <i class="core" title="Au cœur de la contestation">✊</i> }</span>
-                        <span class="lv" [class]="'lv l' + a.level">{{ LV[a.level] }}</span>
+                        <span class="an">{{ a.extra ? 'Article additionnel' : a.n === 1 ? 'Article 1er' : 'Article ' + a.n }}</span>
+                        <span class="at">{{ a.title }}@if (a.core) { <i class="core" title="Au cœur de la contestation">cœur</i> }</span>
+                        <span class="lv" [class]="'lv l' + a.level">{{ a.level === 2 ? 'intégral' : a.level === 1 ? 'réécrit' : 'supprimé' }}</span>
                         <span class="who">
                           @for (w of whoLikes(a); track w.id) { <i class="up" [style.--g]="w.color">▲{{ w.short }}</i> }
                           @for (w of whoHates(a); track w.id) { <i class="dn" [style.--g]="w.color">▼{{ w.short }}</i> }
-                          @for (w of redOn(a); track w) { <i class="red">🔒{{ w }}</i> }
-                          @if (threat(a)) { <i class="thr">✂️ amendé ?</i> }
+                          @for (w of redOn(a); track w) { <i class="red">ligne rouge {{ w }}</i> }
+                          @if (threat(a)) { <i class="thr">amendement menaçant</i> }
                         </span>
                         <span class="amb mono">{{ a.extra ? '' : fmt(a.amb * (a.level === 2 ? 1 : a.level === 1 ? 0.5 : 0)) + '/' + fmt(a.amb) }}</span>
                       </button>
                       @if (open) {
                         <div class="det">
-                          <p class="small">{{ a.desc }}@if (G.v === 'budget' && a.fiscal) { <span> Solde : {{ a.fiscal > 0 ? '+' : '−' }}{{ fmt(Math.abs(a.fiscal), 1) }} Md€ intégral.</span> }</p>
+                          <p class="small body">{{ a.desc }}@if (G.v === 'budget' && a.fiscal) { <span> Solde : {{ a.fiscal > 0 ? '+' : '−' }}{{ fmt(Math.abs(a.fiscal), 1) }} Md€ intégral.</span> }</p>
                           @if (G.mode === 'cmp') {
                             @let rg = range(a);
                             @if (rg.length > 1) {
@@ -1110,7 +1188,7 @@ let flashId = 0;
                                 @if (!p.err) {
                                   <small class="proj">Projection {{ p.t0.p }}–{{ p.t0.c }} → <b [class.okc]="p.t1.ok" [class.koc]="!p.t1.ok">{{ p.t1.p }}–{{ p.t1.c }}</b>
                                     @for (m of p.moves; track m.id) { <span [class]="m.up ? 'g' : 'r'"> · {{ m.short }} {{ m.from }}→{{ m.to }}</span> }</small>
-                                  @for (n of p.notes; track $index) { <small class="note">{{ n }}</small> }
+                                  @for (n of p.notes; track $index) { <small class="note">{{ plain(n) }}</small> }
                                 }
                               </div>
                             }
@@ -1121,6 +1199,7 @@ let flashId = 0;
                   }
                 }
               </ul>
+              </div>
             } @else if (tab() === 'groupes') {
               <ul class="grps">
                 @for (g of groupsSorted(); track g.id) {
@@ -1134,7 +1213,7 @@ let flashId = 0;
                       <span class="gs mono">{{ seatsNow(g) }}</span>
                       <span class="gS mono" [class]="'gS t-' + tone(S)">{{ sgn(S) }}</span>
                       <span class="gv" [class]="'gv t-' + tone(S)">{{ word(S) }}</span>
-                      <span class="gi">{{ g.deal ? '🤝' : '' }}{{ g.known ? (g.red !== null ? '🔒' : '') : '❓' }}</span>
+                      <span class="gi">@if (g.deal) { <i class="bd deal" title="Accord conclu">accord</i> }@if (!g.known) { <i class="bd unk" title="Non consulté">?</i> } @else if (g.red !== null) { <i class="bd red" title="Ligne rouge">ligne r.</i> }</span>
                     </button>
                     @if (open) {
                       <div class="det">
@@ -1143,22 +1222,22 @@ let flashId = 0;
                           @if (!g.known) { <span class="muted">Ligne rouge éventuelle : ?</span> }
                         </p>
                         @if (g.known) {
-                          <p class="small">🔒 {{ g.red !== null ? 'Ligne rouge : article ' + (artN(g.red)) + ' intégral (−' + RED + ')' : 'Pas de ligne rouge.' }}</p>
-                          <p class="small">🤝 {{ g.deal ? 'Accord conclu : ' + demandLabel(G, g, true) + (honored(g) ? ' (respecté)' : ' — TRAHI') : 'Demande : ' + demandLabel(G, g) }}.</p>
+                          <p class="small"><b>Ligne rouge</b> — {{ g.red !== null ? 'article ' + (artN(g.red)) + ' intégral (−' + RED + ')' : 'aucune.' }}</p>
+                          <p class="small"><b>{{ g.deal ? 'Accord' : 'Demande' }}</b> — {{ g.deal ? demandLabel(G, g, true) + (honored(g) ? ' (respecté)' : ' — TRAHI') : demandLabel(G, g) }}.</p>
                         }
                         @if (!g.known) {
                           @let pc = prev({ t: 'consult', g: g.id });
-                          <div class="op" [class.err]="pc.err"><div class="op-h"><b>🗣️ Consulter</b><small>{{ pc.err || '1 ⏱ · révèle ligne rouge et demande' }}</small>
+                          <div class="op" [class.err]="pc.err"><div class="op-h"><b>Consulter</b><small>{{ pc.err || '1 temps · révèle ligne rouge et demande' }}</small>
                             <button type="button" class="btn small" [disabled]="!!pc.err || busy()" (click)="act({ t: 'consult', g: g.id })" [attr.aria-label]="'Consulter ' + g.name">Valider</button></div></div>
                         } @else if (!g.deal && g.demand) {
                           @let pd = prev({ t: 'deal', g: g.id });
                           <div class="op" [class.err]="pd.err">
-                            <div class="op-h"><b>🤝 Négocier</b><small>{{ pd.err || '1 ⏱ · 2 ★ · ambition ' + (pd.dAmb ? '−' + fmt(pd.dAmb) + ' pts' : 'inchangée') }}</small>
+                            <div class="op-h"><b>Négocier</b><small>{{ pd.err || '1 temps · 2 ★ · ambition ' + (pd.dAmb ? '−' + fmt(pd.dAmb) + ' pts' : 'inchangée') }}</small>
                               <button type="button" class="btn small" [disabled]="!!pd.err || busy()" (click)="act({ t: 'deal', g: g.id })" [attr.aria-label]="'Négocier avec ' + g.name">Valider</button></div>
                             @if (!pd.err) {
                               <small class="proj">Projection {{ pd.t0.p }}–{{ pd.t0.c }} → <b [class.okc]="pd.t1.ok" [class.koc]="!pd.t1.ok">{{ pd.t1.p }}–{{ pd.t1.c }}</b>
                                 @for (m of pd.moves; track m.id) { <span [class]="m.up ? 'g' : 'r'"> · {{ m.short }} {{ m.from }}→{{ m.to }}</span> }</small>
-                              @for (n of pd.notes; track $index) { <small class="note">{{ n }}</small> }
+                              @for (n of pd.notes; track $index) { <small class="note">{{ plain(n) }}</small> }
                             }
                           </div>
                         }
@@ -1171,9 +1250,9 @@ let flashId = 0;
               <ul class="amdts">
                 @for (x of fc().res; track x.am.id) {
                   <li [class.ok]="x.t.ok">
-                    <span class="mono num">n° {{ fmt(x.am.num) }}</span>
-                    <span class="am-t"><b>{{ shortOf(x.am.by) }}</b> : {{ amdtLabel(x.am) }}</span>
-                    <span class="am-v mono" [class.ok]="x.t.ok">{{ x.t.p }}–{{ x.t.c }} {{ x.t.ok ? 'adopté' : 'rejeté' }}</span>
+                    <span class="mono num">Amendement n° {{ fmt(x.am.num) }}</span>
+                    <span class="am-t">présenté par <b>{{ shortOf(x.am.by) }}</b> — {{ amdtLabel(x.am) }}</span>
+                    <span class="am-v mono" [class.ok]="x.t.ok">{{ x.t.p }}–{{ x.t.c }} · {{ x.t.ok ? 'adopté' : 'rejeté' }}</span>
                   </li>
                 } @empty { <li class="muted small">Aucun amendement hostile en discussion.</li> }
               </ul>
@@ -1184,15 +1263,15 @@ let flashId = 0;
               @let cp = confirmProj();
               <div class="card sheet" role="dialog" [attr.aria-label]="k === '493' ? 'Engager la responsabilité du gouvernement' : 'Vote bloqué'">
                 @if (k === '493') {
-                  <p><b>⚖️ Article 49, alinéa 3</b> — le texte est adopté sans vote, sauf si une motion de censure réunit {{ CENSURE }} députés. L’opposition s’en souviendra (−1 de soutien chacun, définitivement).</p>
+                  <p><b>Article 49, alinéa 3</b> — le texte est adopté sans vote, sauf si une motion de censure réunit {{ CENSURE }} députés. L’opposition s’en souviendra (−1 de soutien chacun, définitivement).</p>
                 } @else {
-                  <p><b>🔒 Vote bloqué (article 44.3)</b> — un seul vote sur tout le texte : les amendements de l’opposition sont écartés. L’opposition s’en souviendra (−1 de soutien chacun, définitivement).</p>
+                  <p><b>Vote bloqué (article 44, alinéa 3)</b> — un seul vote sur tout le texte : les amendements de l’opposition sont écartés. L’opposition s’en souviendra (−1 de soutien chacun, définitivement).</p>
                 }
                 @if (cp) {
                   <p class="small">{{ k === '493' ? 'Censure : ' + cp.p + ' voix sur ' + CENSURE + ' requises' : 'Vote : ' + cp.p + ' pour, ' + cp.c + ' contre' }} →
                     <b [class.okc]="k === '493' ? !cp.ok : cp.ok" [class.koc]="k === '493' ? cp.ok : !cp.ok">{{ k === '493' ? (cp.ok ? 'le gouvernement tomberait' : 'motion rejetée') : (cp.ok ? 'adopté' : 'rejeté') }}</b> <span class="muted">(projection)</span></p>
                 }
-                @if (unknown()) { <p class="small muted">❓ {{ unknown() }} groupe{{ unknown() > 1 ? 's' : '' }} non consulté{{ unknown() > 1 ? 's' : '' }} : une ligne rouge cachée peut fausser la projection.</p> }
+                @if (unknown()) { <p class="small muted">{{ unknown() }} groupe{{ unknown() > 1 ? 's' : '' }} non consulté{{ unknown() > 1 ? 's' : '' }} : une ligne rouge cachée peut fausser la projection.</p> }
                 <div class="row2">
                   <button type="button" class="btn" (click)="confirm.set(null)">Renoncer</button>
                   <button type="button" class="btn primary" (click)="resolve(k)">{{ k === '493' ? 'Engager la responsabilité' : 'Demander le vote bloqué' }}</button>
@@ -1205,16 +1284,16 @@ let flashId = 0;
                   <button type="button" class="btn primary end" [disabled]="busy() || !cmpOk()" (click)="cmpEnd(true)">{{ G.v === 'constitution' ? 'Adopter en termes identiques' : 'Conclure l’accord' }} →</button>
                 } @else {
                   @if (anStage(G) && G.mode !== 'conclusions') {
-                    <button type="button" class="btn small" [disabled]="!!canDo(G, { t: 'night' }) || busy()" (click)="act({ t: 'night' })" [attr.title]="canDo(G, { t: 'night' })">🌙 Séance de nuit <small>+2 ⏱ · 1 ★</small></button>
+                    <button type="button" class="btn small" [disabled]="!!canDo(G, { t: 'night' }) || busy()" (click)="act({ t: 'night' })" [attr.title]="canDo(G, { t: 'night' })">Séance de nuit <small>+2 temps · 1 ★</small></button>
                   }
                   @if (G.v === 'reforme') {
-                    <button type="button" class="btn small" [disabled]="!!canDo(G, { t: 'concert' }) || busy()" (click)="act({ t: 'concert' })">🤲 Syndicats <small>1 ⏱ · 1 ★ · ✊−1</small></button>
+                    <button type="button" class="btn small" [disabled]="!!canDo(G, { t: 'concert' }) || busy()" (click)="act({ t: 'concert' })">Syndicats <small>1 temps · 1 ★ · rue −1</small></button>
                   }
                   @if (G.v !== 'constitution' && anStage(G)) {
-                    <button type="button" class="btn small" [disabled]="!!can493(G) || busy()" (click)="confirm.set('493')" [attr.title]="can493(G)">⚖️ 49.3 <small>3 ★</small></button>
+                    <button type="button" class="btn small" [disabled]="!!can493(G) || busy()" (click)="confirm.set('493')" [attr.title]="can493(G)">49.3 <small>3 ★</small></button>
                   }
                   @if (!canBloqueShown()) {
-                    <button type="button" class="btn small" [disabled]="!!canBloque(G) || busy()" (click)="confirm.set('bloque')" [attr.title]="canBloque(G)">🔒 Vote bloqué <small>2 ★</small></button>
+                    <button type="button" class="btn small" [disabled]="!!canBloque(G) || busy()" (click)="confirm.set('bloque')" [attr.title]="canBloque(G)">Vote bloqué <small>2 ★</small></button>
                   }
                   <button type="button" class="btn primary end" [disabled]="busy()" (click)="resolve('vote')">{{ voteLabel() }} →</button>
                 }
@@ -1224,15 +1303,16 @@ let flashId = 0;
           @case ('result') {
             @if (result(); as R) {
               <div class="card result" aria-live="polite">
+                <p class="eyebrow">{{ R.kind === 'cmp' ? 'Procès-verbal' : 'Scrutin public' }}</p>
                 <p class="it-t"><b>{{ R.title }}</b></p>
                 @if (R.res.length) {
                   <ul class="amdts">
                     @for (x of R.res; track x.am.id; let i = $index) {
                       @if (i < step()) {
                         <li class="in" [class.ok]="x.t.ok">
-                          <span class="mono num">n° {{ fmt(x.am.num) }}</span>
-                          <span class="am-t"><b>{{ shortOf(x.am.by) }}</b> : {{ amdtLabel(x.am) }}</span>
-                          <span class="am-v mono" [class.ok]="x.t.ok">{{ x.t.p }}–{{ x.t.c }} {{ x.t.ok ? 'adopté' : 'rejeté' }}</span>
+                          <span class="mono num">Amendement n° {{ fmt(x.am.num) }}</span>
+                          <span class="am-t">présenté par <b>{{ shortOf(x.am.by) }}</b> — {{ amdtLabel(x.am) }}</span>
+                          <span class="am-v mono" [class.ok]="x.t.ok">{{ x.t.p }}–{{ x.t.c }} · {{ x.t.ok ? 'adopté' : 'rejeté' }}</span>
                         </li>
                       }
                     }
@@ -1242,23 +1322,25 @@ let flashId = 0;
                   <p class="small mono">Membres de la CMP : {{ ck.yes }} pour sur 14 — Assemblée {{ ck.an.p }}–{{ ck.an.c }} · Sénat {{ ck.sen.p }}–{{ ck.sen.c }}</p>
                 }
                 @if (animDone()) {
-                  <ul class="lines">@for (l of R.lines; track $index) { <li class="in" [class.bad]="l.bad">{{ l.msg }}</li> }</ul>
+                  <ul class="lines">@for (l of R.lines; track $index) { <li class="in" [class.bad]="l.bad">{{ plain(l.msg) }}</li> }</ul>
                   <button type="button" class="btn primary go" (click)="next()">{{ G.status === 'play' ? 'Étape suivante' : 'Bilan' }} →</button>
                 }
               </div>
             }
           }
           @case ('over') {
-            <div class="card sum" aria-live="polite">
+            <div class="card sum jo" aria-live="polite">
+              <p class="jo-h">Journal officiel de la République française</p>
+              <p class="jo-t">{{ G.status === 'won' ? loiTitle() : 'Texte non adopté' }}</p>
               <p class="verdict-big" [class.ok]="G.status === 'won'"><b>{{ endMessage() }}</b></p>
               <div class="bars">
-                <span>🎯 {{ G.status === 'won' ? 'Ambition préservée' : 'Ambition du texte' }}</span><span class="bar"><span [style.width.%]="ambNow() * 100"></span></span><b class="mono">{{ pct(ambNow()) }}</b>
-                @if (G.v === 'budget') { <span>💶 Déficit {{ fmt(defNow(), 2) }} %</span><span class="bar"><span [style.width.%]="defFactor(G) * 100"></span></span><b class="mono">{{ defNow() <= G.target + 0.001 ? '✓' : '✗' }}</b> }
-                <span>🏛️ Score</span><span class="bar"><span [style.width.%]="score() * 100"></span></span><b class="mono">{{ pct(score()) }}</b>
+                <span>{{ G.status === 'won' ? 'Ambition préservée' : 'Ambition du texte' }}</span><span class="bar"><span [style.width.%]="ambNow() * 100"></span></span><b class="mono">{{ pct(ambNow()) }}</b>
+                @if (G.v === 'budget') { <span>Déficit {{ fmt(defNow(), 2) }} %</span><span class="bar"><span [style.width.%]="defFactor(G) * 100"></span></span><b class="mono">{{ defNow() <= G.target + 0.001 ? '✓' : '✗' }}</b> }
+                <span>Score</span><span class="bar"><span [style.width.%]="score() * 100"></span></span><b class="mono">{{ pct(score()) }}</b>
               </div>
               <ul class="final">
                 @for (a of finalArts(); track a.id) {
-                  <li [class]="'l' + a.level"><span>{{ a.level === 2 ? '✓' : a.level === 1 ? '½' : '✗' }}</span> {{ a.extra ? 'Add.' : 'Art. ' + a.n }} — {{ a.title }}</li>
+                  <li [class]="'l' + a.level"><span>{{ a.level === 2 ? '✓' : a.level === 1 ? '½' : '✗' }}</span> {{ a.extra ? 'Art. add.' : 'Art. ' + a.n }} — {{ a.title }}</li>
                 }
               </ul>
             </div>
@@ -1270,89 +1352,138 @@ let flashId = 0;
     </div>
   `,
   styles: `
-    :host { display: block; width: 100%; }
-    .nav { display: grid; gap: 7px; font-size: 13px; min-width: 0; }
-    .bill { margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-2); text-align: center; }
-    .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; counter-reset: s;
-      li { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; line-height: 1.1; color: var(--ink-3); text-align: center; min-width: 0; overflow-wrap: anywhere; }
-      span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); font: 700 10.5px var(--font-body); }
-      .now { color: var(--ink); font-weight: 600; span { background: var(--accent); border-color: var(--accent); color: var(--surface); } }
-      .done span { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+    :host { display: block; width: 100%;
+      --nv-paper: #fbf9f3; --nv-paper-2: #f2ede1; --nv-rule: #ddd4c1; --nv-ink: #1e2128; --nv-ink-2: #5b5e68; --nv-red: #a3201b; --nv-board: #101317; --nv-led: #f2b33d; }
+    @media (prefers-color-scheme: dark) {
+      :host-context(html:not([data-theme="light"])) { --nv-paper: #1f232b; --nv-paper-2: #262b34; --nv-rule: #39404c; --nv-ink: #ebe7dd; --nv-ink-2: #a9a8a2; --nv-red: #ef8a78; --nv-board: #07090c; }
+    }
+    :host-context(html[data-theme="dark"]) { --nv-paper: #1f232b; --nv-paper-2: #262b34; --nv-rule: #39404c; --nv-ink: #ebe7dd; --nv-ink-2: #a9a8a2; --nv-red: #ef8a78; --nv-board: #07090c; }
+    .nav { display: grid; gap: 8px; font-size: 13px; min-width: 0; }
+    .doc { display: grid; justify-items: center; gap: 1px; text-align: center; padding-bottom: 6px; border-bottom: 1px solid var(--line);
+      .rf { font: 600 9.5px var(--font-body); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); }
+      .leg { font-size: 10.5px; color: var(--ink-3); font-style: italic; } }
+    .bill { margin: 0; font: 600 14px/1.25 var(--font-display); color: var(--ink); }
+    .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; position: relative;
+      &::before { content: ''; position: absolute; left: 10%; right: 10%; top: 10px; height: 1.5px; background: var(--line); }
+      li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; line-height: 1.1; color: var(--ink-3); text-align: center; min-width: 0; overflow-wrap: anywhere; }
+      span { display: grid; place-items: center; width: 21px; height: 21px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); font: 700 10.5px var(--font-mono); }
+      .now { color: var(--ink); font-weight: 600; span { background: var(--ink); border-color: var(--ink); color: var(--surface); } }
+      .done span { background: var(--surface); border-color: var(--good); color: var(--good); }
       .ko span { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); } }
     .res { display: flex; flex-wrap: wrap; gap: 4px; }
-    .rs { flex: 1 1 56px; display: grid; grid-template-columns: auto auto; grid-template-areas: 'i v' 'l l'; justify-content: center; align-items: center; column-gap: 4px; padding: 3px 4px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); min-width: 0; line-height: 1.15;
-      i { grid-area: i; font-style: normal; font-size: 13px; } b { grid-area: v; font-size: 13px; white-space: nowrap; } small { grid-area: l; text-align: center; font-size: 9.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rs { flex: 1 1 56px; display: grid; grid-template-columns: auto auto; grid-template-areas: 'i v' 'l l'; justify-content: center; align-items: center; column-gap: 4px; padding: 4px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); min-width: 0; line-height: 1.15;
+      svg { grid-area: i; width: 14px; height: 14px; fill: none; stroke: var(--ink-2); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; } b { grid-area: v; font-size: 13px; white-space: nowrap; } small { grid-area: l; text-align: center; font-size: 9.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .03em; text-transform: uppercase; }
       &.ok { border-color: var(--good); background: var(--good-soft); } &.bad, &.low { border-color: var(--bad); background: var(--bad-soft); } }
-    .hemi { position: relative; width: 100%; max-width: 420px; justify-self: center; svg { display: block; width: 100%; height: auto; } }
-    .s { transition: fill .25s ease; }
-    .s.p { fill: #3f9b62; } .s.a { fill: #b9b3a5; } .s.c { fill: #c8432f; } .s.w { fill: var(--line); } .s.g0 { opacity: .35; }
-    .ring { fill: none; stroke-width: 2.4; }
-    .lbl { font: 600 7px var(--font-body); fill: var(--ink-3); text-anchor: middle; }
-    .sep { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 2; }
-    .hc { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); display: grid; justify-items: center; line-height: 1.05; pointer-events: none;
-      .big { font-size: clamp(16px, 5.4vw, 22px); } small { font-size: 10px; color: var(--ink-2); white-space: nowrap; } }
-    .flash { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); font: 800 14px var(--font-body); color: var(--bad); pointer-events: none; animation: rise 1.2s ease forwards; white-space: nowrap; &.good { color: var(--good); } }
+    .hemi { position: relative; width: 100%; max-width: 520px; justify-self: center; border-radius: 6px; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,.2), 0 8px 22px -14px rgba(0,0,0,.6);
+      svg { display: block; width: 100%; height: auto; } }
+    .ch { --w0: #3e2a1c; --w1: #23170f; --f0: #9a2b31; --f1: #6a161d; --tier: #5a3a24; --tierl: #2c1c11; --aisle: #8e6a48; --rail: #c9a45c; }
+    .ch-sen { --w0: #3a2418; --w1: #1f130c; --f0: #8c2330; --f1: #5c1220; --tier: #63402a; --aisle: #a07a4e; }
+    .ch-congres { --w0: #4a3622; --w1: #261a10; --f0: #a3262e; --f1: #6d121a; --tier: #6b4a2c; --rail: #e0bd6a; }
+    .ch-com { --w0: #3b3a33; --w1: #23221d; --f0: #2f5a45; --f1: #1d3a2c; --tier: #4f4a3e; --aisle: #7d7462; }
+    .ch-cmp { --w0: #3b3a33; --w1: #23221d; }
+    .w0 { stop-color: var(--w0); } .w1 { stop-color: var(--w1); } .f0 { stop-color: var(--f0); } .f1 { stop-color: var(--f1); }
+    .pl { stroke: rgba(0, 0, 0, .25); stroke-width: .5; }
+    .tiers { fill: var(--tier); stroke: var(--tierl); stroke-width: .6; }
+    .tier { fill: none; stroke: var(--tierl); stroke-width: .5; opacity: .75; }
+    .aisle { stroke: var(--aisle); stroke-width: 2.1; opacity: .85; }
+    .rail { fill: var(--rail); }
+    .rug { fill: none; stroke: rgba(232, 196, 120, .35); stroke-width: .6; stroke-dasharray: 1.4 1.2; }
+    .carpet { fill: #6a161d; }
+    .tbl { stroke: #3a2414; stroke-width: .6; } .tbl-l { stroke: rgba(255, 230, 180, .25); stroke-width: .6; }
+    .tribune { .perchoir { fill: #5e3a22; stroke: #2a190d; stroke-width: .4; } .orateur { fill: #8b6040; stroke: #2a190d; stroke-width: .4; } .gold { stroke: #d8b465; stroke-width: .7; } }
+    .s { transition: color .25s ease; color: #6b5b4e; }
+    .s.p { color: #3fa26a; } .s.a { color: #d9d1bd; } .s.c { color: #e0533d; } .s.w { color: #6b5b4e; } .s.g0 { opacity: .35; }
+    .ring { fill: none; stroke-width: 2.6; }
+    .lbl { font: 600 6.5px var(--font-body); fill: #e9dcc3; letter-spacing: .04em; } .lbl.l { text-anchor: start; }
+    .hc:has(b:empty) { display: none; }
+    .hc { position: absolute; left: 50%; bottom: 12.5%; transform: translateX(-50%); display: grid; justify-items: center; line-height: 1.05; pointer-events: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7);
+      padding: 2px 9px 3px; border-radius: 3px; background: rgba(28, 8, 10, .62); box-shadow: 0 0 0 1px rgba(216, 180, 101, .35);
+      .big { font-size: clamp(14px, 4.3vw, 20px); } small { font-size: 9.5px; color: #f1dfc3; white-space: nowrap; letter-spacing: .04em; } }
+    .hemi.cmp .hc { bottom: 36%; }
+    .flash { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); font: 800 14px var(--font-body); color: #ffb4a6; text-shadow: 0 1px 3px #000; pointer-events: none; animation: rise 1.2s ease forwards; white-space: nowrap; &.good { color: #9fe3b8; } }
     @keyframes rise { to { transform: translate(-50%, -22px); opacity: 0; } }
-    .tl { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; align-items: center; font-size: 12px;
-      .p { color: #2f7d4f; } .c { color: var(--bad); } .a { color: var(--ink-3); }
-      .verdict { padding: 1px 8px; border-radius: 999px; background: var(--bad-soft); color: var(--bad); font-weight: 600; &.ok { background: var(--good-soft); color: var(--good); } } }
+    .board { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 6px; padding: 7px 10px; border-radius: 4px; background: var(--nv-board); color: #d8d4c8;
+      box-shadow: inset 0 0 0 1px #2a2f38, inset 0 0 18px rgba(0,0,0,.6); font-size: 11px;
+      > span { display: grid; justify-items: center; small { font: 600 9px var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: #8d8a80; } b { font-size: 20px; color: var(--nv-led); text-shadow: 0 0 6px rgba(242, 179, 61, .45); line-height: 1.1; } }
+      .p b { color: #7fe0a2; text-shadow: 0 0 6px rgba(127, 224, 162, .4); } .c b { color: #ff8a73; text-shadow: 0 0 6px rgba(255, 138, 115, .4); }
+      .meta { grid-column: 1 / -1; font-size: 10px; color: #a29e92; text-align: center; border-top: 1px solid #2a2f38; padding-top: 3px; }
+      .verdict { grid-column: 1 / -1; justify-self: center; font: 700 11px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: #ff8a73; &.ok { color: #7fe0a2; } } }
+    .cmpl { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; font-size: 11.5px; > span { display: block; } b { color: var(--nv-led); font-size: 15px !important; } .okc { color: #7fe0a2; } .koc { color: #ff8a73; } }
     .panel { display: grid; gap: 6px; min-width: 0; }
-    .card { display: grid; gap: 6px; padding: 10px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); animation: pop .3s ease both; min-width: 0; }
-    .intro { border-color: var(--accent); }
-    @keyframes pop { from { transform: scale(.97); opacity: 0; } }
-    .it-t { margin: 0; font-size: 14px; } .it-i { font-size: 18px; }
-    .lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12px; li.bad { color: var(--bad); } li.in { animation: pop .3s ease both; } }
+    .card { display: grid; gap: 6px; padding: 12px; border-radius: 3px; background: var(--nv-paper); color: var(--nv-ink); border: 1px solid var(--nv-rule); box-shadow: 0 2px 10px -6px rgba(0,0,0,.35); animation: pop .3s ease both; min-width: 0; }
+    .eyebrow { margin: 0; font: 600 10px var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--nv-red); border-bottom: 1px solid var(--nv-rule); padding-bottom: 4px; }
+    @keyframes pop { from { transform: translateY(4px); opacity: 0; } }
+    .it-t { margin: 0; font: 600 15px/1.25 var(--font-display); display: flex; align-items: center; gap: 7px; }
+    .it-i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 12px;
+      li { padding-left: 16px; position: relative; &::before { content: '—'; position: absolute; left: 0; color: var(--nv-ink-2); } }
+      li.bad { color: var(--nv-red); } li.in { animation: pop .3s ease both; } }
     .go { justify-self: end; min-height: 38px; }
-    .small { font-size: 12px; margin: 0; } .muted { color: var(--ink-3); }
-    .hint { margin: 0; font-size: 11.5px; color: var(--ink-2); }
-    .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 4px;
-      button { min-height: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; padding: 2px 4px;
-        &.on { border-color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); font-weight: 600; }
-        small { margin-left: 3px; font-size: 10px; padding: 0 5px; border-radius: 999px; background: var(--surface-2); &.warn { background: var(--bad-soft); color: var(--bad); } } } }
+    .small { font-size: 12px; margin: 0; } .muted { color: var(--ink-3); } .card .muted, .paper .muted { color: var(--nv-ink-2); }
+    .hint { margin: 0; font-size: 11.5px; color: var(--nv-ink-2); font-style: italic; }
+    .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 3px; margin-bottom: -7px; position: relative; z-index: 1;
+      button { min-height: 36px; border: 1px solid var(--nv-rule); border-bottom: 0; border-radius: 6px 6px 0 0; background: var(--nv-paper-2); color: var(--nv-ink-2); font: inherit; font-size: 12px; cursor: pointer; padding: 2px 4px;
+        &.on { background: var(--nv-paper); color: var(--nv-ink); font-weight: 600; box-shadow: inset 0 2px 0 var(--nv-red); }
+        small { margin-left: 4px; font-size: 10px; padding: 0 5px; border-radius: 999px; background: var(--nv-rule); color: var(--nv-ink); &.warn { background: var(--nv-red); color: #fff; } } } }
+    .paper { display: grid; gap: 6px; padding: 12px 12px 8px; background: var(--nv-paper); color: var(--nv-ink); border: 1px solid var(--nv-rule); border-radius: 0 0 3px 3px; box-shadow: 0 2px 10px -6px rgba(0,0,0,.35); min-width: 0; }
+    .ph { margin: 0; display: grid; justify-items: center; text-align: center; gap: 1px; padding-bottom: 6px; border-bottom: 1px solid var(--nv-ink);
+      span { font: 700 13px var(--font-display); text-transform: uppercase; letter-spacing: .08em; } small { font-size: 10.5px; color: var(--nv-ink-2); font-style: italic; } }
     ul.arts, ul.grps, ul.amdts, ul.final { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-    .art { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'n t l' 'w w m'; gap: 2px 6px; align-items: center; text-align: left;
-      padding: 6px 8px; min-height: 44px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer;
-      &.open { border-color: var(--accent); } &.gone { opacity: .6; .at { text-decoration: line-through; } } }
-    .an { grid-area: n; font-size: 10.5px; color: var(--ink-3); }
-    .at { grid-area: t; font-size: 12.5px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; .core { font-style: normal; } }
-    .lv { grid-area: l; font-size: 10px; padding: 1px 6px; border-radius: 999px; white-space: nowrap;
-      &.l2 { background: var(--good-soft); color: var(--good); } &.l1 { background: #f3e8cf; color: #8a6514; } &.l0 { background: var(--bad-soft); color: var(--bad); } }
-    .who { grid-area: w; display: flex; flex-wrap: wrap; gap: 2px 5px; font-size: 10px; min-width: 0;
+    ul.arts { gap: 0; li + li { border-top: 1px solid var(--nv-rule); } }
+    .art { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'n l' 't t' 'w m'; gap: 2px 8px; align-items: center; text-align: left;
+      padding: 8px 2px; min-height: 44px; border: 0; border-radius: 0; background: transparent; color: var(--nv-ink); font: inherit; cursor: pointer;
+      &.open { background: var(--nv-paper-2); } &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+      &.gone .at { text-decoration: line-through; text-decoration-color: var(--nv-red); text-decoration-thickness: 1.5px; color: var(--nv-ink-2); }
+      &.half .at { text-decoration: underline wavy var(--nv-red); text-decoration-thickness: 1px; text-underline-offset: 3px; } }
+    .an { grid-area: n; font: 700 11px var(--font-body); letter-spacing: .04em; color: var(--nv-ink-2); }
+    .at { grid-area: t; font: 500 14px/1.3 var(--font-display); overflow-wrap: anywhere;
+      .core { font: italic 600 10px var(--font-body); color: var(--nv-red); margin-left: 4px; padding: 0 4px; border: 1px solid var(--nv-red); border-radius: 2px; vertical-align: 2px; } }
+    .lv { grid-area: l; font: italic 600 11px var(--font-display); white-space: nowrap;
+      &.l2 { color: var(--nv-ink-2); font-weight: 400; } &.l1 { color: var(--nv-red); } &.l0 { color: var(--nv-red); text-transform: uppercase; font-style: normal; font-size: 9.5px; letter-spacing: .08em; border: 1.5px solid var(--nv-red); padding: 0 4px; transform: rotate(-4deg); } }
+    .who { grid-area: w; display: flex; flex-wrap: wrap; gap: 2px 6px; font-size: 10px; min-width: 0;
       i { font-style: normal; white-space: nowrap; border-bottom: 2px solid var(--g, transparent); }
-      .up { color: #2f7d4f; } .dn { color: var(--bad); } .red { color: var(--bad); font-weight: 700; } .thr { color: #8a6514; } }
-    .amb { grid-area: m; font-size: 10px; color: var(--ink-3); }
-    .det { display: grid; gap: 5px; padding: 6px 4px 4px 8px; border-left: 2px solid var(--accent); margin: 2px 0 4px 6px; min-width: 0; }
-    .op { display: grid; gap: 2px; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); &.err { opacity: .7; } }
-    .op-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; b { font-size: 12.5px; } small { color: var(--ink-2); font-size: 11px; flex: 1 1 120px; min-width: 0; } .btn { min-height: 32px; margin-left: auto; } }
-    .proj { font-size: 11px; color: var(--ink-2); overflow-wrap: anywhere; }
-    .note { font-size: 11px; color: var(--ink-2); }
-    .g { color: #2f7d4f; font-weight: 600; } .r { color: var(--bad); font-weight: 600; }
-    .okc { color: #2f7d4f; } .koc { color: var(--bad); }
+      .up { color: var(--good); } .dn { color: var(--nv-red); } .red { color: #fff; background: var(--nv-red); padding: 0 4px; border-radius: 2px; font-weight: 600; } .thr { color: #9a6a10; font-style: italic; } }
+    .amb { grid-area: m; font-size: 10px; color: var(--nv-ink-2); }
+    .det { display: grid; gap: 5px; padding: 6px 4px 8px 10px; border-left: 2px solid var(--nv-red); margin: 0 0 6px 4px; min-width: 0; }
+    .body { font-family: var(--font-display); font-style: italic; }
+    .op { display: grid; gap: 2px; padding: 6px 8px; border-radius: 3px; background: var(--nv-paper-2); border: 1px dashed var(--nv-rule); &.err { opacity: .7; } }
+    .op-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; b { font-size: 12.5px; } small { color: var(--nv-ink-2); font-size: 11px; flex: 1 1 120px; min-width: 0; } .btn { min-height: 32px; margin-left: auto; } }
+    .proj { font-size: 11px; color: var(--nv-ink-2); overflow-wrap: anywhere; }
+    .note { font-size: 11px; color: var(--nv-ink-2); }
+    .g { color: var(--good); font-weight: 600; } .r { color: var(--nv-red); font-weight: 600; }
+    .okc { color: var(--good); } .koc { color: var(--nv-red); }
     .seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 4px;
-      button { min-height: 40px; display: grid; gap: 0; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer;
-        small { font-size: 9.5px; color: var(--ink-3); } &.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 600; } } }
-    .grp { width: 100%; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto auto auto; gap: 6px; align-items: center; text-align: left; min-height: 42px; padding: 5px 8px;
-      border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; &.open { border-color: var(--accent); } }
-    .sw { width: 10px; height: 24px; border-radius: 3px; }
-    .gn { font-size: 11.5px; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; b { font-size: 12.5px; } .maj { font-style: normal; font-size: 9.5px; margin-left: 3px; padding: 0 4px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2); } }
+      button { min-height: 40px; display: grid; gap: 0; place-items: center; border: 1px solid var(--nv-rule); border-radius: 3px; background: var(--nv-paper); color: var(--nv-ink); font: inherit; font-size: 12px; cursor: pointer;
+        small { font-size: 9.5px; color: var(--nv-ink-2); } &.on { border-color: var(--nv-ink); box-shadow: 0 0 0 1.5px var(--nv-ink); font-weight: 600; } } }
+    .grp { width: 100%; display: grid; grid-template-columns: 6px minmax(0, 1fr) auto auto auto auto; gap: 6px; align-items: center; text-align: left; min-height: 44px; padding: 5px 8px 5px 0;
+      border-radius: 3px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; overflow: hidden; &.open { border-color: var(--ink-3); } }
+    .sw { width: 6px; align-self: stretch; margin: -5px 0; }
+    .gn { font-size: 11.5px; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; b { font-size: 12.5px; } .maj { font-style: normal; font-size: 9px; margin-left: 3px; padding: 0 4px; border-radius: 2px; border: 1px solid var(--line); color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; } }
     .gs { font-size: 11px; color: var(--ink-2); }
     .gS { font-size: 12px; font-weight: 700; min-width: 22px; text-align: right; }
-    .gv { font-size: 10px; padding: 1px 5px; border-radius: 999px; min-width: 42px; text-align: center; }
-    .t-p { color: #2f7d4f; } .gv.t-p { background: var(--good-soft); } .t-a { color: var(--ink-2); } .gv.t-a { background: var(--surface-2); } .t-c { color: var(--bad); } .gv.t-c { background: var(--bad-soft); }
-    .gi { font-size: 12px; min-width: 14px; }
+    .gv { font-size: 10px; padding: 1px 5px; border-radius: 2px; min-width: 42px; text-align: center; }
+    .t-p { color: var(--good); } .gv.t-p { background: var(--good-soft); } .t-a { color: var(--ink-2); } .gv.t-a { background: var(--surface-2); } .t-c { color: var(--bad); } .gv.t-c { background: var(--bad-soft); }
+    .gi { display: grid; gap: 2px; justify-items: end; min-width: 14px; }
+    .bd { font: 600 9px var(--font-body); font-style: normal; text-transform: uppercase; letter-spacing: .04em; padding: 0 4px; border-radius: 2px; white-space: nowrap;
+      &.deal { background: var(--good-soft); color: var(--good); } &.red { background: var(--bad-soft); color: var(--bad); } &.unk { border: 1px dashed var(--ink-3); color: var(--ink-3); } }
+    .grps .det { border-left-color: var(--ink-3); }
     .parts { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 9px; font-size: 11.5px; }
-    .amdts li { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'n t' 'v v'; gap: 1px 6px; padding: 5px 8px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: 12px;
-      &.ok { border-color: var(--bad); } &.in { animation: pop .3s ease both; } }
-    .num { grid-area: n; font-size: 10.5px; color: var(--ink-3); } .am-t { grid-area: t; overflow-wrap: anywhere; } .am-v { grid-area: v; font-size: 11px; color: var(--ink-2); &.ok { color: var(--bad); font-weight: 700; } }
+    .amdts li { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'n v' 't t'; gap: 2px 6px; padding: 7px 9px; border-radius: 2px; background: var(--nv-paper); color: var(--nv-ink); border: 1px solid var(--nv-rule); border-left: 3px solid var(--nv-rule); font-size: 12px;
+      &.ok { border-left-color: var(--nv-red); } &.in { animation: pop .3s ease both; } }
+    .num { grid-area: n; font-size: 10px; color: var(--nv-ink-2); text-transform: uppercase; letter-spacing: .04em; } .am-t { grid-area: t; overflow-wrap: anywhere; font-family: var(--font-display); }
+    .am-v { grid-area: v; font-size: 10px; color: var(--nv-ink-2); text-transform: uppercase; &.ok { color: var(--nv-red); font-weight: 700; } }
     .acts { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; .btn { min-height: 36px; } .btn small { font-size: 10px; opacity: .8; } .end { margin-left: auto; } }
-    .sheet { border-color: var(--accent); p { margin: 0; font-size: 12px; } }
+    .sheet { border-top: 3px solid var(--nv-red); p { margin: 0; font-size: 12px; } }
     .row2 { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; .btn { min-height: 36px; } }
     .sum { gap: 8px; }
-    .verdict-big { margin: 0; font-size: 14px; color: var(--bad); &.ok { color: var(--good); } }
+    .jo-h { margin: 0; text-align: center; font: 700 10px var(--font-body); letter-spacing: .14em; text-transform: uppercase; border-top: 3px double var(--nv-ink); border-bottom: 1px solid var(--nv-ink); padding: 4px 0; }
+    .jo-t { margin: 0; text-align: center; font: 600 15px/1.25 var(--font-display); }
+    .verdict-big { margin: 0; font-size: 13px; text-align: center; color: var(--nv-red); &.ok { color: var(--good); } }
     .bars { display: grid; grid-template-columns: auto minmax(0, 1fr) 40px; gap: 5px 8px; align-items: center; font-size: 12px; b { text-align: right; }
-      .bar { display: block; height: 7px; border-radius: 4px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; span { display: block; height: 100%; background: var(--accent); } } }
-    .final li { font-size: 12px; display: flex; gap: 6px; span { font-weight: 700; width: 14px; } &.l2 span { color: var(--good); } &.l1 span { color: #8a6514; } &.l0 { color: var(--ink-3); text-decoration: line-through; span { color: var(--bad); } } }
-    .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 70px; overflow: auto; font-size: 11px; color: var(--ink-2); }
+      .bar { display: block; height: 7px; border-radius: 1px; background: var(--nv-paper-2); border: 1px solid var(--nv-rule); overflow: hidden; span { display: block; height: 100%; background: var(--nv-ink); } } }
+    .final { border-top: 1px solid var(--nv-rule); padding-top: 6px !important; }
+    .final li { font: 13px/1.3 var(--font-display); display: flex; gap: 6px; span { font: 700 12px var(--font-body); width: 14px; flex: none; } &.l2 span { color: var(--good); } &.l1 span { color: #9a6a10; } &.l0 { color: var(--nv-ink-2); text-decoration: line-through; span { color: var(--nv-red); } } }
+    .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 76px; overflow: auto; font: 11px/1.3 var(--font-mono); color: var(--ink-2); li:first-child { color: var(--ink); } }
     @media (prefers-reduced-motion: reduce) { .card, .lines li.in, .amdts li.in, .flash { animation: none; } .s { transition: none; } }
   `,
 })
@@ -1378,6 +1509,10 @@ export class NavetteGameComponent implements OnInit, OnDestroy {
   protected readonly textFixed = textFixed;
   protected readonly demandLabel = demandLabel;
   protected readonly defFactor = defFactor;
+  protected readonly IC = IC;
+  protected readonly plain = plain;
+  protected readonly half = half;
+  protected readonly uid = 'nv' + ++navInstances;
 
   protected billTitle = '';
   protected brief = '';
@@ -1428,14 +1563,14 @@ export class NavetteGameComponent implements OnInit, OnDestroy {
       const geo = geometry(14);
       const cls = geo.seats.map((_, i) => (ms[i] ? (ms[i].pour ? 'p' : 'c') : 'w'));
       const strokes = geo.seats.map((_, i) => (ms[i] ? gOf(G, ms[i].g)?.color ?? null : null));
-      return { geo, cls, strokes, center: `${ck?.yes ?? 0}/14`, sub: 'voix pour · 8 requises' };
+      return { geo, cls, strokes, ch: 'cmp', center: `${ck?.yes ?? 0}/14`, sub: 'voix pour · 8 requises' };
     }
     const t = this.shown() ?? this.projT();
     const ch = t?.ch ?? voteChamber(G);
     const n = totalSeats(ch);
     const geo = geometry(n);
     const strokes: (string | null)[] = [];
-    if (!t) return { geo, cls: geo.seats.map(() => 'w'), strokes, center: '', sub: '' };
+    if (!t) return { geo, cls: geo.seats.map(() => 'w'), strokes, ch: ch as string, center: '', sub: '' };
     const order = [...G.groups].sort((a, b) => a.pos - b.pos);
     const base: string[] = [];
     for (const g of order) {
@@ -1452,7 +1587,7 @@ export class NavetteGameComponent implements OnInit, OnDestroy {
     const cut = Math.round(rv * n);
     const shownP = t.kind === 'censure' ? Math.min(t.p, cut) : Math.round(t.p * rv);
     return {
-      geo, cls, strokes,
+      geo, cls, strokes, ch: ch as string,
       center: t.kind === 'censure' ? `${shownP}/${CENSURE}` : `${Math.round(t.p * rv)}–${Math.round(t.c * rv)}`,
       sub: t.kind === 'censure' ? 'voix pour la censure' : ch === 'com' ? 'commission' : ch === 'sen' ? 'Sénat' : ch === 'congres' ? 'Congrès · 3/5 requis' : 'Assemblée nationale',
     };
@@ -1483,12 +1618,13 @@ export class NavetteGameComponent implements OnInit, OnDestroy {
     const t = this.shown() ?? this.projT();
     if (t.kind === 'censure') {
       const done = this.reveal() >= 1;
-      return { p: Math.round(t.p * this.reveal()), c: t.total - t.p, a: 0, ok: !t.ok, label: !done ? 'Censure…' : t.ok ? 'Censure adoptée' : 'Censure rejetée' };
+      return { p: Math.round(t.p * this.reveal()), c: t.total - t.p, a: 0, ok: !t.ok, need: t.need, kind: t.kind, label: !done ? 'Censure…' : t.ok ? 'Censure adoptée' : 'Censure rejetée' };
     }
     const done = this.reveal() >= 1;
     const pending = R ? !done : false;
     const lab = pending ? 'Vote en cours…' : t.kind === 'tpf' ? `${t.ok ? '✓' : '✗'} 3/5 : ${t.need} requis` : `${t.ok ? '✓ adopté' : '✗ rejeté'}${R ? '' : ' (projection)'}`;
-    return { p: Math.round(t.p * this.reveal()), c: Math.round(t.c * this.reveal()), a: Math.round(t.a * this.reveal()), ok: t.ok, label: lab };
+    const p = Math.round(t.p * this.reveal()), c = Math.round(t.c * this.reveal());
+    return { p, c, a: Math.round(t.a * this.reveal()), ok: t.ok, need: t.kind === 'tpf' ? Math.ceil(0.6 * (p + c)) : Math.floor((p + c) / 2) + 1, kind: t.kind, label: lab };
   });
 
   protected readonly confirmProj = computed(() => {
@@ -1550,7 +1686,25 @@ export class NavetteGameComponent implements OnInit, OnDestroy {
     return am.kind === 'sup' ? `supprimer ${n}` : am.kind === 'rew' ? `réécrire ${n}` : am.kind === 'ret' ? `rétablir ${n}` : `ajouter « ${a?.title ?? ''} »`;
   }
 
-  protected stageIcon(): string { return ['📑', '🏛️', '🏰', '🤝', '📜'][this.game().stage] ?? '📜'; }
+  protected stageIcon(): string { return STAGE_IC[this.game().stage] ?? STAGE_IC[4]; }
+  protected legLine(): string {
+    const G = this.game();
+    if (G.mode === 'congres') return 'Congrès du Parlement · Versailles';
+    if (G.mode === 'cmp') return G.v === 'constitution' ? 'Deuxième lecture · Assemblée nationale et Sénat' : 'Commission mixte paritaire';
+    if (G.mode === 'conclusions') return 'Lecture des conclusions de la CMP · Assemblée nationale';
+    return ['Commission saisie au fond · Assemblée nationale', 'Séance publique · Assemblée nationale, première lecture', 'Sénat · première lecture', 'Commission mixte paritaire', 'Lecture définitive · Assemblée nationale'][G.stage] ?? '';
+  }
+  protected textState(): string {
+    const G = this.game();
+    if (G.mode === 'cmp') return 'Texte élaboré par la commission mixte paritaire';
+    return ['Texte déposé sur le bureau de l’Assemblée nationale', 'Texte adopté par la commission', 'Texte adopté par l’Assemblée nationale', 'Texte en discussion', 'Texte en lecture définitive'][G.stage] ?? '';
+  }
+  protected loiTitle(): string {
+    const G = this.game();
+    const d = new Date();
+    const rest = BILLS[G.v].title.replace(/^Projet de loi( constitutionnelle)?/, '');
+    return `Loi${G.v === 'constitution' ? ' constitutionnelle' : ''} n° ${d.getFullYear()}-${400 + (G.amendNo % 500)} du ${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}${rest}`;
+  }
   protected stageHelp(): string {
     const G = this.game();
     if (G.stage === 0) return 'La commission est une répétition : ses votes reflètent ceux de l’hémicycle. Si elle rejette le texte, vous perdrez du temps en séance.';
@@ -1623,9 +1777,9 @@ export class NavetteGameComponent implements OnInit, OnDestroy {
   protected artOps(a: Article): { label: string; cost: string; act: Action; prev: Prev }[] {
     const G = this.game();
     const out: { label: string; cost: string; act: Action; prev: Prev }[] = [];
-    if (a.level === 2) out.push({ label: '✏️ Réécrire', cost: '1 ⏱', act: { t: 'amend', a: a.id }, prev: this.prev({ t: 'amend', a: a.id }) });
-    if (a.level > 0) out.push({ label: '🗑️ Supprimer', cost: '1 ⏱', act: { t: 'drop', a: a.id }, prev: this.prev({ t: 'drop', a: a.id }) });
-    if (G.mode === 'definitive' && G.sen && G.sen[a.id] !== undefined && G.sen[a.id] !== a.level) out.push({ label: `🏛️ Version du Sénat (${LV[G.sen[a.id]].toLowerCase()})`, cost: '1 ⏱', act: { t: 'senat', a: a.id }, prev: this.prev({ t: 'senat', a: a.id }) });
+    if (a.level === 2) out.push({ label: 'Réécrire', cost: '1 temps', act: { t: 'amend', a: a.id }, prev: this.prev({ t: 'amend', a: a.id }) });
+    if (a.level > 0) out.push({ label: 'Supprimer', cost: '1 temps', act: { t: 'drop', a: a.id }, prev: this.prev({ t: 'drop', a: a.id }) });
+    if (G.mode === 'definitive' && G.sen && G.sen[a.id] !== undefined && G.sen[a.id] !== a.level) out.push({ label: `Version du Sénat (${LV[G.sen[a.id]].toLowerCase()})`, cost: '1 temps', act: { t: 'senat', a: a.id }, prev: this.prev({ t: 'senat', a: a.id }) });
     return out;
   }
 
@@ -1772,7 +1926,7 @@ export class NavetteGameComponent implements OnInit, OnDestroy {
     this.progress.emit({ live, time: clamp(1 - G.stage / 5) });
   }
 
-  private say(t: string): void { this.log.update(l => [t, ...l].slice(0, 8)); }
+  private say(t: string): void { this.log.update(l => [plain(t), ...l].slice(0, 8)); }
   private flash(text: string, good: boolean): void {
     const f: Flash = { text, good, id: ++flashId };
     this.flashes.update(a => [...a, f]);

@@ -937,13 +937,113 @@ const MARK_NAMES = ['vide', 'oui', 'non', 'doute'];
 
 interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left: number; rv: Reveal; c: number; m: number; a: number }
 
+/* ── Les photos d'identité (portraits dessinés, façon tirage argentique) ── */
+
+interface Face {
+  skin: string; shade: string; hair: string; long: boolean; front: string; back: string;
+  glasses: boolean; beard: number; cloth: string; collar: 'tie' | 'blouse' | 'uniform' | 'knit'; tie: string; lips: string;
+}
+const SKIN = [['#f1d3b8', '#d7ad8c'], ['#e8bd98', '#c99573'], ['#d6a27b', '#b47d58'], ['#b47c56', '#8f5d3d'], ['#8c5a3a', '#6b4129'], ['#f4dcc8', '#dcb79c']];
+const HAIR = ['#2b1d14', '#3f2b1c', '#5c3b22', '#8a5a2e', '#c4995a', '#151515'];
+const CLOTH = ['#26324a', '#2f3136', '#4a3a2c', '#5a2a30', '#3d4a38', '#41465a'];
+const TIES = ['#7a1f2b', '#1f3b73', '#2f5a3a', '#6a5a2a'];
+const HAIR_M = [
+  'M11.6 18 Q11 8.4 20 8.2 Q29 8.4 28.4 18 Q27 12.4 20 12.6 Q14 12.8 11.6 18 Z',
+  'M11.6 18.6 Q10.4 8 20 8 Q30 8.4 28.4 17 Q26.4 11.2 17 12.6 Q14 13.4 11.6 18.6 Z',
+  'M11.6 20 Q11 14.6 12.8 12.6 L14 17.6 Z M28.4 20 Q29 14.6 27.2 12.6 L26 17.6 Z',
+  'M11.4 17.6 Q10 12 12.6 10 Q13 7.4 16 7.6 Q18 5.8 20.6 7 Q23.4 5.8 25.2 7.8 Q28.4 8.4 28 11.4 Q30 13.6 28.6 17.6 Q27 12.6 20 12.8 Q13.4 12.6 11.4 17.6 Z',
+  'M11.7 17 Q11.6 9.4 20 9 Q28.4 9.4 28.3 17 Q26.4 12.2 20 12.4 Q13.6 12.2 11.7 17 Z',
+];
+const HAIR_F = [
+  'M11 22 Q10 7.8 20 7.6 Q30 7.8 29 22 Q27.6 12.8 20 12.4 Q13.4 12.8 11 22 Z',
+  'M10.8 25 Q9.4 7.8 20 7.4 Q30.6 7.8 29.2 25 Q28.2 17 27.4 13.6 Q22 12 15 13.4 Q12.4 17 12.6 25 Z',
+  'M11.4 18 Q11 8.2 20 8 Q29 8.2 28.6 18 Q27 12.2 20 12.2 Q13 12.2 11.4 18 Z M16.6 7.2 a3.4 3.4 0 1 0 6.8 0 a3.4 3.4 0 1 0 -6.8 0',
+  'M11.4 17 Q11 8.2 20 8 Q29 8.3 28.6 16 Q25 11 18 12.4 Q14 12 11.4 17 Z',
+  'M11 21 Q9.6 8 20 7.6 Q30.4 8 29 21 Q28 14 24 12.4 Q18 15 12.6 13.4 Q11.4 16 11 21 Z',
+];
+const HAIR_BACK = 'M9.4 22 Q8.6 7.4 20 7 Q31.4 7.4 30.6 22 L31.6 38 Q20 41.6 8.4 38 Z';
+
+function faceOf(s: Suspect, i: number): Face {
+  let h = i * 97;
+  for (const c of s.name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const pick = <T>(a: readonly T[], k: number) => a[(h >>> k) % a.length];
+  const old = /honorai|directeur|directrice|mécène|conservat|commissaire/.test(s.role) && ((h >>> 3) % 3 !== 0);
+  const [skin, shade] = pick(SKIN, 1);
+  const hair = old ? pick(['#9d9890', '#bdb8ae', '#7d7870'], 5) : pick(HAIR, 4);
+  const st = (h >>> 7) % 5;
+  const collar: Face['collar'] = /huissi|gardien|chauffeu|technicien|électricien|garde/.test(s.role) ? 'uniform'
+    : /stagiaire|photographe|journaliste|restaurat|plume|guide|frondeu/.test(s.role) ? 'knit' : s.fem ? 'blouse' : 'tie';
+  return {
+    skin, shade, hair, long: s.fem && (st === 0 || st === 4),
+    front: s.fem ? HAIR_F[st] : HAIR_M[old && st < 2 ? 2 : st], back: HAIR_BACK,
+    glasses: (h >>> 9) % 3 === 0, beard: s.fem ? 0 : (h >>> 11) % 4 === 0 ? 2 : (h >>> 11) % 4 === 1 ? 1 : 0,
+    cloth: collar === 'uniform' ? '#1d2538' : pick(CLOTH, 13), collar, tie: pick(TIES, 15), lips: s.fem ? '#a8524a' : '#8a5040',
+  };
+}
+
+let enqSeq = 0;
+
 @Component({
   selector: 'app-enquete-game',
   template: `
     @let th = cs.theme;
+    <!-- Les portraits des suspects, dessinés une fois, réutilisés partout -->
+    <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient [attr.id]="uid + '-shade'" cx=".38" cy=".34" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".22" /><stop offset=".55" stop-color="#fff" stop-opacity="0" /><stop offset="1" stop-color="#2a1608" stop-opacity=".38" /></radialGradient>
+        <linearGradient [attr.id]="uid + '-cloth'" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".12" /><stop offset=".5" stop-color="#fff" stop-opacity="0" /><stop offset="1" stop-color="#000" stop-opacity=".3" /></linearGradient>
+        @for (f of faces; track $index) {
+          <symbol [attr.id]="uid + '-p' + $index" viewBox="0 0 40 48">
+            @if (f.long) { <path [attr.d]="f.back" [attr.fill]="f.hair" /> }
+            <path d="M1 48 Q2 37.4 12 35 Q16 33.6 20 33.6 Q24 33.6 28 35 Q38 37.4 39 48 Z" [attr.fill]="f.cloth" />
+            <path d="M16.4 26 V34.6 Q20 37.4 23.6 34.6 V26 Z" [attr.fill]="f.shade" />
+            @switch (f.collar) {
+              @case ('tie') {
+                <path d="M15.6 34.2 L20 41.6 L24.4 34.2 Q20 36.2 15.6 34.2 Z" fill="#f1efea" />
+                <path d="M19.1 36.4 L20 35.4 L20.9 36.4 L21.6 44.6 L20 46.6 L18.4 44.6 Z" [attr.fill]="f.tie" />
+                <path d="M13.6 34.8 L19.2 42.8 L17.2 48 H11.6 Z M26.4 34.8 L20.8 42.8 L22.8 48 H28.4 Z" fill="#000" opacity=".22" />
+              }
+              @case ('blouse') {
+                <path d="M15.4 34.4 Q20 40.4 24.6 34.4 Q20 36.4 15.4 34.4 Z" [attr.fill]="f.skin" />
+                <path d="M15.4 34.4 Q20 40.4 24.6 34.4" stroke="#fff" stroke-opacity=".55" stroke-width=".8" fill="none" />
+                <circle cx="20" cy="38.6" r=".7" fill="#e9e4d6" />
+              }
+              @case ('uniform') {
+                <path d="M15.2 34.2 L20 37.6 L24.8 34.2 L24.8 36.4 L20 39.8 L15.2 36.4 Z" fill="#11172a" />
+                <rect x="26" y="40" width="3.4" height="2.2" fill="#c9a43a" /><circle cx="20" cy="43.2" r=".7" fill="#c9a43a" /><circle cx="20" cy="46.6" r=".7" fill="#c9a43a" />
+              }
+              @case ('knit') {
+                <path d="M15 34.2 Q20 38.6 25 34.2" stroke="#000" stroke-opacity=".28" stroke-width="1.6" fill="none" />
+                <path d="M16.4 34.8 L18.6 37.6 L20 35.8 L21.4 37.6 L23.6 34.8" fill="#ece9e2" opacity=".9" />
+              }
+            }
+            <path d="M1 48 Q2 37.4 12 35 Q16 33.6 20 33.6 Q24 33.6 28 35 Q38 37.4 39 48 Z" [attr.fill]="'url(#' + uid + '-cloth)'" />
+            <ellipse cx="11.6" cy="20.4" rx="1.6" ry="2.6" [attr.fill]="f.shade" /><ellipse cx="28.4" cy="20.4" rx="1.6" ry="2.6" [attr.fill]="f.shade" />
+            <ellipse cx="20" cy="19.2" rx="8.4" ry="10.4" [attr.fill]="f.skin" />
+            <ellipse cx="20" cy="19.2" rx="8.4" ry="10.4" [attr.fill]="'url(#' + uid + '-shade)'" />
+            @if (f.beard === 2) { <path d="M11.8 20.6 Q12.4 29 20 30.4 Q27.6 29 28.2 20.6 Q26.4 26 20 26.6 Q13.6 26 11.8 20.6 Z M17 25.4 Q20 24.2 23 25.4 Q20 26.2 17 25.4 Z" [attr.fill]="f.hair" opacity=".92" /> }
+            @if (f.beard === 1) { <path d="M12.6 22 Q13.4 28.8 20 29.6 Q26.6 28.8 27.4 22 Q25 27.4 20 27.6 Q15 27.4 12.6 22 Z" [attr.fill]="f.hair" opacity=".3" /> }
+            <path [attr.d]="f.front" [attr.fill]="f.hair" />
+            <path d="M14.2 16.2 Q16.2 15.2 18.2 16 M21.8 16 Q23.8 15.2 25.8 16.2" [attr.stroke]="f.hair" stroke-width=".8" stroke-linecap="round" fill="none" />
+            <path d="M14.2 16.2 Q16.2 15.2 18.2 16 M21.8 16 Q23.8 15.2 25.8 16.2" stroke="#000" stroke-opacity=".35" stroke-width=".8" stroke-linecap="round" fill="none" />
+            <ellipse cx="16.3" cy="18.6" rx="1.3" ry=".7" fill="#f2ece4" /><ellipse cx="23.7" cy="18.6" rx="1.3" ry=".7" fill="#f2ece4" />
+            <circle cx="16.4" cy="18.6" r=".62" fill="#2a1d16" /><circle cx="23.8" cy="18.6" r=".62" fill="#2a1d16" />
+            <path d="M14.9 18.2 Q16.3 17.4 17.7 18.2 M22.3 18.2 Q23.7 17.4 25.1 18.2" [attr.stroke]="f.shade" stroke-width=".45" fill="none" />
+            <path d="M20 18.8 Q19.3 22.4 18.6 23.2 Q20 24 21.4 23.2" [attr.stroke]="f.shade" stroke-width=".6" fill="none" />
+            <path d="M17.6 26.1 Q20 27 22.4 26.1" [attr.stroke]="f.lips" stroke-width=".75" stroke-linecap="round" fill="none" />
+            @if (f.beard === 2) { <path d="M17.4 25.2 Q20 24 22.6 25.2" [attr.stroke]="f.hair" stroke-width="1" fill="none" /> }
+            @if (f.glasses) { <path d="M13.6 17.4 h5 v2.6 q0 1 -1 1 h-3 q-1 0 -1 -1 Z M21.4 17.4 h5 v2.6 q0 1 -1 1 h-3 q-1 0 -1 -1 Z M18.6 18.2 Q20 17.4 21.4 18.2" stroke="#1d1d1d" stroke-width=".55" fill="#fff" fill-opacity=".08" /> }
+          </symbol>
+        }
+      </defs>
+    </svg>
+
     <div class="enq">
       <div class="head">
-        <span class="case"><span aria-hidden="true">{{ th.icon }}</span> <b>{{ th.title }}</b></span>
+        <span class="case">
+          <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4 H6 L7.2 2.6 H14.5 V13.4 H1.5 Z" /><path d="M1.5 5.6 H14.5" /></svg>
+          <span class="lbl">Dossier</span> <b>{{ th.title }}</b>
+        </span>
         <span class="hours" role="img" [attr.aria-label]="left() + ' heures d’enquête restantes sur ' + cs.budget">
           @for (h of hourSlots; track $index) { <i [class.used]="$index >= left()"></i> }
           <b class="mono">{{ left() }} h</b>
@@ -955,7 +1055,10 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
         <section class="verdict" [class.ok]="v.ok" aria-live="polite">
           <div class="stamp" [class.ok]="v.ok">{{ v.ok ? 'Affaire résolue' : 'Erreur judiciaire' }}</div>
           <div class="culprit">
-            <span class="pic big" aria-hidden="true">{{ C.icon }}</span>
+            <span class="pic big mug" aria-hidden="true">
+              <svg class="photo" viewBox="0 0 40 48"><rect class="bk" width="40" height="48" /><path class="chart" d="M0 6 H40 M0 12 H40 M0 18 H40 M0 24 H40 M0 30 H40 M0 36 H40 M0 42 H40" /><use [attr.href]="'#' + uid + '-p' + cs.culprit" /></svg>
+              <i class="plate">{{ C.name }}</i>
+            </span>
             <div>
               <b>{{ C.name }}</b><small>{{ C.role }}</small>
               <p>{{ C.first }} {{ th.verb }}, {{ th.mobiles[C.mobile].why(C.fem) }}.</p>
@@ -973,7 +1076,7 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
           </ul>
           @if (cs.accomplice >= 0) {
             @let A = cs.suspects[cs.accomplice];
-            <h4>{{ A.icon }}&nbsp;{{ A.name }}, {{ A.fem ? 'sa complice' : 'son complice' }}, l’a couvert{{ C.fem ? 'e' : '' }}</h4>
+            <h4>{{ A.name }}, {{ A.fem ? 'sa complice' : 'son complice' }}, l’a couvert{{ C.fem ? 'e' : '' }}</h4>
             <ul class="lies">
               @for (l of v.rv.accLies; track $index) {
                 <li [class.unheard]="!l.heard"><q>{{ l.text }}</q><span>→ {{ l.truth }}</span>@if (!l.heard) { <em>(jamais entendu)</em> }</li>
@@ -981,10 +1084,12 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
             </ul>
           }
           <h4>La chaîne des indices</h4>
-          <ol class="chain">@for (c of v.rv.chain; track $index) { <li>{{ c }}</li> }</ol>
+          <ol class="chain">@for (c of v.rv.chain; track $index) { <li>{{ plain(c) }}</li> }</ol>
           <h4>Pourquoi pas les autres</h4>
           <ul class="others">
-            @for (o of v.rv.others; track $index) { <li><span aria-hidden="true">{{ o.s.icon }}</span>&nbsp;<b>{{ o.s.first }}</b> {{ o.reason }}.</li> }
+            @for (o of v.rv.others; track $index) {
+              <li><svg class="photo mini" viewBox="0 0 40 48" aria-hidden="true"><rect class="bk" width="40" height="48" /><use [attr.href]="'#' + uid + '-p' + cs.suspects.indexOf(o.s)" /></svg><span><b>{{ o.s.first }}</b> {{ o.reason }}.</span></li>
+            }
           </ul>
           <div class="final">
             <span class="mono">Score {{ pct(v.score) }} / 100 @if (v.ok && v.left) { · {{ v.left }} h d’avance }</span>
@@ -1006,7 +1111,15 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
         <div class="tabs" role="tablist" aria-label="Enquête">
           @for (t of tabs; track t.id) {
             <button type="button" role="tab" [attr.aria-selected]="tab() === t.id" [class.on]="tab() === t.id" (click)="setTab(t.id)">
-              <span class="ti" aria-hidden="true">{{ t.icon }}</span> {{ t.label }}@if (t.id === 'notes' && clues().length) { <i class="n">{{ clues().length }}</i> }
+              <svg class="ti" viewBox="0 0 16 16" aria-hidden="true">
+                @switch (t.id) {
+                  @case ('inv') { <circle cx="6.6" cy="6.6" r="4.2" /><path d="M9.8 9.8 L14 14" /> }
+                  @case ('notes') { <path d="M3.5 1.8 H12.5 V14.2 H3.5 Z M5.8 5 H10.4 M5.8 7.6 H10.4 M5.8 10.2 H9" /><path d="M2.2 4 H4.6 M2.2 7.6 H4.6 M2.2 11.2 H4.6" /> }
+                  @case ('grid') { <path d="M2 2 H14 V14 H2 Z M2 6 H14 M2 10 H14 M6 2 V14 M10 2 V14" /> }
+                  @default { <path d="M8 2 V14 M4.5 14 H11.5 M2.4 4.4 H13.6 M3.8 4.4 L1.8 9.2 Q3.8 10.8 5.8 9.2 Z M12.2 4.4 L10.2 9.2 Q12.2 10.8 14.2 9.2 Z" /> }
+                }
+              </svg>
+              {{ t.label }}@if (t.id === 'notes' && clues().length) { <i class="n">{{ clues().length }}</i> }
             </button>
           }
         </div>
@@ -1015,51 +1128,93 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
           @case ('inv') {
             @if (last(); as c) {
               <div class="last" [class]="'last k-' + c.kind" [class.bad]="c.bad" aria-live="polite">
-                <span class="ic" aria-hidden="true">{{ c.icon }}</span>
+                <span class="ic" aria-hidden="true">
+                  @switch (c.kind) {
+                    @case ('stmt') { <svg class="photo" viewBox="0 0 40 48"><rect class="bk" width="40" height="48" /><use [attr.href]="'#' + uid + '-p' + c.who" /></svg> }
+                    @case ('search') { <i class="ev">{{ evOf(c) }}</i> }
+                    @case ('cross') { <svg class="glyph" viewBox="0 0 24 24"><circle cx="5" cy="6" r="2.4" fill="#c22d2d" stroke="none" /><circle cx="19" cy="6" r="2.4" fill="#c22d2d" stroke="none" /><path d="M5 6 Q12 16 19 6" stroke="#b3202a" stroke-width="1.6" fill="none" /></svg> }
+                    @case ('cam') { <svg class="glyph" viewBox="0 0 24 24"><path d="M3 8 L15 5 L17 12 L5 15 Z M16 8.6 L21 7 M11 13.4 L12 19 H8" /></svg> }
+                    @default { <svg class="glyph" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><rect x="6" y="9" width="5" height="6" /><path d="M13 10 H18 M13 13 H17" /></svg> }
+                  }
+                </span>
                 <div><b>{{ c.title }}</b><p>{{ c.text }}</p></div>
               </div>
             }
             @if (!left()) {
-              <p class="out">Plus une heure devant vous : il est temps d’accuser. <button type="button" class="btn primary small" (click)="setTab('acc')">⚖️ Accuser</button></p>
+              <p class="out">Plus une heure devant vous : il est temps d’accuser. <button type="button" class="btn primary small" (click)="setTab('acc')">Accuser</button></p>
             }
-            <h4>🗣️ Interroger <small>une déclaration par heure</small></h4>
-            <div class="who">
-              @for (s of cs.suspects; track $index; let i = $index) {
-                @let rest = cs.statements[i].length - asked()[i];
-                <button type="button" class="sus" [disabled]="!rest || !left()" (click)="act({ t: 'ask', s: i })"
-                        [attr.aria-label]="'Interroger ' + s.name + ', ' + s.role + ' (' + rest + ' déclaration' + (rest > 1 ? 's' : '') + ' en réserve)'">
-                  <span class="pic" aria-hidden="true">{{ s.icon }}</span>
-                  <span class="nm"><b>{{ s.name }}</b><small>{{ s.role }}</small>
-                    <span class="dots" aria-hidden="true">@for (d of cs.statements[i]; track $index) { <i [class.on]="$index >= asked()[i]"></i> }</span></span>
-                </button>
-              }
+            <h4>Interroger <small>une déclaration par heure</small></h4>
+            <div class="cork">
+              <div class="who">
+                @for (s of cs.suspects; track $index; let i = $index) {
+                  @let rest = cs.statements[i].length - asked()[i];
+                  <button type="button" class="sus" [disabled]="!rest || !left()" (click)="act({ t: 'ask', s: i })"
+                          [attr.aria-label]="'Interroger ' + s.name + ', ' + s.role + ' (' + rest + ' déclaration' + (rest > 1 ? 's' : '') + ' en réserve)'">
+                    <span class="pic" aria-hidden="true"><svg class="photo" viewBox="0 0 40 48"><rect class="bk" width="40" height="48" /><use [attr.href]="'#' + uid + '-p' + i" /></svg></span>
+                    <span class="nm"><b>{{ s.name }}</b><small>{{ s.role }}</small>
+                      <span class="dots" aria-hidden="true">@for (d of cs.statements[i]; track $index) { <i [class.on]="$index >= asked()[i]"></i> }</span></span>
+                  </button>
+                }
+              </div>
             </div>
-            <h4>🔍 Fouiller</h4>
+            <h4>Fouiller</h4>
             <div class="places">
               @for (p of placeIdx; track p) {
                 <button type="button" class="pl" [disabled]="searched()[p] || !left() || (p > 0 && !cs.finds[p])" (click)="act({ t: 'search', p })"
                         [attr.aria-label]="'Fouiller : ' + th.places[p].label + (p === 0 ? ' (la scène)' : '') + (searched()[p] ? ', déjà fouillé' : '')">
-                  <span aria-hidden="true">{{ th.places[p].icon }}</span> {{ th.places[p].label }}@if (p === 0) { <i class="tag">scène</i> }
+                  <i class="ev" aria-hidden="true">{{ p + 1 }}</i> {{ th.places[p].label }}@if (p === 0) { <i class="tag">scène</i> }
                 </button>
               }
             </div>
-            <h4>📹 Caméras et badges</h4>
+            <h4>Caméras et badges</h4>
             <div class="places">
               @for (p of placeIdx; track p) {
                 @if (cs.cams[p]) {
                   <button type="button" class="pl" [disabled]="cammed()[p] || !left()" (click)="act({ t: 'cam', p })"
                           [attr.aria-label]="(p === 0 ? 'Registre des badges : ' : 'Caméra : ') + th.places[p].label">
-                    <span aria-hidden="true">{{ p === 0 ? '🪪' : '📹' }}</span> {{ p === 0 ? 'Badges · ' + th.places[p].label : th.places[p].label }}
+                    <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">
+                      @if (p === 0) { <rect x="3" y="5" width="18" height="14" rx="2" /><rect x="6" y="9" width="5" height="6" /><path d="M13 10 H18 M13 13 H17" /> }
+                      @else { <path d="M3 8 L15 5 L17 12 L5 15 Z M16 8.6 L21 7 M11 13.4 L12 19 H8" /> }
+                    </svg>
+                    {{ p === 0 ? 'Badges · ' + th.places[p].label : th.places[p].label }}
                   </button>
                 }
               }
             </div>
             <p class="muted small">Pas de caméra : {{ noCam }}.</p>
-            <h4>🔁 Recouper <small>deux déclarations de deux personnes</small></h4>
+            <h4>Recouper <small>deux déclarations de deux personnes</small></h4>
             <button type="button" class="btn small" [disabled]="stmtCount() < 2 || !left()" (click)="startCross()">Choisir dans le carnet…</button>
           }
 
           @case ('notes') {
+            <figure class="board" [attr.aria-label]="'Tableau de l’enquête : ' + links().length + ' recoupement' + (links().length > 1 ? 's' : '')" role="img">
+              <svg [attr.viewBox]="'0 0 320 ' + boardH" aria-hidden="true">
+                @for (s of cs.suspects; track $index; let i = $index) {
+                  @let b = slot(i);
+                  <g [attr.transform]="'translate(' + b.x + ' ' + b.y + ') rotate(' + b.r + ')'">
+                    <rect x="-27" y="0" width="54" height="68" class="pol" />
+                    <svg x="-23" y="4" width="46" height="55.2" viewBox="0 0 40 48" class="photo"><rect class="bk" width="40" height="48" /><use [attr.href]="'#' + uid + '-p' + i" /></svg>
+                    <text x="0" y="65.4" text-anchor="middle" class="cap">{{ s.first }}</text>
+                    @if (asked()[i]) { <text x="23" y="14" text-anchor="end" class="cnt">{{ asked()[i] }}</text> }
+                  </g>
+                }
+                @for (l of links(); track $index) {
+                  @let a = slot(l.sa);
+                  @let z = slot(l.sb);
+                  <path [attr.d]="'M' + a.x + ' ' + (a.y + 5) + ' Q' + (a.x + z.x) / 2 + ' ' + ((a.y + z.y) / 2 + 26 + $index * 4) + ' ' + z.x + ' ' + (z.y + 5)" class="str sh" />
+                  <path [attr.d]="'M' + a.x + ' ' + (a.y + 5) + ' Q' + (a.x + z.x) / 2 + ' ' + ((a.y + z.y) / 2 + 26 + $index * 4) + ' ' + z.x + ' ' + (z.y + 5)" class="str" />
+                  <g [attr.transform]="'translate(' + (a.x + z.x) / 2 + ' ' + ((a.y + z.y) / 2 + 15 + $index * 2) + ') rotate(' + ($index % 2 ? 4 : -4) + ')'">
+                    <rect x="-17" y="-6.5" width="34" height="13" class="lbl" [class.bad]="!l.both" />
+                    <text y="3.2" text-anchor="middle" class="lt" [class.bad]="!l.both">{{ l.both ? 'fiables' : 'un ment' }}</text>
+                  </g>
+                }
+                @for (s of cs.suspects; track $index; let i = $index) {
+                  @let b = slot(i);
+                  <circle [attr.cx]="b.x" [attr.cy]="b.y + 5" r="3.4" class="pin" /><circle [attr.cx]="b.x - 1" [attr.cy]="b.y + 4" r="1" fill="#fff" opacity=".6" />
+                }
+              </svg>
+              @if (!links().length) { <figcaption>Recoupez deux déclarations : un fil rouge reliera les deux témoins.</figcaption> }
+            </figure>
             @if (selecting()) {
               <div class="xbar" role="status">
                 <span>Touchez deux déclarations de deux personnes différentes ({{ picks().length }}/2).</span>
@@ -1075,11 +1230,19 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
                 <li>
                   @if (selecting() && c.kind === 'stmt') {
                     <button type="button" class="note pick" [class]="'note pick k-' + c.kind" [class.on]="picks().includes(c.stmtId!)" [attr.aria-pressed]="picks().includes(c.stmtId!)" (click)="togglePick(c)">
-                      <span class="ic" aria-hidden="true">{{ c.icon }}</span><span class="tx"><b>{{ c.title }}</b> {{ c.text }}</span>
+                      <span class="ic" aria-hidden="true"><svg class="photo" viewBox="0 0 40 48"><rect class="bk" width="40" height="48" /><use [attr.href]="'#' + uid + '-p' + c.who" /></svg></span><span class="tx"><b>{{ c.title }}</b> {{ c.text }}</span>
                     </button>
                   } @else {
                     <div class="note" [class]="'note k-' + c.kind" [class.bad]="c.bad">
-                      <span class="ic" aria-hidden="true">{{ c.icon }}</span><span class="tx"><b>{{ c.title }}</b> {{ c.text }}</span>
+                      <span class="ic" aria-hidden="true">
+                        @switch (c.kind) {
+                          @case ('stmt') { <svg class="photo" viewBox="0 0 40 48"><rect class="bk" width="40" height="48" /><use [attr.href]="'#' + uid + '-p' + c.who" /></svg> }
+                          @case ('search') { <i class="ev">{{ evOf(c) }}</i> }
+                          @case ('cross') { <i class="tick" [class.bad]="c.bad">{{ c.bad ? '✗' : '✓' }}</i> }
+                          @case ('cam') { <svg class="glyph" viewBox="0 0 24 24"><path d="M3 8 L15 5 L17 12 L5 15 Z M16 8.6 L21 7 M11 13.4 L12 19 H8" /></svg> }
+                          @default { <svg class="glyph" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><rect x="6" y="9" width="5" height="6" /><path d="M13 10 H18 M13 13 H17" /></svg> }
+                        }
+                      </span><span class="tx"><b>{{ c.title }}</b> {{ c.text }}</span>
                     </div>
                   }
                 </li>
@@ -1090,24 +1253,25 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
           @case ('grid') {
             <div class="gwrap">
               <table class="lg">
+                <caption>Grille de déduction · {{ th.title }}</caption>
                 <thead>
                   <tr>
                     <th scope="col">Suspect</th>
-                    @for (h of cols; track $index) { <th scope="col"><span aria-hidden="true">{{ h.icon }}</span><small>{{ h.label }}</small></th> }
+                    @for (h of cols; track $index) { <th scope="col">{{ h.label }}</th> }
                   </tr>
                 </thead>
                 <tbody>
                   @for (s of cs.suspects; track $index; let i = $index) {
                     <tr>
-                      <th scope="row"><span aria-hidden="true">{{ s.icon }}</span> {{ s.first }}</th>
+                      <th scope="row"><svg class="photo mini" viewBox="0 0 40 48" aria-hidden="true"><rect class="bk" width="40" height="48" /><use [attr.href]="'#' + uid + '-p' + i" /></svg>{{ s.first }}</th>
                       @for (h of cols; track $index; let j = $index) {
                         <td>
                           @if (j < 4) {
                             <button type="button" class="mk" [class]="'mk s' + grid()[i][j]" (click)="cycle(i, j)"
                                     [attr.aria-label]="s.first + ', ' + h.label + ' : ' + markName(grid()[i][j])">{{ mark(grid()[i][j]) }}</button>
                           } @else {
-                            <button type="button" class="mk mob" (click)="cycleMob(i)"
-                                    [attr.aria-label]="s.first + ', mobile : ' + (mob()[i] < 0 ? 'inconnu' : th.mobiles[mob()[i]].label)">{{ mob()[i] < 0 ? '·' : th.mobiles[mob()[i]].icon }}</button>
+                            <button type="button" class="mk mob" [class.set]="mob()[i] >= 0" (click)="cycleMob(i)"
+                                    [attr.aria-label]="s.first + ', mobile : ' + (mob()[i] < 0 ? 'inconnu' : th.mobiles[mob()[i]].label)">{{ mob()[i] < 0 ? '·' : abbr(th.mobiles[mob()[i]].label) }}</button>
                           }
                         </td>
                       }
@@ -1117,22 +1281,24 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
               </table>
             </div>
             <p class="muted small">Touchez une case : ✓ oui, ✗ non, ? doute. « Sur place » : {{ th.places[0].a }} ; « Indice » : correspond à la trace trouvée ; « Ment » : a menti au moins une fois.</p>
-            <p class="legend small">@for (m of th.mobiles; track $index) { <span>{{ m.icon }} {{ m.label }}</span> }</p>
+            <p class="legend small">@for (m of th.mobiles; track $index) { <span><b>{{ abbr(m.label) }}</b> {{ m.label }}</span> }</p>
           }
 
           @case ('acc') {
             <h4>Qui ?</h4>
-            <div class="who acc">
-              @for (s of cs.suspects; track $index; let i = $index) {
-                <button type="button" class="sus" [class.on]="accC() === i" [attr.aria-pressed]="accC() === i" (click)="accC.set(i); accA() === i && accA.set(-1)">
-                  <span class="pic" aria-hidden="true">{{ s.icon }}</span><span class="nm"><b>{{ s.name }}</b><small>{{ s.role }}</small></span>
-                </button>
-              }
+            <div class="cork">
+              <div class="who acc">
+                @for (s of cs.suspects; track $index; let i = $index) {
+                  <button type="button" class="sus" [class.on]="accC() === i" [attr.aria-pressed]="accC() === i" (click)="accC.set(i); accA() === i && accA.set(-1)">
+                    <span class="pic" aria-hidden="true"><svg class="photo" viewBox="0 0 40 48"><rect class="bk" width="40" height="48" /><use [attr.href]="'#' + uid + '-p' + i" /></svg></span><span class="nm"><b>{{ s.name }}</b><small>{{ s.role }}</small></span>
+                  </button>
+                }
+              </div>
             </div>
             <h4>Pourquoi ?</h4>
             <div class="mobs">
               @for (m of th.mobiles; track $index; let i = $index) {
-                <button type="button" class="pl" [class.on]="accM() === i" [attr.aria-pressed]="accM() === i" (click)="accM.set(i)"><span aria-hidden="true">{{ m.icon }}</span> {{ m.label }}</button>
+                <button type="button" class="pl" [class.on]="accM() === i" [attr.aria-pressed]="accM() === i" (click)="accM.set(i)">{{ m.label }}</button>
               }
             </div>
             @if (cs.accomplice >= 0) {
@@ -1140,13 +1306,15 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
               <div class="mobs">
                 @for (s of cs.suspects; track $index; let i = $index) {
                   @if (i !== accC()) {
-                    <button type="button" class="pl" [class.on]="accA() === i" [attr.aria-pressed]="accA() === i" (click)="accA.set(i)"><span aria-hidden="true">{{ s.icon }}</span> {{ s.first }}</button>
+                    <button type="button" class="pl" [class.on]="accA() === i" [attr.aria-pressed]="accA() === i" (click)="accA.set(i)"><svg class="photo mini" viewBox="0 0 40 48" aria-hidden="true"><rect class="bk" width="40" height="48" /><use [attr.href]="'#' + uid + '-p' + i" /></svg> {{ s.first }}</button>
                   }
                 }
               </div>
             }
             <div class="go">
-              <button type="button" class="btn primary" [disabled]="!accReady()" (click)="accuse()">⚖️ Accuser{{ accC() >= 0 ? ' ' + cs.suspects[accC()].first : '' }}</button>
+              <button type="button" class="btn primary" [disabled]="!accReady()" (click)="accuse()">
+                <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9 L11 3 L15 7 L9 13 Z M9 7 L19 17 M3 21 H13" /></svg>
+                Accuser{{ accC() >= 0 ? ' ' + cs.suspects[accC()].first : '' }}</button>
               <span class="muted small">L’accusation est définitive.@if (left()) { Il vous reste {{ left() }} h : chaque heure épargnée compte. }</span>
             </div>
           }
@@ -1155,91 +1323,181 @@ interface Verdict { ok: boolean; okM: boolean; okA: boolean; score: number; left
     </div>
   `,
   styles: `
-    :host { display: block; width: 100%; min-width: 0; }
+    :host { display: block; width: 100%; min-width: 0;
+      --paper: color-mix(in srgb, #f8f4ea 88%, var(--bg)); --paper-2: color-mix(in srgb, #efe7d4 88%, var(--bg));
+      --kraft: color-mix(in srgb, #d9c08e 86%, var(--bg)); --kraft-2: color-mix(in srgb, #c7aa72 86%, var(--bg));
+      --cork: color-mix(in srgb, #b98b57 84%, var(--bg));
+      --ink-p: #26221c; --ink-p2: #5a5245; --red: #b3202a; --type: 'IBM Plex Mono', 'Courier New', ui-monospace, monospace; }
+    .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
     .enq { display: grid; gap: 10px; font-size: 13.5px; min-width: 0; }
     .head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; }
-    .case { font-size: 14px; }
-    .hours { display: inline-flex; align-items: center; gap: 3px;
-      i { width: 9px; height: 14px; border-radius: 3px; background: var(--accent); transition: background .3s, opacity .3s; }
-      i.used { background: var(--line); opacity: .7; }
+    .case { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; min-width: 0;
+      .ico { width: 16px; height: 16px; fill: none; stroke: var(--ink-2); stroke-width: 1.3; flex: none; }
+      .lbl { font: 600 10px var(--type); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+      b { font-family: var(--font-display); } }
+    .hours { display: inline-flex; align-items: center; gap: 2px;
+      i { width: 7px; height: 15px; border-radius: 1.5px; background: var(--paper-2); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 35%, transparent); transition: background .3s; }
+      i.used { background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--ink) 70%, transparent) 0 1.8px, transparent 2.2px), var(--paper-2); opacity: .55; }
       b { margin-left: 6px; font-size: 13px; } }
-    .brief { border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); padding: 0 12px;
-      summary { cursor: pointer; font-weight: 600; min-height: 36px; display: flex; align-items: center; }
-      p { margin: 0 0 6px; color: var(--ink-2); }
-      ul { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 3px; color: var(--ink-2); font-size: 12.5px; } }
-    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 3px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line);
-      button { min-height: 38px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); font: 600 12.5px var(--font-body); cursor: pointer; padding: 4px 2px; position: relative; white-space: nowrap; }
-      button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
-      .n { font-style: normal; font-size: 10.5px; margin-left: 2px; padding: 0 5px; border-radius: 99px; background: var(--accent); color: var(--surface); } }
+    /* Le dossier : chemise kraft, tampon « confidentiel » */
+    .brief { position: relative; border-radius: 2px 6px 6px 6px; background: linear-gradient(180deg, rgba(255, 255, 255, .18), transparent 30%), var(--kraft); padding: 0 12px; color: var(--ink-p);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, .08), 0 6px 14px -10px rgba(40, 25, 10, .6); border: 1px solid var(--kraft-2); margin-top: 10px;
+      &::before { content: ''; position: absolute; left: -1px; top: -10px; width: 110px; height: 10px; border-radius: 6px 6px 0 0; background: var(--kraft); border: 1px solid var(--kraft-2); border-bottom: 0; }
+      &::after { content: 'Confidentiel'; position: absolute; right: 10px; top: 8px; padding: 1px 7px; border: 2px solid rgba(179, 32, 42, .75); border-radius: 3px; color: rgba(179, 32, 42, .8);
+        font: 700 10px var(--type); letter-spacing: .16em; text-transform: uppercase; transform: rotate(-6deg); pointer-events: none; }
+      summary { cursor: pointer; font: 600 12px var(--type); letter-spacing: .12em; text-transform: uppercase; min-height: 36px; display: flex; align-items: center; }
+      p { margin: 0 0 6px; color: var(--ink-p); }
+      ul { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 3px; color: var(--ink-p2); font-size: 12.5px; } }
+    /* Intercalaires */
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; border-bottom: 2px solid var(--kraft-2); padding: 0 2px;
+      button { min-height: 38px; border: 1px solid var(--kraft-2); border-bottom: 0; border-radius: 7px 7px 0 0; background: var(--kraft); color: var(--ink-p2); font: 600 12px var(--font-body);
+        cursor: pointer; padding: 4px 2px; position: relative; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 4px; filter: brightness(.94); }
+      button.on { background: var(--paper); color: var(--ink-p); filter: none; box-shadow: 0 -2px 6px -3px rgba(0, 0, 0, .25); margin-bottom: -2px; padding-bottom: 6px; }
+      button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+      .ti { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+      .n { font-style: normal; font: 600 10px var(--type); margin-left: 1px; padding: 0 5px; border-radius: 99px; background: var(--red); color: #fff; } }
     @media (max-width: 420px) { .tabs .ti { display: none; } }
-    h4 { margin: 4px 0 0; font-size: 13px; small { font-weight: 400; color: var(--ink-3); font-size: 11.5px; } }
+    h4 { margin: 4px 0 0; font: 600 11px var(--type); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2);
+      small { font: 400 11.5px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--ink-3); margin-left: 4px; } }
     .small { font-size: 12px; margin: 0; }
-    .last { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); border-left: 4px solid var(--accent);
-      .ic { font-size: 22px; line-height: 1; }
-      p { margin: 2px 0 0; color: var(--ink-2); }
-      &.k-cross { border-left-color: var(--good); } &.k-cross.bad { border-left-color: var(--bad); } }
-    .out { margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--bad-soft); color: var(--bad); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .who { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
-    .sus { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer; text-align: left; min-width: 0;
-      &:disabled { opacity: .5; cursor: default; }
-      &.on { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); background: var(--surface-2); }
-      .pic { font-size: 24px; line-height: 1; flex: none; }
+    /* Photos d'identité : tirage argentique */
+    .photo { display: block; filter: sepia(.3) saturate(.78) contrast(1.04); }
+    .photo .bk { fill: #b9bec2; }
+    .photo.mini { width: 18px; height: 21.6px; flex: none; border: 1.5px solid #f6f3ea; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+    .glyph { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .ev { display: inline-grid; place-items: center; flex: none; min-width: 18px; height: 18px; padding: 0 3px; box-sizing: border-box; border-radius: 3px 3px 2px 2px; font: 700 11px var(--type); font-style: normal;
+      background: linear-gradient(180deg, #ffd84a, #e9b318); color: #1d1a12; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .18), 0 1px 1px rgba(0, 0, 0, .3); }
+    /* Fiche du dernier indice */
+    .last { position: relative; display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px 10px 10px; border-radius: 2px; color: var(--ink-p);
+      background: repeating-linear-gradient(180deg, transparent 0 19px, rgba(70, 110, 170, .16) 19px 20px), linear-gradient(180deg, transparent 0 22px, rgba(179, 32, 42, .4) 22px 23px, transparent 23px), var(--paper);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .15), 0 8px 16px -12px rgba(0, 0, 0, .5);
+      &::after { content: ''; position: absolute; right: 16px; top: -6px; width: 9px; height: 26px; border: 2px solid #8b9198; border-radius: 6px; border-bottom-color: transparent; }
+      .ic { flex: none; display: grid; place-items: center; width: 34px; min-height: 34px; color: var(--ink-p2); }
+      .ic .photo { width: 32px; height: 38.4px; border: 2px solid #fbf9f3; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); transform: rotate(-3deg); }
+      b { font: 600 12px var(--type); letter-spacing: .02em; }
+      p { margin: 3px 0 0; font: 13px/1.45 var(--font-body); color: var(--ink-p); }
+      &.k-cross.bad b { color: var(--red); } }
+    .out { margin: 0; padding: 8px 10px; border-radius: 4px; background: var(--bad-soft); color: var(--bad); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    /* Le liège et les fiches épinglées */
+    .cork { padding: 12px 10px 10px; border-radius: 4px; background:
+        radial-gradient(circle at 30% 40%, rgba(70, 40, 15, .28) 0 .8px, transparent 1.4px) 0 0 / 6px 7px,
+        radial-gradient(circle at 70% 70%, rgba(255, 230, 190, .22) 0 .8px, transparent 1.4px) 0 0 / 8px 5px,
+        radial-gradient(circle at 50% 50%, rgba(60, 35, 12, .18) 0 1.4px, transparent 2px) 0 0 / 13px 11px,
+        var(--cork);
+      box-shadow: inset 0 0 0 4px color-mix(in srgb, #6b4a2b 90%, var(--bg)), inset 0 0 0 5px rgba(0, 0, 0, .35), inset 0 3px 10px rgba(0, 0, 0, .35); }
+    .who { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 10px 8px; }
+    .sus { position: relative; display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 5px 7px 5px 5px; border: 0; border-radius: 1px; background: var(--paper); color: var(--ink-p); cursor: pointer;
+      text-align: left; min-width: 0; box-shadow: 0 1px 1px rgba(0, 0, 0, .25), 0 5px 8px -5px rgba(0, 0, 0, .55); transform: rotate(-.8deg); transition: transform .15s, box-shadow .15s;
+      &:nth-child(2n) { transform: rotate(.9deg); } &:nth-child(3n) { transform: rotate(-.3deg); }
+      &::before { content: ''; position: absolute; left: 50%; top: -5px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; z-index: 1;
+        background: radial-gradient(circle at 35% 30%, #ff8a80, #c62828 55%, #7a1010); box-shadow: 1px 2px 2px rgba(0, 0, 0, .45); }
+      &:hover:not(:disabled) { transform: rotate(0) translateY(-1px); box-shadow: 0 1px 1px rgba(0, 0, 0, .25), 0 8px 12px -6px rgba(0, 0, 0, .6); }
+      &:focus-visible { outline: 2px solid #1f3b73; outline-offset: 2px; }
+      &:disabled { cursor: default; } &:disabled .pic, &:disabled .nm { opacity: .5; }
+      &.on { background: color-mix(in srgb, #fff 70%, var(--paper)); }
+      &.on::after { content: ''; position: absolute; inset: -3px -3px; border: 2.5px solid rgba(179, 32, 42, .9); border-radius: 16px 20px 14px 22px / 24px 18px 26px 16px; transform: rotate(-1deg); pointer-events: none; }
+      .pic { flex: none; padding: 2px 2px 5px; background: #fbf9f3; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .15); }
+      .pic .photo { width: 34px; height: 40.8px; }
       .nm { display: grid; min-width: 0; flex: 1; line-height: 1.25;
         b, small { overflow-wrap: anywhere; }
-        b { font-size: 12.5px; } small { font-size: 11px; color: var(--ink-3); } }
-      .dots { display: inline-flex; gap: 3px; margin-top: 3px; i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); } i.on { background: var(--accent); } } }
+        b { font: 600 12px var(--font-body); } small { font-size: 10.5px; color: var(--ink-p2); } }
+      .dots { display: inline-flex; gap: 3px; margin-top: 3px; i { width: 6px; height: 6px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--ink-p2); } i.on { background: var(--ink-p); box-shadow: none; } } }
+    /* Étiquettes de lieux et de mobiles */
     .places, .mobs { display: flex; flex-wrap: wrap; gap: 6px; }
-    .pl { min-height: 36px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--ink); cursor: pointer; font: 500 12.5px var(--font-body); display: inline-flex; align-items: center; gap: 5px;
-      &:disabled { opacity: .45; cursor: default; text-decoration: line-through; }
-      &.on { border-color: var(--accent); background: var(--accent); color: var(--surface); }
-      .tag { font-style: normal; font-size: 10px; padding: 1px 6px; border-radius: 99px; background: var(--bad-soft); color: var(--bad); } }
-    .xbar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 10px; background: var(--accent-soft, var(--surface-2)); border: 1px solid var(--accent); font-size: 12.5px;
+    .pl { position: relative; min-height: 36px; padding: 5px 11px 5px 18px; border: 1px solid var(--kraft-2); border-radius: 3px 10px 10px 3px; background: var(--kraft); color: var(--ink-p); cursor: pointer;
+      font: 500 12.5px var(--font-body); display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 1px rgba(0, 0, 0, .15);
+      &::before { content: ''; position: absolute; left: 6px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35); }
+      &:hover:not(:disabled) { filter: brightness(1.04); }
+      &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      &:disabled { opacity: .5; cursor: default; text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 1.5px; }
+      &.on { background: var(--paper); border-color: var(--red); box-shadow: 0 0 0 2px var(--red); }
+      .glyph { width: 17px; height: 17px; color: var(--ink-p); }
+      .tag { font: 600 9.5px var(--type); font-style: normal; letter-spacing: .08em; text-transform: uppercase; padding: 1px 5px; border: 1.5px solid rgba(179, 32, 42, .7); border-radius: 2px; color: var(--red); }
+      .photo.mini { margin-left: -4px; } }
+    .xbar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 1px;
+      background: linear-gradient(180deg, #fbe98a, #f3d75a); color: #2a2410; font-size: 12.5px; box-shadow: 0 6px 10px -6px rgba(0, 0, 0, .5); transform: rotate(-.4deg);
       .xbtns { display: inline-flex; gap: 6px; } }
-    .notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-    .note { display: flex; gap: 8px; align-items: flex-start; width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-align: left; font: inherit; font-size: 12.5px; line-height: 1.4;
-      .ic { font-size: 18px; line-height: 1.1; flex: none; }
-      .tx { min-width: 0; b { display: block; font-size: 11.5px; color: var(--ink-2); } }
-      &.k-search, &.k-cam, &.k-badge { background: var(--surface-2); }
-      &.k-cross { border-left: 3px solid var(--good); } &.k-cross.bad { border-left-color: var(--bad); } }
-    .note.pick { cursor: pointer; min-height: 44px; border-style: dashed; }
-    .note.pick.on { border: 2px solid var(--accent); background: var(--surface-2); }
-    .gwrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; -webkit-overflow-scrolling: touch; }
-    .lg { border-collapse: collapse; width: 100%; min-width: 300px;
-      th, td { padding: 2px; text-align: center; border-bottom: 1px solid var(--line); }
-      thead th { font-size: 15px; padding: 6px 2px; small { display: block; font-size: 10px; color: var(--ink-3); font-weight: 500; } }
-      tbody th { text-align: left; font-size: 12px; font-weight: 600; white-space: nowrap; padding: 2px 6px; max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
-      tr:last-child th, tr:last-child td { border-bottom: 0; } }
-    .mk { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font: 700 16px var(--font-body); color: var(--ink-3); padding: 0;
-      &.s1 { background: var(--good-soft); color: var(--good); border-color: transparent; }
-      &.s2 { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
-      &.s3 { background: var(--surface-2); color: var(--ink-2); }
-      &.mob { font-size: 17px; } }
-    .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--ink-2); margin: 0; }
-    .go { display: grid; gap: 6px; justify-items: start; margin-top: 6px; .btn { min-height: 42px; } }
-    .verdict { display: grid; gap: 8px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
-      h4 { margin-top: 6px; } }
-    .stamp { justify-self: center; padding: 4px 14px; border: 3px solid var(--bad); color: var(--bad); border-radius: 6px; font: 800 15px var(--font-body); letter-spacing: .12em; text-transform: uppercase; transform: rotate(-3deg);
-      &.ok { border-color: var(--good); color: var(--good); } }
-    .culprit { display: flex; gap: 12px; align-items: center;
-      .big { font-size: 44px; line-height: 1; }
-      b { display: block; font-size: 15px; } small { color: var(--ink-3); }
-      p { margin: 4px 0 0; color: var(--ink-2); } }
-    .yours { margin: 0; font-size: 12.5px; color: var(--ink-2); .good { color: var(--good); font-weight: 700; } .bad { color: var(--bad); font-weight: 700; } }
-    .lies { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px;
-      li { padding: 6px 8px; border-radius: 8px; background: var(--bad-soft); font-size: 12.5px; display: grid; gap: 2px; }
-      q { font-style: italic; quotes: '«\\202f' '\\202f»'; }
-      span { color: var(--ink); font-weight: 500; }
-      em { color: var(--ink-3); font-size: 11px; }
-      li.unheard { opacity: .8; } }
-    .chain, .others { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 12.5px; color: var(--ink-2); }
-    .others { list-style: none; padding-left: 0; }
-    .final { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-top: 4px; }
+    /* Le tableau : liège, polaroïds, fil rouge */
+    .board { margin: 0; padding: 8px; border-radius: 4px; background:
+        radial-gradient(circle at 30% 40%, rgba(70, 40, 15, .28) 0 .8px, transparent 1.4px) 0 0 / 6px 7px,
+        radial-gradient(circle at 50% 50%, rgba(60, 35, 12, .18) 0 1.4px, transparent 2px) 0 0 / 13px 11px, var(--cork);
+      box-shadow: inset 0 0 0 4px color-mix(in srgb, #6b4a2b 90%, var(--bg)), inset 0 0 0 5px rgba(0, 0, 0, .35), inset 0 3px 10px rgba(0, 0, 0, .35);
+      > svg { display: block; width: 100%; height: auto; overflow: visible; }
+      figcaption { margin: 4px 4px 2px; font: 11.5px var(--font-body); color: #fff8ec; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); text-align: center; } }
+    .board .pol { fill: #fbf9f3; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .45)); }
+    .board .cap { font: 600 9.5px var(--font-body); fill: #2a251d; }
+    .board .cnt { font: 700 8px var(--type); fill: #fff; paint-order: stroke; stroke: rgba(0, 0, 0, .55); stroke-width: 2px; }
+    .board .str { fill: none; stroke: #c0212b; stroke-width: 1.5; stroke-linecap: round; }
+    .board .str.sh { stroke: rgba(0, 0, 0, .35); stroke-width: 1.8; transform: translate(1.5px, 2px); }
+    .board .pin { fill: #c62828; stroke: #6a0f0f; stroke-width: .6; filter: drop-shadow(1px 1.5px 1px rgba(0, 0, 0, .5)); }
+    .board .lbl { fill: #fbf9f3; stroke: #2f6b45; stroke-width: .8; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .4)); &.bad { stroke: #b3202a; } }
+    .board .lt { font: 700 8px var(--type); fill: #2f6b45; &.bad { fill: #b3202a; } }
+    /* Le carnet tapé à la machine */
+    .notes { list-style: none; margin: 0; padding: 6px 10px 10px 36px; display: grid; gap: 0; border-radius: 2px; color: var(--ink-p);
+      background: linear-gradient(90deg, transparent 0 27px, rgba(200, 60, 60, .45) 27px 28px, transparent 28px), repeating-linear-gradient(180deg, transparent 0 21px, rgba(70, 110, 170, .17) 21px 22px), var(--paper);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .15), 0 8px 16px -12px rgba(0, 0, 0, .5);
+      &:empty { display: none; }
+      li + li { border-top: 1px dashed rgba(60, 50, 40, .22); } }
+    .note { display: flex; gap: 8px; align-items: flex-start; width: 100%; padding: 8px 2px; border: 0; background: transparent; color: var(--ink-p); text-align: left;
+      font: 12px/1.5 var(--type); box-sizing: border-box;
+      .ic { flex: none; width: 24px; display: grid; justify-items: center; margin-left: -32px; margin-right: 6px; color: var(--ink-p2); }
+      .ic .photo { width: 22px; height: 26.4px; border: 1.5px solid #fbf9f3; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+      .ic .glyph { width: 18px; height: 18px; }
+      .tick { font: 700 15px var(--font-body); font-style: normal; color: #2f6b45; &.bad { color: var(--red); } }
+      .tx { min-width: 0; b { display: block; font: 600 10.5px var(--type); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-p2); } }
+      &.k-cross.bad .tx b { color: var(--red); } }
+    .note.pick { cursor: pointer; min-height: 44px; border-radius: 10px; }
+    .note.pick:hover { background: rgba(0, 0, 0, .03); }
+    .note.pick:focus-visible { outline: 2px solid #1f3b73; outline-offset: -2px; }
+    .note.pick.on { box-shadow: inset 0 0 0 2px rgba(179, 32, 42, .85); background: rgba(179, 32, 42, .05); }
+    /* La grille : un formulaire imprimé */
+    .gwrap { max-width: 100%; overflow-x: auto; border-radius: 2px; -webkit-overflow-scrolling: touch; background: var(--paper); color: var(--ink-p);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .15), 0 8px 16px -12px rgba(0, 0, 0, .5); padding: 4px 4px 6px; box-sizing: border-box; }
+    .lg { border-collapse: collapse; width: 100%; min-width: 272px;
+      caption { font: 600 9.5px var(--type); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-p2); text-align: left; padding: 2px 2px 6px; }
+      th, td { padding: 3px 2px; text-align: center; border: 1px solid rgba(40, 34, 26, .28); }
+      thead th { font: 600 8.5px/1.2 var(--type); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-p2); padding: 5px 1px; border-bottom: 2px solid rgba(40, 34, 26, .6); }
+      tbody th { text-align: left; font: 600 11.5px var(--font-body); white-space: nowrap; padding: 2px 4px 2px 3px; max-width: 84px; overflow: hidden; text-overflow: ellipsis;
+        .photo { display: inline-block; vertical-align: middle; margin-right: 5px; } } }
+    .mk { width: 34px; height: 34px; border-radius: 2px; border: 1px solid rgba(40, 34, 26, .35); background: transparent; cursor: pointer; font: 700 18px/1 var(--font-body); color: var(--ink-p2); padding: 0;
+      &:hover { background: rgba(0, 0, 0, .04); } &:focus-visible { outline: 2px solid #1f3b73; outline-offset: 1px; }
+      &.s1 { color: #1f6b3a; } &.s2 { color: #b3202a; } &.s3 { color: #6b6457; font-weight: 500; font-style: italic; }
+      &.mob { font: 600 9px var(--type); letter-spacing: .02em; color: #9a9184; } &.mob.set { color: #1f3b73; } }
+    .legend { display: flex; flex-wrap: wrap; gap: 3px 12px; color: var(--ink-2); margin: 0; b { font: 600 10px var(--type); margin-right: 3px; color: var(--ink); } }
+    .go { display: grid; gap: 6px; justify-items: start; margin-top: 6px; .btn { min-height: 42px; display: inline-flex; align-items: center; gap: 6px; } .glyph { width: 18px; height: 18px; } }
+    /* Le dénouement : la fiche de clôture */
+    .verdict { position: relative; display: grid; gap: 8px; padding: 14px 14px 12px; border-radius: 2px; background: var(--paper); color: var(--ink-p);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .15), 0 10px 20px -12px rgba(0, 0, 0, .55);
+      h4 { margin-top: 6px; color: var(--ink-p2); } }
+    .stamp { justify-self: center; padding: 4px 14px; border: 3px double var(--red); color: var(--red); border-radius: 4px; font: 800 16px var(--type); letter-spacing: .16em; text-transform: uppercase; transform: rotate(-4deg);
+      -webkit-mask-image: radial-gradient(circle at 20% 30%, #000 0 60%, rgba(0, 0, 0, .55) 61% 63%, #000 64%), repeating-radial-gradient(circle at 37% 61%, #000 0 1.5px, rgba(0, 0, 0, .7) 1.6px 2px, #000 2.1px 3.4px);
+      -webkit-mask-composite: source-in; mask-composite: intersect; opacity: .9;
+      &.ok { border-color: #1f6b3a; color: #1f6b3a; } }
+    .culprit { display: flex; gap: 14px; align-items: center;
+      b { display: block; font: 600 15px var(--font-display); } small { color: var(--ink-p2); }
+      p { margin: 4px 0 0; color: var(--ink-p); } }
+    .mug { flex: none; display: grid; justify-items: center; gap: 0; padding: 3px 3px 0; background: #fbf9f3; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); transform: rotate(-2deg);
+      .photo { width: 72px; height: 86.4px; } .photo .bk { fill: #a9afb4; } .chart { stroke: #e9ecee; stroke-width: .5; opacity: .7; }
+      .plate { display: block; width: 72px; padding: 2px 0; background: #1f2127; color: #f0f0f0; font: 600 7.5px var(--type); font-style: normal; letter-spacing: .06em; text-transform: uppercase; text-align: center;
+        overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } }
+    .yours { margin: 0; font-size: 12.5px; color: var(--ink-p2); b { color: var(--ink-p); } .good { color: #1f6b3a; font-weight: 700; } .bad { color: var(--red); font-weight: 700; } }
+    .lies { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
+      li { padding: 6px 8px; border-left: 2px solid var(--red); background: rgba(179, 32, 42, .05); font-size: 12.5px; display: grid; gap: 2px; }
+      q { font: 12px/1.45 var(--type); quotes: '«\\202f' '\\202f»'; text-decoration: line-through; text-decoration-color: rgba(179, 32, 42, .75); text-decoration-thickness: 1.5px; color: var(--ink-p2); }
+      span { color: var(--red); font-weight: 600; font-style: italic; }
+      em { color: var(--ink-p2); font-size: 11px; }
+      li.unheard { opacity: .82; } }
+    .chain, .others { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; color: var(--ink-p); }
+    .chain { font: 12px/1.5 var(--type); }
+    .others { list-style: none; padding-left: 0; li { display: flex; gap: 8px; align-items: center; } }
+    .final { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-top: 4px; padding-top: 8px; border-top: 1px dashed rgba(60, 50, 40, .3); }
     @media (prefers-reduced-motion: no-preference) {
       .last { animation: slide .35s ease both; }
       .stamp { animation: stamp .45s cubic-bezier(.2, 1.4, .4, 1) both; }
       @keyframes slide { from { opacity: 0; transform: translateY(-6px); } }
-      @keyframes stamp { from { opacity: 0; transform: rotate(-3deg) scale(1.8); } }
+      @keyframes stamp { from { opacity: 0; transform: rotate(-4deg) scale(1.8); } }
     }
+    @media (prefers-reduced-motion: reduce) { .sus, .hours i { transition: none; } }
   `,
 })
 export class EnqueteGameComponent implements OnInit, OnDestroy {
@@ -1251,9 +1509,12 @@ export class EnqueteGameComponent implements OnInit, OnDestroy {
 
   protected cs!: EnqueteCase;
   private st!: InvState;
-  private uid = 0;
+  private uidN = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
   private closed = false;
+  protected readonly uid = `enq${++enqSeq}`;
+  protected faces: Face[] = [];
+  protected boardH = 186;
 
   protected readonly tabs: { id: Tab; icon: string; label: string }[] = [
     { id: 'inv', icon: '🔎', label: 'Enquêter' }, { id: 'notes', icon: '📓', label: 'Carnet' },
@@ -1274,6 +1535,7 @@ export class EnqueteGameComponent implements OnInit, OnDestroy {
   protected readonly asked = signal<number[]>([]);
   protected readonly searched = signal<boolean[]>([]);
   protected readonly cammed = signal<boolean[]>([]);
+  protected readonly links = signal<{ sa: number; sb: number; both: boolean }[]>([]);
   protected readonly selecting = signal(false);
   protected readonly picks = signal<number[]>([]);
   protected readonly grid = signal<number[][]>([]);
@@ -1296,6 +1558,7 @@ export class EnqueteGameComponent implements OnInit, OnDestroy {
     this.cs = generateCase(variantOf(this.def().id), levelOf(this.diff()));
     this.st = newState(this.cs);
     const P = this.cs.theme.places;
+    this.faces = this.cs.suspects.map((s, i) => faceOf(s, i));
     this.hourSlots = range(this.cs.budget);
     this.placeIdx = range(this.cs.nPlaces);
     this.noCam = listFr(this.placeIdx.filter(p => !this.cs.cams[p]).map(p => (p === 0 ? `${P[p].label.toLowerCase()} (en panne)` : P[p].label.toLowerCase())));
@@ -1308,6 +1571,23 @@ export class EnqueteGameComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void { this.timers.forEach(t => clearTimeout(t)); }
 
+  /* ── Affichage ── */
+
+  /** Place d'un polaroïd sur le tableau : trois par rangée, la seconde centrée si incomplète */
+  protected slot(i: number): { x: number; y: number; r: number } {
+    const n = this.cs.suspects.length, row = Math.floor(i / 3), inRow = Math.min(3, n - row * 3), col = i % 3;
+    const x = 160 + (col - (inRow - 1) / 2) * 104;
+    return { x, y: 12 + row * 92, r: [-3, 2, -1.5, 2.5, -2, 1][i % 6] };
+  }
+  /** Repère du lieu fouillé (le numéro de la plaque jaune) */
+  protected evOf(c: Clue): string {
+    const i = this.cs.theme.places.findIndex(p => c.title.endsWith(p.label));
+    return i >= 0 ? String(i + 1) : '•';
+  }
+  /** Les phrases du dénouement, sans les pictogrammes */
+  protected plain(t: string): string { return t.replace(/^[\p{Extended_Pictographic}️‍]+\s*/u, ''); }
+  protected abbr(label: string): string { return label.replace(/[^A-Za-zÀ-ÿ]/g, '').slice(0, 4).toUpperCase(); }
+
   /* ── Enquête ── */
 
   protected setTab(t: Tab): void {
@@ -1317,7 +1597,7 @@ export class EnqueteGameComponent implements OnInit, OnDestroy {
 
   protected act(a: Action): void {
     if (this.verdict() || this.left() <= 0) return;
-    const clue = apply(this.cs, this.st, a, ++this.uid);
+    const clue = apply(this.cs, this.st, a, ++this.uidN);
     this.clues.update(c => [clue, ...c]);
     this.last.set(clue);
     this.left.set(this.cs.budget - this.st.moves);
@@ -1329,6 +1609,7 @@ export class EnqueteGameComponent implements OnInit, OnDestroy {
     this.asked.set(this.st.asked.slice());
     this.searched.set(this.st.searched.slice());
     this.cammed.set(this.st.cammed.slice());
+    this.links.set(this.st.k.crosses.slice());
   }
 
   protected startCross(): void {

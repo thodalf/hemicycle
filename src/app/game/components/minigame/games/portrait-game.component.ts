@@ -451,7 +451,7 @@ const BOTTLES = [[10, 60, 12, 5, '#5f8f7a'], [24, 60, 16, 6, '#c78a4a'], [38, 60
 
               <!-- Lumière, toile et vernis -->
               <rect width="200" height="250" [attr.fill]="url('light')" />
-              <rect width="200" height="250" [attr.filter]="url('strokes')" opacity=".3" style="mix-blend-mode: multiply" />
+              <rect width="200" height="250" [attr.filter]="url('strokes')" opacity=".22" style="mix-blend-mode: multiply" />
               <rect width="200" height="250" [attr.fill]="url('weave')" opacity=".2" style="mix-blend-mode: multiply" />
               <rect width="200" height="250" [attr.filter]="url('grain')" opacity=".6" />
               <rect width="200" height="250" fill="#c9952e" opacity=".07" style="mix-blend-mode: multiply" />
