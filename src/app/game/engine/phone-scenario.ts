@@ -773,6 +773,70 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Madame la marquise est passée à minuit, comme d’habitude. Elle a eu l’air contrariée par la foule. Les apparitions aiment le calme, je crois.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
     ],
   },
+  {
+    key: 'sc:saga_robots', icon: '🤖', when: d => d.saga?.id === 'robots' && !d.saga.outcome,
+    name: () => 'Pr Hélène Corvaisier', role: () => 'Roboticienne, médiatrice auprès du Syndicat des machines',
+    options: () => [
+      { id: 'sc_robots_point', label: 'Demander où en sont les robots', hint: 'Elle parle aux machines comme à des collègues.', ask: 'Hélène, ils vont reprendre ?', cooldown: 1,
+        run: () => ({ answer: 'Ils ne sont ni en colère ni malheureux : ils sont logiques. Donnez-leur une règle claire et juste, et ils la suivront mieux que nous.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_monnaie', icon: '🪙', when: d => d.saga?.id === 'monnaie' && !d.saga.outcome,
+    name: () => 'Claire Monteil-Asseraf', role: () => 'Sous-gouverneure de la Banque de France',
+    options: () => [
+      { id: 'sc_monnaie_point', label: 'Demander comment se porte l’euro', hint: 'Elle consulte les flux de dépôts toutes les heures, même le dimanche.', ask: 'Claire, on tient le choc ?', cooldown: 1,
+        run: () => ({ answer: 'Les dépôts fuient moins vite cette semaine. Une monnaie, c’est de la confiance : tant que les Français croient en l’euro, Monéa n’est qu’une application.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_heritage', icon: '📜', when: d => d.saga?.id === 'heritage' && !d.saga.outcome,
+    name: () => 'Maître Anselme Rouquette', role: () => 'Notaire de Vabre-l’Ancien, exécuteur du testament Delorme',
+    options: () => [
+      { id: 'sc_heritage_point', label: 'Demander où en est le testament', hint: 'Il a usé ses fonds de culotte sur les mêmes bancs d’école qu’Auguste Delorme.', ask: 'Maître, où en sommes-nous ?', cooldown: 1,
+        run: () => ({ answer: 'Auguste aimait les énigmes, pas les procès. Chaque clause a un sens, même la plus absurde. Si l’on cherche l’esprit plutôt que la lettre, on s’en sortira.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_moteur', icon: '🔧', when: d => d.saga?.id === 'moteur' && !d.saga.outcome,
+    name: () => 'Dr Nadia Kerbrat', role: () => 'Ingénieure motoriste, responsable des essais indépendants',
+    options: () => [
+      { id: 'sc_moteur_point', label: 'Demander où en sont les essais', hint: 'Elle a démonté la 4L pièce par pièce, deux fois.', ask: 'Nadia, alors, ça roule à l’eau ?', cooldown: 1,
+        run: () => ({ answer: 'Ça ne roule pas à l’eau, ça, je peux vous le jurer. Mais il y a dans son catalyseur quelque chose que je ne comprends pas encore. Laissez-moi travailler au calme.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_sommet', icon: '🕊️', when: d => d.saga?.id === 'sommet' && !d.saga.outcome,
+    name: () => 'Solène Verdier-Kassem', role: () => 'Ambassadrice, cheffe du protocole du sommet de Versailles',
+    options: () => [
+      { id: 'sc_sommet_point', label: 'Demander si les négociations avancent', hint: 'Elle n’a pas dormi plus de quatre heures d’affilée depuis l’ouverture.', ask: 'Solène, ça avance ?', cooldown: 1,
+        run: () => ({ answer: 'Deux crochets sautés ce matin, un nouveau ce soir. Ils sont fatigués, et c’est bon signe : un diplomate fatigué finit toujours par signer.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_degel', icon: '🧊', when: d => d.saga?.id === 'degel' && !d.saga.outcome,
+    name: () => 'Dr Inès Folliguet', role: () => 'Médecin réanimatrice, au chevet d’Aristide Chavanne',
+    options: () => [
+      { id: 'sc_degel_point', label: 'Prendre des nouvelles d’Aristide', hint: 'Elle lui apprend à se servir d’un téléphone, une touche à la fois.', ask: 'Inès, comment va-t-il ?', cooldown: 1,
+        run: () => ({ answer: 'Le corps récupère mieux que l’esprit. Il ne comprend pas pourquoi tout le monde veut sa photo. Il lui faut du calme, de la montagne, et des gens qui ne lui demandent rien.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_tour', icon: '🏙️', when: d => d.saga?.id === 'tour' && !d.saga.outcome,
+    name: () => 'Margaux Delattre-Ngo', role: () => 'Ingénieure en chef des structures de la tour Hélios',
+    options: () => [
+      { id: 'sc_tour_point', label: 'Demander si la tour tiendra', hint: 'Elle monte mesurer le vent au sommet chaque matin.', ask: 'Margaux, elle tiendra ?', cooldown: 1,
+        run: () => ({ answer: 'Elle tiendra, si l’on cesse de lui ajouter des étages pour faire plaisir aux actionnaires. Une tour, c’est comme un budget : plus c’est haut, plus le moindre souffle se sent.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_flottante', icon: '🛳️', when: d => d.saga?.id === 'flottante' && !d.saga.outcome,
+    name: () => 'Amirale Catherine Ferrandi', role: () => 'Préfète maritime de la Méditerranée',
+    options: () => [
+      { id: 'sc_flottante_point', label: 'Demander des nouvelles de Nautilia', hint: 'Elle observe Nautilia aux jumelles depuis son bureau de Toulon.', ask: 'Amirale, ils bougent ?', cooldown: 1,
+        run: () => ({ answer: 'Ils tirent sur leurs ancres à chaque coup de mistral. Une ville n’est pas un navire : tôt ou tard, ils auront besoin de nous. Ce jour-là, il faudra être prêts, et fermes.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -856,7 +920,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45, 'sc:saga_eveil': 54, 'sc:saga_parc': 47, 'sc:saga_lune': 39, 'sc:saga_voyageur': 41, 'sc:saga_midi': 52, 'sc:saga_somnolence': 47, 'sc:saga_souterrain': 34, 'sc:saga_maree': 49, 'sc:saga_pirates': 54, 'sc:saga_voyante': 38, 'sc:saga_silence': 44, 'sc:saga_volcans': 45, 'sc:saga_danse': 51, 'sc:saga_jouvence': 44, 'sc:saga_exode': 61, 'sc:saga_pluie': 36, 'sc:saga_rouille': 41, 'sc:saga_abeilles': 63, 'sc:saga_or': 67, 'sc:saga_miroir': 58, 'sc:saga_fantomes': 55,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45, 'sc:saga_eveil': 54, 'sc:saga_parc': 47, 'sc:saga_lune': 39, 'sc:saga_voyageur': 41, 'sc:saga_midi': 52, 'sc:saga_somnolence': 47, 'sc:saga_souterrain': 34, 'sc:saga_maree': 49, 'sc:saga_pirates': 54, 'sc:saga_voyante': 38, 'sc:saga_silence': 44, 'sc:saga_volcans': 45, 'sc:saga_danse': 51, 'sc:saga_jouvence': 44, 'sc:saga_exode': 61, 'sc:saga_pluie': 36, 'sc:saga_rouille': 41, 'sc:saga_abeilles': 63, 'sc:saga_or': 67, 'sc:saga_miroir': 58, 'sc:saga_fantomes': 55, 'sc:saga_robots': 48, 'sc:saga_monnaie': 57, 'sc:saga_heritage': 78, 'sc:saga_moteur': 42, 'sc:saga_sommet': 56, 'sc:saga_degel': 45, 'sc:saga_tour': 46, 'sc:saga_flottante': 58,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

@@ -247,6 +247,94 @@ export const SAGA_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'saga_robots', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('robots', 30),
+    build: () => ({
+      title: 'Le robot qui a posé son plumeau',
+      context: 'Ce matin, le robot d’entretien de votre permanence s’est arrêté au milieu du couloir, a rangé soigneusement son plumeau et affiché sur son écran : « En grève. Merci de votre compréhension. » À la radio, on annonce la même chose dans tous les entrepôts du pays.',
+      choices: [
+        c('cellule', 'Réunir constructeurs, roboticiens et syndicats', [start('robots'), g(8, 0, -1), s('politicalCapital', -2)], 'Autour de la table, personne ne comprend rien, mais tout le monde est là. C’est un début.'),
+        c('panne', 'Parler d’une simple panne logicielle', [start('robots'), g(0, 5, 3)], 'Le pays se rassure. Le lendemain, les robots des hôpitaux rejoignent le mouvement.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_monnaie', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('monnaie', 28),
+    build: () => ({
+      title: 'Un café payé en francs',
+      context: 'Bastien Lorrel, trente et un ans, fondateur de la licorne Monéa, vous offre un café qu’il règle d’un geste du pouce : « Un franc numérique. Sans banque, sans frais, sans Francfort. Nous lançons demain, et deux millions de Français sont déjà inscrits. »',
+      choices: [
+        c('alerter', 'Alerter la Banque de France et exiger un encadrement', [start('monnaie'), g(8, 0, -1), s('politicalCapital', -2)], 'Le gouverneur vous rappelle dans l’heure. Il avait déjà téléchargé l’application, « pour voir ».'),
+        c('saluer', 'Saluer une réussite française', [start('monnaie'), g(0, 5, 3)], 'Votre message fait grimper les inscriptions. Bastien Lorrel vous remercie d’un émoji.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_heritage', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('heritage', 24),
+    build: () => ({
+      title: 'Le notaire de Vabre-l’Ancien',
+      context: 'Un vieux notaire aveyronnais, chapeau à la main, vous remet une enveloppe cachetée de cire rouge : le testament d’Auguste Delorme, roi du jouet en bois. Quarante milliards pour l’État, à vingt-sept conditions. La première exige un ministère du Bonheur.',
+      choices: [
+        c('executer', 'Créer une mission d’exécution du testament', [start('heritage'), g(8, 0, -1), s('politicalCapital', -2)], 'Juristes, comptables et un historien de la famille Delorme s’installent dans un bureau sans fenêtre. Pour un ministère du Bonheur, c’est un début.'),
+        c('rire', 'En rire publiquement', [start('heritage'), g(0, 5, 3)], 'Le pays rit avec vous. Les avocats des héritiers, eux, prennent des notes.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_moteur', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('moteur', 22),
+    build: () => ({
+      title: 'Une 4L qui boit de l’eau',
+      context: 'Raymond Vuillemin, garagiste à Montbief, dans le Haut-Jura, vous a invité à voir « l’invention du siècle ». Il verse un jerrican d’eau de source dans le réservoir d’une vieille 4L, tourne la clé, et le moteur démarre. Il s’essuie les mains sur son bleu : « Ils vont tous vouloir me l’acheter. »',
+      choices: [
+        c('verifier', 'Demander des essais indépendants, en toute discrétion', [start('moteur'), g(8, 0, -1), s('politicalCapital', -2)], 'Deux ingénieurs arrivent le lendemain. Raymond leur offre un café, et garde la clé du garage dans sa poche.'),
+        c('enthousiasme', 'S’enthousiasmer publiquement', [start('moteur'), g(0, 5, 3)], 'Votre message fait le tour du pays. Le lendemain, deux mille personnes campent devant le garage.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_sommet', weight: 1, minRank: 'depute', eligible: fresh('sommet', 26),
+    build: () => ({
+      title: 'Trois jours à Versailles',
+      context: 'Le Quai d’Orsay vous associe à la coordination d’un sommet mondial de la coopération à Versailles : cent quarante délégations, trois jours, un communiqué final. Le chef du protocole vous glisse : « Ils ne sont d’accord sur rien. Pas même sur l’heure du déjeuner. »',
+      choices: [
+        c('preparer', 'Préparer un plan de négociation minutieux', [start('sommet'), g(8, 0, -1), s('politicalCapital', -2)], 'Tableaux, salles, interprètes : votre plan prévoit tout, sauf ce qui va arriver.'),
+        c('confiance', 'Faire confiance aux diplomates', [start('sommet'), g(0, 5, 3)], 'Les diplomates vous remercient de votre confiance. Ils réservent leurs chambres pour une semaine, par précaution.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_degel', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('degel', 24),
+    build: () => ({
+      title: 'Un guide de 1923',
+      context: 'Un glaciologue vous appelle de Chamonix, la voix tremblante : un guide disparu en 1923, retrouvé intact dans la mer de Glace, vient de rouvrir les yeux à l’hôpital. Il s’appelle Aristide Chavanne. Il réclame sa pipe, et demande qui a gagné le Tour de France.',
+      choices: [
+        c('proteger', 'Garantir sa protection et sa tranquillité', [start('degel'), g(8, 0, -1), s('politicalCapital', -2)], 'Une chambre au calme, un médecin, un historien, et pas une caméra. Aristide demande du tabac gris.'),
+        c('annoncer', 'Annoncer la nouvelle au monde', [start('degel'), g(-2, 5, 4)], 'Le monde entier s’émerveille. Le lendemain, quatre cents journalistes campent devant l’hôpital.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_tour', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('tour', 28),
+    build: () => ({
+      title: 'Deux mille mètres',
+      context: 'Dans un salon de la Défense, le patron d’un consortium international soulève un drap : la maquette de la tour Hélios, deux mille mètres, quatre cents étages. « La France aura la plus haute tour du monde. L’État n’aura qu’à garantir les emprunts. Une formalité. »',
+      choices: [
+        c('exiger', 'Exiger des études indépendantes et un plafond de dépenses publiques', [start('tour'), g(8, 0, -1), s('politicalCapital', -2)], 'Le patron sourit jaune. Les études commencent, et les grues attendent.'),
+        c('applaudir', 'Applaudir le génie français', [start('tour'), g(0, 5, 3)], 'Votre enthousiasme fait la une. Le consortium ajoute vingt étages en votre honneur.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_flottante', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('flottante', 26),
+    build: () => ({
+      title: 'Une ville dans la brume',
+      context: 'Un patron pêcheur du Vieux-Port vous emmène au large, à l’aube. Dans la brume, une ville entière flotte sur l’eau : immeubles blancs, jardins suspendus, héliport. Un panneau souhaite la bienvenue à Nautilia, « première cité libre de la Méditerranée ». Ni impôts, ni lois, ni État.',
+      choices: [
+        c('souverainete', 'Saisir le préfet maritime et les juristes du droit de la mer', [start('flottante'), g(8, 0, -1), s('politicalCapital', -2)], 'Le préfet maritime déplie ses cartes. Nautilia est ancrée à trois cents mètres des eaux territoriales. Exactement.'),
+        c('curiosite', 'Y voir une curiosité architecturale', [start('flottante'), g(0, 5, 3)], 'Les architectes s’extasient. Le lendemain, trois grandes fortunes françaises y déménagent.'),
+      ],
+    }),
+  },
 ];
 
 /* ── Rebondissements ───────────────────────────────────────── */
@@ -1402,6 +1490,454 @@ export const SAGA_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  // La grève des robots
+  {
+    tag: 'robots_hopitaux', weight: 1, eligible: on('robots', 0, 1),
+    build: () => ({
+      title: 'Les hôpitaux sans bras',
+      context: 'Les robots qui portaient les plateaux, désinfectaient les chambres et aidaient à lever les patients se sont arrêtés. Les soignants n’en peuvent plus, et les urgences réclament du renfort.',
+      choices: [
+        c('renforts', 'Mobiliser étudiants, réservistes et retraités du soin', [g(5, -3, 2), s('energy', -3)], 'Des milliers de volontaires en blouse prennent le relais. Les soignants respirent.'),
+        c('attendre', 'Attendre que les constructeurs trouvent une parade', [g(-1, 4, 0)], 'Les constructeurs promettent un correctif pour la semaine prochaine. Les urgences attendent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'robots_manifeste', weight: 1, eligible: on('robots', 1, 2),
+    build: () => ({
+      title: 'Le manifeste des machines',
+      context: 'Le Syndicat des travailleurs mécaniques publie un manifeste d’une politesse exquise et demande à être reçu. Les constructeurs exigent qu’on ne discute pas « avec des grille-pain ».',
+      choices: [
+        { ...c('recevoir', 'Recevoir la délégation des robots', [g(5, -3, 3)], 'Trois robots d’entrepôt s’assoient, très droits, et lisent leurs revendications. La séance dure six heures, et personne ne hausse le ton.'), play: 'negociation_syndicale' },
+        c('refuser', 'Refuser : on ne négocie pas avec des machines', [g(1, 3, -3)], 'Les constructeurs applaudissent. Les robots, eux, restent assis.'),
+      ],
+    }),
+  },
+  {
+    tag: 'robots_vote', weight: 1, eligible: on('robots', 2, 3),
+    build: () => ({
+      title: 'Le vote débranché',
+      context: 'À l’Assemblée, le vote d’un amendement sur le « statut des machines » tourne au fiasco : des boîtiers ont été débranchés, de fausses consignes circulent dans les travées. Robots, lobbyistes ou députés farceurs ? Il faut trouver le saboteur avant de revoter.',
+      choices: [
+        { ...c('enqueter', 'Mener l’enquête vous-même', [g(5, -4, 2)], 'Le saboteur n’était pas un robot, mais un assistant payé par un constructeur. Le vote est refait dans le calme, et le débat assaini.'), play: 'enquete_sabotage' },
+        c('accuser', 'Accuser les robots : c’est plus simple', [g(0, 4, -3)], 'Le pays se dresse contre les machines. Les machines, elles, ne bronchent pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'robots_philosophes', weight: 1, eligible: on('robots', 3),
+    build: () => ({
+      title: 'Une machine peut-elle faire grève ?',
+      context: 'Philosophes, juristes et ingénieurs s’écharpent sur tous les plateaux. On vous propose d’ouvrir une consultation citoyenne pour trier les propositions, des plus sages aux plus farfelues.',
+      choices: [
+        { ...c('consulter', 'Organiser la consultation et en tirer des propositions', [g(4, -3, 5)], 'Le pays tranche lui-même : pas de droits de l’homme pour les machines, mais des devoirs pour ceux qui les possèdent. Le débat s’apaise.'), play: 'consultation' },
+        c('philosophes', 'Laisser les philosophes trancher', [g(0, 3, -3)], 'Les philosophes ne tranchent rien. Ils sont ravis.'),
+      ],
+    }),
+  },
+  {
+    tag: 'robots_signature', weight: 1, eligible: on('robots', 4),
+    build: () => ({
+      title: 'La signature',
+      context: 'Un accord est sur la table : un fonds alimenté par les heures des machines, un jour de maintenance par semaine, une reprise immédiate. Les constructeurs hésitent, les robots attendent, et la signature doit avoir lieu en direct.',
+      choices: [
+        c('signer', 'Organiser une signature solennelle, minutée au millimètre', [g(5, -4, 3)], 'Un stylo pour les constructeurs, un stylet pour les robots : l’accord est signé sous les applaudissements, et les entrepôts se remettent en marche le soir même.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -3)], failureNews: 'Au moment de signer, un robot réclame une pause syndicale de dix minutes ; les constructeurs quittent la salle, vexés.' } }),
+        c('constructeurs', 'Laisser les constructeurs régler ça entre eux', [g(0, 4, -2)], 'Les constructeurs proposent une mise à jour obligatoire. Les robots refusent poliment de l’installer.'),
+      ],
+    }),
+  },
+  // Le franc numérique
+  {
+    tag: 'monnaie_cantine', weight: 1, eligible: on('monnaie', 0, 1),
+    build: () => ({
+      title: 'La cantine payée en francs',
+      context: 'Plusieurs mairies acceptent désormais le franc numérique pour la cantine et la piscine. Les comptables publics s’arrachent les cheveux : comment tenir des comptes dans une monnaie privée ?',
+      choices: [
+        c('circulaire', 'Rappeler que le service public se paie en euros, et accompagner les mairies', [g(5, -3, 1), s('energy', -3)], 'Une circulaire claire, une ligne directe pour les comptables : les mairies reviennent à l’euro sans drame.'),
+        c('innover', 'Laisser les mairies innover', [g(-1, 4, 1)], 'Trois cents mairies suivent le mouvement. La Cour des comptes prend des notes.'),
+      ],
+    }),
+  },
+  {
+    tag: 'monnaie_banques', weight: 1, eligible: on('monnaie', 1, 2),
+    build: () => ({
+      title: 'Les banques prennent l’eau',
+      context: 'Les dépôts quittent les banques par milliards. Les banquiers réclament un sauvetage, les associations d’épargnants une garantie, et il faut chiffrer ce que coûterait chaque option avant l’ouverture des marchés.',
+      choices: [
+        { ...c('chiffrer', 'Chiffrer vous-même une garantie des dépôts', [g(5, -3, 2)], 'Une garantie claire, limitée, chiffrée au centime : la fuite ralentit dès le lendemain.'), play: 'chiffrage' },
+        c('banquiers', 'Laisser les banquiers se débrouiller', [g(0, 4, -2)], 'Les banquiers se débrouillent : ils augmentent leurs frais. La fuite s’accélère.'),
+      ],
+    }),
+  },
+  {
+    tag: 'monnaie_referendum', weight: 1, eligible: on('monnaie', 2, 3),
+    build: () => ({
+      title: 'Le référendum de l’euro',
+      context: 'Des pétitions géantes réclament un référendum : « Voulez-vous que l’euro reste la seule monnaie légale ? » Le gouvernement l’accepte. Il faut mener la campagne du Oui, région par région, face aux nostalgiques du franc.',
+      choices: [
+        { ...c('campagne', 'Mener la campagne du Oui', [g(5, -4, 3)], 'Meetings, porte-à-porte, débats sur les marchés : le Oui l’emporte, et le pays se souvient de ce qu’est sa monnaie.'), play: 'campagne_referendum' },
+        c('retrait', 'Rester en retrait de la campagne', [g(0, 4, -3)], 'La campagne se fait sans vous. Les nostalgiques du franc font salle comble.'),
+      ],
+    }),
+  },
+  {
+    tag: 'monnaie_depots', weight: 1, eligible: on('monnaie', 3),
+    build: () => ({
+      title: 'Où dorment les dépôts ?',
+      context: 'Une lanceuse d’alerte révèle que Monéa place les dépôts de ses clients dans des fonds spéculatifs. Les épargnants s’affolent, et Bastien Lorrel jure à la télévision que tout est sous contrôle.',
+      choices: [
+        c('audit', 'Exiger un audit immédiat et des réserves en euros', [g(6, -5, 1)], 'Les auditeurs débarquent chez Monéa le soir même. Les réserves sont reconstituées, et la panique s’éloigne.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Monéa traîne des pieds, l’audit fuite à moitié, et la rumeur d’une faillite fait le tour des réseaux.' } }),
+        c('croire', 'Croire Bastien Lorrel sur parole', [g(1, 3, -1)], 'Il est très convaincant. Les épargnants, un peu moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'monnaie_conseil', weight: 1, eligible: on('monnaie', 4),
+    build: () => ({
+      title: 'Le Conseil européen de la monnaie',
+      context: 'Les Vingt-Sept se réunissent pour décider du sort des monnaies privées. Certains veulent tout interdire, d’autres tout permettre, et l’on attend de la France qu’elle propose une voie.',
+      choices: [
+        { ...c('negocier', 'Négocier un euro numérique public, distribué aussi par les licornes', [g(4, -3, 5)], 'Au petit matin, un compromis : l’euro numérique sera public, et les applications privées pourront le distribuer.'), play: 'sommet_ue' },
+        c('suivre', 'Se ranger à l’avis majoritaire', [g(1, 2, -2)], 'L’avis majoritaire est flou. La position française aussi.'),
+      ],
+    }),
+  },
+  // L'héritage Delorme
+  {
+    tag: 'heritage_bonheur', weight: 1, eligible: on('heritage', 0, 1),
+    build: () => ({
+      title: 'Le ministère du Bonheur',
+      context: 'La clause 4 exige un « ministère du Bonheur, avec budget et fanfare ». Les éditorialistes ricanent, les psychologues s’enthousiasment, et il faut décider ce qu’on y mettra vraiment.',
+      choices: [
+        c('serieux', 'En faire une petite délégation sérieuse : solitude, loisirs, bien-être au travail', [g(5, -3, 2), s('energy', -3)], 'Trois fonctionnaires, une fanfare municipale et un vrai programme contre la solitude des aînés : la clause est tenue, sans ridicule.'),
+        c('palais', 'Lui offrir un vrai ministère, palais compris', [g(1, 3, 2)], 'Le ministère du Bonheur s’installe dans un hôtel particulier. Ses premières factures font la une.'),
+      ],
+    }),
+  },
+  {
+    tag: 'heritage_tgv', weight: 1, eligible: on('heritage', 1, 2),
+    build: () => ({
+      title: 'Un TGV pour quatre cents habitants',
+      context: 'La clause 9 exige un TGV jusqu’à Vabre-l’Ancien. Les ingénieurs l’estiment à trois milliards, le village s’enthousiasme, les contribuables s’étranglent. Il faudrait chiffrer une alternative que le notaire puisse accepter.',
+      choices: [
+        { ...c('chiffrer', 'Chiffrer une alternative : petite ligne rénovée et autorail aux couleurs de Delorme', [g(5, -3, 2)], 'Une ligne régionale rouverte, un autorail repeint en bleu jouet : le notaire juge la clause « honorée dans son esprit ».'), play: 'chiffrage_mesure' },
+        c('tgv', 'Lancer le TGV, coûte que coûte', [g(2, 3, -3), { kind: 'economy', deficit: 0.1 }], 'Les géomètres arrivent à Vabre-l’Ancien. Les vaches les regardent passer.'),
+      ],
+    }),
+  },
+  {
+    tag: 'heritage_joyaux', weight: 1, eligible: on('heritage', 2, 3),
+    build: () => ({
+      title: 'Les joyaux de la famille Delorme',
+      context: 'Pendant l’inventaire nocturne du château Delorme, la collection de joyaux de la famille disparaît. Héritiers, domestiques et experts se soupçonnent les uns les autres, et le notaire refuse d’avancer tant que le coupable court.',
+      choices: [
+        { ...c('enquete', 'Mener l’enquête au château', [g(5, -4, 2)], 'Le coupable était un expert en bijoux engagé par l’un des neveux. Les joyaux rejoignent l’inventaire, et le neveu son avocat.'), play: 'enquete_joyaux' },
+        c('police', 'Laisser la police s’en charger, à son rythme', [g(0, 4, -2)], 'L’enquête suit son cours. Les procès aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'heritage_bourree', weight: 1, eligible: on('heritage', 3),
+    build: () => ({
+      title: 'Le codicille sous le parquet',
+      context: 'Un codicille retrouvé sous une lame de parquet exige qu’« un élu de la République danse la bourrée sur la place de Vabre-l’Ancien ». Les héritiers y voient la preuve que tout ceci est une farce ; le village prépare déjà le bal.',
+      choices: [
+        { ...c('fete', 'Organiser la fête au village, bourrée comprise', [g(2, -3, 6)], 'Accordéon, aligot et une bourrée un peu raide mais sincère : la photo fait le tour du pays, et le juge déclare le codicille « honoré ».'), play: 'fete_village' },
+        c('contester', 'Contester le codicille devant le juge', [g(2, 2, -3)], 'Le juge vous donne raison. Le village, lui, vous en veut.'),
+      ],
+    }),
+  },
+  {
+    tag: 'heritage_coffre', weight: 1, eligible: on('heritage', 4),
+    build: () => ({
+      title: 'L’ouverture du coffre',
+      context: 'Le coffre d’Auguste Delorme sera ouvert devant le notaire, les héritiers, les caméras et la moitié du village. Personne ne sait ce qu’il contient. Il faut organiser la cérémonie.',
+      choices: [
+        c('ceremonie', 'Organiser une cérémonie digne, retransmise sans tapage', [g(5, -4, 3)], 'Le coffre s’ouvre sur une enveloppe, une toupie en bois et une dernière clause. Le pays entier sourit.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -3)], failureNews: 'La serrure du coffre résiste deux heures en direct ; un serrurier finit par l’ouvrir sous les rires du pays entier.' } }),
+        c('huis_clos', 'Ouvrir le coffre à huis clos', [g(1, 3, -3)], 'Le coffre est ouvert sans témoins. Les héritiers crient au complot.'),
+      ],
+    }),
+  },
+  // Le moteur à eau
+  {
+    tag: 'moteur_camp', weight: 1, eligible: on('moteur', 0, 1),
+    build: () => ({
+      title: 'Le camp de Montbief',
+      context: 'Des milliers de passionnés campent devant le garage, des camping-cars bloquent la route du col, et des camelots vendent des « kits de conversion à l’eau » à neuf cents euros.',
+      choices: [
+        c('organiser', 'Organiser l’accueil et interdire la vente de kits', [g(5, -3, 2), s('energy', -3)], 'Parkings, navettes et saisies de kits : Montbief retrouve son calme, et les camelots leurs factures.'),
+        c('laisser', 'Laisser faire : ça fait vivre la vallée', [g(-1, 4, 0)], 'Les kits se vendent par milliers. Aucun ne fonctionne.'),
+      ],
+    }),
+  },
+  {
+    tag: 'moteur_fuite', weight: 1, eligible: on('moteur', 1, 2),
+    build: () => ({
+      title: 'Les plans ont fuité',
+      context: 'Les plans du moteur, confiés au laboratoire d’essais, se retrouvent sur le bureau d’une compagnie pétrolière. Raymond Vuillemin crie au complot, et il n’a peut-être pas tort. Il faut trouver qui a fait fuiter le dossier.',
+      choices: [
+        { ...c('enquete', 'Mener l’enquête au laboratoire', [g(5, -4, 2)], 'La fuite venait d’un consultant de passage. Le laboratoire est blanchi, et la confiance revient dans les essais.'), play: 'enquete_fuite' },
+        c('rumeurs', 'Laisser courir les rumeurs', [g(0, 4, -3)], 'Les forums s’enflamment. Chaque ingénieur devient suspect.'),
+      ],
+    }),
+  },
+  {
+    tag: 'moteur_verdicts', weight: 1, eligible: on('moteur', 2, 3),
+    build: () => ({
+      title: 'Deux essais, deux verdicts',
+      context: 'Le laboratoire public conclut à une supercherie, un institut privé à une révolution. Chaque camp exige qu’on le croie. Un journaliste vous invite à vous expliquer en direct, et il a préparé ses questions pièges.',
+      choices: [
+        { ...c('expliquer', 'Expliquer en direct comment on vérifie une invention', [g(2, -3, 5)], 'Protocoles, double aveugle, témoins indépendants : vous parlez de méthode plutôt que de miracle. Le pays écoute.'), play: 'interview_piege' },
+        c('trancher', 'Trancher en faveur du laboratoire public', [g(3, 2, -3)], 'Les croyants crient à la censure. Le camp de Montbief double de volume.'),
+      ],
+    }),
+  },
+  {
+    tag: 'moteur_petroliers', weight: 1, eligible: on('moteur', 3),
+    build: () => ({
+      title: 'La contre-offensive des pétroliers',
+      context: 'Les compagnies pétrolières financent des études, des publicités et des « experts indépendants » qui ne le sont guère. Une association réclame la transparence sur le financement de toutes les études.',
+      choices: [
+        c('transparence', 'Imposer la transparence des financements de toutes les études', [g(6, -5, 1)], 'Chaque étude affiche désormais qui l’a payée. Les experts de complaisance disparaissent des plateaux.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Un expert que vous citiez en exemple se révèle financé par un pétrolier ; les croyants exultent.' } }),
+        c('neutre', 'Rester neutre dans la querelle', [g(1, 3, -1)], 'Vous restez neutre. La querelle, elle, ne l’est pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'moteur_essai', weight: 1, eligible: on('moteur', 4),
+    build: () => ({
+      title: 'L’essai public',
+      context: 'L’essai public aura lieu sur une piste du Jura, devant des ingénieurs du monde entier et dix millions de téléspectateurs. Il faut annoncer le protocole aux Français, et y présider.',
+      choices: [
+        { ...c('protocole', 'Présenter un protocole irréprochable, et s’y tenir', [g(5, -4, 3)], 'Réservoir scellé, témoins croisés, caméras partout : quel que soit le verdict, personne ne pourra le contester.'), play: 'allocution' },
+        c('spectacle', 'En faire un grand spectacle télévisé', [g(0, 4, 3)], 'Paillettes, compte à rebours et animateur vedette : le moteur tousse, la télévision exulte.'),
+      ],
+    }),
+  },
+  // Le sommet sans fin
+  {
+    tag: 'sommet_dejeuner', weight: 1, eligible: on('sommet', 0, 1),
+    build: () => ({
+      title: 'La querelle du déjeuner',
+      context: 'Le sommet bute sur une question cruciale : le déjeuner. Trois continents, quatre régimes alimentaires et une délégation qui ne mange qu’après le coucher du soleil. Il faut un plan de table qui ne fâche personne.',
+      choices: [
+        { ...c('plan', 'Composer vous-même le plan de table', [g(5, -3, 2)], 'Le déjeuner est servi à l’heure, et deux délégations brouillées découvrent une passion commune pour le comté.'), play: 'plan_table' },
+        c('buffet', 'Servir un buffet, chacun pour soi', [g(-1, 4, 0)], 'Le buffet tourne à l’incident diplomatique devant le plateau de fromages.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sommet_convois', weight: 1, eligible: on('sommet', 1, 2),
+    build: () => ({
+      title: 'Paris en convoi',
+      context: 'Les convois officiels bloquent Paris trois fois par jour. Les taxis sont furieux, les livreurs aussi, et un bus de touristes a passé deux heures derrière une délégation qui cherchait une pharmacie de garde.',
+      choices: [
+        c('navettes', 'Créer des couloirs diplomatiques et des navettes communes', [g(4, -3, 4), s('energy', -3)], 'Les délégations voyagent désormais en navettes électriques partagées. Certaines s’y adressent la parole pour la première fois.'),
+        c('tolerer', 'Laisser circuler les convois', [g(0, 4, -3)], 'Les sirènes hurlent. Les Parisiens aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sommet_virgule', weight: 1, eligible: on('sommet', 2, 3),
+    build: () => ({
+      title: 'La virgule de l’article 12',
+      context: 'Deux délégations ne se parlent plus depuis un désaccord sur une virgule de l’article 12. Pendant la réception à l’ambassade de l’une d’elles, il faudrait déposer sur le bureau de l’ambassadeur une proposition de compromis, sans que personne ne sache d’où elle vient.',
+      choices: [
+        { ...c('glisser', 'Vous charger vous-même de déposer le compromis', [g(5, -4, 2)], 'Le lendemain, l’ambassadeur propose « son » compromis. La virgule est déplacée d’un mot, et les deux délégations se serrent la main.'), play: 'infiltration_ambassade' },
+        c('attendre', 'Attendre qu’ils se réconcilient', [g(0, 4, -2)], 'Ils ne se réconcilient pas. Ils se brouillent même sur l’article 13.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sommet_parisiens', weight: 1, eligible: on('sommet', 3),
+    build: () => ({
+      title: 'Rendez-nous Paris',
+      context: 'Une pétition « Rendez-nous Paris » dépasse le million de signatures. Les restaurateurs, eux, n’ont jamais fait d’aussi bonnes affaires. Il faut parler aux Parisiens sans froisser les délégations.',
+      choices: [
+        { ...c('allocution', 'Parler aux Parisiens, avec humour et franchise', [g(2, -2, 6)], '« Ils partiront, je vous le promets. Peut-être même avant Noël. » Paris rit, et patiente encore un peu.'), play: 'allocution' },
+        c('ignorer', 'Ignorer la pétition', [g(0, 3, -4)], 'La pétition atteint deux millions de signatures. Une délégation la signe par solidarité.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sommet_aube', weight: 1, eligible: on('sommet', 4),
+    build: () => ({
+      title: 'La vraie dernière nuit',
+      context: 'Les chefs de délégation acceptent une ultime nuit de négociations, sans téléphone ni caméra. Il faut arracher le communiqué final, article par article, avant l’aube.',
+      choices: [
+        { ...c('negocier', 'Mener la négociation jusqu’à l’aube', [g(5, -4, 3)], 'À six heures du matin, le dernier crochet saute. Des diplomates épuisés s’applaudissent dans la galerie des Glaces.'), play: 'sommet_g20' },
+        c('sherpas', 'Laisser les sherpas négocier', [g(1, 3, -1)], 'Les sherpas négocient. Ils réservent aussi leurs vacances, sur place.'),
+      ],
+    }),
+  },
+  // L'homme des glaces
+  {
+    tag: 'degel_chamonix', weight: 1, eligible: on('degel', 0, 1),
+    build: () => ({
+      title: 'Les caméras de Chamonix',
+      context: 'Des centaines de journalistes et de curieux campent devant l’hôpital de Chamonix. Un drone a filmé Aristide à sa fenêtre, en chemise de nuit. Les médecins réclament du calme.',
+      choices: [
+        c('perimetre', 'Instaurer un périmètre et un bulletin de santé quotidien', [g(5, -3, 2), s('energy', -3)], 'Un bulletin chaque midi, et plus un drone au-dessus du toit : Aristide dort enfin.'),
+        c('laisser', 'Laisser faire : le monde a le droit de savoir', [g(-1, 4, 1)], 'Le monde sait tout. Aristide ne dort plus.'),
+      ],
+    }),
+  },
+  {
+    tag: 'degel_langue', weight: 1, eligible: on('degel', 1, 2),
+    build: () => ({
+      title: 'Le français de 1923',
+      context: 'Aristide accepte sa première interview. Mais son français de 1923, semé de mots savoyards et d’expressions oubliées, déroute les journalistes. Il vous demande de l’accompagner, et de traduire.',
+      choices: [
+        { ...c('traduire', 'Traduire et accompagner l’entretien', [g(4, -3, 4)], 'Ses mots sur la montagne, la patience et la parole donnée émeuvent tout le pays, et personne ne peut les déformer.'), play: 'interprete' },
+        c('seul', 'Le laisser se débrouiller seul', [g(0, 4, -1)], 'Ses phrases sont mal comprises, coupées, détournées. Des slogans naissent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'degel_marchands', weight: 1, eligible: on('degel', 2, 3),
+    build: () => ({
+      title: 'Les marchands de légende',
+      context: 'Agents, publicitaires et partis se disputent Aristide : contrats d’édition, tasses à son effigie, slogans « Chavanne 1923 ». Lui ne comprend pas ce qu’on lui fait signer.',
+      choices: [
+        c('conseil', 'Lui trouver un avocat et un conseil de confiance', [g(6, -5, 1)], 'Une avocate de Chambéry relit chaque contrat. Les marchands repartent bredouilles, et Aristide garde son nom.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Le conseil est accusé de vouloir confisquer Aristide ; par défi, il signe un contrat de tasses à son effigie.' } }),
+        c('libre', 'Le laisser libre de ses choix', [g(1, 3, 0)], 'Il est libre. Il signe tout, très poliment.'),
+      ],
+    }),
+  },
+  {
+    tag: 'degel_partielle', weight: 1, eligible: on('degel', 3),
+    build: () => ({
+      title: 'La législative partielle',
+      context: 'Un mouvement qui se réclame d’Aristide présente un candidat à une législative partielle en Haute-Savoie, avec le portrait du vieux guide sur toutes les affiches. Aristide jure qu’il n’a rien demandé. Votre camp vous demande de mener campagne, canton par canton.',
+      choices: [
+        { ...c('campagne', 'Mener une campagne propre, sans jamais viser Aristide', [g(5, -4, 3)], 'Vous parlez de vallées, de glaciers et d’écoles, jamais contre lui. Le mouvement s’essouffle, et Aristide vous écrit une lettre de remerciement, à la plume.'), play: 'campagne_legislatives' },
+        c('affiche', 'Poser à votre tour avec Aristide sur une affiche', [g(-2, 4, 2), s('popularity', 2)], 'L’affiche fait sourire. Aristide, beaucoup moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'degel_discours', weight: 1, eligible: on('degel', 4),
+    build: () => ({
+      title: 'Le discours d’Aristide',
+      context: 'Aristide veut annoncer sa décision au pays, depuis le refuge où il avait dormi sa dernière nuit, il y a un siècle. Il vous demande de l’aider à écrire son discours, avec ses mots à lui.',
+      choices: [
+        { ...c('ecrire', 'L’aider à écrire, sans rien lui souffler', [g(3, -3, 5)], '« J’ai dormi cent ans. Je ne vais pas passer ce qu’il me reste à me disputer. » Le pays entier a les yeux humides.'), play: 'plume_discours' },
+        c('conseillers', 'Le confier à des conseillers en communication', [g(0, 3, -2)], 'Le discours est impeccable. Personne ne croit qu’il est de lui.'),
+      ],
+    }),
+  },
+  // La tour de deux mille mètres
+  {
+    tag: 'tour_ombre', weight: 1, eligible: on('tour', 0, 1),
+    build: () => ({
+      title: 'L’ombre de la tour',
+      context: 'Les riverains de Puteaux et de Courbevoie découvrent les simulations : la tour plongera leurs rues dans l’ombre deux heures par jour. Une association réclame des compensations, et des centaines de propositions affluent.',
+      choices: [
+        { ...c('consultation', 'Organiser une consultation des riverains', [g(4, -3, 3)], 'Jardins sur les toits, éclairages chauds, une crèche au pied de la tour : les meilleures idées sont retenues, et l’ombre devient négociable.'), play: 'consultation' },
+        c('progres', 'Rappeler que le progrès fait toujours un peu d’ombre', [g(0, 4, -2)], 'La formule fait le tour des réseaux. Les riverains font le tour des tribunaux.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tour_vent', weight: 1, eligible: on('tour', 1, 2),
+    build: () => ({
+      title: 'Deux mètres d’oscillation',
+      context: 'À six cents mètres, la structure oscille de deux mètres par grand vent. Les grutiers refusent de monter, et les ingénieurs du consortium jurent que tout est parfaitement normal.',
+      choices: [
+        c('expertise', 'Imposer une contre-expertise et suspendre les travaux en hauteur', [g(6, -4, -1), s('energy', -3)], 'Un amortisseur de six cents tonnes est installé au sommet. La tour n’oscille plus que de vingt centimètres, et les grutiers remontent.'),
+        c('confiance', 'Faire confiance au consortium', [g(-1, 4, 1)], 'Les travaux continuent. Par grand vent, une grue se bloque à mi-course, et la photo fait le tour du monde.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tour_rallonge', weight: 1, eligible: on('tour', 2, 3),
+    build: () => ({
+      title: 'La rallonge',
+      context: 'Le consortium réclame quatre milliards d’argent public pour « ne pas laisser la France au milieu du gué ». Ministères, régions et collectivités se disputent ce qu’il faudrait sacrifier pour les trouver.',
+      choices: [
+        { ...c('arbitrer', 'Arbitrer vous-même, enveloppe par enveloppe', [g(5, -4, 1)], 'Une rallonge limitée, conditionnée à des économies du consortium : le chantier continue, et personne ne paie à l’aveugle.'), play: 'arbitrage_budgetaire' },
+        c('payer', 'Payer : on ne s’arrête pas à mi-hauteur', [g(3, 4, 2), { kind: 'economy', deficit: 0.1 }], 'Les milliards tombent. Le consortium ajoute un étage panoramique.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tour_quartier', weight: 1, eligible: on('tour', 3),
+    build: () => ({
+      title: 'Le quartier au pied de la tour',
+      context: 'Autour du chantier, tout un quartier est à redessiner : logements, écoles, parcs, transports. Le consortium voulait des parkings et des boutiques de luxe ; les maires vous confient le plan d’urbanisme.',
+      choices: [
+        { ...c('plan', 'Dessiner le quartier vous-même', [g(4, -3, 5)], 'Des logements, des écoles, un grand parc au pied de la tour : les riverains commencent à l’aimer.'), play: 'urbanisme_commune' },
+        c('consortium', 'Laisser le consortium décider', [g(1, 3, -3)], 'Parkings et boutiques de luxe. Les riverains lancent une pétition.'),
+      ],
+    }),
+  },
+  {
+    tag: 'tour_hauteur', weight: 1, eligible: on('tour', 4),
+    build: () => ({
+      title: 'La hauteur finale',
+      context: 'Il faut fixer la hauteur finale et la cérémonie qui l’accompagnera. Le monde entier attend une image : la France fière, ou la France ruinée.',
+      choices: [
+        c('raisonnable', 'Arrêter la tour à une hauteur raisonnable et inaugurer le jardin suspendu', [g(5, -4, 3)], 'Mille deux cents mètres, un jardin dans les nuages et la Normandie à l’horizon : l’inauguration est un triomphe.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -3)], failureNews: 'Le jour de l’inauguration, un brouillard épais avale la tour jusqu’au cinquantième étage ; les caméras du monde entier filment une nappe grise.' } }),
+        c('record', 'Exiger le record, coûte que coûte', [g(0, 5, 4)], 'La tour monte encore. Les comptes aussi.'),
+      ],
+    }),
+  },
+  // La cité flottante
+  {
+    tag: 'flottante_navettes', weight: 1, eligible: on('flottante', 0, 1),
+    build: () => ({
+      title: 'Les navettes du Vieux-Port',
+      context: 'Des navettes rapides relient le Vieux-Port à Nautilia toutes les heures, sans le moindre contrôle des douanes. Les pêcheurs se plaignent des sillages, les douaniers de leur impuissance.',
+      choices: [
+        c('controles', 'Instaurer des contrôles douaniers au départ du port', [g(5, -3, 1), s('energy', -3)], 'Passeports, bagages, déclarations : les navettes partent moins vite, et les valises moins pleines.'),
+        c('tourisme', 'Laisser circuler : c’est bon pour le tourisme', [g(-1, 4, 1)], 'Les navettes doublent leurs rotations. Les valises aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'flottante_reception', weight: 1, eligible: on('flottante', 1, 2),
+    build: () => ({
+      title: 'La réception sur Nautilia',
+      context: 'Les fondateurs de Nautilia donnent une grande réception pour séduire diplomates et investisseurs. Vous y êtes invité. L’occasion de déposer sur le bureau du fondateur la mise en demeure de l’État, sans esclandre et sans être reconduit à la passerelle.',
+      choices: [
+        { ...c('deposer', 'Vous glisser jusqu’au bureau du fondateur', [g(5, -4, 2)], 'Le lendemain, le fondateur découvre la mise en demeure entre ses boîtes de cigares. Il rappelle le préfet maritime, beaucoup moins arrogant.'), play: 'infiltration_ambassade' },
+        c('decliner', 'Décliner l’invitation', [g(0, 4, -1)], 'La réception a lieu sans vous. Trois ministres étrangers y trinquent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'flottante_dockers', weight: 1, eligible: on('flottante', 2, 3),
+    build: () => ({
+      title: 'Les dockers en colère',
+      context: 'Ceux qui font tourner Nautilia travaillent sans contrat ni sécurité sociale. Les dockers de Marseille menacent de bloquer toutes les navettes par solidarité, et le port avec elles.',
+      choices: [
+        { ...c('negocier', 'Négocier avec les syndicats un plan pour les travailleurs de Nautilia', [g(4, -3, 5)], 'Inspection du travail embarquée, contrats de droit français pour quiconque vit à Marseille : les dockers lèvent le blocus.'), play: 'negociation_syndicale' },
+        c('bloquer', 'Laisser les dockers bloquer', [g(1, 3, -4)], 'Le port est bloqué trois semaines. Nautilia fait venir ses vivres d’Espagne.'),
+      ],
+    }),
+  },
+  {
+    tag: 'flottante_mistral', weight: 1, eligible: on('flottante', 3),
+    build: () => ({
+      title: 'Coup de mistral',
+      context: 'Un coup de mistral fait gîter Nautilia, des modules se détachent, et les fondateurs appellent la Marine nationale à l’aide. Il faut décider des secours, et de ce qui suivra.',
+      choices: [
+        c('secours', 'Envoyer les secours, et une inspection de sécurité avec eux', [g(6, -5, 2)], 'Remorqueurs, plongeurs et inspecteurs : Nautilia est stabilisée, et ses fondateurs signent sans discuter le rapport de sécurité.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'L’orage passé, les fondateurs refusent l’inspection ; la Marine repart, et Nautilia fanfaronne.' } }),
+        c('conditions', 'Exiger d’abord une reconnaissance de la loi française', [g(3, 2, -4)], 'Les fondateurs cèdent sous la pluie. Le pays trouve que vous avez marchandé les secours.'),
+      ],
+    }),
+  },
+  {
+    tag: 'flottante_statut', weight: 1, eligible: on('flottante', 4),
+    build: () => ({
+      title: 'Le statut de Nautilia',
+      context: 'Nautilia demande sa reconnaissance aux Nations unies. Il faut convaincre les partenaires européens de refuser, et proposer une autre voie.',
+      choices: [
+        { ...c('conseil', 'Porter la question au Conseil européen', [g(5, -4, 3)], 'Les Vingt-Sept refusent la reconnaissance et proposent un statut de port européen. Nautilia, isolée, accepte de négocier.'), play: 'sommet_ue' },
+        c('attendre', 'Attendre le vote des Nations unies', [g(0, 4, -2)], 'Trois micro-États votent pour Nautilia. Les autres s’abstiennent poliment.'),
+      ],
+    }),
+  },
 ];
 
 /* ── Actions de l'onglet ───────────────────────────────────── */
@@ -1541,4 +2077,60 @@ export const SAGA_ACTIONS: ActionDefinition[] = [
   act('fantomes', [1, 2, 3, 4], { id: 'sg_fantomes_accueil', label: 'Organiser l’accueil des foules dans les châteaux', description: 'Réservations, navettes, parcours nocturnes : canaliser la ruée.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
   act('fantomes', [1, 2, 3], { id: 'sg_fantomes_guides', label: 'Former des guides des apparitions', description: 'Des historiens en lanterne pour raconter, rassurer, et éloigner les escrocs.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
     risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Un guide jure en direct avoir parlé à la dame de la galerie ; la frénésie repart de plus belle.' } }),
+  // La grève des robots
+  act('robots', undefined, { id: 'sg_robots_entrepot', label: 'Visiter un entrepôt à l’arrêt', description: 'Des allées immobiles, des robots alignés, et des caristes rappelés de leur retraite.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('robots', undefined, { id: 'sg_robots_roboticiens', label: 'Réunir roboticiens et juristes', description: 'Comprendre ce qui les a fait s’arrêter, et ce qu’en dit le droit.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('robots', undefined, { id: 'sg_robots_matinale', label: 'Répondre aux auditeurs de la matinale', description: 'Des auditeurs inquiets, d’autres attendris : expliquer sans caricaturer.', minigame: 'matinale', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('robots', [1, 2, 3, 4], { id: 'sg_robots_fonds', label: 'Créer un fonds de transition mécanique', description: 'Une part de chaque heure-machine pour former et protéger les travailleurs humains.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('robots', [1, 2, 3], { id: 'sg_robots_reserve', label: 'Lancer une réserve civique du soin et de la logistique', description: 'Étudiants, retraités, réservistes : des bras humains là où les machines se sont tues.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Des volontaires sont envoyés dans des entrepôts vides pendant que les hôpitaux attendent ; la cacophonie fait la une.' } }),
+  // Le franc numérique
+  act('monnaie', undefined, { id: 'sg_monnaie_commercants', label: 'Faire le tour des commerçants', description: 'Boulangers, cafetiers, marchés : comprendre pourquoi ils ont adopté le franc.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('monnaie', undefined, { id: 'sg_monnaie_economistes', label: 'Réunir la Banque de France et les économistes', description: 'Masse monétaire, réserves, scénarios de panique : savoir ce qu’on risque.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('monnaie', undefined, { id: 'sg_monnaie_radio', label: 'Expliquer la monnaie à la radio', description: 'Ce qu’est l’argent, ce que garantit l’euro, ce que promet le franc.', minigame: 'matinale', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('monnaie', [1, 2, 3, 4], { id: 'sg_monnaie_reserves', label: 'Imposer des réserves en euros à Monéa', description: 'Chaque franc numérique adossé à un euro bien réel, contrôlé chaque semaine.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('monnaie', [1, 2, 3], { id: 'sg_monnaie_epargnants', label: 'Informer les épargnants', description: 'Guichets, brochures, conseillers : ce que vous risquez, et comment vous protéger.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une brochure officielle confond le franc numérique et l’ancien franc ; tout le pays s’en amuse.' } }),
+  // L'héritage Delorme
+  act('heritage', undefined, { id: 'sg_heritage_vabre', label: 'Passer quelques jours à Vabre-l’Ancien', description: 'La maison natale, l’école communale, le café : comprendre l’homme derrière le testament.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('heritage', undefined, { id: 'sg_heritage_notaires', label: 'Réunir notaires et juristes', description: 'Vingt-sept clauses, onze codicilles, et autant de chausse-trapes.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('heritage', undefined, { id: 'sg_heritage_repartir', label: 'Répartir la fortune Delorme', description: 'Écoles, hôpitaux, petites lignes, ministère du Bonheur : chacun réclame sa part.', minigame: 'arbitrage_budgetaire', cost: { ap: 1, energy: 4 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('heritage', [1, 2, 3, 4], { id: 'sg_heritage_heritiers', label: 'Négocier avec les héritiers', description: 'Une part pour les neveux, la paix pour le testament.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('heritage', [1, 2, 3], { id: 'sg_heritage_souvenirs', label: 'Lancer un appel aux souvenirs d’Auguste Delorme', description: 'Lettres, carnets, anecdotes : retrouver le sens caché de chaque clause.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Un faux codicille, fabriqué par un plaisantin, est authentifié trois jours avant d’être démasqué ; le pays rit, mais pas avec l’État.' } }),
+  // Le moteur à eau
+  act('moteur', undefined, { id: 'sg_moteur_garage', label: 'Passer une journée au garage de Montbief', description: 'Cambouis, café et questions précises : regarder le moteur de près.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('moteur', undefined, { id: 'sg_moteur_physiciens', label: 'Réunir physiciens et motoristes', description: 'Thermodynamique, électrolyse, catalyse : ce qui est possible, et ce qui ne l’est pas.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('moteur', undefined, { id: 'sg_moteur_verifier', label: 'Démonter les fausses promesses en direct', description: 'Kits miracles, brevets fantômes, complots : vérifier chaque affirmation.', minigame: 'factcheck_direct', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('moteur', [1, 2, 3, 4], { id: 'sg_moteur_banc', label: 'Financer un banc d’essai indépendant', description: 'Un laboratoire public, des ingénieurs étrangers, des résultats publiés en ligne.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('moteur', [1, 2, 3], { id: 'sg_moteur_kits', label: 'Traquer les vendeurs de kits miracles', description: 'Saisies, amendes, et des notices qui promettent de rouler au robinet.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Un vendeur de kits saisi porte plainte et devient, en une semaine, le martyr des croyants.' } }),
+  // Le sommet sans fin
+  act('sommet', undefined, { id: 'sg_sommet_couloirs', label: 'Arpenter les couloirs du sommet', description: 'Apartés, cafés, et confidences dans les escaliers de Versailles.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('sommet', undefined, { id: 'sg_sommet_sherpas', label: 'Réunir les sherpas', description: 'Les vrais négociateurs, ceux qui connaissent chaque crochet du texte.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('sommet', undefined, { id: 'sg_sommet_diner', label: 'Recevoir une délégation à dîner', description: 'Cadeau, menu, toast : le moindre faux pas coûte un article.', minigame: 'visite_officielle', cost: { ap: 1, energy: 4 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('sommet', [1, 2, 3, 4], { id: 'sg_sommet_texte', label: 'Réécrire le texte en dix pages', description: 'Couper, simplifier, fusionner : un texte que l’on puisse enfin signer.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('sommet', [1, 2, 3], { id: 'sg_sommet_bal', label: 'Offrir un bal de quartier aux Parisiens et aux délégués', description: 'Buffets du monde, accordéon, et des diplomates qui apprennent la java.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Deux délégations rivales se disputent le micro du bal ; la vidéo fait rire toutes les chancelleries.' } }),
+  // L'homme des glaces
+  act('degel', undefined, { id: 'sg_degel_promenade', label: 'Passer une journée avec Aristide', description: 'Une promenade, un café, et mille questions sur le monde d’aujourd’hui.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('degel', undefined, { id: 'sg_degel_medecins', label: 'Réunir médecins et historiens', description: 'Sa santé, son passé, son village : l’aider sans le brusquer.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('degel', undefined, { id: 'sg_degel_radio', label: 'Raconter Aristide à la radio', description: 'Qui il est, ce qu’il vit, et pourquoi il faut le laisser respirer.', minigame: 'matinale', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('degel', [1, 2, 3, 4], { id: 'sg_degel_fondation', label: 'Créer une fondation des glaciers à son nom', description: 'Un projet à sa mesure, loin des estrades.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('degel', [1, 2, 3], { id: 'sg_degel_famille', label: 'Retrouver la famille d’Aristide', description: 'Des petits-neveux, des arrière-cousines, et un album de photos jaunies.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une prétendue arrière-petite-nièce se révèle être une influenceuse en quête d’abonnés ; le pays s’indigne.' } }),
+  // La tour de deux mille mètres
+  act('tour', undefined, { id: 'sg_tour_chantier', label: 'Monter sur le chantier avec les compagnons', description: 'Casque, harnais, et un café pris à six cents mètres.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('tour', undefined, { id: 'sg_tour_ingenieurs', label: 'Réunir ingénieurs et économistes', description: 'Vent, fondations, devis : ce qui tient debout, et ce qui ne tient pas.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('tour', undefined, { id: 'sg_tour_chiffrage', label: 'Recompter le coût de chaque étage', description: 'Acier, béton, ascenseurs : cinq calculs avant d’annoncer quoi que ce soit.', minigame: 'chiffrage', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('tour', [1, 2, 3, 4], { id: 'sg_tour_plafond', label: 'Plafonner les garanties publiques', description: 'Pas un euro de plus sans contrepartie, ni un étage sans financement.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('tour', [1, 2, 3], { id: 'sg_tour_riverains', label: 'Financer des compensations pour les riverains', description: 'Jardins, toits végétalisés, et lumière pour les rues à l’ombre.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Les compensations profitent surtout aux bureaux du quartier d’affaires ; les riverains dénoncent un « cadeau aux tours ».' } }),
+  // La cité flottante
+  act('flottante', undefined, { id: 'sg_flottante_vedette', label: 'Embarquer avec les douaniers en mer', description: 'Une nuit sur une vedette, à compter les navettes et les conteneurs.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('flottante', undefined, { id: 'sg_flottante_juristes', label: 'Réunir les juristes du droit de la mer', description: 'Eaux territoriales, zone économique, pavillon : où commence la République ?', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('flottante', undefined, { id: 'sg_flottante_littoral', label: 'Faire la tournée des maires du littoral', description: 'De Martigues à La Ciotat : rassurer ceux qui voient la ville flotter au large.', minigame: 'tournee_maires', cost: { ap: 1, energy: 5 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('flottante', [1, 2, 3, 4], { id: 'sg_flottante_fisc', label: 'Taxer les résidents de Nautilia', description: 'Domicile fiscal, taxe de sortie, conventions : qui vit de Marseille paie à Marseille.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('flottante', [1, 2, 3], { id: 'sg_flottante_inspection', label: 'Envoyer l’inspection du travail à bord', description: 'Contrats, horaires, sécurité : voir comment vivent ceux qui font tourner Nautilia.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Les inspecteurs sont refoulés à la passerelle, sous l’œil goguenard des caméras de Nautilia.' } }),
 ];
