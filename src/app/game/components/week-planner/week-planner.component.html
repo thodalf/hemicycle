@@ -120,10 +120,11 @@
               </div>
               <p class="muted">{{ a.description | royal: game.kingFem() }}</p>
               <div class="costs mono">
-                <span class="cost ap">{{ a.cost.ap }} PA</span>
-                @if (a.cost.energy) { <span class="cost">⚡ {{ a.cost.energy }}</span> }
-                @if (a.cost.money) { <span class="cost">{{ a.cost.money.toLocaleString('fr-FR') }} €</span> }
-                @if (a.cost.politicalCapital) { <span class="cost">◆ {{ a.cost.politicalCapital }} cap.</span> }
+                @let k = costOf(a);
+                <span class="cost ap">{{ k.ap }} PA</span>
+                @if (k.energy) { <span class="cost">⚡ {{ k.energy }}</span> }
+                @if (k.money) { <span class="cost">{{ k.money.toLocaleString('fr-FR') }} €</span> }
+                @if (k.politicalCapital) { <span class="cost">◆ {{ k.politicalCapital }} cap.</span> }
               </div>
               @let f = fx(a);
               @if (f.gains.length || f.losses.length || f.other.length) {
@@ -132,6 +133,7 @@
                   @for (c of f.losses; track c.text) { <span class="fx-chip bad">{{ c.text }}</span> }
                   @for (c of f.other; track c.text) { <span class="fx-chip">{{ c.text }}</span> }
                   @if (a.risk) { <span class="fx-chip risk" [title]="failText(a)">{{ failText(a) }}</span> }
+                  @if (satNext(a); as sat) { <span class="fx-chip bad" title="Trop d’actions de la même catégorie dans le mois : chacune porte moins que la précédente.">saturation −{{ sat }} %</span> }
                   @if (odds(a); as o) { <span class="fx-chip dice" title="Chaque action peut rater ou faire un coup d’éclat : la forme, la réputation et l’équipe font pencher la balance.">🎲 {{ o.eclat }} % éclat · {{ o.rate }} % raté</span> }
                   @if (wear(a) < 1) { <span class="fx-chip bad" title="Répéter la même action d’un mois sur l’autre lasse : les gains diminuent.">Lassitude : gains −{{ 100 - wear(a) * 100 | number: '1.0-0' }} %</span> }
                 </div>

@@ -213,8 +213,8 @@ export function scaleGains(effects: Effect[], f: number): Effect[] {
 /** Lassitude : répéter la même action d'un mois sur l'autre rapporte de moins en moins */
 export function wearFactor(d: GameState, actionId: string): number {
   const last = Number(d.player.flags[`last_${actionId}`] ?? -99);
-  if (d.week - last > 1) return 1;
-  return Math.max(0.4, 1 - 0.2 * (Number(d.player.flags[`streak_${actionId}`] ?? 0) + 1));
+  if (d.week - last > 2) return 1;
+  return Math.max(0.35, 1 - 0.25 * (Number(d.player.flags[`streak_${actionId}`] ?? 0) + 1));
 }
 
 /** Applique une liste d'effets ; renvoie un résumé lisible (« Popularité +3 ») */

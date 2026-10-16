@@ -8,7 +8,7 @@ import { FxService } from '../../services/fx.service';
 import { TeamService } from '../../services/team.service';
 import { RecruitCardComponent } from '../recruit-card/recruit-card.component';
 import { GameStateService } from '../../services/game-state.service';
-import { MISSIONS, MISSION_BY_ID, missionSkill, setMission } from '../../engine/council';
+import { MISSION_BY_ID, missionSkill, missionsFor, setMission } from '../../engine/council';
 import { onLeave } from '../../engine/recruits';
 import { LEAVE_MALUS } from '../../data/leave';
 
@@ -56,7 +56,7 @@ import { LEAVE_MALUS } from '../../data/leave';
                 <span>Mission</span>
                 <select [value]="r.mission ?? ''" (change)="setMission(r.id, $any($event.target).value, r.missionTarget)">
                   <option value="">— aucune —</option>
-                  @for (m of missions; track m.id) { <option [value]="m.id">{{ m.icon }} {{ m.label }}</option> }
+                  @for (m of missionsFor(r.role); track m.id) { <option [value]="m.id" [title]="m.hint">{{ m.icon }} {{ m.label }}</option> }
                 </select>
                 @if (missionNeeds(r.mission) === 'faction') {
                   <select [value]="r.missionTarget ?? ''" (change)="setMission(r.id, r.mission ?? '', $any($event.target).value)">
@@ -69,7 +69,7 @@ import { LEAVE_MALUS } from '../../data/leave';
                     @for (n of game.s().npcs; track n.id) { <option [value]="n.id">{{ n.name }}</option> }
                   </select>
                 }
-                @if (r.mission) { <small class="muted">Efficacité ×{{ skill(r) }}</small> }
+                @if (r.mission) { <small class="muted">{{ missionHint(r.mission) }} Efficacité ×{{ skill(r) }}</small> } @else if (!missionsFor(r.role).length) { <small class="muted">Aucune mission pour ce poste.</small> }
               </label>
               <small class="payer" [class.party]="team.funding().partyIds.includes(r.id)">{{ team.funding().partyIds.includes(r.id) ? 'Payé par le parti' : team.personalRoles.includes(r.role) ? 'À vos frais (poste personnel)' : 'À vos frais (budget du parti épuisé)' }}</small>
             </div>
@@ -170,7 +170,8 @@ import { LEAVE_MALUS } from '../../data/leave';
 export class TeamPanelComponent {
   protected readonly team = inject(TeamService);
   protected readonly game = inject(GameStateService);
-  protected readonly missions = MISSIONS;
+  protected readonly missionsFor = missionsFor;
+  protected missionHint(id: string) { return MISSION_BY_ID.get(id)?.hint ?? ''; }
   protected missionNeeds(id?: string) { return id ? MISSION_BY_ID.get(id)?.target : undefined; }
   protected skill(r: Recruit) { return missionSkill(r).toFixed(1).replace('.', ','); }
   protected setMission(id: string, mission: string, target?: string): void {

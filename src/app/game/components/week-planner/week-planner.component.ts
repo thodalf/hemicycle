@@ -1,3 +1,4 @@
+import { costOf, saturation } from '../../engine/difficulty';
 import { SAGA_BY_ID } from '../../data/saga-defs';
 import { RoyalPipe } from '../shared/royal.pipe';
 import { tierOdds } from '../../engine/outcomes';
@@ -169,6 +170,13 @@ export class WeekPlannerComponent {
   }
 
   /** Chances de coup d'éclat et de raté, affichées sur chaque action */
+  protected costOf(a: ActionDefinition) { return costOf(this.game.s(), a); }
+  /** La prochaine action de cette catégorie : quelle perte, faute de variété ? */
+  protected satNext(a: ActionDefinition): number {
+    if (['repos', 'sante', 'argent'].includes(a.category)) return 0;
+    const rank = this.planner.plan().filter(p => ACTIONS_BY_ID.get(p.actionId)?.category === a.category).length;
+    return Math.round((1 - saturation(rank)) * 100);
+  }
   protected odds(a: ActionDefinition): { eclat: number; rate: number } | null {
     if (['repos', 'sante', 'argent'].includes(a.category) || a.minigame) return null;
     const o = tierOdds(this.game.s(), a);
@@ -299,7 +307,7 @@ export class WeekPlannerComponent {
   /** Infobulle du bouton « Parti » */
   protected partyHint(action: ActionDefinition): string {
     const left = this.planner.envelopeLeft().toLocaleString('fr-FR');
-    const pc = partyCapitalCost(this.game.s(), action.cost.money ?? 0);
+    const pc = partyCapitalCost(this.game.s(), costOf(this.game.s(), action).money ?? 0);
     return this.planner.leaderPays()
       ? `Réglé par la trésorerie du parti (reste ${left} €)`
       : `Enveloppe de la fédération : ${left} € restants · coûte ${pc} pt de capital politique`;

@@ -1,3 +1,4 @@
+import { mods } from './difficulty';
 import { ActionDefinition, Effect, GameState } from '../models/game.models';
 import { Rng, clamp } from './rng';
 
@@ -27,7 +28,8 @@ export function tierOdds(d: GameState, a: ActionDefinition): { rate: number; ecl
     || (a.category === 'dossiers' && p.staff.includes('assistant_parlementaire')) ? 0.03 : 0;
   const luck = (p.traits ?? []).includes('chanceux' as never) ? 0.03 : 0;
   const edge = clamp(shape + rep + staff + luck, -0.08, 0.1);
-  return { rate: clamp(0.12 - edge, 0.04, 0.22), eclat: clamp(0.12 + edge, 0.05, 0.24) };
+  const hard = mods(d).tier;
+  return { rate: clamp(0.12 - edge + hard, 0.03, 0.3), eclat: clamp(0.12 + edge - hard / 2, 0.04, 0.24) };
 }
 
 export function rollTier(d: GameState, a: ActionDefinition, rng: Rng): Tier {

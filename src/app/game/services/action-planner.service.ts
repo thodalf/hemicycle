@@ -1,3 +1,4 @@
+import { costOf, masteryFactor, saturation } from '../engine/difficulty';
 import { sagaRunning } from '../engine/saga';
 import { natCrisis } from '../data/national-crises';
 import { onAction } from '../engine/character';
@@ -55,6 +56,9 @@ export function partyFundable(a: ActionDefinition): boolean {
  * énergie, argent, capital politique), puis TurnService les exécute toutes
  * en fin de mois.
  */
+/** Catégories sans saturation : se reposer, se soigner, gérer son argent */
+const FLAT_CATEGORIES = new Set(['repos', 'sante', 'argent']);
+
 @Injectable({ providedIn: 'root' })
 export class ActionPlannerService {
   private readonly game = inject(GameStateService);
@@ -68,14 +72,15 @@ export class ActionPlannerService {
     const totals = { ap: 0, energy: 0, money: 0, partyMoney: 0, politicalCapital: 0 };
     for (const p of this._plan()) {
       const a = ACTIONS_BY_ID.get(p.actionId)!;
-      totals.ap += a.cost.ap;
-      totals.energy += a.cost.energy ?? 0;
-      totals.politicalCapital += a.cost.politicalCapital ?? 0;
+      const c = costOf(s, a);
+      totals.ap += c.ap;
+      totals.energy += c.energy ?? 0;
+      totals.politicalCapital += c.politicalCapital ?? 0;
       if (p.payer === 'parti' || a.partyOnly) {
-        totals.partyMoney += a.cost.money ?? 0;
-        totals.politicalCapital += partyCapitalCost(s, a.cost.money ?? 0);
+        totals.partyMoney += c.money ?? 0;
+        totals.politicalCapital += partyCapitalCost(s, c.money ?? 0);
       } else {
-        totals.money += a.cost.money ?? 0;
+        totals.money += c.money ?? 0;
       }
     }
     return totals;
@@ -146,7 +151,7 @@ export class ActionPlannerService {
   availability(action: ActionDefinition, targetId?: string, payer: Payer = 'perso'): Availability {
     const s = this.game.s();
     const spent = this.spent();
-    const { cost } = action;
+    const cost = costOf(s, action);
     if (rankOrder(action.minRank) > rankOrder(s.player.rankId)) return { ok: false, reason: 'Rang insuffisant' };
     if ((s.cooldowns[action.id] ?? 0) > s.week) return { ok: false, reason: `De nouveau possible ${inMonth(s.cooldowns[action.id])}` };
     if (action.minigame && MINIGAMES_BY_ID.get(action.minigame)?.daily && dailyPlayed()) return { ok: false, reason: 'Déjà joué aujourd’hui : nouveau mot demain' };
@@ -254,10 +259,11 @@ export class ActionPlannerService {
 
   /** Appelé par TurnService à l'intérieur de la transaction de fin de mois */
   execute(d: GameState, rng: Rng): void {
+    const byCategory: Record<string, number> = {};
     for (const planned of this._plan()) {
       const action = ACTIONS_BY_ID.get(planned.actionId)!;
       const ctx = { domain: planned.domain, targetId: planned.targetId, reason: action.label };
-      const { cost } = action;
+      const cost = costOf(d, action);
 
       d.player.actionPoints.current -= cost.ap;
       d.player.stats.energy = Math.max(0, d.player.stats.energy - (cost.energy ?? 0));
@@ -285,7 +291,12 @@ export class ActionPlannerService {
         pushNews(d, 'action', 'negative', `${action.label} : raté`, [action.risk!.failureNews, summary.join(' · ')].filter(Boolean).join(' — '));
       } else {
         // Lassitude : les gains s'émoussent si l'on répète la même action
-        const wear = wearFactor(d, action.id);
+        // Saturation de la catégorie dans le mois, maîtrise du dossier, sujet à la une
+        const rank = byCategory[action.category] = (byCategory[action.category] ?? -1) + 1;
+        const sat = FLAT_CATEGORIES.has(action.category) ? 1 : saturation(rank);
+        const mastery = ctx.domain ? masteryFactor(d.player.dossiers[ctx.domain].mastery) : 1;
+        const agenda = ctx.domain && ctx.domain === d.agendaDomain ? 1.15 : 1;
+        const wear = wearFactor(d, action.id) * sat * mastery * agenda;
         const effects = action.category === 'medias' ? boostMedia(d, action.effects) : action.effects;
         // Mini-jeu : les gains attendent le résultat (joué avant la fin du mois suivant)
         if (action.minigame && queueMinigame(d, action.minigame, action.label, scaleGains(effects, wear), ctx).length) {
@@ -296,7 +307,9 @@ export class ActionPlannerService {
         // Raté, comme prévu, ou coup d'éclat : le hasard du terrain
         const tier = rollTier(d, action, rng);
         const summary = applyEffects(d, tierEffects(scaleGains(effects, wear), tier), ctx, rng);
-        if (wear < 1) summary.push(`lassitude −${Math.round((1 - wear) * 100)} %`);
+        if (sat < 1) summary.push(`saturation −${Math.round((1 - sat) * 100)} %`);
+        if (mastery < 1) summary.push(`dossier mal maîtrisé −${Math.round((1 - mastery) * 100)} %`);
+        if (wear / sat / mastery / agenda < 1) summary.push(`lassitude −${Math.round((1 - wear / sat / mastery / agenda) * 100)} %`);
         if (tier === 'eclat') {
           d.player.renown = (d.player.renown ?? 0) + 3;
           pushNews(d, 'actu', 'positive', `Coup d’éclat : ${action.label}`, [tierStory(action, tier, rng), summary.join(' · ')].filter(Boolean).join(' — '));

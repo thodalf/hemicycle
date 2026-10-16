@@ -56,6 +56,27 @@ export interface Grid { set: GridSet; rows: GridCrit[]; cols: GridCrit[]; answer
 const initial = (s: string) => normalize(s.replace(/^(le |la |les |l’|l')/i, ''))[0] ?? 'a';
 const multiWord = (s: string) => /[-\s’']/.test(s.trim());
 
+/**
+ * Critères sur l'orthographe du nom : lettres contenues, initiale, finale, longueur.
+ * Une seule colonne « lettre » par grille (même groupe), pour varier les questions.
+ */
+function spellingCrits(nameOf: (x: GridItem) => string, letters: string[], extra = true): GridCrit[] {
+  const n = (x: GridItem) => normalize(nameOf(x));
+  const out: GridCrit[] = letters.map(l => ({ id: `has-${l}`, label: `Contient la lettre ${l.toUpperCase()}`, group: 'spell', test: (x: GridItem) => n(x).includes(l) }));
+  out.push(
+    { id: 'vowel', label: 'Commence par une voyelle', group: 'spell', test: x => /^[aeiouy]/.test(n(x)) },
+    { id: 'endvowel', label: 'Se termine par une voyelle', group: 'spell', test: x => /[aeiouy]$/.test(n(x)) },
+    { id: 'endcons', label: 'Se termine par une consonne', group: 'spell', test: x => /[b-df-hj-np-tv-xz]$/.test(n(x)) },
+  );
+  if (extra) out.push(
+    { id: 'short', label: 'Nom de 7 lettres ou moins', group: 'spell', test: x => n(x).length <= 7 },
+    { id: 'long', label: 'Nom de plus de 14 lettres', group: 'spell', test: x => n(x).length > 14 },
+    { id: 'dbl', label: 'Contient une lettre doublée (ll, rr, ss…)', group: 'spell', test: x => /([a-z])\1/.test(n(x)) },
+    { id: 'accent', label: 'S’écrit avec un accent', group: 'spell', test: x => /[À-ÿ]/.test(nameOf(x).replace(/[’']/g, '')) },
+  );
+  return out;
+}
+
 /* ── Villes de France ──────────────────────────────────────── */
 
 const v = (x: GridItem) => x.data as Ville;
@@ -78,6 +99,7 @@ const villes: GridSet = {
     { id: 'single', label: 'Nom en un seul mot', group: 'words', test: x => !multiWord(v(x).name) },
     { id: 'atol', label: 'Initiale de A à L', group: 'initial', test: x => initial(v(x).name) <= 'l' },
     { id: 'mtoz', label: 'Initiale de M à Z', group: 'initial', test: x => initial(v(x).name) >= 'm' },
+    ...spellingCrits(x => v(x).name, ['b', 'v', 'g', 'p', 'h', 'y']),
   ],
   minPerCell: 3,
 };
@@ -137,6 +159,7 @@ const metro: GridSet = {
     { id: 'lieu', label: 'Commence par Place, Pont, Quai, Rue ou Avenue', group: 'words', test: x => /^(Place|Pont|Quai|Rue|Avenue)\b/.test(st(x).name) },
     { id: 'double', label: 'Double nom (avec un « – »)', group: 'dash', test: x => /–/.test(st(x).name) },
     { id: 'oneword', label: 'Nom en un seul mot', group: 'dash', test: x => !multiWord(st(x).name) },
+    ...spellingCrits(x => st(x).name, ['b', 'v', 'g', 'p', 'f', 'h', 'q']),
   ],
   minPerCell: 3,
 };
@@ -160,7 +183,8 @@ const capitales: GridSet = {
     { id: 'atol', label: 'Capitale de A à L', group: 'initial', test: x => initial(k(x).capital) <= 'l' },
     { id: 'mtoz', label: 'Capitale de M à Z', group: 'initial', test: x => initial(k(x).capital) >= 'm' },
     { id: 'multi', label: 'Capitale en plusieurs mots', group: 'words', test: x => multiWord(k(x).capital) },
-    { id: 'samename', label: 'Même initiale que le pays', group: 'letter', test: x => initial(k(x).capital) === initial(k(x).country) },
+    { id: 'samename', label: 'Même initiale que le pays', group: 'same', test: x => initial(k(x).capital) === initial(k(x).country) },
+    ...spellingCrits(x => k(x).capital, ['b', 'k', 'g', 'u', 'r'], false),
   ],
   minPerCell: 3,
 };
