@@ -664,25 +664,197 @@ export function scoreCity(c: City): Score {
   return { score: clamp(score), popC, satC, budC, objC, objOk, s };
 }
 
+
 /* ============================================================
  *  Le composant
+ *  Rendu « plan d’urbanisme » : un plan masse vu du dessus,
+ *  îlots cadastraux, rues, rivière, relief, zone inondable
+ *  hachurée, bâtiments en toitures avec leurs ombres portées.
  * ============================================================ */
 
 interface Fx { i: number; text: string; tone: 'good' | 'bad' | 'info'; id: number }
 interface Preview { i: number; err: string | null; cost: number; dPop: number; dJobs: number; dSat: number; dInc: number; dPoll: number; deltas: Map<number, number>; own: number | null; notes: string[] }
+
+/** Un élément de dessin : tracé, remplissage, trait */
+interface Part { d: string; f?: string; s?: string; w?: number }
+type GlyphId = 'people' | 'jobs' | 'euro' | 'smog' | 'target' | 'crane' | 'dozer' | 'refresh' | 'face1' | 'face2' | 'face3' | 'face4'
+  | 'waves' | 'rain' | 'factory' | 'megaphone' | 'doc' | 'crown' | 'heart' | 'snow' | 'stop';
+
+const rd = (v: number) => Math.round(v * 100) / 100;
+const box = (x: number, y: number, w: number, h: number) => `M${rd(x)} ${rd(y)}h${rd(w)}v${rd(h)}h${rd(-w)}z`;
+const disc = (x: number, y: number, r: number, ry = r) => `M${rd(x - r)} ${rd(y)}a${rd(r)} ${rd(ry)} 0 1 0 ${rd(2 * r)} 0a${rd(r)} ${rd(ry)} 0 1 0 ${rd(-2 * r)} 0z`;
+const trees = (pts: number[][], dark = '#5c8a44', light = '#7fab5f') => [
+  { d: pts.map(([x, y, r]) => disc(x, y, r)).join(''), f: dark },
+  { d: pts.map(([x, y, r]) => disc(x - r * .28, y - r * .28, r * .5)).join(''), f: light },
+];
+const LOT = 'M.9 .9h8.2v8.2H.9z';
+
+/** Courbes de niveau (carrés marchants) d’un relief fait de bosses gaussiennes */
+function isolines(peaks: number[][], levels: number[], size = 80, sigma = 5.6): string {
+  const n = size + 1, f = new Float32Array(n * n), k = 1 / (2 * sigma * sigma);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    let v = 0;
+    for (const [px, py] of peaks) { const dx = i - px, dy = j - py; v += Math.exp(-(dx * dx + dy * dy) * k); }
+    f[j * n + i] = v;
+  }
+  const o = (v: number) => Math.round(v * 10) / 10;
+  let d = '';
+  for (const L of levels) for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) {
+    const a = f[j * n + i], b = f[j * n + i + 1], c = f[(j + 1) * n + i + 1], e = f[(j + 1) * n + i];
+    const idx = (a > L ? 8 : 0) | (b > L ? 4 : 0) | (c > L ? 2 : 0) | (e > L ? 1 : 0);
+    if (idx === 0 || idx === 15) continue;
+    const T = `${o(i + (L - a) / (b - a))} ${j}`, R = `${i + 1} ${o(j + (L - b) / (c - b))}`, B = `${o(i + (L - e) / (c - e))} ${j + 1}`, Lf = `${i} ${o(j + (L - a) / (e - a))}`;
+    const seg = (p: string, q: string) => `M${p}L${q}`;
+    switch (idx) {
+      case 1: case 14: d += seg(Lf, B); break;
+      case 2: case 13: d += seg(B, R); break;
+      case 3: case 12: d += seg(Lf, R); break;
+      case 4: case 11: d += seg(T, R); break;
+      case 6: case 9: d += seg(T, B); break;
+      case 7: case 8: d += seg(Lf, T); break;
+      case 5: d += seg(T, R) + seg(Lf, B); break;
+      case 10: d += seg(Lf, T) + seg(B, R); break;
+    }
+  }
+  return d;
+}
+
+/* ── Les bâtiments, vus du ciel (10 × 10 unités = une parcelle) ── */
+
+const BLD: Record<BKind, Part[]> = {
+  logements: [
+    { d: LOT, f: '#c9d6a9' }, { d: box(4.6, .9, .8, 8.2), f: '#e6dfcd' },
+    { d: box(1.5, 1.6, 2.6, 3.1), f: '#b4633f' }, { d: box(2.8, 1.6, 1.3, 3.1), f: 'rgba(0,0,0,.2)' },
+    { d: box(5.9, 1.6, 2.6, 3.1), f: '#a85d3d' }, { d: box(7.2, 1.6, 1.3, 3.1), f: 'rgba(0,0,0,.2)' },
+    { d: box(1.5, 5.6, 2.6, 2.9), f: '#86837e' }, { d: box(2.8, 5.6, 1.3, 2.9), f: 'rgba(0,0,0,.2)' },
+    { d: box(5.9, 5.6, 2.6, 2.9), f: '#b86a46' }, { d: box(7.2, 5.6, 1.3, 2.9), f: 'rgba(0,0,0,.2)' },
+    ...trees([[4.2, 5.1, .45], [8.6, 8.6, .45]]),
+  ],
+  residence: [
+    { d: LOT, f: '#cdd1c3' }, { d: box(5, 5, 4.1, 4.1), f: '#b6cd99' },
+    { d: 'M1.2 1.2h7.6v3.3H4.6v4.4H1.2z', f: '#c4c9cd' }, { d: 'M1.65 1.65h6.7v2.4H4.15v4.4h-2.5z', f: '#b3babf' },
+    { d: box(2.1, 2.1, 1.2, .9) + box(6.4, 2.2, 1.3, 1) + box(2.1, 6.4, 1, 1), f: '#8c9399' },
+    ...trees([[6.4, 6.4, .95], [8, 8, .8], [8.1, 5.9, .6]]),
+  ],
+  ancien: [
+    { d: LOT, f: '#dbd1c0' },
+    { d: box(1.1, 1.1, 3.1, 2.4), f: '#a9654c' }, { d: box(4.4, 1.1, 2.1, 2.9), f: '#8e8781' }, { d: box(6.7, 1.1, 2.2, 2.1), f: '#b8785a' },
+    { d: box(1.1, 3.8, 2.3, 2.6), f: '#9c5a43' }, { d: box(6.2, 3.4, 2.7, 2.5), f: '#c08868' }, { d: box(1.1, 6.7, 3.4, 2.2), f: '#7f7a74' },
+    { d: box(4.9, 6.3, 2.2, 2.6), f: '#b06a4c' }, { d: box(7.3, 6.2, 1.6, 2.7), f: '#9a6650' },
+    { d: 'M1.1 2.3h3.1M5.45 1.1v2.9M6.7 2.15h2.2M2.25 3.8v2.6M6.2 4.65h2.7M1.1 7.8h3.4M6 6.3v2.6M8.1 6.2v2.7', s: 'rgba(40,20,10,.35)', w: .16 },
+    ...trees([[4.7, 5.1, .6]]),
+  ],
+  ecole: [
+    { d: LOT, f: '#e6dab9' },
+    { d: 'M1.2 1.2h7.6v7.6H6.3V3.6H3.7v5.2H1.2z', f: '#8c9fb3' }, { d: 'M1.2 2.25h7.6v.3H1.2zM2.3 3.6h.3v5.2h-.3zM7.4 3.6h.3v5.2h-.3z', f: 'rgba(0,0,0,.14)' },
+    { d: box(4.05, 4.2, 1.9, 3.7), f: '#c98f62' }, { d: box(4.05, 4.2, 1.9, 3.7) + 'M4.05 6.05h1.9', s: '#f6f2e8', w: .16 },
+    ...trees([[5, 8.55, .45]]),
+  ],
+  commerce: [
+    { d: LOT, f: '#b3b1ab' },
+    { d: box(1.2, 1.2, 7.6, 3.6), f: '#ddd6c8' }, { d: box(2, 2, 1, 1.8) + box(3.8, 2, 1, 1.8) + box(5.6, 2, 1, 1.8) + box(7.3, 2, .9, 1.8), f: '#a3b4c2' },
+    { d: box(1.2, 4.8, 7.6, .55), f: '#b5443a' },
+    { d: 'M1.7 6.1v2.6M3.1 6.1v2.6M4.5 6.1v2.6M5.9 6.1v2.6M7.3 6.1v2.6M8.7 6.1v2.6', s: '#f2f2ee', w: .16 },
+    { d: box(2.05, 6.5, .7, 1.4) + box(6.25, 6.7, .7, 1.4), f: '#5d7590' }, { d: box(4.85, 6.4, .7, 1.4), f: '#b8473b' },
+  ],
+  usine: [
+    { d: LOT, f: '#c2beb4' },
+    { d: box(1.2, 1.2, 6, 6.4), f: '#a3a7aa' },
+    { d: box(1.2, 2.2, 6, .55) + box(1.2, 3.6, 6, .55) + box(1.2, 5, 6, .55) + box(1.2, 6.4, 6, .55), f: '#7b8085' },
+    { d: box(1.2, 1.75, 6, .3) + box(1.2, 3.15, 6, .3) + box(1.2, 4.55, 6, .3) + box(1.2, 5.95, 6, .3), f: '#c9d5de' },
+    { d: box(7.6, 1.2, 1.3, 3), f: '#c9c3b7' }, { d: box(1.8, 8, 1.7, .65) + box(4, 8, 1.7, .65), f: '#e6e4de' },
+    { d: disc(8.1, 7.6, .8), f: '#6b6560' }, { d: disc(8.1, 7.6, .42), f: '#2b2826' },
+  ],
+  parc: [
+    { d: LOT, f: '#a8ca8d' },
+    { d: 'M.9 6.6C3 5.6 4 3.1 6 2.4s2.6-.5 3.1-.8M4.4 9.1c.2-1.4 1-2.6 2.2-3.2', s: '#ece3c8', w: .55 },
+    { d: disc(6.7, 7, 1.35, .95), f: '#8bb6cf' },
+    ...trees([[2.2, 2.4, 1.1], [3.4, 7.7, 1], [1.7, 8.2, .75], [8, 4.7, .95], [7.9, 8.6, .55], [4.4, 4.7, .7], [6.8, 1.4, .5]]),
+  ],
+  tram: [],
+  hopital: [
+    { d: LOT, f: '#d2d5cb' },
+    { d: box(1.3, 1.3, 2.5, 7.4) + box(6.2, 1.3, 2.5, 7.4) + box(3.8, 3.8, 2.4, 2.4), f: '#eef0ed' },
+    { d: box(1.3, 1.3, 2.5, .3) + box(6.2, 1.3, 2.5, .3), f: 'rgba(0,0,0,.08)' },
+    { d: disc(5, 2.45, .95), f: '#76838a' }, { d: 'M4.62 2v.9h.16v-.37h.44v.37h.16V2h-.16v.37h-.44V2z', f: '#fff' },
+    { d: 'M2.25 4.55h.6v.6h.6v.6h-.6v.6h-.6v-.6h-.6v-.6h.6z', f: '#d23a32' },
+    { d: box(4.3, 7.3, 1.4, .7), f: '#fff' }, { d: box(4.3, 7.55, 1.4, .2), f: '#d23a32' },
+  ],
+  fetes: [
+    { d: LOT, f: '#ddd4c3' },
+    { d: box(1.4, 1.5, 7.2, 4.5), f: '#b9a789' },
+    { d: box(1.4, 2, 7.2, .5) + box(1.4, 3, 7.2, .6), f: 'rgba(255,255,255,.3)' },
+    { d: box(1.4, 4.4, 7.2, .6) + box(1.4, 5.4, 7.2, .6), f: 'rgba(0,0,0,.15)' },
+    { d: 'M2 7h6M2 8.4h6', s: '#c9bea8', w: .14 },
+    ...trees([[2.2, 7.8, .7], [5, 7.9, .7], [7.8, 7.8, .7]]),
+  ],
+  solaire: [
+    { d: LOT, f: '#c4d0a4' },
+    { d: box(1.3, 1.4, 7.4, 1.3) + box(1.3, 3.4, 7.4, 1.3) + box(1.3, 5.4, 7.4, 1.3) + box(1.3, 7.4, 7.4, 1.3), f: '#2c4566' },
+    { d: 'M3.15 1.4v1.3M5 1.4v1.3M6.85 1.4v1.3M3.15 3.4v1.3M5 3.4v1.3M6.85 3.4v1.3M3.15 5.4v1.3M5 5.4v1.3M6.85 5.4v1.3M3.15 7.4v1.3M5 7.4v1.3M6.85 7.4v1.3', s: '#58779e', w: .12 },
+    { d: 'M1.3 1.5h7.4M1.3 3.5h7.4M1.3 5.5h7.4M1.3 7.5h7.4', s: '#8eaad0', w: .12 },
+  ],
+  epuration: [
+    { d: LOT, f: '#cdcac0' },
+    { d: disc(3.2, 3.2, 2.1) + disc(6.9, 6.9, 1.8), f: '#e0dcd2' }, { d: disc(3.2, 3.2, 1.72) + disc(6.9, 6.9, 1.45), f: '#6f9db2' },
+    { d: 'M3.2 3.2h1.72M6.9 6.9h1.45', s: '#e0dcd2', w: .26 }, { d: disc(3.2, 3.2, .3) + disc(6.9, 6.9, .28), f: '#e0dcd2' },
+    { d: box(5.6, 1.3, 3.1, 1.5) + box(5.6, 3.2, 3.1, 1.5), f: '#7aa3b6' }, { d: box(1.3, 6.2, 3, 2.5), f: '#bdb6a8' },
+  ],
+};
+/** Ruines : murs effondrés, gravats */
+const RUIN: Part[] = [
+  { d: LOT, f: '#b9ae9d' },
+  { d: 'M1.6 1.6h3.4v.5H2.1v2.4h-.5zM6 1.5h2.5v3h-.5V2h-2zM1.7 6.2h.5v2h2.6v.5H1.7zM6.2 6.4l2.3-.3.1.5-1.8.3.2 1.9-.5.1z', f: '#6c655c' },
+  { d: disc(3.6, 3.7, .35) + disc(4.4, 4.8, .25) + disc(5.6, 4.2, .4) + disc(3.3, 5.5, .3) + disc(6.4, 5.4, .22) + disc(7.4, 7.6, .3) + disc(4.8, 7.4, .35), f: '#8c8273' },
+  { d: disc(4.9, 3.4, .22) + disc(2.9, 4.6, .18) + disc(6.9, 3.6, .2) + disc(5.5, 6.6, .25), f: '#544d45' },
+];
+/** Silhouettes pour l’interface (24 × 24, au trait) */
+const GLYPHS: Record<GlyphId, Part[]> = {
+  people: [{ d: 'M9 4.5a3 3 0 1 1 0 6a3 3 0 0 1 0-6zM3 19.5c0-3.3 2.7-6 6-6s6 2.7 6 6v.5H3zM16.5 6.5a2.5 2.5 0 1 1 0 5a2.5 2.5 0 0 1 0-5zM15.9 13.3c2.9.2 5.1 2.6 5.1 5.5V20h-4.4v-.5c0-2.4-.3-4.4-.7-6.2z', f: 'currentColor' }],
+  jobs: [{ d: 'M3.5 8h17v11.5h-17zM9 8V5.5h6V8M3.5 13h17M11 12v2.2h2V12', s: 'currentColor', w: 1.6 }],
+  euro: [{ d: 'M17.5 6.6A6.6 6.6 0 1 0 17.5 17.4M4.5 10.4h8.5M4.5 13.6h8.5', s: 'currentColor', w: 1.7 }],
+  smog: [{ d: 'M3 8c2-1.3 4 1.3 6 0s4-1.3 6 0 4 1.3 6 0M3 12.5c2-1.3 4 1.3 6 0s4-1.3 6 0 4 1.3 6 0M3 17c2-1.3 4 1.3 6 0s4-1.3 6 0 4 1.3 6 0', s: 'currentColor', w: 1.6 }],
+  target: [{ d: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18zM12 7.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 0 0 0-9z', s: 'currentColor', w: 1.6 }, { d: disc(12, 12, 1.6), f: 'currentColor' }],
+  crane: [{ d: 'M6 21V4M6 4h14M6 4l3.5 4.5M6 8.5h3.5M17 4v6M3.5 21h6', s: 'currentColor', w: 1.6 }, { d: box(15.2, 10, 3.6, 3), f: 'currentColor' }],
+  dozer: [{ d: 'M4 8h6.2l1 4.2H17v4H4zM13.6 9.6h1v2.6h-1zM16.6 13.4l2.9-1.2.5 1.1-2.9 1.3zM19.4 10.2l2.4-.5c.4 2.2.4 7.4 0 11.6l-2.4.2c.5-3.6.5-7.6 0-11.3zM4.4 16.8h12.2a2.1 2.1 0 0 1 0 4.2H4.4a2.1 2.1 0 0 1 0-4.2z', f: 'currentColor' }],
+  refresh: [{ d: 'M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4', s: 'currentColor', w: 1.8 }],
+  face1: [{ d: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18zM8 16.5c2.2-2.3 5.8-2.3 8 0', s: 'currentColor', w: 1.6 }, { d: disc(9, 10, 1.1) + disc(15, 10, 1.1), f: 'currentColor' }],
+  face2: [{ d: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18zM8.2 15.5h7.6', s: 'currentColor', w: 1.6 }, { d: disc(9, 10, 1.1) + disc(15, 10, 1.1), f: 'currentColor' }],
+  face3: [{ d: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18zM8.2 14.4c2.1 1.9 5.5 1.9 7.6 0', s: 'currentColor', w: 1.6 }, { d: disc(9, 10, 1.1) + disc(15, 10, 1.1), f: 'currentColor' }],
+  face4: [{ d: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18z', s: 'currentColor', w: 1.6 }, { d: 'M7.6 13.2h8.8a4.4 4.4 0 0 1-8.8 0z' + disc(9, 9.6, 1.1) + disc(15, 9.6, 1.1), f: 'currentColor' }],
+  waves: [{ d: 'M3 8c2-1.4 4 1.4 6 0s4-1.4 6 0 4 1.4 6 0M3 13c2-1.4 4 1.4 6 0s4-1.4 6 0 4 1.4 6 0M3 18c2-1.4 4 1.4 6 0s4-1.4 6 0 4 1.4 6 0', s: 'currentColor', w: 1.7 }],
+  rain: [{ d: 'M7 15.2a4.4 4.4 0 0 1-.7-8.8 6 6 0 0 1 11.4 1.7 3.6 3.6 0 0 1-.2 7.1z', f: 'currentColor' }, { d: 'M8 18l-1 2.6M12 18l-1 2.6M16 18l-1 2.6', s: 'currentColor', w: 1.6 }],
+  factory: [{ d: 'M3 20.5V10l5 3v-3l5 3V7.5h3.5V3.5h2.5v17z', f: 'currentColor' }],
+  megaphone: [{ d: 'M4 9.5v5h3l8 4.5V5L7 9.5zM18.2 9a4 4 0 0 1 0 6M7.5 14.5l1.2 5', s: 'currentColor', w: 1.7 }],
+  doc: [{ d: 'M6 3h9l4 4v14H6zM15 3v4h4M9 11h7M9 14h7M9 17h5', s: 'currentColor', w: 1.6 }],
+  crown: [{ d: 'M4 18.5h16M4.5 16.5L3 7.5l5 4 4-7 4 7 5-4-1.5 9z', s: 'currentColor', w: 1.6 }],
+  heart: [{ d: 'M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z', f: 'currentColor' }],
+  snow: [{ d: 'M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.8 4.8L12 6.5l2.2-1.7M9.8 19.2l2.2-1.7 2.2 1.7', s: 'currentColor', w: 1.6 }],
+  stop: [{ d: disc(12, 12, 8), f: 'currentColor' }, { d: 'M8 12h8', s: '#fff', w: 2.4 }],
+};
+const GLYPH_LIST = (Object.keys(GLYPHS) as GlyphId[]).map(id => ({ id, parts: GLYPHS[id] }));
+const BLD_LIST = (Object.keys(BLD) as BKind[]).filter(k => BLD[k].length).map(id => ({ id, parts: BLD[id] })).concat([{ id: 'ruine' as BKind, parts: RUIN }]);
+const EV_GLYPH: Record<string, GlyphId> = { crue: 'waves', embacles: 'rain', usine: 'factory', subvention: 'euro', greve: 'megaphone', petition: 'doc', promoteur: 'crane', roi: 'crown', dons: 'heart', assureurs: 'doc', gel: 'snow' };
 
 const BRIEF: Record<Variant, { title: string; brief: (c: City) => string; tip: string }> = {
   commune: { title: 'Moderniser la commune', tip: 'Le vieux centre étouffe près de l’usine : parcs, école et emplois feront remonter la satisfaction.',
     brief: c => `Fin de mandat dans ${c.years} ans : satisfaction ≥ ${c.satTarget} et budget positif. Visez aussi ${c.popTarget.toLocaleString('fr-FR')} habitants.` },
   nouvelle: { title: 'La ville nouvelle sur la Loire', tip: 'Gardez des quartiers séparés : une seule ligne de tram doit les longer tous.',
     brief: c => `Le grand chantier du roi : ${c.popTarget.toLocaleString('fr-FR')} habitants et une ligne de tram qui dessert ${c.dTarget} quartiers en ${c.years} ans.` },
-  reconstruction: { title: 'Reconstruire après la crue', tip: 'Déblayez les ruines (🚜) avant de rebâtir ; on ne reconstruit plus en zone inondable.',
+  reconstruction: { title: 'Reconstruire après la crue', tip: 'Déblayez les ruines (bulldozer) avant de rebâtir ; on ne reconstruit plus en zone inondable.',
     brief: c => `Relogez tout le monde avant l’hiver (${c.popTarget.toLocaleString('fr-FR')} habitants) et videz la zone inondable de ses décombres, en ${c.years} mois.` },
 };
 
 const fmt = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 const sgn = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '±') + fmt(Math.abs(n));
 let fxId = 0;
+let uidSeq = 0;
+
+interface Plan {
+  lots: string; lines: string; forest: string; hills: string; contours: string; index: string; peak: { x: number; y: number; label: string } | null;
+  water: string; quays: string; river: string; flood: string; floodEdge: string;
+  ballast: string; bridge: string; rails: string; sleepers: string; tramCar: string | null; blds: { i: number; k: string; x: number; y: number; fresh: boolean }[];
+}
 
 @Component({
   selector: 'app-urbanisme-game',
@@ -690,51 +862,113 @@ let fxId = 0;
     @let c = city();
     @let s = st();
     <div class="urb" [class]="'urb v-' + c.v">
+      <svg class="defs" aria-hidden="true" focusable="false" width="0" height="0">
+        <defs>
+          @for (g of glyphs; track g.id) {
+            <symbol [attr.id]="uid + '-g-' + g.id" viewBox="0 0 24 24">
+              @for (p of g.parts; track $index) { <path [attr.d]="p.d" [attr.fill]="p.f ?? 'none'" [attr.stroke]="p.s ?? null" [attr.stroke-width]="p.w ?? null" stroke-linecap="round" stroke-linejoin="round" /> }
+            </symbol>
+          }
+          @for (b of blds; track b.id) {
+            <symbol [attr.id]="uid + '-b-' + b.id" viewBox="0 0 10 10">
+              @for (p of b.parts; track $index) { <path [attr.d]="p.d" [attr.fill]="p.f ?? 'none'" [attr.stroke]="p.s ?? null" [attr.stroke-width]="p.w ?? null" stroke-linecap="round" /> }
+            </symbol>
+          }
+          <filter [attr.id]="uid + '-shadow'" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx=".38" dy=".55" stdDeviation=".32" flood-color="#141a10" flood-opacity=".42" />
+          </filter>
+          <radialGradient [attr.id]="uid + '-crown'" cx=".5" cy=".5" r=".5" fx=".36" fy=".34">
+            <stop offset="0" stop-color="#86ad62" /><stop offset=".6" stop-color="#557d3c" /><stop offset="1" stop-color="#3b5a2a" />
+          </radialGradient>
+          <pattern [attr.id]="uid + '-canopy'" patternUnits="userSpaceOnUse" width="6.6" height="6.6" patternTransform="rotate(19)">
+            <rect width="6.6" height="6.6" fill="#3f5f2e" />
+            @for (k of crowns; track $index) { <circle [attr.cx]="k[0]" [attr.cy]="k[1]" [attr.r]="k[2]" [attr.fill]="u('crown')" /> }
+          </pattern>
+          <pattern [attr.id]="uid + '-hatch'" patternUnits="userSpaceOnUse" width="1.9" height="1.9" patternTransform="rotate(-45)">
+            <path d="M0 .95h1.9" stroke="#2f6fbf" stroke-opacity=".55" stroke-width=".32" />
+          </pattern>
+          <pattern [attr.id]="uid + '-ripple'" patternUnits="userSpaceOnUse" width="5" height="2.4" patternTransform="rotate(-12)">
+            <path d="M.4 .7h1.6M2.8 1.8h1.5" stroke="#f3fbff" stroke-opacity=".45" stroke-width=".2" stroke-linecap="round" />
+          </pattern>
+        </defs>
+      </svg>
+
       <div class="head">
         <span class="yr">{{ c.v === 'reconstruction' ? 'Mois' : 'Année' }} <b class="mono">{{ Math.min(c.year, c.years) }}</b>/{{ c.years }}</span>
         <span class="ttl">{{ title }}</span>
-        <span class="works" [class.none]="!worksLeft()" aria-label="Chantiers restants cette année">🏗️ {{ worksLeft() }}/{{ c.works }}</span>
+        <span class="works" [class.none]="!worksLeft()" aria-label="Chantiers restants cette année"><svg class="gi" aria-hidden="true"><use [attr.href]="g('crane')" /></svg>{{ worksLeft() }}/{{ c.works }}</span>
       </div>
 
       <div class="stats" role="list" aria-label="Indicateurs de la ville">
         <span class="st" role="listitem" [class.ok]="s.pop >= c.popTarget" [attr.aria-label]="'Habitants ' + s.pop + ' sur ' + c.popTarget">
-          <i>👥</i><b class="mono">{{ fmt(s.pop) }}</b><small>/{{ fmt(c.popTarget) }}</small>
+          <svg class="gi" aria-hidden="true"><use [attr.href]="g('people')" /></svg><b class="mono">{{ fmt(s.pop) }}</b><small>/{{ fmt(c.popTarget) }}</small>
           @for (f of statFx('pop'); track f.id) { <em class="sfx" [class]="'sfx ' + f.tone">{{ f.text }}</em> }
         </span>
         <span class="st" role="listitem" [class.warn]="s.unemp > 0.12" [attr.aria-label]="'Emplois ' + s.jobs + ' pour ' + s.actifs + ' actifs'">
-          <i>💼</i><b class="mono">{{ fmt(s.jobs) }}</b><small>{{ s.unemp > 0.005 ? 'chôm. ' + Math.round(s.unemp * 100) + ' %' : 'plein emploi' }}</small>
+          <svg class="gi" aria-hidden="true"><use [attr.href]="g('jobs')" /></svg><b class="mono">{{ fmt(s.jobs) }}</b><small>{{ s.unemp > 0.005 ? 'chôm. ' + Math.round(s.unemp * 100) + ' %' : 'plein emploi' }}</small>
         </span>
         <span class="st" role="listitem" [class.bad]="c.budget < 0" [attr.aria-label]="'Budget ' + c.budget + ' millions, ' + s.income + ' par an'">
-          <i>💶</i><b class="mono">{{ fmt(c.budget) }}</b><small>{{ sgn(s.income) }}/{{ per }}</small>
+          <svg class="gi" aria-hidden="true"><use [attr.href]="g('euro')" /></svg><b class="mono">{{ fmt(c.budget) }}</b><small>{{ sgn(s.income) }}/{{ per }}</small>
           @for (f of statFx('budget'); track f.id) { <em class="sfx" [class]="'sfx ' + f.tone">{{ f.text }}</em> }
         </span>
         <button type="button" class="st tap" role="listitem" [class.ok]="c.v === 'commune' && s.sat >= c.satTarget" [class.bad]="s.sat < 40" [class.open]="satOpen()" (click)="toggleSat()"
                 [attr.aria-pressed]="satOpen()" [attr.aria-label]="'Satisfaction ' + s.sat + ', touchez pour le détail'">
-          <i>{{ s.sat >= 65 ? '😀' : s.sat >= 45 ? '🙂' : s.sat >= 30 ? '😐' : '😠' }}</i><b class="mono">{{ s.sat }}</b><small>{{ c.v === 'commune' ? '/' + c.satTarget : 'satisf. ⓘ' }}</small>
+          <svg class="gi" aria-hidden="true"><use [attr.href]="g(face(s.sat))" /></svg><b class="mono">{{ s.sat }}</b><small>{{ c.v === 'commune' ? '/' + c.satTarget : 'satisf. ⓘ' }}</small>
           @for (f of statFx('sat'); track f.id) { <em class="sfx" [class]="'sfx ' + f.tone">{{ f.text }}</em> }
         </button>
         <span class="st" role="listitem" [class.bad]="s.poll >= 5" [attr.aria-label]="'Pollution ' + s.poll">
-          <i>🌫️</i><b class="mono">{{ s.poll }}</b><small>pollution</small>
+          <svg class="gi" aria-hidden="true"><use [attr.href]="g('smog')" /></svg><b class="mono">{{ s.poll }}</b><small>pollution</small>
         </span>
       </div>
 
-      <p class="obj">🎯 {{ objText() }}</p>
+      <p class="obj"><svg class="gi" aria-hidden="true"><use [attr.href]="g('target')" /></svg>{{ objText() }}</p>
 
-      <div class="board" role="grid" aria-label="Plan de la ville, 8 cases sur 8">
-        @for (cell of c.cells; track $index; let i = $index) {
-          @let d = deltaAt(i);
-          <button type="button" class="cell" [class]="'cell t-' + cell.t" [class.flood]="cell.flood" [class.ok]="validSet().has(i)" [class.no]="mode() && !validSet().has(i)"
-                  [class.aim]="aim() === i" [class.look]="look() === i" [class.served]="servedSet().has(i)"
-                  [disabled]="over() || !!event() || busy()" (click)="tap(i)" [attr.aria-label]="cellLabel(i)">
-            @if (cell.b) {
-              <span class="bld" [class]="'bld c-' + cat(cell.b)" [class.new]="cell.fresh">{{ icon(cell.b) }}</span>
-            } @else if (cell.t === 'ruine') { <span class="deco">🧱</span> }
-            @else if (cell.t === 'foret') { <span class="deco">🌲</span> }
-            @if (aim() === i) { @if (ghost(); as g) { <span class="bld ghost" [class]="'bld ghost c-' + cat(g)">{{ icon(g) }}</span> } }
-            @if (d !== null) { <i class="dq" [class.pos]="d > 0" [class.neg]="d < 0" [class.own]="aim() === i">{{ sgn(d) }}</i> }
-            @for (f of fxAt(i); track f.id) { <span class="fx" [class]="'fx ' + f.tone">{{ f.text }}</span> }
-          </button>
-        }
+      <div class="sheet-plan">
+        <div class="board" role="grid" aria-label="Plan de la ville, 8 cases sur 8">
+          @let pl = plan();
+          <svg class="plan" viewBox="0 0 80 80" aria-hidden="true">
+            <rect width="80" height="80" class="p-street" />
+            <path class="p-lot" [attr.d]="pl.lots" />
+            <path class="p-hill" [attr.d]="pl.hills" />
+            <path class="p-contour" [attr.d]="pl.contours" /><path class="p-index" [attr.d]="pl.index" />
+            @if (pl.peak; as pk) { <path class="p-peak" [attr.d]="'M' + pk.x + ' ' + (pk.y - .9) + 'l.8 1.3h-1.6z'" /><text class="p-peak-l" [attr.x]="pk.x + 1.2" [attr.y]="pk.y + .4">{{ pk.label }}</text> }
+            <path [attr.d]="pl.forest" [attr.fill]="u('canopy')" class="p-forest" />
+            <path class="p-cad" [attr.d]="pl.lines" />
+            @if (pl.water) {
+              <path class="p-water" [attr.d]="pl.water" />
+              @if (pl.river) { <path class="p-deep" [attr.d]="pl.river" /> }
+              <path [attr.d]="pl.water" [attr.fill]="u('ripple')" />
+              <path class="p-quay" [attr.d]="pl.quays" />
+            }
+            @if (pl.flood) { <path [attr.d]="pl.flood" [attr.fill]="u('hatch')" /><path class="p-flood" [attr.d]="pl.floodEdge" /> }
+            @if (pl.ballast) {
+              <path class="p-bridge" [attr.d]="pl.bridge" /><path class="p-ballast" [attr.d]="pl.ballast" />
+              <path class="p-sleeper" [attr.d]="pl.sleepers" /><path class="p-rail" [attr.d]="pl.rails" />
+              @if (pl.tramCar) { <path class="p-tram" [attr.d]="pl.tramCar" /> }
+            }
+            <g [attr.filter]="u('shadow')">
+              @for (b of pl.blds; track b.i + b.k) { <use [attr.href]="'#' + uid + '-b-' + b.k" [attr.x]="b.x" [attr.y]="b.y" width="10" height="10" [class.new]="b.fresh" /> }
+            </g>
+          </svg>
+          <div class="cells">
+            @for (cell of c.cells; track $index; let i = $index) {
+              @let d = deltaAt(i);
+              <button type="button" class="cell" [class]="'cell t-' + cell.t" [class.flood]="cell.flood" [class.ok]="validSet().has(i)" [class.no]="mode() && !validSet().has(i)"
+                      [class.aim]="aim() === i" [class.look]="look() === i" [class.served]="servedSet().has(i)"
+                      [disabled]="over() || !!event() || busy()" (click)="tap(i)" [attr.aria-label]="cellLabel(i)">
+                @if (aim() === i) { @if (ghost(); as gk) { <svg class="ghost" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + uid + '-b-' + gk" width="10" height="10" /></svg> } }
+                @if (d !== null) { <i class="dq" [class.pos]="d > 0" [class.neg]="d < 0" [class.own]="aim() === i">{{ sgn(d) }}</i> }
+                @for (f of fxAt(i); track f.id) { <span class="fx" [class]="'fx ' + f.tone">{{ f.text }}</span> }
+              </button>
+            }
+          </div>
+        </div>
+        <div class="plan-foot" aria-hidden="true">
+          <span class="north">N</span>
+          <span class="scale"><i></i><i></i><small>100 m</small></span>
+          <span class="key"><i class="k-flood"></i>Zone inondable</span>
+          @if (c.v === 'nouvelle') { <span class="key"><i class="k-stop"></i>Quartier desservi</span> }
+        </div>
       </div>
 
       <div class="panel" aria-live="polite">
@@ -744,17 +978,17 @@ let fxId = 0;
             <div class="sum">
               <p class="verdict"><b>{{ message() }}</b></p>
               <div class="bars">
-                <span>👥 Population</span><span class="bar"><span [style.width.%]="sc.popC * 100"></span></span><b class="mono">{{ Math.round(sc.popC * 100) }}</b>
-                <span>🙂 Satisfaction</span><span class="bar"><span [style.width.%]="sc.satC * 100"></span></span><b class="mono">{{ Math.round(sc.satC * 100) }}</b>
-                <span>💶 Finances</span><span class="bar"><span [style.width.%]="sc.budC * 100"></span></span><b class="mono">{{ Math.round(sc.budC * 100) }}</b>
-                <span>🎯 Objectif</span><span class="bar"><span [style.width.%]="sc.objC * 100"></span></span><b class="mono">{{ Math.round(sc.objC * 100) }}</b>
+                <span><svg class="gi" aria-hidden="true"><use [attr.href]="g('people')" /></svg>Population</span><span class="bar"><span [style.width.%]="sc.popC * 100"></span></span><b class="mono">{{ Math.round(sc.popC * 100) }}</b>
+                <span><svg class="gi" aria-hidden="true"><use [attr.href]="g('face3')" /></svg>Satisfaction</span><span class="bar"><span [style.width.%]="sc.satC * 100"></span></span><b class="mono">{{ Math.round(sc.satC * 100) }}</b>
+                <span><svg class="gi" aria-hidden="true"><use [attr.href]="g('euro')" /></svg>Finances</span><span class="bar"><span [style.width.%]="sc.budC * 100"></span></span><b class="mono">{{ Math.round(sc.budC * 100) }}</b>
+                <span><svg class="gi" aria-hidden="true"><use [attr.href]="g('target')" /></svg>Objectif</span><span class="bar"><span [style.width.%]="sc.objC * 100"></span></span><b class="mono">{{ Math.round(sc.objC * 100) }}</b>
               </div>
               <p class="small muted">{{ built() }} chantiers menés · {{ fmt(sc.s.pop) }} habitants · {{ sc.s.sat }} de satisfaction · {{ fmt(c.budget) }} M€ en caisse@if (c.v === 'nouvelle') { · {{ sc.s.served }} quartier{{ sc.s.served > 1 ? 's' : '' }} desservi{{ sc.s.served > 1 ? 's' : '' }} }</p>
             </div>
           }
         } @else if (event(); as e) {
           <div class="event" role="dialog" [attr.aria-label]="e.title">
-            <p class="ev-t"><span class="ev-i">{{ e.icon }}</span> <b>{{ e.title }}</b></p>
+            <p class="ev-t"><svg class="ev-i" aria-hidden="true"><use [attr.href]="g(evGlyph(e.id))" /></svg><span><small>Arrêté du maire · affaire à trancher</small><b>{{ e.title }}</b></span></p>
             <p class="small">{{ e.text }}</p>
             <div class="ev-o">
               @for (o of e.opts; track $index) {
@@ -765,35 +999,36 @@ let fxId = 0;
         } @else {
           @if (preview(); as p) {
             <div class="prev" [class.err]="p.err">
-              @if (p.err) { <span>⛔ {{ p.err }}</span> }
+              @if (p.err) { <span class="pv"><svg class="gi" aria-hidden="true"><use [attr.href]="g('stop')" /></svg>{{ p.err }}</span> }
               @else {
                 <span class="pv">
-                  <b>{{ mode() === 'clear' ? '🚜 ' + (c.cells[p.i].t === 'ruine' ? 'Déblayer' : 'Démolir') : icon(selCard()!.k) + ' ' + name(selCard()!.k) }}</b>
+                  @if (mode() === 'clear') { <b><svg class="gi" aria-hidden="true"><use [attr.href]="g('dozer')" /></svg>{{ c.cells[p.i].t === 'ruine' ? 'Déblayer' : 'Démolir' }}</b> }
+                  @else { <b><svg class="thumb" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + uid + '-b-' + selCard()!.k" width="10" height="10" /></svg>{{ name(selCard()!.k) }}</b> }
                   <span class="mono">{{ p.cost ? '−' + fmt(p.cost) + ' M€' : 'gratuit' }}</span>
-                  @if (p.dPop) { <span [class]="p.dPop > 0 ? 'g' : 'r'">👥 {{ sgn(p.dPop) }}</span> }
-                  @if (p.dJobs) { <span [class]="p.dJobs > 0 ? 'g' : 'r'">💼 {{ sgn(p.dJobs) }}</span> }
-                  <span [class]="p.dSat > 0 ? 'g' : p.dSat < 0 ? 'r' : ''">🙂 {{ sgn(p.dSat) }}</span>
-                  @if (p.dInc) { <span [class]="p.dInc > 0 ? 'g' : 'r'">💶 {{ sgn(p.dInc) }}/an</span> }
-                  @if (p.dPoll) { <span [class]="p.dPoll < 0 ? 'g' : 'r'">🌫️ {{ sgn(p.dPoll) }}</span> }
+                  @if (p.dPop) { <span [class]="p.dPop > 0 ? 'g' : 'r'"><svg class="gi" aria-hidden="true"><use [attr.href]="g('people')" /></svg>{{ sgn(p.dPop) }}</span> }
+                  @if (p.dJobs) { <span [class]="p.dJobs > 0 ? 'g' : 'r'"><svg class="gi" aria-hidden="true"><use [attr.href]="g('jobs')" /></svg>{{ sgn(p.dJobs) }}</span> }
+                  <span [class]="p.dSat > 0 ? 'g' : p.dSat < 0 ? 'r' : ''"><svg class="gi" aria-hidden="true"><use [attr.href]="g('face3')" /></svg>{{ sgn(p.dSat) }}</span>
+                  @if (p.dInc) { <span [class]="p.dInc > 0 ? 'g' : 'r'"><svg class="gi" aria-hidden="true"><use [attr.href]="g('euro')" /></svg>{{ sgn(p.dInc) }}/an</span> }
+                  @if (p.dPoll) { <span [class]="p.dPoll < 0 ? 'g' : 'r'"><svg class="gi" aria-hidden="true"><use [attr.href]="g('smog')" /></svg>{{ sgn(p.dPoll) }}</span> }
                 </span>
                 @for (n of p.notes; track $index) { <small class="note">{{ n }}</small> }
                 <span class="go"><small>Touchez à nouveau la case, ou</small> <button type="button" class="btn primary small" (click)="confirm()">Construire</button></span>
               }
             </div>
           } @else if (selCard(); as k) {
-            <p class="rule"><b>{{ icon(k.k) }} {{ name(k.k) }}@if (k.free) { · offert }@if (k.segs) { · {{ k.segs }} tronçon{{ k.segs > 1 ? 's' : '' }} restant{{ k.segs > 1 ? 's' : '' }} }</b> — {{ rule(k.k) }}</p>
+            <p class="rule"><b><svg class="thumb" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + uid + '-b-' + k.k" width="10" height="10" /></svg>{{ name(k.k) }}@if (k.free) { · offert }@if (k.segs) { · {{ k.segs }} tronçon{{ k.segs > 1 ? 's' : '' }} restant{{ k.segs > 1 ? 's' : '' }} }</b> — {{ rule(k.k) }}</p>
           } @else if (mode() === 'clear') {
-            <p class="rule"><b>🚜 Déblayer / démolir</b> — ruines : {{ c.freeClears ? 'gratuit (' + c.freeClears + ' bénévoles)' : '2 M€' }} ; bâtiment : 1 M€. Trois par an, sans compter les chantiers.</p>
+            <p class="rule"><b><svg class="gi" aria-hidden="true"><use [attr.href]="g('dozer')" /></svg>Déblayer / démolir</b> — ruines : {{ c.freeClears ? 'gratuit (' + c.freeClears + ' bénévoles)' : '2 M€' }} ; bâtiment : 1 M€. Trois par an, sans compter les chantiers.</p>
           } @else if (satOpen()) {
             <div class="insp">
-              <b>{{ s.sat >= 65 ? '😀' : s.sat >= 45 ? '🙂' : '😐' }} Satisfaction {{ s.sat }} : d’où vient-elle ?</b>
+              <b><svg class="gi" aria-hidden="true"><use [attr.href]="g(face(s.sat))" /></svg>Satisfaction {{ s.sat }} : d’où vient-elle ?</b>
               <span class="parts">@for (pt of s.satParts; track $index) { <span [class]="$index === 0 ? '' : pt.v > 0 ? 'g' : 'r'">{{ pt.label }} {{ $index === 0 ? pt.v : sgn(pt.v) }}</span> }</span>
               <small class="muted">Actifs : {{ fmt(s.actifs) }} pour {{ fmt(s.jobs) }} emplois (dont {{ c.extJobs }} dans le bassin)@if (s.demand) {<span> · logements attendus : {{ fmt(s.demand) }}</span>}</small>
             </div>
           } @else if (look() !== null) {
             @let li = look()!;
             <div class="insp">
-              <b>{{ c.cells[li].b ? icon(c.cells[li].b!) + ' ' + name(c.cells[li].b!) : terrainLabel(li) }}@if (c.cells[li].flood) { · 🌊 zone inondable }</b>
+              <b>@if (c.cells[li].b) { <svg class="thumb" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + uid + '-b-' + c.cells[li].b" width="10" height="10" /></svg>{{ name(c.cells[li].b!) }} } @else { {{ terrainLabel(li) }} }@if (c.cells[li].flood) { · zone inondable }</b>
               @if (inspect(); as parts) {
                 <span class="parts">
                   @for (pt of parts; track $index) { <span [class]="pt.v > 0 ? 'g' : 'r'">{{ pt.label }} {{ sgn(pt.v) }}</span> } @empty { <span class="muted">Cadre de vie neutre</span> }
@@ -805,9 +1040,14 @@ let fxId = 0;
           }
           <div class="hand" [style.--n]="c.handSize" role="toolbar" aria-label="Projets de l’année">
             @for (k of hand(); track k.id; let h = $index) {
-              <button type="button" class="card" [class.on]="mode() === 'card' && sel() === h" [class.free]="k.free" [disabled]="cardOff(k) || busy()"
+              <button type="button" class="card" [class]="'card c-' + cat(k.k)" [class.on]="mode() === 'card' && sel() === h" [class.free]="k.free" [disabled]="cardOff(k) || busy()"
                       (click)="pick(h)" [attr.aria-pressed]="mode() === 'card' && sel() === h" [attr.aria-label]="name(k.k) + ', ' + (k.free ? 'offert' : cost(k.k) + ' millions')">
-                <span class="ci">{{ icon(k.k) }}</span>
+                <span class="pc"><span>{{ k.free ? 'Offert' : 'Permis' }}</span><span class="mono">n° {{ permit(k.id) }}</span></span>
+                <svg class="ci" viewBox="0 0 10 10" aria-hidden="true">
+                  <rect width="10" height="10" class="ci-bg" />
+                  @if (k.k === 'tram') { <path class="ci-ballast" d="M0 5h10" /><path class="ci-sleeper" d="M0 5h10" /><path class="ci-rail" d="M0 4.3h10M0 5.7h10" /><path class="p-tram" d="M2.6 4.1h4.8a.9.9 0 0 1 0 1.8H2.6a.9.9 0 0 1 0-1.8z" /> }
+                  @else { <use [attr.href]="'#' + uid + '-b-' + k.k" width="10" height="10" /> }
+                </svg>
                 <span class="cn">{{ name(k.k) }}</span>
                 <span class="cc mono">{{ k.free ? 'offert' : cost(k.k) + ' M€' + (k.segs ? ' ×' + k.segs : '') }}</span>
                 <span class="ct">{{ tag(k.k) }}</span>
@@ -815,8 +1055,8 @@ let fxId = 0;
             } @empty { <p class="small muted">Plus de projets cette année.</p> }
           </div>
           <div class="tools">
-            <button type="button" class="btn small" [class.on]="mode() === 'clear'" [disabled]="clears() >= 3 || busy()" (click)="tool()" [attr.aria-pressed]="mode() === 'clear'">🚜 Déblayer ({{ 3 - clears() }})</button>
-            <button type="button" class="btn small" [disabled]="redrawn() || c.budget < 1 || busy() || placed() > 0" (click)="redraw()">🔄 Autres projets (1 M€)</button>
+            <button type="button" class="btn small" [class.on]="mode() === 'clear'" [disabled]="clears() >= 3 || busy()" (click)="tool()" [attr.aria-pressed]="mode() === 'clear'"><svg class="gi" aria-hidden="true"><use [attr.href]="g('dozer')" /></svg>Déblayer ({{ 3 - clears() }})</button>
+            <button type="button" class="btn small" [disabled]="redrawn() || c.budget < 1 || busy() || placed() > 0" (click)="redraw()"><svg class="gi" aria-hidden="true"><use [attr.href]="g('refresh')" /></svg>Autres projets (1 M€)</button>
             <button type="button" class="btn primary small end" [disabled]="busy()" (click)="endTurn()">{{ c.year >= c.years ? 'Bilan du mandat' : (c.v === 'reconstruction' ? 'Mois suivant' : 'Année suivante') }} →</button>
           </div>
         }
@@ -826,79 +1066,118 @@ let fxId = 0;
     </div>
   `,
   styles: `
-    :host { display: block; width: 100%; }
+    :host { display: block; width: 100%;
+      /* Le plan : des teintes de papier, assombries d’elles-mêmes en thème sombre */
+      --p-street: color-mix(in srgb, #ebe7dd 84%, var(--surface));
+      --p-lot: color-mix(in srgb, #dde2c9 86%, var(--surface));
+      --p-cad: color-mix(in srgb, #a9ab95 80%, var(--surface));
+      --p-frame: color-mix(in srgb, #6f6a5c 70%, var(--surface)); }
     .urb { display: grid; gap: 7px; font-size: 13px; }
+    .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .gi { width: 15px; height: 15px; flex: none; vertical-align: -3px; }
     .head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between; font-size: 12.5px; }
     .ttl { font-weight: 600; color: var(--ink-2); flex: 1; text-align: center; min-width: 0; }
-    .works { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--good-soft); color: var(--good); &.none { background: var(--surface-2); color: var(--ink-3); } }
+    .works { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--good-soft); color: var(--good); &.none { background: var(--surface-2); color: var(--ink-3); } .gi { width: 14px; height: 14px; } }
     .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
     .st.tap { font: inherit; color: inherit; cursor: pointer; &.open { box-shadow: 0 0 0 2px var(--accent); } }
-    .st { position: relative; display: grid; justify-items: center; gap: 0; padding: 4px 2px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); line-height: 1.15; min-width: 0;
-      i { font-style: normal; font-size: 14px; } b { font-size: 13.5px; }
+    .st { position: relative; display: grid; justify-items: center; gap: 1px; padding: 5px 2px 4px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); line-height: 1.15; min-width: 0;
+      .gi { width: 16px; height: 16px; color: var(--ink-2); } b { font-size: 13.5px; }
       small { font-size: 9.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-      &.ok { border-color: var(--good); background: var(--good-soft); } &.bad { border-color: var(--bad); background: var(--bad-soft); } &.warn small { color: var(--bad); } }
+      &.ok { border-color: var(--good); background: var(--good-soft); .gi { color: var(--good); } } &.bad { border-color: var(--bad); background: var(--bad-soft); .gi { color: var(--bad); } } &.warn small { color: var(--bad); } }
     .sfx { position: absolute; top: 45%; left: 50%; transform: translateX(-50%); font: 800 12px var(--font-body); font-style: normal; white-space: nowrap; pointer-events: none; animation: rise 1.3s ease forwards; z-index: 4;
       &.good { color: var(--good); } &.bad { color: var(--bad); } &.info { color: var(--ink-2); } }
-    .obj { margin: 0; font-size: 12px; color: var(--ink-2); }
-    .board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 4px; border-radius: 10px; background: #3b4a3a; width: 100%; max-width: 460px; justify-self: center; user-select: none; touch-action: manipulation; }
-    .cell { position: relative; aspect-ratio: 1; min-width: 0; min-height: 32px; border: 0; border-radius: 4px; padding: 0; cursor: pointer; display: grid; place-items: center; overflow: visible; font-size: clamp(15px, 4.4vw, 24px);
-      &:disabled { cursor: default; } &:focus-visible { outline: 3px solid #f4d35e; outline-offset: -3px; z-index: 2; } }
-    .t-plaine { background: #b7c88a; }
-    .t-foret { background: #6f9150; }
-    .t-colline { background: #cdb37c; background-image: radial-gradient(ellipse at 50% 95%, #b39761 48%, transparent 50%); }
-    .t-riviere { background: #5b8fba; background-image: repeating-linear-gradient(160deg, transparent 0 6px, rgba(255,255,255,.18) 6px 8px); }
-    .t-ruine { background: #9b8f82; background-image: linear-gradient(135deg, transparent 45%, #6f655b 46% 50%, transparent 51%); }
-    .cell.flood::before { content: ''; position: absolute; inset: 0; border-radius: 4px; pointer-events: none; background: repeating-linear-gradient(45deg, rgba(40, 110, 200, .32) 0 3px, transparent 3px 7px); }
-    .cell.no { filter: saturate(.35) brightness(.8); }
-    .cell.ok { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .75); }
-    .cell.aim { box-shadow: inset 0 0 0 3px #f4d35e; z-index: 2; }
-    .cell.look { box-shadow: inset 0 0 0 3px #fff; z-index: 2; }
-    .cell.served::after { content: ''; position: absolute; left: 3px; bottom: 3px; width: 6px; height: 6px; border-radius: 50%; background: #e63946; box-shadow: 0 0 0 1px #fff; }
-    .deco { opacity: .75; font-size: .8em; }
-    .bld { position: relative; z-index: 1; display: grid; place-items: center; width: 88%; height: 88%; border-radius: 6px; line-height: 1;
-      &.c-hab { background: #f6e7c8; box-shadow: inset 0 -3px 0 #d9b77a; } &.c-srv { background: #dfe9f7; box-shadow: inset 0 -3px 0 #8fb0de; }
-      &.c-eco { background: #e6e1da; box-shadow: inset 0 -3px 0 #a39a8e; } &.c-vert { background: #d6efcf; box-shadow: inset 0 -3px 0 #86c27a; }
-      &.c-tram { width: 100%; height: 100%; border-radius: 4px; font-size: .75em; background: #c9c2b4 linear-gradient(90deg, transparent 28%, #5d5850 28% 34%, transparent 34% 66%, #5d5850 66% 72%, transparent 72%); }
-      &.ghost { position: absolute; inset: 6%; width: auto; height: auto; opacity: .7; outline: 2px dashed #f4d35e; }
-      &.new { animation: drop .45s cubic-bezier(.2, 1.4, .4, 1) both; } }
-    .t-riviere .bld.c-tram { background-color: #8a7a62; }
-    @keyframes drop { from { transform: translateY(-14px) scale(.4); opacity: 0; } }
+    .obj { margin: 0; font-size: 12px; color: var(--ink-2); display: flex; gap: 5px; align-items: flex-start; .gi { margin-top: 1px; color: var(--accent); } }
+    /* La planche du plan */
+    .sheet-plan { justify-self: center; width: 100%; max-width: 460px; display: grid; gap: 3px; padding: 5px; border-radius: 6px; background: var(--p-street); border: 1px solid var(--p-frame);
+      box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 6px 16px -10px rgba(0,0,0,.45); }
+    .board { position: relative; width: 100%; aspect-ratio: 1; user-select: none; touch-action: manipulation; outline: 1px solid var(--p-frame); }
+    .plan { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .p-street { fill: var(--p-street); }
+    .p-lot { fill: var(--p-lot); stroke: var(--p-cad); stroke-width: .16; }
+    .p-cad { fill: none; stroke: var(--p-cad); stroke-width: .12; stroke-dasharray: .6 .35; }
+    .p-hill { fill: color-mix(in srgb, #e3d7a8 80%, var(--surface)); stroke: var(--p-cad); stroke-width: .16; }
+    .p-contour { fill: none; stroke: #9a7a45; stroke-opacity: .6; stroke-width: .14; }
+    .p-index { fill: none; stroke: #8a6a38; stroke-opacity: .75; stroke-width: .26; }
+    .p-peak { fill: #6d5530; } .p-peak-l { font: 600 2.1px var(--font-mono); fill: #6d5530; paint-order: stroke; stroke: var(--p-lot); stroke-width: .5px; }
+    .p-forest { stroke: #3b5a2a; stroke-width: .15; }
+    .p-water { fill: color-mix(in srgb, #8db7d3 88%, var(--surface)); }
+    .p-deep { fill: none; stroke: color-mix(in srgb, #6f9fc2 88%, var(--surface)); stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+    .p-quay { fill: none; stroke: #8f887a; stroke-width: .9; stroke-linecap: square; }
+    .p-flood { fill: none; stroke: #2f6fbf; stroke-width: .3; stroke-dasharray: 1 .6; }
+    .p-bridge { fill: none; stroke: #8b8579; stroke-width: 4.6; } .p-bridge { stroke-linecap: butt; }
+    .p-ballast { fill: none; stroke: #b4ada0; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .p-sleeper { fill: none; stroke: #7d756a; stroke-width: 2.1; stroke-dasharray: .25 .55; }
+    .p-rail { fill: none; stroke: #4a4640; stroke-width: .22; stroke-linejoin: round; }
+    .p-tram { fill: #f4f2ee; stroke: #c23a32; stroke-width: .35; }
+    .plan use.new { animation: drop .45s cubic-bezier(.2, 1.4, .4, 1) both; transform-box: fill-box; transform-origin: center; }
+    @keyframes drop { from { transform: translateY(-3px) scale(.6); opacity: 0; } }
+    .plan-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font: 600 9.5px var(--font-body); color: var(--ink-2); padding: 0 2px;
+      .north { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--ink-3); font-size: 8.5px; position: relative; }
+      .north::before { content: ''; position: absolute; top: -4px; border: 3px solid transparent; border-bottom: 4px solid var(--ink-2); border-top: 0; }
+      .scale { display: inline-flex; align-items: center; gap: 0; i { width: 18px; height: 4px; border: 1px solid var(--ink-2); } i:first-child { background: var(--ink-2); } small { margin-left: 4px; font-size: 9.5px; } }
+      .key { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; }
+      .k-flood { width: 12px; height: 9px; border: 1px dashed #2f6fbf; background: repeating-linear-gradient(-45deg, transparent 0 2px, rgba(47,111,191,.55) 2px 3px); }
+      .k-stop { width: 8px; height: 8px; border-radius: 50%; background: #fff; border: 2px solid #c23a32; } }
+    .cells { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
+    .cell { position: relative; min-width: 0; min-height: 32px; border: 0; border-radius: 2px; padding: 0; cursor: pointer; background: transparent; display: grid; place-items: center; overflow: visible;
+      -webkit-tap-highlight-color: transparent;
+      &:hover:not(:disabled) { box-shadow: inset 0 0 0 1px rgba(30, 40, 30, .45); }
+      &:disabled { cursor: default; } &:focus-visible { outline: 3px solid #f4b400; outline-offset: -3px; z-index: 2; } }
+    .cell.no { background: rgba(28, 32, 26, .32); }
+    .cell.ok { box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .95), inset 0 0 0 2.5px rgba(31, 59, 115, .45); }
+    .cell.aim { box-shadow: inset 0 0 0 3px #f4b400; z-index: 2; }
+    .cell.look { box-shadow: inset 0 0 0 2.5px #fff, inset 0 0 0 3.5px rgba(0,0,0,.3); z-index: 2; }
+    .cell.served::after { content: ''; position: absolute; left: 3px; bottom: 3px; width: 7px; height: 7px; border-radius: 50%; background: #fff; border: 2px solid #c23a32; box-sizing: border-box; }
+    .ghost { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .78; outline: 2px dashed #f4b400; outline-offset: -3px; border-radius: 2px; pointer-events: none; }
     .dq { position: absolute; z-index: 3; top: -5px; right: -4px; min-width: 18px; padding: 1px 3px; border-radius: 8px; font: 800 10.5px/1.2 var(--font-body); font-style: normal; color: #fff; text-align: center; pointer-events: none;
-      &.pos { background: #2f8f57; } &.neg { background: #c8432f; } &.own { top: auto; bottom: -5px; right: auto; left: -4px; outline: 2px solid #f4d35e; } }
+      box-shadow: 0 1px 2px rgba(0,0,0,.35);
+      &.pos { background: #2f8f57; } &.neg { background: #c8432f; } &.own { top: auto; bottom: -5px; right: auto; left: -4px; outline: 2px solid #f4b400; } }
     .fx { position: absolute; z-index: 5; top: -6px; font: 800 12px var(--font-body); white-space: nowrap; pointer-events: none; animation: rise 1.1s ease forwards; text-shadow: 0 1px 2px #000;
       &.good { color: #b7f5c6; } &.bad { color: #ffb3a6; } &.info { color: #fff; } }
     @keyframes rise { to { transform: translate(-50%, -22px); opacity: 0; } }
     .fx { left: 50%; transform: translateX(-50%); }
     .panel { display: grid; gap: 6px; min-height: 120px; }
-    .rule { margin: 0; font-size: 12px; color: var(--ink-2); }
+    .rule { margin: 0; font-size: 12px; color: var(--ink-2); b { color: var(--ink); } }
+    .thumb { width: 18px; height: 18px; vertical-align: -4px; margin-right: 4px; border-radius: 2px; outline: 1px solid var(--line); }
+    .rule .gi, .insp .gi, .prev .gi { margin-right: 3px; }
     .prev { display: grid; gap: 4px; padding: 7px 9px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 12px;
       &.err { background: var(--bad-soft); color: var(--bad); border-color: transparent; } }
-    .pv { display: flex; flex-wrap: wrap; gap: 4px 9px; align-items: baseline; }
+    .pv { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; > span { display: inline-flex; align-items: center; gap: 2px; } .gi { width: 14px; height: 14px; } }
     .g { color: var(--good); font-weight: 600; } .r { color: var(--bad); font-weight: 600; }
     .note { color: var(--ink-2); font-size: 11.5px; }
     .go { display: flex; align-items: center; justify-content: flex-end; gap: 8px; small { color: var(--ink-3); } }
     .insp { display: grid; gap: 4px; padding: 7px 9px; border-radius: 10px; background: var(--surface-2); font-size: 12px; }
     .parts { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 11.5px; }
+    /* Les projets : des permis de construire */
     .hand { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 5px; }
-    .card { display: grid; justify-items: center; gap: 1px; padding: 6px 4px; min-height: 76px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; color: var(--ink); font: inherit; transition: transform .15s ease, box-shadow .15s ease;
-      &.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); transform: translateY(-2px); }
+    .card { --cat: #8a7f6c; position: relative; display: grid; justify-items: center; align-content: start; gap: 2px; padding: 0 4px 6px; min-height: 76px; border-radius: 6px; border: 1px solid var(--line); border-top: 3px solid var(--cat);
+      background: var(--surface); cursor: pointer; color: var(--ink); font: inherit; overflow: hidden; transition: transform .15s ease, box-shadow .15s ease;
+      box-shadow: 0 1px 0 rgba(0,0,0,.04);
+      &.c-hab { --cat: #b4633f; } &.c-srv { --cat: #4f7cad; } &.c-eco { --cat: #7b7f86; } &.c-vert { --cat: #4f8a3f; } &.c-tram { --cat: #c23a32; }
+      &.on { border-color: var(--accent); border-top-color: var(--cat); box-shadow: 0 0 0 2px var(--accent); transform: translateY(-2px); }
       &.free { background: var(--good-soft); }
       &:disabled { opacity: .45; cursor: not-allowed; }
-      .ci { font-size: 22px; line-height: 1.1; } .cn { font-size: 11.5px; font-weight: 600; text-align: center; line-height: 1.15; }
+      .pc { display: flex; justify-content: space-between; width: calc(100% + 8px); margin: 0 -4px 2px; padding: 2px 5px; font: 600 8.5px var(--font-body); letter-spacing: .06em; text-transform: uppercase;
+        color: var(--ink-3); border-bottom: 1px dashed var(--line); .mono { letter-spacing: 0; text-transform: none; } }
+      .ci { width: 34px; height: 34px; border-radius: 3px; outline: 1px solid color-mix(in srgb, var(--cat) 45%, transparent); }
+      .cn { font-size: 11.5px; font-weight: 600; text-align: center; line-height: 1.15; }
       .cc { font-size: 11px; color: var(--accent); } .ct { font-size: 10px; color: var(--ink-3); text-align: center; } }
-    .tools { display: flex; flex-wrap: wrap; gap: 6px; .end { margin-left: auto; } .btn { min-height: 34px; } .on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); } }
-    .event { display: grid; gap: 6px; padding: 10px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--accent); animation: pop .3s ease both; }
-    .ev-t { margin: 0; font-size: 14px; } .ev-i { font-size: 20px; }
+    .ci-bg { fill: var(--p-lot); }
+    .ci-ballast { stroke: #b4ada0; stroke-width: 3; } .ci-sleeper { stroke: #7d756a; stroke-width: 2.1; stroke-dasharray: .25 .55; } .ci-rail { stroke: #4a4640; stroke-width: .22; }
+    .tools { display: flex; flex-wrap: wrap; gap: 6px; .end { margin-left: auto; } .btn { min-height: 34px; display: inline-flex; align-items: center; gap: 5px; } .on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); } }
+    .event { display: grid; gap: 6px; padding: 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); border-left: 4px solid var(--accent); animation: pop .3s ease both; }
+    .ev-t { margin: 0; font-size: 14px; display: flex; gap: 9px; align-items: center; span { display: grid; } small { font: 600 9.5px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); } }
+    .ev-i { width: 30px; height: 30px; flex: none; padding: 5px; border-radius: 50%; color: var(--accent); background: var(--accent-soft, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
     .ev-o { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px; }
     .opt { display: grid; gap: 2px; text-align: left; min-height: 48px; small { color: var(--ink-3); font-size: 11px; } }
     @keyframes pop { from { transform: scale(.95); opacity: 0; } }
     .sum { display: grid; gap: 8px; }
     .verdict { margin: 0; font-size: 14px; }
-    .bars { display: grid; grid-template-columns: auto 1fr 28px; gap: 5px 8px; align-items: center; font-size: 12px; b { text-align: right; } }
+    .bars { display: grid; grid-template-columns: auto 1fr 28px; gap: 5px 8px; align-items: center; font-size: 12px; b { text-align: right; } > span:nth-child(3n + 1) { display: inline-flex; align-items: center; gap: 4px; } }
     .small { font-size: 12px; margin: 0; }
     .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 76px; overflow: auto; font-size: 11.5px; color: var(--ink-2); }
-    @media (max-width: 400px) { .stats small { font-size: 8.5px; } .card .ct { display: none; } }
-    @media (prefers-reduced-motion: reduce) { .bld.new, .fx, .sfx, .event, .card { animation: none; transition: none; } .card.on { transform: none; } }
+    @media (max-width: 400px) { .stats small { font-size: 8.5px; } .card .ct { display: none; } .card .pc { font-size: 7.5px; } }
+    @media (prefers-reduced-motion: reduce) { .plan use.new, .fx, .sfx, .event, .card { animation: none; transition: none; } .card.on { transform: none; } }
   `,
 })
 export class UrbanismeGameComponent implements OnInit, OnDestroy {
@@ -911,6 +1190,10 @@ export class UrbanismeGameComponent implements OnInit, OnDestroy {
   protected readonly Math = Math;
   protected readonly fmt = fmt;
   protected readonly sgn = sgn;
+  protected readonly uid = `ub${++uidSeq}`;
+  protected readonly glyphs = GLYPH_LIST;
+  protected readonly blds = BLD_LIST;
+  protected readonly crowns = [[1.3, 1.4, 1.2], [4.2, 1.1, 1], [5.6, 3.4, 1.1], [2.4, 4, 1.15], [1, 6, .8], [4.4, 5.8, .9]];
   protected title = '';
   protected tip = '';
   protected per = 'an';
@@ -942,6 +1225,117 @@ export class UrbanismeGameComponent implements OnInit, OnDestroy {
   protected readonly selCard = computed(() => (this.mode() === 'card' && this.sel() !== null ? this.hand()[this.sel()!] ?? null : null));
   protected readonly worksLeft = computed(() => Math.max(0, this.city().works - this.placed()));
   protected readonly ghost = computed(() => (this.preview() && !this.preview()!.err ? this.selCard()?.k ?? null : null));
+
+  /** Le plan masse, recalculé à chaque changement de la ville */
+  protected readonly plan = computed<Plan>(() => {
+    const c = this.city(), cells = c.cells;
+    const X = (i: number) => (i % W) * 10, Y = (i: number) => Math.floor(i / W) * 10;
+    const isRiver = (i: number) => cells[i].t === 'riviere';
+    const lot = (i: number, p = 0.7) => box(X(i) + p, Y(i) + p, 10 - 2 * p, 10 - 2 * p);
+    const pl: Plan = { lots: '', lines: '', forest: '', hills: '', contours: '', index: '', peak: null, water: '', quays: '', river: '', flood: '', floodEdge: '', ballast: '', bridge: '', rails: '', sleepers: '', tramCar: null, blds: [] };
+    const peaks: number[][] = [];
+    const h = (i: number, k: number) => { const t = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return t - Math.floor(t); };
+    cells.forEach((cell, i) => {
+      if (isRiver(i)) return;
+      pl.lots += lot(i);
+      if (cell.t === 'foret') pl.forest += lot(i, 0.45);
+      if (cell.t === 'colline') { pl.hills += lot(i); peaks.push([X(i) + 5 + (h(i, 1) - .5) * 2, Y(i) + 5 + (h(i, 2) - .5) * 2]); }
+      // Le cadastre : des parcelles libres découpées en lots
+      if (!cell.b && cell.t === 'plaine') {
+        const v = h(i, 3) < 0.5, at = 3.4 + h(i, 4) * 3.2;
+        pl.lines += v ? `M${rd(X(i) + at)} ${Y(i) + .7}v8.6` : `M${X(i) + .7} ${rd(Y(i) + at)}h8.6`;
+      }
+      if (cell.b && cell.b !== 'tram') pl.blds.push({ i, k: cell.b, x: X(i), y: Y(i), fresh: !!cell.fresh });
+      else if (cell.t === 'ruine') pl.blds.push({ i, k: 'ruine', x: X(i), y: Y(i), fresh: false });
+    });
+    // Le relief : courbes de niveau tous les 10 m, courbe maîtresse, point coté
+    if (peaks.length) {
+      pl.contours = isolines(peaks, [0.25, 0.5, 0.75, 1.25, 1.5, 1.75]);
+      pl.index = isolines(peaks, [1]);
+      let best = 0, bx = 0, by = 0;
+      for (const [px, py] of peaks) {
+        const v = peaks.reduce((t, [qx, qy]) => t + Math.exp(-((px - qx) ** 2 + (py - qy) ** 2) / (2 * 5.6 * 5.6)), 0);
+        if (v > best) { best = v; bx = px; by = py; }
+      }
+      pl.peak = { x: rd(bx), y: rd(by), label: `${Math.round(140 + best * 26)} m` };
+    }
+    // La rivière : le lit en eau, ses quais, et le chenal le plus long en courbe douce
+    const riv = cells.map((x, i) => (isRiver(i) ? i : -1)).filter(i => i >= 0);
+    if (riv.length) {
+      const horiz = c.v === 'nouvelle';
+      riv.forEach(i => {
+        pl.water += box(X(i), Y(i), 10, 10);
+        const x = i % W, y = Math.floor(i / W);
+        if (y > 0 && !isRiver(i - W)) pl.quays += `M${X(i)} ${Y(i)}h10`;
+        if (y < W - 1 && !isRiver(i + W)) pl.quays += `M${X(i)} ${Y(i) + 10}h10`;
+        if (x > 0 && !isRiver(i - 1)) pl.quays += `M${X(i)} ${Y(i)}v10`;
+        if (x < W - 1 && !isRiver(i + 1)) pl.quays += `M${X(i) + 10} ${Y(i)}v10`;
+      });
+      const entry = (i: number) => (horiz ? i % W === 0 : i < W), exit = (i: number) => (horiz ? i % W === W - 1 : i >= W * (W - 1));
+      let order: number[] = [];
+      const walk = (path: number[]) => {
+        const last = path[path.length - 1];
+        if (exit(last) && path.length > order.length) order = [...path];
+        for (const j of N4[last]) if (isRiver(j) && !path.includes(j)) { path.push(j); walk(path); path.pop(); }
+      };
+      for (const s0 of riv.filter(entry)) walk([s0]);
+      if (!order.length) order = riv;
+      const pts = order.map(i => [X(i) + 5, Y(i) + 5]);
+      pts.unshift(horiz ? [pts[0][0] - 10, pts[0][1]] : [pts[0][0], pts[0][1] - 10]);
+      const e = pts[pts.length - 1];
+      pts.push(horiz ? [e[0] + 10, e[1]] : [e[0], e[1] + 10]);
+      let d = `M${pts[0][0]} ${pts[0][1]}`;
+      for (let k = 1; k < pts.length - 1; k++) d += `Q${pts[k][0]} ${pts[k][1]} ${(pts[k][0] + pts[k + 1][0]) / 2} ${(pts[k][1] + pts[k + 1][1]) / 2}`;
+      pl.river = d + `L${e[0] + (horiz ? 10 : 0)} ${e[1] + (horiz ? 0 : 10)}`;
+    }
+    // Zone inondable : hachures bleues et limite en tirets, comme sur un PPRI
+    const fl = (i: number) => cells[i].flood && !isRiver(i);
+    cells.forEach((cell, i) => {
+      if (!fl(i)) return;
+      pl.flood += box(X(i), Y(i), 10, 10);
+      const x = i % W, y = Math.floor(i / W);
+      if (y === 0 || (!fl(i - W) && !isRiver(i - W))) pl.floodEdge += `M${X(i)} ${Y(i) + .3}h10`;
+      if (y === W - 1 || (!fl(i + W) && !isRiver(i + W))) pl.floodEdge += `M${X(i)} ${Y(i) + 9.7}h10`;
+      if (x === 0 || (!fl(i - 1) && !isRiver(i - 1))) pl.floodEdge += `M${X(i) + .3} ${Y(i)}v10`;
+      if (x === W - 1 || (!fl(i + 1) && !isRiver(i + 1))) pl.floodEdge += `M${X(i) + 9.7} ${Y(i)}v10`;
+    });
+    // Le tram : ballast, traverses, rails ; un pont pour franchir l’eau ; une rame en ligne
+    const tram = (i: number) => cells[i].b === 'tram';
+    const seg: string[] = [];
+    cells.forEach((cell, i) => {
+      if (!tram(i)) return;
+      const cx = X(i) + 5, cy = Y(i) + 5;
+      const ns = N4[i].filter(tram);
+      if (!ns.length) seg.push(`M${cx - 5} ${cy}h10`);
+      for (const j of ns) if (j > i) seg.push(j === i + 1 ? `M${cx} ${cy}h10` : `M${cx} ${cy}v10`);
+      if (ns.length === 1) {
+        const j = ns[0], dx = (j % W) - (i % W), dy = Math.floor(j / W) - Math.floor(i / W);
+        seg.push(`M${cx} ${cy}l${-dx * 3.2} ${-dy * 3.2}`);
+      }
+      if (isRiver(i)) pl.bridge += ns.some(j => j === i - 1 || j === i + 1) || !ns.length ? `M${X(i)} ${cy}h10` : `M${cx} ${Y(i)}v10`;
+    });
+    if (seg.length) {
+      pl.ballast = seg.join('');
+      pl.sleepers = pl.ballast;
+      const off = 0.68;
+      pl.rails = seg.map(sg => {
+        const m = /^M([\d.]+) ([\d.]+)([hvl])(-?[\d.]+)(?: (-?[\d.]+))?/.exec(sg);
+        if (!m) return '';
+        const x = +m[1], y = +m[2];
+        if (m[3] === 'h') return `M${x} ${rd(y - off)}h${m[4]}M${x} ${rd(y + off)}h${m[4]}`;
+        if (m[3] === 'v') return `M${rd(x - off)} ${y}v${m[4]}M${rd(x + off)} ${y}v${m[4]}`;
+        const dx = +m[4], dy = +(m[5] ?? 0);
+        return dy === 0 ? `M${x} ${rd(y - off)}h${dx}M${x} ${rd(y + off)}h${dx}` : `M${rd(x - off)} ${y}v${dy}M${rd(x + off)} ${y}v${dy}`;
+      }).join('');
+      const first = cells.findIndex((x, i) => tram(i) && N4[i].some(tram));
+      if (first >= 0) {
+        const j = N4[first].find(tram)!, horiz = Math.abs(j - first) === 1;
+        const mx = X(first) + 5 + (horiz ? (j > first ? 5 : -5) : 0), my = Y(first) + 5 + (horiz ? 0 : (j > first ? 5 : -5));
+        pl.tramCar = horiz ? `M${mx - 3} ${my - .8}h6a.8.8 0 0 1 0 1.6h-6a.8.8 0 0 1 0-1.6z` : `M${mx - .8} ${my - 3}a.8.8 0 0 1 1.6 0v6a.8.8 0 0 1-1.6 0z`;
+      }
+    }
+    return pl;
+  });
 
   /** Cases où le projet choisi (ou le bulldozer) peut aller */
   protected readonly validSet = computed(() => {
@@ -1022,6 +1416,11 @@ export class UrbanismeGameComponent implements OnInit, OnDestroy {
 
   /* ── Libellés ── */
 
+  protected u(name: string): string { return `url(#${this.uid}-${name})`; }
+  protected g(id: GlyphId): string { return `#${this.uid}-g-${id}`; }
+  protected face(sat: number): GlyphId { return sat >= 65 ? 'face4' : sat >= 45 ? 'face3' : sat >= 30 ? 'face2' : 'face1'; }
+  protected evGlyph(id: string): GlyphId { return EV_GLYPH[id] ?? 'doc'; }
+  protected permit(id: number): string { return String(id % 1000).padStart(3, '0'); }
   protected icon(k: BKind): string { return BUILD[k].icon; }
   protected name(k: BKind): string { return BUILD[k].name; }
   protected rule(k: BKind): string { return BUILD[k].rule; }
@@ -1121,7 +1520,7 @@ export class UrbanismeGameComponent implements OnInit, OnDestroy {
       clearCell(c, i);
       this.clears.update(n => n + 1);
       this.city.set(c);
-      this.pop(i, ruin ? '🚜' : '💥', 'info');
+      this.pop(i, ruin ? 'déblayé' : 'démoli', 'info');
       this.say(`🚜 ${ruin ? 'Ruines déblayées' : 'Bâtiment démoli'}${p.cost ? ` (−${fmt(p.cost)} M€)` : ''}.`);
       this.aim.set(null);
       if (this.clears() >= 3) this.mode.set(null);
@@ -1131,8 +1530,8 @@ export class UrbanismeGameComponent implements OnInit, OnDestroy {
       place(c, k.k, i, k.free);
       this.city.set(c);
       this.built.update(n => n + 1);
-      if (p.dPop) this.pop(i, `+${p.dPop} 👥`, 'good');
-      else if (p.dSat) this.pop(i, `${sgn(p.dSat)} 🙂`, p.dSat > 0 ? 'good' : 'bad');
+      if (p.dPop) this.pop(i, `+${p.dPop} hab.`, 'good');
+      else if (p.dSat) this.pop(i, `${sgn(p.dSat)} satisf.`, p.dSat > 0 ? 'good' : 'bad');
       else this.pop(i, `−${fmt(p.cost)} M€`, 'info');
       for (const [j, d] of p.deltas) this.pop(j, sgn(d), d > 0 ? 'good' : 'bad');
       this.aim.set(null);
