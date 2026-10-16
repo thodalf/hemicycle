@@ -1,4 +1,4 @@
-import { mods } from './difficulty';
+import { mods, topFactor } from './difficulty';
 import { ActionDefinition, CircoKind, Domain, EconomyState, Effect, EffectContext, ElectionType, ElectoralMap, ElectorateState, GameState, Segment } from '../models/game.models';
 import { SEGMENTS } from '../data/programme';
 import { BASE_SEATS } from '../data/bills';
@@ -173,7 +173,8 @@ export function adjustSegment(d: GameState, x: Extract<Effect, { kind: 'segment'
   const off = electorate(d).offsets;
   const ids = x.segment === '*' ? SEGMENTS.map(s => s.id) : [x.segment];
   const delta = x.delta * (x.delta > 0 ? mods(d).gain : mods(d).loss);
-  for (const id of ids) off[id] = clamp(off[id] + delta, -30, 30);
+  // Un électorat déjà conquis ne se gagne plus qu'à la marge
+  for (const id of ids) off[id] = clamp(off[id] + (delta > 0 ? delta * topFactor(d, d.player.stats.popularity + off[id]) : delta), -30, 30);
   const label = x.segment === '*' ? 'Tous les électorats' : SEGMENTS.find(s => s.id === x.segment)!.label;
   return [`${label} ${frSigned(x.delta)}`];
 }
@@ -182,6 +183,16 @@ export function adjustSegment(d: GameState, x: Extract<Effect, { kind: 'segment'
 export function monthlyElectorate(d: GameState): void {
   const off = electorate(d).offsets;
   for (const k of Object.keys(off) as Segment[]) off[k] = r1(off[k] * 0.92);
+  // Personne ne fait l'unanimité : au-delà de 80 % d'adhésion, un électorat se lasse vite
+  const pop = d.player.stats.popularity;
+  for (const k of Object.keys(off) as Segment[]) {
+    const approval = pop + off[k];
+    if (approval > 80) off[k] = r1(clamp(off[k] - (approval - 80) * 0.25, -30, 30));
+  }
+  // L'électorat le plus éloigné de votre camp ne vous suivra jamais tout à fait
+  const lean = clamp(d.party.position / 100, -1, 1);
+  const far: Segment = lean >= 0 ? 'jeunes' : 'cadres';
+  if (pop + off[far] > 70) off[far] = r1(clamp(off[far] - 1.5, -30, 30));
 }
 
 /** Poids des électorats selon le scrutin (les ruraux pèsent plus dans une circonscription rurale) */

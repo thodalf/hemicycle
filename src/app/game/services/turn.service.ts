@@ -1,4 +1,5 @@
 import { monthlyDifficulty } from '../engine/difficulty';
+import { monthlyNemesis } from '../engine/nemesis';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Decision, DecisionChoice, Effect, GameState, STAT_LABELS, StatKey, Tone } from '../models/game.models';
 import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } from '../engine/effects';
@@ -173,6 +174,7 @@ export class TurnService {
     monthlySaga(d, rng);
     monthlyImage(d);
     monthlyDifficulty(d);
+    monthlyNemesis(d, rng);
     monthlyQuotes(d, rng);
     monthlyLaws(d, rng);
     monthlyPledges(d);

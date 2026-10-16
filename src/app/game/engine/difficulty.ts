@@ -60,7 +60,9 @@ export function scaleStat(d: GameState, stat: string, delta: number): number {
   if (stat === 'energy' || !delta) return delta;
   const m = mods(d);
   const good = stat === 'stress' ? delta < 0 : delta > 0;
-  return delta * (good ? m.gain : m.loss);
+  const top = good && (stat === 'popularity' || stat === 'credibility' || stat === 'influence')
+    ? topFactor(d, Number((d.player.stats as unknown as Record<string, number>)[stat] ?? 0)) : 1;
+  return delta * (good ? m.gain : m.loss) * top;
 }
 
 /** L'usure du pouvoir : chaque mois, les jauges hautes s'érodent un peu */
@@ -71,6 +73,11 @@ export function monthlyDifficulty(d: GameState): void {
   if (s.popularity > 25) s.popularity = clamp(s.popularity - m.erosion * (s.popularity / 50));
   if (s.credibility > 30) s.credibility = clamp(s.credibility - m.erosion * 0.6 * (s.credibility / 60));
   if (s.influence > 30) s.influence = clamp(s.influence - m.erosion * 0.5 * (s.influence / 60));
+  // L'usure du sommet : au-delà de 70, l'opinion se lasse vite
+  const wear = 0.5 + m.erosion;
+  if (s.popularity > 70) s.popularity = clamp(s.popularity - (s.popularity - 70) * 0.1 * wear);
+  if (s.credibility > 78) s.credibility = clamp(s.credibility - (s.credibility - 78) * 0.06 * wear);
+  if (s.influence > 78) s.influence = clamp(s.influence - (s.influence - 78) * 0.06 * wear);
 }
 
 /** Le coût réel d'une action, selon la difficulté (les points d'action ne changent pas) */
@@ -83,6 +90,18 @@ export function costOf<C extends { ap: number; energy?: number; money?: number; 
     ...(a.cost.money ? { money: Math.round(a.cost.money * m / 50) * 50 } : {}),
     ...(a.cost.politicalCapital ? { politicalCapital: Math.round(a.cost.politicalCapital * m) } : {}),
   };
+}
+
+/** L'hubris (0 … 100) : nourrie par la domination, elle appelle les retours de bâton */
+export function hubrisOf(d: Pick<GameState, 'player'>): number {
+  return Math.max(0, Math.min(100, Number(d.player.flags['hubris'] ?? 0)));
+}
+
+/** Rendement décroissant au sommet : les derniers points de popularité sont les plus durs à gagner */
+export function topFactor(d: Pick<GameState, 'difficulty'>, value: number): number {
+  const start = difficultyOfGame(d) === 'decouverte' ? 72 : 60;
+  if (value <= start) return 1;
+  return Math.max(0.1, 1 - (value - start) / (100 - start + 6));
 }
 
 /** Saturation : la troisième action d'une même catégorie dans le mois porte moins, puis de moins en moins */

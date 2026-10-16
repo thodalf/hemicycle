@@ -15,6 +15,8 @@ import { addMilestone } from './life';
 import { fallFromMatignon } from './government';
 import { regionShares } from './country';
 import { Rng, clamp, nextId, fr, frSigned } from './rng';
+import { hubrisOf, mods, topFactor } from './difficulty';
+import { recentWins } from './nemesis';
 
 /* ============================================================
  *  Élection présidentielle et présidence.
@@ -374,13 +376,18 @@ export function adjustPresidency(d: GameState, e: Extract<Effect, { kind: 'presi
   if (!pr) return [];
   const out: string[] = [];
   const sign = (n: number) => frSigned(n);
-  if (e.approval) { pr.approval = clamp(pr.approval + e.approval); out.push(`Cote de confiance ${sign(e.approval)}`); }
+  if (e.approval) {
+    // Les derniers points de confiance sont les plus durs à gagner
+    const v = e.approval > 0 ? Math.max(1, Math.round(e.approval * topFactor(d, pr.approval))) : e.approval;
+    pr.approval = clamp(pr.approval + v); out.push(`Cote de confiance ${sign(v)}`);
+  }
   if (e.majority) { pr.majority = clamp(pr.majority + e.majority); out.push(`Majorité ${sign(e.majority)}`); }
   if (e.security) { pr.security = clamp(pr.security + e.security); out.push(`Sécurité ${sign(e.security)}`); }
   if (e.threat) { pr.threat = clamp(pr.threat + e.threat); out.push(`Menace ${sign(e.threat)}`); }
   if (e.reform) {
     // Sans majorité, une réforme a de bonnes chances d'être rejetée
-    const pass = e.force || pr.majority >= 50 || rng.chance(Math.max(0.1, pr.majority / 55));
+    // Même avec une majorité, rien n'est acquis : fatigue des réformes, frondeurs, hubris
+    const pass = e.force || rng.chance(clamp(0.2 + (pr.majority - 45) / 30 - Math.max(0, recentWins(d) - 2) * 0.06 - hubrisOf(d) / 300 - mods(d).risk, 0.08, 0.9));
     if (pass) {
       pr.reforms += 1;
       d.player.flags['reformsTotal'] = Number(d.player.flags['reformsTotal'] ?? 0) + 1;
@@ -561,9 +568,9 @@ export function weeklyPresidency(d: GameState, rng: Rng): void {
   if (!pres || d.status !== 'en_cours') return;
   const p = d.player;
   // Usure du pouvoir ; la cote de confiance tire la popularité, et inversement
-  pres.approval = clamp(pres.approval - 0.3 + (p.stats.popularity - pres.approval) * 0.03);
+  pres.approval = clamp(pres.approval - 0.3 - Math.max(0, pres.approval - 60) * 0.04 + (p.stats.popularity - pres.approval) * 0.06);
   p.stats.popularity = clamp(p.stats.popularity + (pres.approval - p.stats.popularity) * 0.05);
-  pres.majority = clamp(pres.majority + ((pres.cohabitation ? 33 : 46) + (pres.approval - 40) * 0.35 - pres.majority) * 0.04);
+  pres.majority = clamp(pres.majority + ((pres.cohabitation ? 33 : 46) + Math.min(9, (pres.approval - 40) * 0.35) - hubrisOf(d) / 12 - pres.majority) * 0.04);
   pres.threat = clamp(pres.threat + (18 + (100 - pres.approval) * 0.22 - pres.threat) * 0.05);
   // La protection retombe vers son niveau de routine
   pres.security = clamp(pres.security + (45 - pres.security) * 0.03);

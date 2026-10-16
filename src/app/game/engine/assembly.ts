@@ -6,6 +6,7 @@ import { DOMAIN_LABELS } from '../models/game.models';
 import { applyEffects, pushNews } from './effects';
 import { ENEMIES_BY_ID, startWar } from './war';
 import { Rng, clamp, nextId } from './rng';
+import { hubrisOf } from './difficulty';
 
 /* ============================================================
  *  L'Assemblée nationale vote sur l'actualité : chaque mois,
@@ -103,10 +104,13 @@ export function majorityStrain(d: GameState, v: AssemblyVote, g: AssemblyGroup):
   const pop = Math.max(0, 45 - d.player.stats.popularity) / 170;
   const coh = g.partyId === d.party.id ? Math.max(0, 55 - d.party.cohesion) / 200
     : d.coalition && g.partyId === d.coalition.partyId ? Math.max(0, 55 - d.coalition.mood) / 140 : 0;
-  const recent = (d.voteHistory ?? []).filter(h => h.adopted && d.week - h.week <= 10).length;
-  const fatigue = Math.max(0, recent - 2) * 0.04;
+  const recent = (d.voteHistory ?? []).filter(h => h.adopted && d.week - h.week <= 12).length;
+  const fatigue = Math.max(0, recent - 2) * 0.06;
   const far = Math.max(0, Math.abs(v.lean - g.position) - 30) / 200;
-  return pop + coh + fatigue + far;
+  // Une majorité trop large se croit tout permis, et l'hubris du chef agace ses propres troupes
+  const seats = d.presidency?.majority ?? d.government?.majority ?? 50;
+  const large = Math.max(0, seats - 56) / 70;
+  return pop + coh + fatigue + far + large + hubrisOf(d) / 260;
 }
 
 /** Le Conseil constitutionnel : un texte clivant ou ambitieux peut être censuré, en partie ou en totalité */

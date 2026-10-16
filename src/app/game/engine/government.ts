@@ -4,6 +4,7 @@ import { RANKS } from '../data/ranks';
 import { pushNews } from './effects';
 import { addMilestone, dateOfWeek } from './life';
 import { Rng, clamp, nextId, frSigned } from './rng';
+import { hubrisOf } from './difficulty';
 
 /* ============================================================
  *  Le gouvernement : portefeuille ministériel, Matignon
@@ -106,7 +107,7 @@ export function weeklyGovernment(d: GameState, rng: Rng): void {
 
   const g = d.government;
   if (g) {
-    g.majority = clamp(g.majority + (44 + (p.stats.popularity - 40) * 0.3 + (g.cohesion - 50) * 0.1 - g.majority) * 0.04);
+    g.majority = clamp(g.majority + (44 + Math.min(8, (p.stats.popularity - 40) * 0.3) + Math.min(3, (g.cohesion - 50) * 0.1) - hubrisOf(d) / 12 - g.majority) * 0.04);
     g.cohesion = clamp(g.cohesion + (55 - g.cohesion) * 0.02 - (p.stats.stress > 70 ? 0.5 : 0));
     if (g.majority < 33 && !d.pendingDecisions.some(x => x.tag === 'pm_censure') && rng.chance(0.25)) {
       d.pendingDecisions.push(decision(d, 'pm_censure', 'Motion de censure contre votre gouvernement',

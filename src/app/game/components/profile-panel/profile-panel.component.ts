@@ -1,4 +1,5 @@
-import { DIFFICULTIES, difficultyOfGame } from '../../engine/difficulty';
+import { DIFFICULTIES, difficultyOfGame, hubrisOf } from '../../engine/difficulty';
+import { hubrisLabel } from '../../engine/nemesis';
 import { RoyalPipe } from '../shared/royal.pipe';
 import { DecimalPipe } from '@angular/common';
 import { TraitsComponent } from '../traits/traits.component';
@@ -33,7 +34,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
     <section class="card">
       <div class="eyebrow">{{ game.s().party.name }}</div>
       <h2 class="name">{{ game.player().name }}</h2>
-      <div class="rank"><span class="dot" [style.background]="game.s().party.color"></span>{{ game.roleLabel() }}<span class="diffchip" [title]="diffLabel().blurb">{{ diffLabel().icon }} {{ diffLabel().label }}</span></div>
+      <div class="rank"><span class="dot" [style.background]="game.s().party.color"></span>{{ game.roleLabel() }}<span class="diffchip" [title]="diffLabel().blurb">{{ diffLabel().icon }} {{ diffLabel().label }}</span>@if (hubris() >= 15) {<span class="diffchip hubris" [class.hot]="hubris() >= 50" [title]="'Hubris ' + hubris() + '/100 : plus vous dominez (popularité, électorats, majorité, lois adoptées), plus les retours de bâton sont probables. ' + hubrisText()">⚡ Hubris {{ hubris() }}</span>}</div>
       @if (game.player().traits?.length) {
         <app-traits class="my-traits" [ids]="game.player().traits ?? []" [gender]="game.player().gender" [grouped]="true" [fresh]="freshTrait()" />
         @if (traitPath().length) {
@@ -230,6 +231,8 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
     </section>
   `,
   styles: `
+    .diffchip.hubris { background: var(--warn-soft); color: var(--warn); }
+    .diffchip.hot { background: var(--bad-soft); color: var(--bad); }
     .diffchip { margin-left: 8px; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
     :host { display: grid; gap: 12px; align-content: start; }
     .name { font-size: 24px; margin-top: 4px; }
@@ -308,6 +311,8 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
   `,
 })
 export class ProfilePanelComponent {
+  protected readonly hubris = computed(() => Math.round(hubrisOf(this.game.s())));
+  protected readonly hubrisText = computed(() => hubrisLabel(this.hubris()));
   protected readonly diffLabel = computed(() => DIFFICULTIES.find(x => x.id === difficultyOfGame(this.game.s()))!);
   protected readonly game = inject(GameStateService);
   protected readonly lifestyles = LIFESTYLES;
