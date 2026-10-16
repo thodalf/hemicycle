@@ -833,8 +833,8 @@ export function resolveStage(G: Game, kind: Resolution['kind']): Resolution {
     G.sen = passed ? levels(G) : null;
     // Le texte repart de la version de l'Assemblée pour la suite
     for (const a of G.arts) a.level = G.an![a.id] ?? 0;
+    // Si le Sénat rejette, la CMP (ou la deuxième lecture) part du texte de l'Assemblée
     G.stage = 3; G.mode = 'cmp';
-    if (G.v === 'constitution' && !passed) { /* la deuxième lecture partira du texte de l'Assemblée */ }
   } else if (passed) advance(G, lines);
   else if (G.stage === 4 && G.mode === 'conclusions') {
     // ne se produit que si l'Assemblée rejette les conclusions : lecture définitive impossible, échec
@@ -906,4 +906,877 @@ export function cmpConclude(G: Game, agree: boolean): { lines: Fx[]; check: CmpC
     lines.push({ msg: agree ? `🤝 La CMP échoue : ${check.yes} voix sur 14 seulement.` : '🤝 Désaccord constaté en CMP.', bad: true });
   }
   return { lines, check };
+}
+
+/* ============================================================
+ *  Le composant
+ * ============================================================ */
+
+/** L'hémicycle : sièges en arcs concentriques, ordonnés de gauche à droite */
+interface Geo { seats: { x: number; y: number }[]; r: number; rank: number[] }
+const GEO = new Map<number, Geo>();
+function geometry(n: number): Geo {
+  const hit = GEO.get(n);
+  if (hit) return hit;
+  const rows = n <= 16 ? 1 : n <= 90 ? 4 : n <= 400 ? 9 : n <= 650 ? 12 : 15;
+  const r0 = n <= 16 ? 0.78 : n <= 90 ? 0.44 : 0.38;
+  const radii = Array.from({ length: rows }, (_, i) => r0 + ((1 - r0) * i) / Math.max(1, rows - 1));
+  const counts = apportion(radii, n);
+  const pts: { x: number; y: number; a: number; rr: number }[] = [];
+  radii.forEach((R, i) => {
+    const c = counts[i];
+    for (let k = 0; k < c; k++) {
+      const a = Math.PI * (1 - (c === 1 ? 0.5 : k / (c - 1)));
+      pts.push({ x: 100 + 93 * R * Math.cos(a), y: 97 - 93 * R * Math.sin(a), a, rr: R });
+    }
+  });
+  pts.sort((p, q) => q.a - p.a || p.rr - q.rr);
+  const gap = (93 * (1 - r0)) / Math.max(1, rows - 1);
+  const arc = Math.min(...radii.map((R, i) => (counts[i] > 1 ? (Math.PI * 93 * R) / (counts[i] - 1) : 99)));
+  const r = Math.min(gap, arc) * (n <= 16 ? 0.4 : 0.45);
+  const order = shuffle(pts.map((_, i) => i), mulberry(n * 31 + 7));
+  const rank = new Array<number>(n);
+  order.forEach((s, k) => { rank[s] = k; });
+  const g: Geo = { seats: pts.map(p => ({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 })), r: Math.round(r * 100) / 100, rank };
+  GEO.set(n, g);
+  return g;
+}
+
+const LV = ['Supprimé', 'Réécrit', 'Intégral'];
+const fmt = (n: number, d = 0) => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const sgn = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n);
+const word = (S: number) => (S >= 1 ? 'Pour' : S === 0 ? 'Partagé' : S === -1 ? 'Abst.' : 'Contre');
+const tone = (S: number) => (S >= 1 ? 'p' : S >= -1 ? 'a' : 'c');
+
+interface Move { id: Gid; short: string; from: string; to: string; up: boolean }
+interface Prev { err: string | null; dAmb: number; t0: Tally; t1: Tally; moves: Move[]; notes: string[] }
+interface ResView { title: string; kind: 'vote' | '493' | 'bloque' | 'cmp'; res: { am: Amdt; t: Tally }[]; main: Tally | null; passed: boolean; lines: Fx[]; cmp: CmpCheck | null }
+interface Flash { text: string; good: boolean; id: number }
+
+const BRIEF: Record<Variant, string> = {
+  loi: 'Faites adopter le texte en préservant le plus d’ambition possible.',
+  budget: 'Faites voter le budget en préservant vos priorités, sans dépasser la cible de déficit.',
+  reforme: 'Faites passer la réforme. Tant que son cœur ✊ reste intact, la mobilisation grossit à chaque étape.',
+  constitution: 'Révisez la Constitution : ni 49.3 ni dernier mot de l’Assemblée, et le Congrès devra réunir les trois cinquièmes des suffrages exprimés.',
+};
+
+let flashId = 0;
+
+@Component({
+  selector: 'app-navette-game',
+  template: `
+    @let G = game();
+    <div class="nav" [class]="'nav v-' + G.v">
+      <p class="bill">{{ billTitle }}</p>
+      <ol class="steps" aria-label="Étapes de la navette">
+        @for (s of stepLabels; track $index; let i = $index) {
+          <li [class.now]="i === G.stage && G.status === 'play'" [class.done]="i < G.stage || G.status === 'won'" [class.ko]="G.status !== 'play' && G.status !== 'won' && i === stopAt()"
+              [attr.aria-current]="i === G.stage ? 'step' : null"><span>{{ G.status !== 'play' && G.status !== 'won' && i === stopAt() ? '✗' : i < G.stage || G.status === 'won' ? '✓' : i + 1 }}</span>{{ s }}</li>
+        }
+      </ol>
+
+      <div class="res" role="list" aria-label="Ressources">
+        <span class="rs" role="listitem" [attr.aria-label]="'Temps de parole : ' + G.temps">
+          <i>⏱️</i><b class="mono">{{ G.temps }}</b><small>temps</small>
+        </span>
+        <span class="rs" role="listitem" [class.low]="G.capital < 2" [attr.aria-label]="'Capital politique : ' + G.capital"><i>★</i><b class="mono">{{ G.capital }}</b><small>capital</small></span>
+        <span class="rs" role="listitem" [attr.aria-label]="'Ambition préservée : ' + pct(ambNow())"><i>🎯</i><b class="mono">{{ pct(ambNow()) }}</b><small>ambition</small></span>
+        @if (G.v === 'budget') {
+          <span class="rs" role="listitem" [class.bad]="defNow() > G.target + 0.001" [class.ok]="defNow() <= G.target + 0.001" [attr.aria-label]="'Déficit ' + fmt(defNow(), 2) + ' pour cent, cible ' + fmt(G.target, 1)">
+            <i>💶</i><b class="mono">{{ fmt(defNow(), 2) }} %</b><small>cible {{ fmt(G.target, 1) }}</small></span>
+        }
+        @if (G.v === 'reforme') {
+          <span class="rs" role="listitem" [class.bad]="G.pressure >= 4" [attr.aria-label]="'Mobilisation ' + G.pressure + ' sur 6'"><i>✊</i><b class="mono">{{ G.pressure }}/6</b><small>la rue</small></span>
+        }
+        @if (G.v === 'constitution' && G.stage < 4) {
+          @let cg = congresNow();
+          <span class="rs" role="listitem" [class.bad]="!cg.ok" [class.ok]="cg.ok" [attr.aria-label]="'Projection du Congrès : ' + pct(cg.p / Math.max(1, cg.p + cg.c)) + ', trois cinquièmes requis'">
+            <i>🏰</i><b class="mono">{{ pct(cg.p / Math.max(1, cg.p + cg.c)) }}</b><small>Congrès/60</small></span>
+        }
+      </div>
+
+      <div class="hemi">
+        @let h = hemi();
+        <svg viewBox="0 0 200 101" role="img" [attr.aria-label]="hemiLabel()">
+          @for (a of ring(); track a.id) { <path [attr.d]="a.d" [attr.stroke]="a.color" class="ring" /> }
+          @for (s of h.geo.seats; track $index; let i = $index) {
+            <circle [attr.cx]="s.x" [attr.cy]="s.y" [attr.r]="h.geo.r" [attr.class]="'s ' + h.cls[i]" [attr.stroke]="h.strokes[i] ?? null" [attr.stroke-width]="h.strokes[i] ? 2.6 : null" />
+          }
+          @if (cmpView()) {
+            <text x="66" y="60" class="lbl">7 députés</text><text x="134" y="60" class="lbl">7 sénateurs</text>
+            <line x1="100" y1="18" x2="100" y2="40" class="sep" />
+          }
+        </svg>
+        <div class="hc">
+          <b class="mono big">{{ h.center }}</b>
+          <small>{{ h.sub }}</small>
+        </div>
+        @for (f of flashes(); track f.id) { <span class="flash" [class.good]="f.good">{{ f.text }}</span> }
+      </div>
+      @if (tallyLine(); as tl) {
+        <p class="tl" aria-live="polite">
+          <span class="p">Pour <b class="mono">{{ tl.p }}</b></span>
+          <span class="c">Contre <b class="mono">{{ tl.c }}</b></span>
+          <span class="a">Abst. <b class="mono">{{ tl.a }}</b></span>
+          <span class="verdict" [class.ok]="tl.ok">{{ tl.label }}</span>
+        </p>
+      }
+
+      @if (cmpNow(); as ck) {
+        @if (phase() === 'play') {
+          <p class="tl cmpl">
+            @if (G.v !== 'constitution') { <span [class]="ck.yes >= 8 ? 'okc' : 'koc'">CMP <b class="mono">{{ ck.yes }}/14</b></span> }
+            <span [class]="ck.an.ok ? 'okc' : 'koc'">Assemblée <b class="mono">{{ ck.an.p }}–{{ ck.an.c }}</b> {{ ck.an.ok ? '✓' : '✗' }}</span>
+            <span [class]="ck.sen.ok ? 'okc' : 'koc'">Sénat <b class="mono">{{ ck.sen.p }}–{{ ck.sen.c }}</b> {{ ck.sen.ok ? '✓' : '✗' }}</span>
+          </p>
+        }
+      }
+
+      <div class="panel">
+        @switch (phase()) {
+          @case ('intro') {
+            @if (intro(); as it) {
+              <div class="card intro" role="dialog" [attr.aria-label]="it.title">
+                <p class="it-t"><span class="it-i">{{ stageIcon() }}</span> <b>{{ it.title }}</b></p>
+                @if (G.stage === 0) {
+                  <p class="small">{{ brief }}@if (G.v === 'budget') { Cible : {{ fmt(G.target, 1) }} % du PIB. }</p>
+                  <p class="small muted">Chaque groupe vote selon son <b>soutien</b> : +1 et plus, pour ; 0, partagé ; −1, abstention ; −2 et moins, contre. Réécrire un article divise ses effets par deux, le supprimer les annule. Consultez les groupes pour découvrir leurs lignes rouges et ce qu’ils demandent.</p>
+                }
+                <ul class="lines">@for (l of it.lines; track $index) { <li [class.bad]="l.bad">{{ l.msg }}</li> }</ul>
+                <p class="small muted">{{ stageHelp() }}</p>
+                <button type="button" class="btn primary go" (click)="play()">{{ G.stage === 0 ? 'Déposer le texte' : 'À l’ouvrage' }} →</button>
+              </div>
+            }
+          }
+          @case ('play') {
+            <div class="tabs" role="tablist" aria-label="Vues">
+              <button type="button" role="tab" [attr.aria-selected]="tab() === 'texte'" [class.on]="tab() === 'texte'" (click)="tab.set('texte')">📜 Texte</button>
+              <button type="button" role="tab" [attr.aria-selected]="tab() === 'groupes'" [class.on]="tab() === 'groupes'" (click)="tab.set('groupes')">👥 Groupes@if (unknown()) { <small>{{ unknown() }}?</small> }</button>
+              @if (G.mode !== 'cmp') {
+                <button type="button" role="tab" [attr.aria-selected]="tab() === 'amdts'" [class.on]="tab() === 'amdts'" (click)="tab.set('amdts')">✂️ Amend.@if (G.pending.length) { <small class="warn">{{ G.pending.length }}</small> }</button>
+              }
+            </div>
+
+            @if (tab() === 'texte') {
+              @if (G.mode === 'cmp') {
+                <p class="hint">{{ G.v === 'constitution' ? 'Choisissez, article par article, une rédaction que les deux chambres voteront.' : 'Choisissez, article par article, entre la version de l’Assemblée, celle du Sénat ou un compromis : il faut 8 voix sur 14.' }}</p>
+              } @else if (textFixed(G)) {
+                <p class="hint">Le texte ne peut plus être modifié : seuls les accords avec les groupes peuvent encore faire bouger les voix.</p>
+              }
+              <ul class="arts">
+                @for (a of G.arts; track a.id) {
+                  @if (a.level > 0 || !a.extra || G.mode === 'cmp') {
+                    @let open = selArt() === a.id;
+                    <li>
+                      <button type="button" class="art" [class.open]="open" [class.gone]="a.level === 0" (click)="toggleArt(a.id)" [attr.aria-expanded]="open"
+                              [attr.aria-label]="'Article ' + a.n + ' : ' + a.title + ', ' + LV[a.level]">
+                        <span class="an mono">{{ a.extra ? 'Add.' : 'Art. ' + a.n }}</span>
+                        <span class="at">{{ a.title }}@if (a.core) { <i class="core" title="Au cœur de la contestation">✊</i> }</span>
+                        <span class="lv" [class]="'lv l' + a.level">{{ LV[a.level] }}</span>
+                        <span class="who">
+                          @for (w of whoLikes(a); track w.id) { <i class="up" [style.--g]="w.color">▲{{ w.short }}</i> }
+                          @for (w of whoHates(a); track w.id) { <i class="dn" [style.--g]="w.color">▼{{ w.short }}</i> }
+                          @for (w of redOn(a); track w) { <i class="red">🔒{{ w }}</i> }
+                          @if (threat(a)) { <i class="thr">✂️ amendé ?</i> }
+                        </span>
+                        <span class="amb mono">{{ a.extra ? '' : fmt(a.amb * (a.level === 2 ? 1 : a.level === 1 ? 0.5 : 0)) + '/' + fmt(a.amb) }}</span>
+                      </button>
+                      @if (open) {
+                        <div class="det">
+                          <p class="small">{{ a.desc }}@if (G.v === 'budget' && a.fiscal) { <span> Solde : {{ a.fiscal > 0 ? '+' : '−' }}{{ fmt(Math.abs(a.fiscal), 1) }} Md€ intégral.</span> }</p>
+                          @if (G.mode === 'cmp') {
+                            @let rg = range(a);
+                            @if (rg.length > 1) {
+                              <div class="seg" role="radiogroup" [attr.aria-label]="'Rédaction de l’article ' + a.n">
+                                @for (l of rg; track l) {
+                                  <button type="button" role="radio" [attr.aria-checked]="a.level === l" [class.on]="a.level === l" (click)="cmpPick(a.id, l)">
+                                    {{ LV[l] }}<small>{{ origin(a, l) }}</small>
+                                  </button>
+                                }
+                              </div>
+                            } @else { <p class="small muted">Rédaction identique dans les deux chambres.</p> }
+                          } @else if (!textFixed(G)) {
+                            @for (op of artOps(a); track op.label) {
+                              @let p = op.prev;
+                              <div class="op" [class.err]="p.err">
+                                <div class="op-h">
+                                  <b>{{ op.label }}</b>
+                                  @if (p.err) { <small>{{ p.err }}</small> }
+                                  @else {
+                                    <small>{{ op.cost }} · ambition {{ p.dAmb ? '−' + fmt(p.dAmb) + ' pts' : 'inchangée' }}</small>
+                                  }
+                                  <button type="button" class="btn small" [disabled]="!!p.err || busy()" (click)="act(op.act)" [attr.aria-label]="op.label + ' l’article ' + a.n">Valider</button>
+                                </div>
+                                @if (!p.err) {
+                                  <small class="proj">Projection {{ p.t0.p }}–{{ p.t0.c }} → <b [class.okc]="p.t1.ok" [class.koc]="!p.t1.ok">{{ p.t1.p }}–{{ p.t1.c }}</b>
+                                    @for (m of p.moves; track m.id) { <span [class]="m.up ? 'g' : 'r'"> · {{ m.short }} {{ m.from }}→{{ m.to }}</span> }</small>
+                                  @for (n of p.notes; track $index) { <small class="note">{{ n }}</small> }
+                                }
+                              </div>
+                            }
+                          }
+                        </div>
+                      }
+                    </li>
+                  }
+                }
+              </ul>
+            } @else if (tab() === 'groupes') {
+              <ul class="grps">
+                @for (g of groupsSorted(); track g.id) {
+                  @let open = selGrp() === g.id;
+                  @let S = sNow(g);
+                  <li>
+                    <button type="button" class="grp" [class.open]="open" (click)="toggleGrp(g.id)" [attr.aria-expanded]="open"
+                            [attr.aria-label]="g.name + ', ' + seatsNow(g) + ' sièges, soutien ' + S + ', ' + word(S) + (g.known ? '' : ', non consulté')">
+                      <i class="sw" [style.background]="g.color"></i>
+                      <span class="gn"><b>{{ g.short }}</b> {{ g.name }}@if (g.coal) { <em class="maj">majorité</em> }</span>
+                      <span class="gs mono">{{ seatsNow(g) }}</span>
+                      <span class="gS mono" [class]="'gS t-' + tone(S)">{{ sgn(S) }}</span>
+                      <span class="gv" [class]="'gv t-' + tone(S)">{{ word(S) }}</span>
+                      <span class="gi">{{ g.deal ? '🤝' : '' }}{{ g.known ? (g.red !== null ? '🔒' : '') : '❓' }}</span>
+                    </button>
+                    @if (open) {
+                      <div class="det">
+                        <p class="parts">
+                          @for (pt of parts(g); track pt.k) { <span [class]="pt.v > 0 ? 'g' : pt.v < 0 ? 'r' : ''">{{ pt.label }} {{ sgn(pt.v) }}</span> }
+                          @if (!g.known) { <span class="muted">Ligne rouge éventuelle : ?</span> }
+                        </p>
+                        @if (g.known) {
+                          <p class="small">🔒 {{ g.red !== null ? 'Ligne rouge : article ' + (artN(g.red)) + ' intégral (−' + RED + ')' : 'Pas de ligne rouge.' }}</p>
+                          <p class="small">🤝 {{ g.deal ? 'Accord conclu : ' + demandLabel(G, g, true) + (honored(g) ? ' (respecté)' : ' — TRAHI') : 'Demande : ' + demandLabel(G, g) }}.</p>
+                        }
+                        @if (!g.known) {
+                          @let pc = prev({ t: 'consult', g: g.id });
+                          <div class="op" [class.err]="pc.err"><div class="op-h"><b>🗣️ Consulter</b><small>{{ pc.err || '1 ⏱ · révèle ligne rouge et demande' }}</small>
+                            <button type="button" class="btn small" [disabled]="!!pc.err || busy()" (click)="act({ t: 'consult', g: g.id })" [attr.aria-label]="'Consulter ' + g.name">Valider</button></div></div>
+                        } @else if (!g.deal && g.demand) {
+                          @let pd = prev({ t: 'deal', g: g.id });
+                          <div class="op" [class.err]="pd.err">
+                            <div class="op-h"><b>🤝 Négocier</b><small>{{ pd.err || '1 ⏱ · 2 ★ · ambition ' + (pd.dAmb ? '−' + fmt(pd.dAmb) + ' pts' : 'inchangée') }}</small>
+                              <button type="button" class="btn small" [disabled]="!!pd.err || busy()" (click)="act({ t: 'deal', g: g.id })" [attr.aria-label]="'Négocier avec ' + g.name">Valider</button></div>
+                            @if (!pd.err) {
+                              <small class="proj">Projection {{ pd.t0.p }}–{{ pd.t0.c }} → <b [class.okc]="pd.t1.ok" [class.koc]="!pd.t1.ok">{{ pd.t1.p }}–{{ pd.t1.c }}</b>
+                                @for (m of pd.moves; track m.id) { <span [class]="m.up ? 'g' : 'r'"> · {{ m.short }} {{ m.from }}→{{ m.to }}</span> }</small>
+                              @for (n of pd.notes; track $index) { <small class="note">{{ n }}</small> }
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </li>
+                }
+              </ul>
+            } @else {
+              <ul class="amdts">
+                @for (x of fc().res; track x.am.id) {
+                  <li [class.ok]="x.t.ok">
+                    <span class="mono num">n° {{ fmt(x.am.num) }}</span>
+                    <span class="am-t"><b>{{ shortOf(x.am.by) }}</b> : {{ amdtLabel(x.am) }}</span>
+                    <span class="am-v mono" [class.ok]="x.t.ok">{{ x.t.p }}–{{ x.t.c }} {{ x.t.ok ? 'adopté' : 'rejeté' }}</span>
+                  </li>
+                } @empty { <li class="muted small">Aucun amendement hostile en discussion.</li> }
+              </ul>
+              <p class="hint">Projection d’après vos informations. Pour en faire tomber un : réécrivez l’article vous-même, négociez avec un groupe, ou écartez-les tous d’un coup (vote bloqué, 49.3).</p>
+            }
+
+            @if (confirm(); as k) {
+              @let cp = confirmProj();
+              <div class="card sheet" role="dialog" [attr.aria-label]="k === '493' ? 'Engager la responsabilité du gouvernement' : 'Vote bloqué'">
+                @if (k === '493') {
+                  <p><b>⚖️ Article 49, alinéa 3</b> — le texte est adopté sans vote, sauf si une motion de censure réunit {{ CENSURE }} députés. L’opposition s’en souviendra (−1 de soutien chacun, définitivement).</p>
+                } @else {
+                  <p><b>🔒 Vote bloqué (article 44.3)</b> — un seul vote sur tout le texte : les amendements de l’opposition sont écartés. L’opposition s’en souviendra (−1 de soutien chacun, définitivement).</p>
+                }
+                @if (cp) {
+                  <p class="small">{{ k === '493' ? 'Censure : ' + cp.p + ' voix sur ' + CENSURE + ' requises' : 'Vote : ' + cp.p + ' pour, ' + cp.c + ' contre' }} →
+                    <b [class.okc]="k === '493' ? !cp.ok : cp.ok" [class.koc]="k === '493' ? cp.ok : !cp.ok">{{ k === '493' ? (cp.ok ? 'le gouvernement tomberait' : 'motion rejetée') : (cp.ok ? 'adopté' : 'rejeté') }}</b> <span class="muted">(projection)</span></p>
+                }
+                @if (unknown()) { <p class="small muted">❓ {{ unknown() }} groupe{{ unknown() > 1 ? 's' : '' }} non consulté{{ unknown() > 1 ? 's' : '' }} : une ligne rouge cachée peut fausser la projection.</p> }
+                <div class="row2">
+                  <button type="button" class="btn" (click)="confirm.set(null)">Renoncer</button>
+                  <button type="button" class="btn primary" (click)="resolve(k)">{{ k === '493' ? 'Engager la responsabilité' : 'Demander le vote bloqué' }}</button>
+                </div>
+              </div>
+            } @else {
+              <div class="acts">
+                @if (G.mode === 'cmp') {
+                  <button type="button" class="btn" [disabled]="busy()" (click)="cmpEnd(false)">{{ G.v === 'constitution' ? 'Renoncer à la révision' : 'Constater le désaccord' }}</button>
+                  <button type="button" class="btn primary end" [disabled]="busy() || !cmpOk()" (click)="cmpEnd(true)">{{ G.v === 'constitution' ? 'Adopter en termes identiques' : 'Conclure l’accord' }} →</button>
+                } @else {
+                  @if (anStage(G) && G.mode !== 'conclusions') {
+                    <button type="button" class="btn small" [disabled]="!!canDo(G, { t: 'night' }) || busy()" (click)="act({ t: 'night' })" [attr.title]="canDo(G, { t: 'night' })">🌙 Séance de nuit <small>+2 ⏱ · 1 ★</small></button>
+                  }
+                  @if (G.v === 'reforme') {
+                    <button type="button" class="btn small" [disabled]="!!canDo(G, { t: 'concert' }) || busy()" (click)="act({ t: 'concert' })">🤲 Syndicats <small>1 ⏱ · 1 ★ · ✊−1</small></button>
+                  }
+                  @if (G.v !== 'constitution' && anStage(G)) {
+                    <button type="button" class="btn small" [disabled]="!!can493(G) || busy()" (click)="confirm.set('493')" [attr.title]="can493(G)">⚖️ 49.3 <small>3 ★</small></button>
+                  }
+                  @if (!canBloqueShown()) {
+                    <button type="button" class="btn small" [disabled]="!!canBloque(G) || busy()" (click)="confirm.set('bloque')" [attr.title]="canBloque(G)">🔒 Vote bloqué <small>2 ★</small></button>
+                  }
+                  <button type="button" class="btn primary end" [disabled]="busy()" (click)="resolve('vote')">{{ voteLabel() }} →</button>
+                }
+              </div>
+            }
+          }
+          @case ('result') {
+            @if (result(); as R) {
+              <div class="card result" aria-live="polite">
+                <p class="it-t"><b>{{ R.title }}</b></p>
+                @if (R.res.length) {
+                  <ul class="amdts">
+                    @for (x of R.res; track x.am.id; let i = $index) {
+                      @if (i < step()) {
+                        <li class="in" [class.ok]="x.t.ok">
+                          <span class="mono num">n° {{ fmt(x.am.num) }}</span>
+                          <span class="am-t"><b>{{ shortOf(x.am.by) }}</b> : {{ amdtLabel(x.am) }}</span>
+                          <span class="am-v mono" [class.ok]="x.t.ok">{{ x.t.p }}–{{ x.t.c }} {{ x.t.ok ? 'adopté' : 'rejeté' }}</span>
+                        </li>
+                      }
+                    }
+                  </ul>
+                }
+                @if (R.cmp; as ck) {
+                  <p class="small mono">Membres de la CMP : {{ ck.yes }} pour sur 14 — Assemblée {{ ck.an.p }}–{{ ck.an.c }} · Sénat {{ ck.sen.p }}–{{ ck.sen.c }}</p>
+                }
+                @if (animDone()) {
+                  <ul class="lines">@for (l of R.lines; track $index) { <li class="in" [class.bad]="l.bad">{{ l.msg }}</li> }</ul>
+                  <button type="button" class="btn primary go" (click)="next()">{{ G.status === 'play' ? 'Étape suivante' : 'Bilan' }} →</button>
+                }
+              </div>
+            }
+          }
+          @case ('over') {
+            <div class="card sum" aria-live="polite">
+              <p class="verdict-big" [class.ok]="G.status === 'won'"><b>{{ endMessage() }}</b></p>
+              <div class="bars">
+                <span>🎯 {{ G.status === 'won' ? 'Ambition préservée' : 'Ambition du texte' }}</span><span class="bar"><span [style.width.%]="ambNow() * 100"></span></span><b class="mono">{{ pct(ambNow()) }}</b>
+                @if (G.v === 'budget') { <span>💶 Déficit {{ fmt(defNow(), 2) }} %</span><span class="bar"><span [style.width.%]="defFactor(G) * 100"></span></span><b class="mono">{{ defNow() <= G.target + 0.001 ? '✓' : '✗' }}</b> }
+                <span>🏛️ Score</span><span class="bar"><span [style.width.%]="score() * 100"></span></span><b class="mono">{{ pct(score()) }}</b>
+              </div>
+              <ul class="final">
+                @for (a of finalArts(); track a.id) {
+                  <li [class]="'l' + a.level"><span>{{ a.level === 2 ? '✓' : a.level === 1 ? '½' : '✗' }}</span> {{ a.extra ? 'Add.' : 'Art. ' + a.n }} — {{ a.title }}</li>
+                }
+              </ul>
+            </div>
+          }
+        }
+      </div>
+
+      <ul class="log" aria-label="Journal">@for (l of log(); track $index) { <li>{{ l }}</li> }</ul>
+    </div>
+  `,
+  styles: `
+    :host { display: block; width: 100%; }
+    .nav { display: grid; gap: 7px; font-size: 13px; min-width: 0; }
+    .bill { margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-2); text-align: center; }
+    .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; counter-reset: s;
+      li { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; line-height: 1.1; color: var(--ink-3); text-align: center; min-width: 0; overflow-wrap: anywhere; }
+      span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); font: 700 10.5px var(--font-body); }
+      .now { color: var(--ink); font-weight: 600; span { background: var(--accent); border-color: var(--accent); color: var(--surface); } }
+      .done span { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+      .ko span { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); } }
+    .res { display: flex; flex-wrap: wrap; gap: 4px; }
+    .rs { flex: 1 1 56px; display: grid; grid-template-columns: auto auto; grid-template-areas: 'i v' 'l l'; justify-content: center; align-items: center; column-gap: 4px; padding: 3px 4px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); min-width: 0; line-height: 1.15;
+      i { grid-area: i; font-style: normal; font-size: 13px; } b { grid-area: v; font-size: 13px; white-space: nowrap; } small { grid-area: l; text-align: center; font-size: 9.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      &.ok { border-color: var(--good); background: var(--good-soft); } &.bad, &.low { border-color: var(--bad); background: var(--bad-soft); } }
+    .hemi { position: relative; width: 100%; max-width: 420px; justify-self: center; svg { display: block; width: 100%; height: auto; } }
+    .s { transition: fill .25s ease; }
+    .s.p { fill: #3f9b62; } .s.a { fill: #b9b3a5; } .s.c { fill: #c8432f; } .s.w { fill: var(--line); } .s.g0 { opacity: .35; }
+    .ring { fill: none; stroke-width: 2.4; }
+    .lbl { font: 600 7px var(--font-body); fill: var(--ink-3); text-anchor: middle; }
+    .sep { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 2; }
+    .hc { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); display: grid; justify-items: center; line-height: 1.05; pointer-events: none;
+      .big { font-size: clamp(16px, 5.4vw, 22px); } small { font-size: 10px; color: var(--ink-2); white-space: nowrap; } }
+    .flash { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); font: 800 14px var(--font-body); color: var(--bad); pointer-events: none; animation: rise 1.2s ease forwards; white-space: nowrap; &.good { color: var(--good); } }
+    @keyframes rise { to { transform: translate(-50%, -22px); opacity: 0; } }
+    .tl { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; align-items: center; font-size: 12px;
+      .p { color: #2f7d4f; } .c { color: var(--bad); } .a { color: var(--ink-3); }
+      .verdict { padding: 1px 8px; border-radius: 999px; background: var(--bad-soft); color: var(--bad); font-weight: 600; &.ok { background: var(--good-soft); color: var(--good); } } }
+    .panel { display: grid; gap: 6px; min-width: 0; }
+    .card { display: grid; gap: 6px; padding: 10px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); animation: pop .3s ease both; min-width: 0; }
+    .intro { border-color: var(--accent); }
+    @keyframes pop { from { transform: scale(.97); opacity: 0; } }
+    .it-t { margin: 0; font-size: 14px; } .it-i { font-size: 18px; }
+    .lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12px; li.bad { color: var(--bad); } li.in { animation: pop .3s ease both; } }
+    .go { justify-self: end; min-height: 38px; }
+    .small { font-size: 12px; margin: 0; } .muted { color: var(--ink-3); }
+    .hint { margin: 0; font-size: 11.5px; color: var(--ink-2); }
+    .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 4px;
+      button { min-height: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; padding: 2px 4px;
+        &.on { border-color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); font-weight: 600; }
+        small { margin-left: 3px; font-size: 10px; padding: 0 5px; border-radius: 999px; background: var(--surface-2); &.warn { background: var(--bad-soft); color: var(--bad); } } } }
+    ul.arts, ul.grps, ul.amdts, ul.final { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+    .art { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'n t l' 'w w m'; gap: 2px 6px; align-items: center; text-align: left;
+      padding: 6px 8px; min-height: 44px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer;
+      &.open { border-color: var(--accent); } &.gone { opacity: .6; .at { text-decoration: line-through; } } }
+    .an { grid-area: n; font-size: 10.5px; color: var(--ink-3); }
+    .at { grid-area: t; font-size: 12.5px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; .core { font-style: normal; } }
+    .lv { grid-area: l; font-size: 10px; padding: 1px 6px; border-radius: 999px; white-space: nowrap;
+      &.l2 { background: var(--good-soft); color: var(--good); } &.l1 { background: #f3e8cf; color: #8a6514; } &.l0 { background: var(--bad-soft); color: var(--bad); } }
+    .who { grid-area: w; display: flex; flex-wrap: wrap; gap: 2px 5px; font-size: 10px; min-width: 0;
+      i { font-style: normal; white-space: nowrap; border-bottom: 2px solid var(--g, transparent); }
+      .up { color: #2f7d4f; } .dn { color: var(--bad); } .red { color: var(--bad); font-weight: 700; } .thr { color: #8a6514; } }
+    .amb { grid-area: m; font-size: 10px; color: var(--ink-3); }
+    .det { display: grid; gap: 5px; padding: 6px 4px 4px 8px; border-left: 2px solid var(--accent); margin: 2px 0 4px 6px; min-width: 0; }
+    .op { display: grid; gap: 2px; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); &.err { opacity: .7; } }
+    .op-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; b { font-size: 12.5px; } small { color: var(--ink-2); font-size: 11px; flex: 1 1 120px; min-width: 0; } .btn { min-height: 32px; margin-left: auto; } }
+    .proj { font-size: 11px; color: var(--ink-2); overflow-wrap: anywhere; }
+    .note { font-size: 11px; color: var(--ink-2); }
+    .g { color: #2f7d4f; font-weight: 600; } .r { color: var(--bad); font-weight: 600; }
+    .okc { color: #2f7d4f; } .koc { color: var(--bad); }
+    .seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 4px;
+      button { min-height: 40px; display: grid; gap: 0; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer;
+        small { font-size: 9.5px; color: var(--ink-3); } &.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 600; } } }
+    .grp { width: 100%; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto auto auto; gap: 6px; align-items: center; text-align: left; min-height: 42px; padding: 5px 8px;
+      border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; &.open { border-color: var(--accent); } }
+    .sw { width: 10px; height: 24px; border-radius: 3px; }
+    .gn { font-size: 11.5px; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; b { font-size: 12.5px; } .maj { font-style: normal; font-size: 9.5px; margin-left: 3px; padding: 0 4px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2); } }
+    .gs { font-size: 11px; color: var(--ink-2); }
+    .gS { font-size: 12px; font-weight: 700; min-width: 22px; text-align: right; }
+    .gv { font-size: 10px; padding: 1px 5px; border-radius: 999px; min-width: 42px; text-align: center; }
+    .t-p { color: #2f7d4f; } .gv.t-p { background: var(--good-soft); } .t-a { color: var(--ink-2); } .gv.t-a { background: var(--surface-2); } .t-c { color: var(--bad); } .gv.t-c { background: var(--bad-soft); }
+    .gi { font-size: 12px; min-width: 14px; }
+    .parts { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 9px; font-size: 11.5px; }
+    .amdts li { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'n t' 'v v'; gap: 1px 6px; padding: 5px 8px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: 12px;
+      &.ok { border-color: var(--bad); } &.in { animation: pop .3s ease both; } }
+    .num { grid-area: n; font-size: 10.5px; color: var(--ink-3); } .am-t { grid-area: t; overflow-wrap: anywhere; } .am-v { grid-area: v; font-size: 11px; color: var(--ink-2); &.ok { color: var(--bad); font-weight: 700; } }
+    .acts { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; .btn { min-height: 36px; } .btn small { font-size: 10px; opacity: .8; } .end { margin-left: auto; } }
+    .sheet { border-color: var(--accent); p { margin: 0; font-size: 12px; } }
+    .row2 { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; .btn { min-height: 36px; } }
+    .sum { gap: 8px; }
+    .verdict-big { margin: 0; font-size: 14px; color: var(--bad); &.ok { color: var(--good); } }
+    .bars { display: grid; grid-template-columns: auto minmax(0, 1fr) 40px; gap: 5px 8px; align-items: center; font-size: 12px; b { text-align: right; }
+      .bar { display: block; height: 7px; border-radius: 4px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; span { display: block; height: 100%; background: var(--accent); } } }
+    .final li { font-size: 12px; display: flex; gap: 6px; span { font-weight: 700; width: 14px; } &.l2 span { color: var(--good); } &.l1 span { color: #8a6514; } &.l0 { color: var(--ink-3); text-decoration: line-through; span { color: var(--bad); } } }
+    .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 70px; overflow: auto; font-size: 11px; color: var(--ink-2); }
+    @media (prefers-reduced-motion: reduce) { .card, .lines li.in, .amdts li.in, .flash { animation: none; } .s { transition: none; } }
+  `,
+})
+export class NavetteGameComponent implements OnInit, OnDestroy {
+  readonly def = input.required<MinigameDef>();
+  readonly diff = input(1);
+  readonly done = output<number>();
+  readonly progress = output<{ live: number; time: number }>();
+  readonly miss = output<void>();
+
+  protected readonly Math = Math;
+  protected readonly LV = LV;
+  protected readonly RED = RED;
+  protected readonly CENSURE = CENSURE;
+  protected readonly fmt = fmt;
+  protected readonly sgn = sgn;
+  protected readonly word = word;
+  protected readonly tone = tone;
+  protected readonly canDo = canDo;
+  protected readonly can493 = can493;
+  protected readonly canBloque = canBloque;
+  protected readonly anStage = anStage;
+  protected readonly textFixed = textFixed;
+  protected readonly demandLabel = demandLabel;
+  protected readonly defFactor = defFactor;
+
+  protected billTitle = '';
+  protected brief = '';
+  protected stepLabels: string[] = [...STAGES];
+
+  protected readonly game = signal<Game>(newGame('loi', 1, mulberry(1)));
+  protected readonly phase = signal<'intro' | 'play' | 'result' | 'over'>('intro');
+  protected readonly intro = signal<Intro | null>(null);
+  protected readonly tab = signal<'texte' | 'groupes' | 'amdts'>('texte');
+  protected readonly selArt = signal<number | null>(null);
+  protected readonly selGrp = signal<Gid | null>(null);
+  protected readonly confirm = signal<'493' | 'bloque' | null>(null);
+  protected readonly result = signal<ResView | null>(null);
+  protected readonly step = signal(0);
+  protected readonly shown = signal<Tally | null>(null);
+  protected readonly reveal = signal(1);
+  protected readonly animDone = signal(false);
+  protected readonly busy = signal(false);
+  protected readonly log = signal<string[]>([]);
+  protected readonly flashes = signal<Flash[]>([]);
+  protected readonly score = signal(0);
+  private readonly rnd: Rnd = mulberry((Math.random() * 2 ** 32) >>> 0);
+  private timers: ReturnType<typeof setTimeout>[] = [];
+  private reduced = false;
+  private lastStop = 0;
+
+  /** Ce que donnerait le vote, d'après les informations du gouvernement */
+  protected readonly fc = computed(() => forecast(this.game(), true));
+  protected readonly cmpNow = computed(() => (this.game().mode === 'cmp' ? cmpCheck(this.game(), true) : null));
+  protected readonly cmpOk = computed(() => !!this.cmpNow()?.ok);
+  protected readonly cmpView = computed(() => this.phase() !== 'over' && (this.game().mode === 'cmp' && this.phase() !== 'intro' || !!this.result()?.cmp) && this.game().v !== 'constitution');
+  /** La projection affichée : en deuxième lecture constitutionnelle, le Sénat (le verrou) */
+  protected readonly projT = computed(() => { const ck = this.cmpNow(); return ck && this.game().v === 'constitution' ? ck.sen : this.fc().final; });
+  protected readonly ambNow = computed(() => ambition(this.game()));
+  protected readonly defNow = computed(() => deficit(this.game()));
+  protected readonly congresNow = computed(() => tally(this.game(), 'congres', levels(this.game()), true));
+  protected readonly unknown = computed(() => this.game().groups.filter(g => !g.known).length);
+  protected readonly groupsSorted = computed(() => [...this.game().groups].sort((a, b) => a.pos - b.pos));
+  protected readonly stopAt = computed(() => this.lastStop);
+
+  /** La chambre affichée et ses sièges */
+  protected readonly hemi = computed(() => {
+    const G = this.game();
+    const R = this.result();
+    if (this.cmpView()) {
+      const ck = R?.cmp ?? this.cmpNow();
+      const ms = ck?.members ?? [];
+      const geo = geometry(14);
+      const cls = geo.seats.map((_, i) => (ms[i] ? (ms[i].pour ? 'p' : 'c') : 'w'));
+      const strokes = geo.seats.map((_, i) => (ms[i] ? gOf(G, ms[i].g)?.color ?? null : null));
+      return { geo, cls, strokes, center: `${ck?.yes ?? 0}/14`, sub: 'voix pour · 8 requises' };
+    }
+    const t = this.shown() ?? this.projT();
+    const ch = t?.ch ?? voteChamber(G);
+    const n = totalSeats(ch);
+    const geo = geometry(n);
+    const strokes: (string | null)[] = [];
+    if (!t) return { geo, cls: geo.seats.map(() => 'w'), strokes, center: '', sub: '' };
+    const order = [...G.groups].sort((a, b) => a.pos - b.pos);
+    const base: string[] = [];
+    for (const g of order) {
+      const row = t.rows.find(x => x.g === g.id);
+      if (!row) continue;
+      if (t.kind === 'censure') { for (let k = 0; k < row.p; k++) base.push('c'); for (let k = 0; k < row.seats - row.p; k++) base.push('a g0'); continue; }
+      for (let k = 0; k < row.p; k++) base.push('p');
+      for (let k = 0; k < row.a; k++) base.push('a');
+      for (let k = 0; k < row.c; k++) base.push('c');
+    }
+    while (base.length < n) base.push('w');
+    const rv = this.reveal();
+    const cls = geo.seats.map((_, i) => (geo.rank[i] < rv * n ? base[i] : 'w'));
+    const cut = Math.round(rv * n);
+    const shownP = t.kind === 'censure' ? Math.min(t.p, cut) : Math.round(t.p * rv);
+    return {
+      geo, cls, strokes,
+      center: t.kind === 'censure' ? `${shownP}/${CENSURE}` : `${Math.round(t.p * rv)}–${Math.round(t.c * rv)}`,
+      sub: t.kind === 'censure' ? 'voix pour la censure' : ch === 'com' ? 'commission' : ch === 'sen' ? 'Sénat' : ch === 'congres' ? 'Congrès · 3/5 requis' : 'Assemblée nationale',
+    };
+  });
+
+  /** L'anneau des groupes autour de l'hémicycle */
+  protected readonly ring = computed(() => {
+    if (this.cmpView()) return [];
+    const G = this.game();
+    const t = this.shown() ?? this.projT();
+    const ch = t.ch;
+    const order = [...G.groups].sort((a, b) => a.pos - b.pos);
+    const tot = totalSeats(ch);
+    let acc = 0;
+    const R = 97.5;
+    return order.map(g => {
+      const n = seatsIn(g, ch);
+      const a0 = Math.PI * (1 - acc / tot), a1 = Math.PI * (1 - (acc + n) / tot);
+      acc += n;
+      const p = (a: number) => `${(100 + R * Math.cos(a)).toFixed(2)} ${(97 - R * Math.sin(a)).toFixed(2)}`;
+      return { id: g.id, color: g.color, d: `M ${p(a0 - 0.004)} A ${R} ${R} 0 0 1 ${p(a1 + 0.004)}` };
+    });
+  });
+
+  protected readonly tallyLine = computed(() => {
+    if (this.cmpView() || this.phase() === 'over') return null;
+    const R = this.result();
+    const t = this.shown() ?? this.projT();
+    if (t.kind === 'censure') {
+      const done = this.reveal() >= 1;
+      return { p: Math.round(t.p * this.reveal()), c: t.total - t.p, a: 0, ok: !t.ok, label: !done ? 'Censure…' : t.ok ? 'Censure adoptée' : 'Censure rejetée' };
+    }
+    const done = this.reveal() >= 1;
+    const pending = R ? !done : false;
+    const lab = pending ? 'Vote en cours…' : t.kind === 'tpf' ? `${t.ok ? '✓' : '✗'} 3/5 : ${t.need} requis` : `${t.ok ? '✓ adopté' : '✗ rejeté'}${R ? '' : ' (projection)'}`;
+    return { p: Math.round(t.p * this.reveal()), c: Math.round(t.c * this.reveal()), a: Math.round(t.a * this.reveal()), ok: t.ok, label: lab };
+  });
+
+  protected readonly confirmProj = computed(() => {
+    const k = this.confirm();
+    if (!k) return null;
+    const c = cloneGame(this.game());
+    for (const g of c.groups) if (!g.coal) g.anger++;
+    c.pending = [];
+    return k === '493' ? censureTally(c, levels(c), true) : tally(c, voteChamber(c), levels(c), true);
+  });
+
+  ngOnInit(): void {
+    const id = this.def().id;
+    const v: Variant = /budget|finances/.test(id) ? 'budget' : /reforme|retraite/.test(id) ? 'reforme' : /constitution/.test(id) ? 'constitution' : 'loi';
+    this.reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const G = newGame(v, this.diff(), this.rnd);
+    this.billTitle = this.def().title ? `${this.def().title} — ${BILLS[v].title}` : BILLS[v].title;
+    this.brief = BRIEF[v];
+    if (v === 'constitution') this.stepLabels = ['Commission', 'Séance publique', 'Sénat', '2e lecture', 'Congrès'];
+    this.game.set(G);
+    this.begin();
+  }
+
+  ngOnDestroy(): void { this.timers.forEach(t => clearTimeout(t)); }
+
+  /* ── Libellés ── */
+
+  protected pct(x: number): string { return `${Math.round(x * 100)} %`; }
+  protected artN(id: number): number { return aOf(this.game(), id)?.n ?? 0; }
+  protected shortOf(id: Gid): string { return gOf(this.game(), id)?.short ?? id; }
+  protected range(a: Article): Level[] { return cmpRange(this.game(), a); }
+  protected honored(g: Group): boolean { return dealHonored(this.game(), g, levels(this.game())); }
+  protected sNow(g: Group): number { return sOf(this.game(), g, this.sCh(), levels(this.game()), true); }
+  protected parts(g: Group): SPart[] { return sParts(this.game(), g, this.sCh(), levels(this.game()), true); }
+  protected seatsNow(g: Group): number { const ch = voteChamber(this.game()); return seatsIn(g, this.game().mode === 'cmp' ? 'an' : ch); }
+  private sCh(): Chamber { const ch = voteChamber(this.game()); return ch === 'sen' ? 'sen' : 'an'; }
+
+  protected origin(a: Article, l: Level): string {
+    const G = this.game();
+    const an = G.an?.[a.id] ?? 0, sn = G.sen?.[a.id];
+    const o = [l === an ? 'Assemblée' : '', sn !== undefined && l === sn ? 'Sénat' : ''].filter(Boolean).join(' · ');
+    return o || 'compromis';
+  }
+
+  protected whoLikes(a: Article): { id: Gid; short: string; color: string }[] {
+    const ch = this.sCh();
+    return this.groupsSorted().filter(g => attAt(a, g.id, a.level || 2, ch) > 0).map(g => ({ id: g.id, short: g.short, color: g.color }));
+  }
+  protected whoHates(a: Article): { id: Gid; short: string; color: string }[] {
+    const ch = this.sCh();
+    return this.groupsSorted().filter(g => attAt(a, g.id, a.level || 2, ch) < 0).map(g => ({ id: g.id, short: g.short, color: g.color }));
+  }
+  protected redOn(a: Article): string[] { return this.game().groups.filter(g => g.known && g.red === a.id).map(g => g.short); }
+  protected threat(a: Article): boolean { return this.fc().res.some(x => x.am.art === a.id && x.t.ok && x.am.to < a.level); }
+
+  protected amdtLabel(am: Amdt): string {
+    const a = aOf(this.game(), am.art);
+    const n = a ? (a.extra ? `l’article additionnel « ${a.title} »` : `l’article ${a.n}`) : 'un article';
+    return am.kind === 'sup' ? `supprimer ${n}` : am.kind === 'rew' ? `réécrire ${n}` : am.kind === 'ret' ? `rétablir ${n}` : `ajouter « ${a?.title ?? ''} »`;
+  }
+
+  protected stageIcon(): string { return ['📑', '🏛️', '🏰', '🤝', '📜'][this.game().stage] ?? '📜'; }
+  protected stageHelp(): string {
+    const G = this.game();
+    if (G.stage === 0) return 'La commission est une répétition : ses votes reflètent ceux de l’hémicycle. Si elle rejette le texte, vous perdrez du temps en séance.';
+    if (G.stage === 1) return 'Le vote décisif à l’Assemblée. Les amendements adoptés modifient le texte avant le vote sur l’ensemble.';
+    if (G.stage === 2) return 'Une autre majorité : vos accords valent aussi au Sénat. Les amendements de la majorité sénatoriale seront votés avant le texte.';
+    if (G.stage === 3) return G.v === 'constitution' ? 'En matière constitutionnelle, le Sénat a autant de pouvoir que l’Assemblée : sans accord, la révision meurt.' : 'Sans accord, l’Assemblée reprendra son propre texte en lecture définitive, face à une nouvelle obstruction.';
+    if (G.mode === 'congres') return 'Seuls les accords peuvent encore faire bouger des voix.';
+    if (G.mode === 'conclusions') return 'Le texte est figé : il reste le vote, les accords… ou le 49.3.';
+    return 'L’Assemblée repart de son texte ; vous pouvez reprendre la version du Sénat d’un article (1 ⏱).';
+  }
+
+  protected voteLabel(): string {
+    const G = this.game();
+    if (G.stage === 0) return 'Vote en commission';
+    if (G.stage === 2) return 'Vote du Sénat';
+    if (G.mode === 'congres') return 'Vote du Congrès';
+    if (G.stage === 4) return 'Vote définitif';
+    return 'Vote solennel';
+  }
+  protected canBloqueShown(): boolean { const G = this.game(); return G.mode === 'conclusions' || G.mode === 'congres' || G.stage === 0; }
+
+  protected hemiLabel(): string {
+    const h = this.hemi();
+    const t = this.tallyLine();
+    return t ? `Hémicycle : ${t.p} pour, ${t.c} contre, ${t.a} abstentions. ${t.label}` : `Commission mixte paritaire : ${h.center} voix pour.`;
+  }
+
+  protected endMessage(): string {
+    const G = this.game();
+    const r = this.score();
+    if (G.status === 'censure') return 'La motion de censure est adoptée : le gouvernement tombe, le texte avec lui.';
+    if (G.status === 'lost') return G.v === 'constitution' && G.lostAt >= 3 ? 'La révision constitutionnelle est enterrée.' : 'Le texte est rejeté : retour à la case départ.';
+    if (G.v === 'budget' && deficit(G) > G.target + 0.001) return 'Budget adopté, mais la cible de déficit est manquée.';
+    return r >= 0.85 ? 'Adopté définitivement, et presque intact : une victoire politique.' : r >= 0.65 ? 'Adopté définitivement : l’essentiel est sauf.' : 'Adopté, mais vidé de sa substance.';
+  }
+
+  protected finalArts(): Article[] { return this.game().arts.filter(a => !a.extra || a.level > 0); }
+
+  /* ── Aperçus ── */
+
+  protected prev(act: Action): Prev {
+    const G = this.game();
+    const f0 = this.fc();
+    const err = canDo(G, act);
+    if (err) return { err, dAmb: 0, t0: f0.final, t1: f0.final, moves: [], notes: [] };
+    const c = cloneGame(G);
+    applyAction(c, act);
+    const f1 = forecast(c, true);
+    const ch = this.sCh();
+    const moves: Move[] = [];
+    for (const g of G.groups) {
+      const s0 = sOf(G, g, ch, f0.lv, true);
+      const g1 = gOf(c, g.id);
+      const s1 = sOf(c, g1, ch, f1.lv, true);
+      if (word(s0) !== word(s1)) moves.push({ id: g.id, short: g.short, from: word(s0), to: word(s1), up: s1 > s0 });
+    }
+    const notes: string[] = [];
+    if (G.v === 'budget') { const d0 = deficit(G, f0.lv), d1 = deficit(c, f1.lv); if (Math.abs(d1 - d0) > 0.001) notes.push(`💶 Déficit ${fmt(d0, 2)} % → ${fmt(d1, 2)} %${d1 > G.target + 0.001 ? ' : au-dessus de la cible !' : ''}`); }
+    if (G.v === 'reforme' && c.pressure !== G.pressure) notes.push(`✊ Mobilisation ${G.pressure} → ${c.pressure}`);
+    for (const g of G.groups) {
+      const g1 = gOf(c, g.id);
+      if (g.deal && dealHonored(G, g, f0.lv) && !dealHonored(c, g1, f1.lv)) notes.push(`⚠️ Trahit l’accord avec ${g.name}`);
+      if (g.known && g.red !== null && (f0.lv[g.red] ?? 0) === 2 && (f1.lv[g.red] ?? 0) < 2) notes.push(`🔓 Désamorce la ligne rouge de ${g.short}`);
+    }
+    const res1 = new Set(f1.res.filter(x => x.t.ok).map(x => x.am.id));
+    for (const x of f0.res) if (x.t.ok && !res1.has(x.am.id) && c.pending.some(p => p.id === x.am.id)) notes.push(`✂️ L’amendement n° ${fmt(x.am.num)} serait rejeté`);
+    return { err: null, dAmb: Math.round((ambition(G, f0.lv) - ambition(c, f1.lv)) * 100), t0: f0.final, t1: f1.final, moves, notes };
+  }
+
+  protected artOps(a: Article): { label: string; cost: string; act: Action; prev: Prev }[] {
+    const G = this.game();
+    const out: { label: string; cost: string; act: Action; prev: Prev }[] = [];
+    if (a.level === 2) out.push({ label: '✏️ Réécrire', cost: '1 ⏱', act: { t: 'amend', a: a.id }, prev: this.prev({ t: 'amend', a: a.id }) });
+    if (a.level > 0) out.push({ label: '🗑️ Supprimer', cost: '1 ⏱', act: { t: 'drop', a: a.id }, prev: this.prev({ t: 'drop', a: a.id }) });
+    if (G.mode === 'definitive' && G.sen && G.sen[a.id] !== undefined && G.sen[a.id] !== a.level) out.push({ label: `🏛️ Version du Sénat (${LV[G.sen[a.id]].toLowerCase()})`, cost: '1 ⏱', act: { t: 'senat', a: a.id }, prev: this.prev({ t: 'senat', a: a.id }) });
+    return out;
+  }
+
+  /* ── Interaction ── */
+
+  protected toggleArt(id: number): void { this.selArt.set(this.selArt() === id ? null : id); }
+  protected toggleGrp(id: Gid): void { this.selGrp.set(this.selGrp() === id ? null : id); }
+
+  protected play(): void {
+    this.phase.set('play');
+    this.tab.set(this.game().stage === 0 ? 'groupes' : 'texte');
+    this.selArt.set(null); this.selGrp.set(null);
+  }
+
+  protected act(a: Action): void {
+    if (this.busy() || this.phase() !== 'play') return;
+    const G = cloneGame(this.game());
+    if (canDo(G, a)) return;
+    const before = this.fc().final;
+    const lines = applyAction(G, a);
+    lines.push(...aiReact(G, this.rnd));
+    this.game.set(G);
+    for (const l of lines) this.say(l.msg);
+    if (lines.some(l => l.bad)) this.miss.emit();
+    const after = this.fc().final;
+    const d = (after.p - after.c) - (before.p - before.c);
+    if (d) this.flash(`${d > 0 ? '+' : '−'}${Math.abs(d)} d’écart`, d > 0);
+    this.emitProgress();
+  }
+
+  protected cmpPick(id: number, l: Level): void {
+    if (this.busy()) return;
+    const G = cloneGame(this.game());
+    const before = this.cmpNow()?.yes ?? 0;
+    cmpSet(G, id, l);
+    this.game.set(G);
+    const after = this.cmpNow()?.yes ?? 0;
+    if (after !== before) this.flash(`${after > before ? '+' : '−'}${Math.abs(after - before)} voix`, after > before);
+    this.emitProgress();
+  }
+
+  protected resolve(kind: Resolution['kind']): void {
+    if (this.busy() || this.phase() !== 'play') return;
+    this.confirm.set(null);
+    const G = cloneGame(this.game());
+    const stage = G.stage;
+    const title = kind === '493' ? 'Article 49.3 : la motion de censure' : kind === 'bloque' ? 'Vote bloqué' : `${this.voteLabel()}`;
+    const r = resolveStage(G, kind);
+    if (!r.passed || r.res.some(x => x.t.ok && (x.am.kind === 'sup' || x.am.kind === 'rew'))) this.miss.emit();
+    if (G.status !== 'play') this.lastStop = stage;
+    this.game.set(G);
+    this.runResult({ title, kind, res: r.res, main: r.censure ?? r.final, passed: r.passed, lines: r.lines, cmp: null });
+  }
+
+  protected cmpEnd(agree: boolean): void {
+    if (this.busy() || this.phase() !== 'play') return;
+    const G = cloneGame(this.game());
+    const r = cmpConclude(G, agree);
+    if (G.status !== 'play') this.lastStop = 3;
+    if (r.lines.some(l => l.bad)) this.miss.emit();
+    this.game.set(G);
+    const constit = G.v === 'constitution';
+    this.runResult({ title: constit ? 'Deuxième lecture' : 'Commission mixte paritaire', kind: 'cmp', res: [], main: constit ? r.check.sen : null, passed: G.status === 'play', lines: r.lines, cmp: constit ? null : r.check });
+  }
+
+  /** Le dépouillement : les amendements un à un, puis le vote sur l'ensemble */
+  private runResult(R: ResView): void {
+    this.result.set(R);
+    this.phase.set('result');
+    this.busy.set(true);
+    this.animDone.set(false);
+    this.step.set(0);
+    const seq: Tally[] = [...R.res.map(x => x.t), ...(R.main ? [R.main] : [])];
+    const D = this.reduced ? 0 : 900;
+    let k = 0;
+    const nextTally = () => {
+      if (k >= seq.length) { this.step.set(R.res.length); this.reveal.set(1); this.finishResult(); return; }
+      const t = seq[k];
+      this.shown.set(t);
+      if (k < R.res.length) this.step.set(k + 1);
+      if (!D) { this.reveal.set(1); k++; nextTally(); return; }
+      const frames = k < R.res.length ? 10 : 22;
+      const dur = k < R.res.length ? 550 : D * 1.4;
+      let f = 0;
+      this.reveal.set(0);
+      const tick = () => {
+        f++;
+        this.reveal.set(Math.min(1, f / frames));
+        if (f < frames) this.later(tick, dur / frames);
+        else { k++; this.later(nextTally, k < seq.length ? 350 : 250); }
+      };
+      this.later(tick, 60);
+    };
+    nextTally();
+  }
+
+  private finishResult(): void {
+    const R = this.result()!;
+    for (const l of R.lines) this.say(l.msg);
+    this.animDone.set(true);
+    this.busy.set(false);
+    this.emitProgress();
+    if (this.game().status !== 'play') this.later(() => this.finish(), this.reduced ? 600 : 1300);
+  }
+
+  protected next(): void {
+    if (this.busy()) return;
+    if (this.game().status !== 'play') { this.finish(); return; }
+    this.begin();
+  }
+
+  private begin(): void {
+    this.shown.set(null);
+    this.reveal.set(1);
+    this.result.set(null);
+    this.confirm.set(null);
+    const G = cloneGame(this.game());
+    const it = startStage(G, this.rnd);
+    this.game.set(G);
+    this.intro.set(it);
+    for (const l of it.lines) this.say(l.msg);
+    if (it.lines.some(l => l.bad)) this.miss.emit();
+    this.phase.set('intro');
+    this.emitProgress();
+  }
+
+  private finish(): void {
+    if (this.phase() === 'over') return;
+    const G = this.game();
+    const sc = finalScore(G);
+    this.score.set(sc);
+    this.result.set(null);
+    this.phase.set('over');
+    this.busy.set(false);
+    if (sc < 0.45) this.miss.emit();
+    this.progress.emit({ live: sc, time: 0 });
+    this.later(() => this.done.emit(sc), 2200);
+  }
+
+  private emitProgress(): void {
+    const G = this.game();
+    const f = this.fc();
+    const live = G.status === 'play' ? (f.final.ok ? adoptedScore(G, f.lv) : 0.3) : finalScore(G);
+    this.progress.emit({ live, time: clamp(1 - G.stage / 5) });
+  }
+
+  private say(t: string): void { this.log.update(l => [t, ...l].slice(0, 8)); }
+  private flash(text: string, good: boolean): void {
+    const f: Flash = { text, good, id: ++flashId };
+    this.flashes.update(a => [...a, f]);
+    this.later(() => this.flashes.update(a => a.filter(x => x.id !== f.id)), 1200);
+  }
+  private later(fn: () => void, ms: number): void { this.timers.push(setTimeout(fn, ms)); }
 }

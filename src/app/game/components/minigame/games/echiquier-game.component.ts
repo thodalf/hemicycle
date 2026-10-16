@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, computed, input, output, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { MinigameDef } from '../../../data/minigames';
 
 /* ============================================================
@@ -39,7 +40,7 @@ export interface ZoneDef { id: string; name: string; icon: string; vals: [number
 interface NodeDef { id: string; name: string; short?: string; at?: string; zone: string; c: number; r: number; stab: number; pivot?: boolean; anchor?: Side }
 export interface MapNode extends NodeDef { i: number; zi: number; nb: number[]; short: string; at: string }
 export interface Words {
-  inf: string; country: string; countries: string; stab: string; coup: string; coupShort: string; tension: string; crisis: string;
+  inf: string; country: string; countries: string; stab: string; coup: string; coups: string; coupShort: string; tension: string; crisis: string;
 }
 export interface RivalText { name: string; the: string; The: string; of: string; emblem: string }
 interface VariantData {
@@ -52,7 +53,7 @@ interface VariantData {
 export interface VariantDef extends Omit<VariantData, 'nodes'> { id: Variant; nodes: MapNode[]; links: [number, number][] }
 
 const WORLD_WORDS: Words = {
-  inf: 'influence', country: 'pays', countries: 'pays', stab: 'stabilité', coup: 'coup diplomatique', coupShort: 'Coup', tension: 'tension', crisis: 'crise internationale',
+  inf: 'influence', country: 'pays', countries: 'pays', stab: 'stabilité', coup: 'coup diplomatique', coups: 'coups diplomatiques', coupShort: 'Coup', tension: 'tension', crisis: 'crise internationale',
 };
 
 const DATA: Record<Variant, VariantData> = {
@@ -87,7 +88,7 @@ const DATA: Record<Variant, VariantData> = {
     ],
     extra: [['VAL', 'ACE'], ['AOU', 'CSU']],
     cut: [['CAR', 'MER'], ['AND', 'MAG'], ['CSU', 'SAH'], ['GOL', 'PAC']],
-    start: { p: { MER: 1, MAG: 2, CAR: 1, PAC: 1, AOU: 1 }, r: { VAL: 1, ACE: 2, ZAM: 1, LEV: 1, SUB: 1 } },
+    start: { p: { MER: 2, MAG: 2, CAR: 1, PAC: 1, AOU: 1 }, r: { VAL: 1, ACE: 2, ZAM: 1, LEV: 1, SUB: 1 } },
     rival: { name: 'Karstanie', the: 'la Karstanie', The: 'La Karstanie', of: 'de la Karstanie', emblem: '🦅' },
     words: WORLD_WORDS,
     brief: 'La France et la Karstanie se disputent l’influence sur cinq continents. Dix-huit pays, cinq zones, huit tours.',
@@ -169,7 +170,7 @@ const DATA: Record<Variant, VariantData> = {
     start: { p: { LOR: 2, ARV: 1, IBE: 1, BEL: 1, PAR: 1 }, r: { FRI: 2, SKA: 1, MOR: 1, KAL: 1, CON: 1 } },
     rival: { name: 'Coalition', the: 'la coalition des capitales', The: 'La coalition des capitales', of: 'de la coalition', emblem: '🏛️' },
     words: {
-      inf: 'influence', country: 'siège', countries: 'sièges', stab: 'fermeté', coup: 'retournement', coupShort: 'Retourner', tension: 'blocage', crisis: 'crise institutionnelle',
+      inf: 'influence', country: 'siège', countries: 'sièges', stab: 'fermeté', coup: 'retournement', coups: 'retournements', coupShort: 'Retourner', tension: 'blocage', crisis: 'crise institutionnelle',
     },
     brief: 'Au sein de l’Union, la France rallie États et institutions face à une coalition de capitales : votes, alliances, budgets.',
     cards: {
@@ -853,3 +854,669 @@ export function lookahead(g: Game, s: Side, width: number, noise = 0): Action {
   }
   return best;
 }
+
+/** Une ligne d'analyse du coup adverse (son intention apparente) */
+export function intentOf(g: Game, rep: ActReport): string {
+  const V = V_(g);
+  if (rep.k === 'class') return 'Elle enterre une carte qui vous aurait profité.';
+  const main = rep.coup?.at ?? rep.changed[0];
+  if (main === undefined) return rep.card === 'sommet' ? 'Elle fait baisser la tension.' : '';
+  const n = V.nodes[main];
+  const z = V.zones[n.zi];
+  const next = g.sched.find(s => !s.res && s.turn >= g.turn && s.zones.length === 1 && s.zones[0] === n.zi);
+  if (rep.k === 'coup') return rep.coup?.ok ? `Elle frappe là où vous étiez fragile${next ? `, avant le bilan ${z.name} (tour ${next.turn})` : ''}.` : 'Coup manqué : elle a pris un risque.';
+  if (controller(g, main) === 'r' && n.pivot) return `Elle tient un pivot ${z.name === n.name ? '' : `de la zone ${z.name}`}${next ? ` avant le bilan du tour ${next.turn}` : ''}.`.replace(' .', '.');
+  if (next) return `Elle prépare le bilan ${z.name} (tour ${next.turn}).`;
+  return `Elle avance ses pions en zone ${z.name}.`;
+}
+
+/* ── Composant ─────────────────────────────────────────────── */
+
+type Phase = 'brief' | 'play' | 'ai' | 'turn' | 'final' | 'over';
+type Mode = 'inf' | 'coup' | 'event' | null;
+interface NodeView {
+  i: number; left: number; top: number; w: number; h: number; name: string; stab: number; pivot: boolean;
+  p: number; r: number; ctrl: Side | null; anchor: string; pend: number; can: boolean; cost2: boolean; odds: string; evt: boolean; dim: boolean;
+  flash: string; shield: string; label: string; focus: boolean; pick: boolean;
+}
+interface CardView { uid: number; id: CardId; icon: string; name: string; ops: number; side: Side | 'n'; owner: string; on: boolean }
+
+const LEVELS = ['rien', 'présence', 'domination', 'contrôle'];
+const SIDE_CLASS: Record<Side, string> = { p: 'c-p', r: 'c-r' };
+
+@Component({
+  selector: 'app-echiquier-game',
+  template: `
+    @if (game(); as g) {
+    <div class="eq">
+      <div class="head">
+        <span>Tour <b class="mono">{{ g.turn }}</b>/{{ turns }}@if (phase() === 'play' || phase() === 'ai') { <span class="muted"> · action {{ Math.min(g.acted + 1, rounds) }}/{{ rounds }}</span> }</span>
+        <span class="vp" [attr.aria-label]="'Points de victoire : France ' + g.vpP + ', ' + V.rival.name + ' ' + g.vpR">
+          <span class="fr">🇫🇷 <b class="mono">{{ g.vpP }}</b></span> PV <span class="rv"><b class="mono">{{ g.vpR }}</b> {{ V.rival.emblem }}</span>
+        </span>
+      </div>
+
+      <div class="tension" role="img" [attr.aria-label]="cap(V.words.tension) + ' : ' + g.tension + ' sur ' + maxT + (g.tension + 1 >= maxT ? ', le prochain ' + V.words.coup + ' déclenche la crise' : '')">
+        <span class="tl">{{ cap(V.words.tension) }}</span>
+        @for (k of tcells; track k) {
+          <i class="tc" [class.on]="k <= g.tension && k > 0" [class.hot]="k >= 3" [class.boom]="k === maxT">{{ k === maxT ? '💥' : k }}</i>
+        }
+        <span class="tnote">{{ tensionNote() }}</span>
+      </div>
+
+      <ol class="sched" aria-label="Calendrier des bilans">
+        @for (s of schedView(); track s.turn) {
+          <li [class.now]="s.now" [class.done]="s.done" [class.won]="s.res === 'p'" [class.lost]="s.res === 'r'" [attr.aria-label]="s.aria">
+            <b>T{{ s.turn }}</b> {{ s.icon }}<span class="sn">{{ s.label }}</span>@if (s.score) { <span class="mono sc">{{ s.score }}</span> }
+          </li>
+        }
+      </ol>
+
+      <div class="map" [style.aspect-ratio]="V.cols + ' / ' + (V.rows * 0.82)" role="group" [attr.aria-label]="'Carte : ' + V.nodes.length + ' ' + V.words.countries">
+        <svg class="under" [attr.viewBox]="'0 0 ' + V.cols + ' ' + V.rows" preserveAspectRatio="none" aria-hidden="true">
+          @for (n of V.nodes; track n.i) { <rect [attr.x]="n.c" [attr.y]="n.r" width="1" height="1" [attr.fill]="V.zones[n.zi].tint" class="zb" /> }
+          @for (l of V.links; track $index) {
+            <line [attr.x1]="V.nodes[l[0]].c + 0.5" [attr.y1]="V.nodes[l[0]].r + 0.5" [attr.x2]="V.nodes[l[1]].c + 0.5" [attr.y2]="V.nodes[l[1]].r + 0.5" class="ln" vector-effect="non-scaling-stroke" />
+          }
+        </svg>
+        @for (n of nodes(); track n.i) {
+          <button type="button" class="node" [class]="'node ' + (n.ctrl ? sideClass[n.ctrl] : '') + ' ' + n.flash" [class.can]="n.can" [class.tgt]="!!n.odds" [class.evt]="n.evt" [class.dim]="n.dim" [class.focus]="n.focus" [class.pick]="n.pick"
+                  [style.left.%]="n.left" [style.top.%]="n.top" [style.width.%]="n.w" [style.height.%]="n.h" [disabled]="phase() === 'over'"
+                  (click)="tapNode(n.i)" [attr.aria-label]="n.label">
+            <span class="nm">{{ n.name }}</span>
+            <span class="infs"><span class="ip" [class.zero]="!n.p">{{ n.p }}</span><span class="st" aria-hidden="true">{{ n.stab }}</span><span class="ir" [class.zero]="!n.r">{{ n.r }}</span></span>
+            @if (n.pivot) { <span class="pv" aria-hidden="true">★</span> }
+            @if (n.anchor) { <span class="anc" aria-hidden="true">{{ n.anchor }}</span> }
+            @if (n.shield) { <span class="shd" aria-hidden="true">{{ n.shield }}</span> }
+            @if (n.pend) { <span class="badge add mono">+{{ n.pend }}</span> }
+            @else if (n.odds) { <span class="badge odd mono">{{ n.odds }}</span> }
+            @else if (n.cost2) { <span class="badge two">×2</span> }
+          </button>
+        }
+      </div>
+      <div class="zones" role="toolbar" aria-label="Zones">
+        @for (z of V.zones; track z.id; let zi = $index) {
+          <button type="button" class="zchip" [class.on]="zoneFocus() === zi" (click)="tapZone(zi)" [style.border-color]="z.tint"
+                  [attr.aria-label]="'Zone ' + z.name + ' : ' + zoneLine(zi)">{{ z.icon }} {{ z.name }}</button>
+        }
+      </div>
+
+      @switch (phase()) {
+        @case ('brief') {
+          <div class="panel brief">
+            <p><b>{{ def().title }}.</b> {{ V.brief }} <b>Objectif :</b> plus de points de victoire (PV) que {{ V.rival.the }} au bout de huit tours.</p>
+            <ul>
+              <li>Chaque tour, {{ hand }} cartes en main : vous en jouez {{ rounds }}, {{ V.rival.the }} répond après chacune.</li>
+              <li><b>Opérations</b> : placez autant de points d’{{ V.words.inf }} dans les {{ V.words.countries }} où vous êtes présent, leurs voisins ou vos accès directs (🇫🇷) ; entrer chez un {{ V.words.country }} contrôlé par l’adversaire coûte 2.</li>
+              <li><b>{{ cap(V.words.coup) }}</b> : dé + opérations contre 2 × {{ V.words.stab }} ; l’excédent retire l’{{ V.words.inf }} adverse. {{ cap(V.words.tension) }} +1.</li>
+              <li><b>Événement</b> 🇫🇷 ou ⚪ : son effet, à la place des opérations. Une carte {{ V.rival.emblem }} jouée pour ses opérations déclenche l’événement adverse ; une fois par tour, vous pouvez la classer sans suite.</li>
+              <li><b>Contrôle</b> : {{ V.words.inf }} ≥ {{ V.words.stab }} et avance ≥ {{ V.words.stab }} (couleur pleine).</li>
+              <li><b>Bilans</b> aux tours annoncés : présence, domination (plus de {{ V.words.countries }} et de pivots ★), contrôle (plus de {{ V.words.countries }} et tous les pivots), +1 PV par pivot.</li>
+              <li><b>{{ cap(V.words.tension) }}</b> : −1 à chaque tour. {{ closures() }} À {{ maxT }}, c’est la {{ V.words.crisis }} : partie perdue.</li>
+            </ul>
+            <button type="button" class="btn primary small" (click)="begin()">À la table ▸</button>
+          </div>
+        }
+        @case ('turn') { <ng-container *ngTemplateOutlet="turnPanel" /> }
+        @case ('final') { <ng-container *ngTemplateOutlet="turnPanel" /> }
+        @case ('over') {
+          <div class="panel over" aria-live="polite">
+            <p class="verdict" [class.good]="won()" [class.bad]="!won()"><b>{{ verdict() }}</b></p>
+            <p class="small">France <b class="mono">{{ g.vpP }}</b> PV — {{ V.rival.name }} <b class="mono">{{ g.vpR }}</b> PV</p>
+          </div>
+        }
+        @default {
+          @if (theirs(); as t) {
+            <div class="panel foe" aria-live="polite">
+              <p><b>{{ V.rival.emblem }} {{ V.rival.The }}</b> joue {{ cardIcon(t.card) }} « {{ cardName(t.card) }} »{{ howLabel(t) }} : {{ t.text }}.</p>
+              @if (t.trig) { <p class="small good">⚡ Votre événement se déclenche : {{ t.trig.fx.text }}.</p> }
+              @if (aiNote()) { <p class="small muted">{{ aiNote() }}</p> }
+            </div>
+          } @else if (phase() === 'ai') {
+            <div class="panel foe"><p class="muted">{{ V.rival.emblem }} {{ V.rival.The }} réfléchit…</p></div>
+          }
+          @if (mine(); as m) {
+            <p class="mine small" [class.bad]="m.coup && !m.coup.ok" aria-live="polite">Vous : {{ cardIcon(m.card) }} {{ m.text }}.@if (m.trig) { <span class="bad"> ⚡ {{ V.rival.The }} : {{ m.trig.fx.text }}.</span> }</p>
+          }
+
+          <div class="hand" role="toolbar" aria-label="Vos cartes">
+            @for (c of cards(); track c.uid) {
+              <button type="button" class="card" [class.on]="c.on" [class.foe]="c.side === 'r'" [class.neu]="c.side === 'n'" [disabled]="phase() !== 'play'"
+                      (click)="pickCard(c.uid)" [attr.aria-pressed]="c.on" [attr.aria-label]="c.name + ', ' + c.ops + ' opérations, ' + c.owner">
+                <span class="ops mono">{{ c.ops }}</span>
+                <span class="ic">{{ c.icon }}</span>
+                <span class="cn">{{ c.name }}</span>
+                <span class="ow">{{ c.side === 'p' ? '🇫🇷' : c.side === 'r' ? V.rival.emblem : '⚪' }}</span>
+              </button>
+            }
+          </div>
+
+          <div class="panel act" aria-live="polite">
+            @if (phase() === 'ai') {
+              <p class="muted small">Au tour {{ V.rival.of }}…</p>
+            } @else if (selCard(); as c) {
+              @let m = mech(c.id);
+              @switch (mode()) {
+                @case ('inf') {
+                  <p><b>Influence</b> : reste <b class="mono">{{ left() }}</b> point{{ left() > 1 ? 's' : '' }}. Touchez les {{ V.words.countries }} en pointillés (×2 : contrôlé par l’adversaire).</p>
+                  <div class="row">
+                    <button type="button" class="btn small" (click)="cancelMode()">✕</button>
+                    <button type="button" class="btn small" [disabled]="!pend().at.length" (click)="undoPoint()">↶ Retirer</button>
+                    <button type="button" class="btn primary small" [disabled]="!pend().at.length" (click)="validateInf()">Valider ▸</button>
+                  </div>
+                }
+                @case ('coup') {
+                  @if (coupAt() !== null) {
+                    @let i = coupAt()!;
+                    <p><b>{{ cap(V.words.coup) }} {{ V.nodes[i].at }}</b> : il faut {{ 2 * V.nodes[i].stab + 1 }} ou plus avec 🎲 + {{ opsSel() }} → <b class="mono">{{ pct(i) }}</b> de réussite.
+                      {{ cap(V.words.tension) }} {{ g.tension }} → {{ g.tension + 1 }}.</p>
+                    @if (g.tension + 1 >= maxT) { <p class="bad"><b>⚠️ Ce {{ V.words.coup }} déclenchera la {{ V.words.crisis }} : partie perdue.</b></p> }
+                    <div class="row">
+                      <button type="button" class="btn small" (click)="coupAt.set(null)">✕</button>
+                      <button type="button" class="btn primary small" [class.danger]="g.tension + 1 >= maxT" (click)="confirmCoup()">Lancer le dé 🎲</button>
+                    </div>
+                  } @else {
+                    <p>Touchez un {{ V.words.country }} cible (chances affichées en rouge). Il faut y trouver de l’{{ V.words.inf }} adverse.</p>
+                    <div class="row"><button type="button" class="btn small" (click)="cancelMode()">✕ Retour</button></div>
+                  }
+                }
+                @case ('event') {
+                  <p>{{ cardDescOf(c.id) }} <b>Touchez {{ m.target === 'zone' ? 'un ' + V.words.country + ' de la zone visée' : 'le ' + V.words.country + ' visé' }}</b> (surligné).</p>
+                  <div class="row"><button type="button" class="btn small" (click)="cancelMode()">✕ Retour</button></div>
+                }
+                @default {
+                  <p><b>{{ cardIcon(c.id) }} {{ cardName(c.id) }}</b> · {{ opsSel() }} opération{{ opsSel() > 1 ? 's' : '' }}</p>
+                  <p class="small">@if (m.event) { <b>{{ m.side === 'p' ? '🇫🇷' : m.side === 'r' ? V.rival.emblem : '⚪' }} Événement</b> : }{{ cardDescOf(c.id) }}</p>
+                  @if (m.side === 'r') { <p class="small bad">Jouée pour ses opérations, elle déclenche cet événement pour {{ V.rival.the }}.</p> }
+                  <div class="modes">
+                    <button type="button" class="btn small" (click)="setMode('inf')">➕ Influence · {{ opsSel() }}</button>
+                    <button type="button" class="btn small" [disabled]="!coupCount()" (click)="setMode('coup')"
+                            [attr.aria-label]="cap(V.words.coup) + (coupCount() ? '' : ' : aucune cible')">🎲 {{ V.words.coupShort }}@if (!coupCount()) { <span class="muted"> (aucune cible)</span> }</button>
+                    @if (m.event && m.side !== 'r') {
+                      <button type="button" class="btn small" [disabled]="!eventOk()" (click)="setMode('event')">⚡ Événement</button>
+                    }
+                    @if (m.side === 'r') {
+                      <button type="button" class="btn small" [disabled]="g.classed.p" (click)="classCard()">🗄️ Classer sans suite@if (g.classed.p) { <span class="muted"> (déjà fait)</span> }</button>
+                    }
+                  </div>
+                }
+              }
+            } @else if (focusInfo(); as f) {
+              <p><b>{{ f.title }}</b></p>
+              <p class="small">{{ f.line }}</p>
+              @if (f.more) { <p class="small muted">{{ f.more }}</p> }
+            } @else {
+              <p class="muted small">{{ hint() }}</p>
+            }
+          </div>
+        }
+      }
+
+      <ul class="log" aria-label="Journal">@for (l of log(); track $index) { <li>{{ l }}</li> }</ul>
+
+      <ng-template #turnPanel>
+        <div class="panel turn" aria-live="polite">
+          <p><b>{{ phase() === 'final' ? 'Bilan final' : 'Fin du tour ' + g.turn }}</b>@if (theirs(); as t) { <span class="small muted"> · dernier coup : {{ V.rival.emblem }} {{ cardName(t.card) }}, {{ t.text }}</span> }</p>
+          @if (turnRep()?.length) {
+            <table class="scores">
+              <thead><tr><th scope="col">Zone</th><th scope="col">🇫🇷 France</th><th scope="col">{{ V.rival.emblem }} {{ V.rival.name }}</th></tr></thead>
+              <tbody>
+                @for (z of turnRep()!; track z.zone) {
+                  <tr>
+                    <th scope="row">{{ V.zones[z.zi].icon }} {{ V.zones[z.zi].name }}</th>
+                    <td [class.good]="z.pts[0] > z.pts[1]">{{ lvl(z.lv[0]) }}@if (z.piv[0]) { +{{ z.piv[0] }}★ } <b class="mono">{{ z.pts[0] }}</b></td>
+                    <td [class.bad]="z.pts[1] > z.pts[0]">{{ lvl(z.lv[1]) }}@if (z.piv[1]) { +{{ z.piv[1] }}★ } <b class="mono">{{ z.pts[1] }}</b></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <p class="small muted">Pas de bilan ce tour-ci. {{ nextLine() }}</p>
+          }
+          <p class="small">Total : France <b class="mono">{{ g.vpP }}</b> — {{ V.rival.name }} <b class="mono">{{ g.vpR }}</b> PV</p>
+          <button type="button" class="btn primary small" (click)="phase() === 'final' ? showVerdict() : goNextTurn()">{{ phase() === 'final' ? 'Verdict ▸' : 'Tour ' + (g.turn + 1) + ' ▸' }}</button>
+        </div>
+      </ng-template>
+    </div>
+    }
+  `,
+  imports: [NgTemplateOutlet],
+  styles: `
+    :host { display: block; width: 100%; --fr: #2f6fb3; --fr-d: #1d4f86; --rv: #c0392b; --rv-d: #8e2a20; }
+    .eq { display: grid; gap: 7px; min-width: 0; }
+    .head { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: space-between; align-items: center; font-size: 12.5px; }
+    .vp { display: inline-flex; gap: 5px; align-items: center; .fr b { color: var(--fr); } .rv b { color: var(--rv); } }
+    .muted { color: var(--ink-3); } .small { font-size: 12px; } .good { color: var(--good); } .bad { color: var(--bad); }
+    .tension { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; font-size: 11.5px;
+      .tl { font-weight: 700; margin-right: 2px; }
+      .tc { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 5px; background: var(--surface-2); border: 1px solid var(--line); font-style: normal; font-size: 10.5px; color: var(--ink-3);
+        &.on { background: #e9b949; color: #3b2a00; border-color: #c99a2e; } &.on.hot { background: #e2763c; color: #fff; border-color: #b85a28; } &.boom { font-size: 11px; } }
+      .tnote { flex: 1 1 140px; color: var(--ink-2); font-size: 11px; margin-left: 4px; } }
+    .sched { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px;
+      li { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 11px; white-space: nowrap;
+        &.now { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); } &.done { opacity: .65; }
+        &.won .sc { color: var(--good); } &.lost .sc { color: var(--bad); } .sc { font-weight: 700; } } }
+    .map { position: relative; width: 100%; max-width: 460px; justify-self: center; margin-top: 4px; user-select: none; }
+    .under { position: absolute; inset: 0; width: 100%; height: 100%; .zb { opacity: .2; } .ln { stroke: var(--ink-3); stroke-width: 2; stroke-dasharray: 3 2; opacity: .8; } }
+    .node { position: absolute; display: grid; align-content: space-between; gap: 1px; padding: 3px 3px 2px; border-radius: 9px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
+      font: inherit; text-align: center; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.15); transition: background .4s ease, opacity .2s ease, transform .15s ease; min-width: 0;
+      &.c-p { background: var(--fr); border-color: var(--fr-d); color: #fff; } &.c-r { background: var(--rv); border-color: var(--rv-d); color: #fff; }
+      &.can { outline: 2px dashed var(--fr); outline-offset: 1px; } &.tgt { outline: 2px solid var(--rv); outline-offset: 1px; } &.evt { outline: 2px solid #e0a800; outline-offset: 1px; }
+      &.dim { opacity: .45; } &.focus, &.pick { box-shadow: 0 0 0 3px #f4d35e; } &.pick { outline-width: 3px; }
+      &.fl-p { animation: flP 1.4s ease 1; } &.fl-r { animation: flR 1.4s ease 1; }
+      &:disabled { cursor: default; } }
+    .nm { font-size: clamp(8.5px, 2.5vw, 11px); font-weight: 700; line-height: 1.1; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 1px; }
+    .infs { display: flex; justify-content: space-between; align-items: center; gap: 2px; }
+    .ip, .ir { min-width: 15px; padding: 0 2px; border-radius: 6px; font-weight: 800; font-size: clamp(11px, 3.2vw, 13px); line-height: 1.35; }
+    .ip { background: #dce8f6; color: var(--fr-d); } .ir { background: #f8dedb; color: var(--rv-d); } .zero { opacity: .35; }
+    .st { width: 15px; height: 15px; flex: 0 0 auto; border-radius: 50%; border: 1.5px solid currentColor; font-size: 9px; font-weight: 800; display: grid; place-items: center; opacity: .8; }
+    .pv { position: absolute; top: -8px; left: -5px; color: #e0a800; font-size: 14px; line-height: 1; text-shadow: 0 0 2px rgba(0,0,0,.7); }
+    .anc { position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); font-size: 10px; line-height: 1; }
+    .shd { position: absolute; bottom: -7px; right: -3px; font-size: 10px; line-height: 1; }
+    .badge { position: absolute; z-index: 2; top: -9px; right: -5px; padding: 0 4px; border-radius: 7px; font-size: 10px; font-weight: 700; line-height: 1.5; color: #fff;
+      &.add { background: #1f8a4c; } &.odd { background: var(--rv); } &.two { background: var(--ink-2); } }
+    @keyframes flP { 40% { transform: scale(1.08); box-shadow: 0 0 0 4px #7fb2ea; } }
+    @keyframes flR { 40% { transform: scale(1.08); box-shadow: 0 0 0 4px #f08f80; } }
+    .zones { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .zchip { min-height: 32px; padding: 3px 8px; border-radius: 16px; border: 2px solid; background: var(--surface); color: var(--ink); font: inherit; font-size: 11.5px; cursor: pointer;
+      &.on { background: var(--surface-2); font-weight: 700; } }
+    .panel { display: grid; gap: 5px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); font-size: 13px; min-width: 0; p { margin: 0; } ul { margin: 0; padding-left: 18px; } }
+    .brief li { font-size: 12.3px; color: var(--ink-2); margin: 3px 0; }
+    .foe { border-left: 4px solid var(--rv); font-size: 12.5px; }
+    .mine { margin: 0; padding: 0 4px; color: var(--ink-2); }
+    .hand { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+    .card { position: relative; display: grid; justify-items: center; align-content: start; gap: 1px; min-height: 74px; padding: 6px 3px 4px; border-radius: 9px; border: 1.5px solid var(--fr); background: var(--surface);
+      color: var(--ink); font: inherit; cursor: pointer; min-width: 0;
+      &.foe { border-color: var(--rv); } &.neu { border-color: var(--line); }
+      &.on { outline: 3px solid var(--accent); outline-offset: 1px; background: var(--surface-2); }
+      &:disabled { opacity: .55; cursor: default; }
+      .ops { position: absolute; top: 3px; left: 4px; font-size: 13px; font-weight: 800; color: var(--ink-2); }
+      .ic { font-size: 19px; line-height: 1.1; } .cn { font-size: 10.3px; font-weight: 600; line-height: 1.12; text-align: center; overflow-wrap: anywhere; }
+      .ow { position: absolute; top: 2px; right: 4px; font-size: 10px; } }
+    .act { min-height: 52px; }
+    .row, .modes { display: flex; flex-wrap: wrap; gap: 6px; .btn { min-height: 36px; } }
+    .row { justify-content: flex-end; }
+    .btn.danger { background: var(--bad); border-color: var(--bad); }
+    .scores { width: 100%; border-collapse: collapse; font-size: 12px;
+      th, td { padding: 3px 4px; text-align: left; border-bottom: 1px solid var(--line); } thead th { font-size: 11px; color: var(--ink-2); font-weight: 600; } td b { margin-left: 3px; } }
+    .verdict { font-size: 14px; }
+    .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 76px; overflow: auto; font-size: 11px; color: var(--ink-2); }
+    @media (prefers-reduced-motion: reduce) { .node { transition: none; &.fl-p, &.fl-r { animation: none; } } }
+  `,
+})
+export class EchiquierGameComponent implements OnInit, OnDestroy {
+  readonly def = input.required<MinigameDef>();
+  readonly diff = input(1);
+  readonly done = output<number>();
+  readonly progress = output<{ live: number; time: number }>();
+  readonly miss = output<void>();
+
+  protected readonly Math = Math;
+  protected readonly turns = TURNS;
+  protected readonly rounds = ROUNDS;
+  protected readonly hand = HAND;
+  protected readonly maxT = MAXT;
+  protected readonly tcells = Array.from({ length: MAXT + 1 }, (_, k) => k);
+  protected readonly sideClass = SIDE_CLASS;
+  protected V: VariantDef = VARIANTS.monde;
+
+  protected readonly game = signal<Game | null>(null, { equal: () => false });
+  protected readonly phase = signal<Phase>('brief');
+  protected readonly sel = signal<number | null>(null);
+  protected readonly mode = signal<Mode>(null);
+  protected readonly pend = signal<{ at: number[]; cost: number[] }>({ at: [], cost: [] });
+  private reachSet = new Set<number>();
+  protected readonly coupAt = signal<number | null>(null);
+  protected readonly focus = signal<number | null>(null);
+  protected readonly zoneFocus = signal<number | null>(null);
+  protected readonly mine = signal<ActReport | null>(null);
+  protected readonly theirs = signal<ActReport | null>(null);
+  protected readonly aiNote = signal('');
+  protected readonly turnRep = signal<ZoneScore[] | null>(null);
+  protected readonly flash = signal<Map<number, Side>>(new Map());
+  protected readonly log = signal<string[]>([]);
+  protected readonly verdict = signal('');
+  protected readonly won = signal(false);
+  private timers: ReturnType<typeof setTimeout>[] = [];
+  private reduced = false;
+  private finished = false;
+
+  protected readonly selCard = computed(() => {
+    const g = this.game(), u = this.sel();
+    return g && u !== null ? g.hand.find(c => c.uid === u) ?? null : null;
+  });
+  protected readonly opsSel = computed(() => { const c = this.selCard(), g = this.game(); return c && g ? opsOf(g, 'p', c) : 0; });
+  protected readonly left = computed(() => this.opsSel() - this.pend().cost.reduce((a, b) => a + b, 0));
+  protected readonly coupCount = computed(() => { const g = this.game(), c = this.selCard(); return g && c ? coupTargets(g, 'p', opsOf(g, 'p', c)).length : 0; });
+  protected readonly eventOk = computed(() => { const g = this.game(), c = this.selCard(); return !!g && !!c && canEvent(g, 'p', c); });
+  private readonly evTargets = computed(() => {
+    const g = this.game(), c = this.selCard();
+    if (!g || !c || this.mode() !== 'event') return new Set<number>();
+    const ts = eventTargets(g, 'p', c.id);
+    return MECH[c.id].target === 'zone' ? new Set(this.V.nodes.filter(n => ts.includes(n.zi)).map(n => n.i)) : new Set(ts);
+  });
+
+  protected readonly nodes = computed<NodeView[]>(() => {
+    const g = this.game();
+    if (!g) return [];
+    const V = this.V, mode = this.phase() === 'play' ? this.mode() : null, pend = this.pend(), fl = this.flash(), c = this.selCard();
+    const counts = new Map<number, number>();
+    for (const i of pend.at) counts.set(i, (counts.get(i) ?? 0) + 1);
+    const ops = c ? opsOf(g, 'p', c) : 0;
+    const coup = mode === 'coup' ? new Set(coupTargets(g, 'p', ops)) : null;
+    const ev = this.evTargets();
+    const left = this.left();
+    const cw = 100 / V.cols, ch = 100 / V.rows;
+    return V.nodes.map(n => {
+      const p = g.p[n.i] + (counts.get(n.i) ?? 0), r = g.r[n.i];
+      const ctrl = p >= n.stab + r ? 'p' : r >= n.stab + p ? 'r' : null;
+      const inReach = mode === 'inf' && this.reachSet.has(n.i);
+      const cost = inReach ? (ctrl === 'r' ? 2 : 1) : 0;
+      const can = inReach && cost <= left;
+      const odds = coup?.has(n.i) ? Math.round(coupChance(g, ops, n.i) * 100) + ' %' : '';
+      const evt = mode === 'event' && ev.has(n.i);
+      const dim = (mode === 'inf' && !can && !counts.get(n.i)) || (mode === 'coup' && !odds) || (mode === 'event' && !evt);
+      const zone = V.zones[n.zi].name;
+      let label = `${n.name}, ${zone}${n.pivot ? ', pivot' : ''}, ${V.words.stab} ${n.stab}, France ${p}, ${V.rival.name} ${r}`
+        + (ctrl === 'p' ? ', contrôlé par la France' : ctrl === 'r' ? `, contrôlé par ${V.rival.the}` : '')
+        + (n.anchor === 'p' ? ', accès direct français' : n.anchor === 'r' ? `, accès direct ${V.rival.of}` : '')
+        + (g.shield[n.i] ? `, protégé (${g.shield[n.i] === 'p' ? 'France' : V.rival.name})` : '');
+      if (can) label += `, placer ici coûte ${cost}`;
+      if (counts.get(n.i)) label += `, ${counts.get(n.i)} prévu${counts.get(n.i)! > 1 ? 's' : ''}`;
+      if (odds) label += `, ${V.words.coup} : ${odds} de réussite`;
+      if (evt) label += ', cible possible';
+      return {
+        i: n.i, left: (n.c + 0.05) * cw, top: (n.r + 0.08) * ch, w: 0.9 * cw, h: 0.84 * ch, name: n.short, stab: n.stab, pivot: !!n.pivot, p, r, ctrl,
+        anchor: n.anchor === 'p' ? '🇫🇷' : n.anchor === 'r' ? V.rival.emblem : '', pend: counts.get(n.i) ?? 0, can, cost2: can && cost === 2, odds, evt, dim,
+        flash: fl.has(n.i) && !this.reduced ? 'fl-' + fl.get(n.i) : '', shield: g.shield[n.i] ? '🛡️' : '', label, focus: this.focus() === n.i, pick: this.coupAt() === n.i,
+      };
+    });
+  });
+
+  protected readonly cards = computed<CardView[]>(() => {
+    const g = this.game();
+    if (!g) return [];
+    return g.hand.map(c => {
+      const t = cardText(c.id, this.V.id), m = MECH[c.id];
+      return {
+        uid: c.uid, id: c.id, icon: t.icon, name: t.name, ops: opsOf(g, 'p', c), side: m.side, on: this.sel() === c.uid,
+        owner: !m.event ? 'sans événement' : m.side === 'p' ? 'événement français' : m.side === 'r' ? `événement ${this.V.rival.of}` : 'événement neutre',
+      };
+    });
+  });
+
+  protected readonly schedView = computed(() => {
+    const g = this.game();
+    if (!g) return [];
+    return g.sched.map(s => {
+      const all = s.zones.length > 1;
+      const z = this.V.zones[s.zones[0]];
+      let score = '', res: Side | '' = '';
+      if (s.res) {
+        const a = s.res.reduce((t, x) => t + x.pts[0], 0), b = s.res.reduce((t, x) => t + x.pts[1], 0);
+        score = `${a}–${b}`; res = a > b ? 'p' : b > a ? 'r' : '';
+      }
+      return {
+        turn: s.turn, icon: all ? '🌐' : z.icon, label: all ? 'Bilan final' : z.name, now: s.turn === g.turn && !s.res, done: !!s.res, res, score,
+        aria: `Tour ${s.turn} : ${all ? 'bilan de toutes les zones' : 'bilan ' + z.name}${score ? ', résultat ' + score : ''}`,
+      };
+    });
+  });
+
+  protected readonly focusInfo = computed(() => {
+    const g = this.game(), V = this.V;
+    if (!g) return null;
+    const zf = this.zoneFocus();
+    if (zf !== null) {
+      const z = V.zones[zf];
+      return { title: `${z.icon} ${z.name}`, line: this.zoneLine(zf), more: `Présence ${z.vals[0]}, domination ${z.vals[1]}, contrôle ${z.vals[2]} PV, +1 par pivot ★.` + (z.close !== undefined ? ` ${cap(V.words.coups)} interdits dès ${V.words.tension} ${z.close}.` : '') };
+    }
+    const f = this.focus();
+    if (f === null) return null;
+    const n = V.nodes[f], c = controller(g, f);
+    return {
+      title: `${n.pivot ? '★ ' : ''}${n.name} · ${V.zones[n.zi].name}`,
+      line: `${cap(V.words.stab)} ${n.stab} · France ${g.p[f]} / ${V.rival.name} ${g.r[f]} · ${c === 'p' ? 'contrôlé par la France' : c === 'r' ? `contrôlé par ${V.rival.the}` : 'disputé'}`
+        + (g.shield[f] ? ` · protégé (${g.shield[f] === 'p' ? 'France' : V.rival.name})` : ''),
+      more: `Voisins : ${n.nb.map(b => V.nodes[b].name).join(', ') || 'aucun'}.` + (n.anchor ? ` Accès direct ${n.anchor === 'p' ? 'français' : V.rival.of}.` : ''),
+    };
+  });
+
+  ngOnInit(): void {
+    this.V = VARIANTS[variantOf(this.def().id)];
+    this.reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.game.set(newGame(this.V.id, this.diff(), Math.floor(Math.random() * 2 ** 31)));
+  }
+
+  ngOnDestroy(): void { this.timers.forEach(t => clearTimeout(t)); }
+
+  /* ── Libellés ── */
+
+  protected cap(t: string): string { return t.charAt(0).toUpperCase() + t.slice(1); }
+  protected mech(id: CardId): CardMech { return MECH[id]; }
+  protected cardIcon(id: CardId): string { return cardText(id, this.V.id).icon; }
+  protected cardName(id: CardId): string { return cardText(id, this.V.id).name; }
+  protected cardDescOf(id: CardId): string { return cardDesc(id, this.V.id); }
+  protected lvl(k: number): string { return LEVELS[k]; }
+  protected pct(i: number): string { const g = this.game()!; return Math.round(coupChance(g, this.opsSel(), i) * 100) + ' %'; }
+  protected howLabel(t: ActReport): string {
+    return t.k === 'inf' ? ` (${t.ops} opérations)` : t.k === 'coup' ? '' : t.k === 'event' ? ' pour son événement' : '';
+  }
+  protected zoneLine(zi: number): string {
+    const g = this.game()!;
+    const s = zoneScore(g, zi);
+    const next = g.sched.find(x => !x.res && x.zones.includes(zi));
+    return `en l’état : France ${LEVELS[s.lv[0]]} (${s.pts[0]} PV), ${this.V.rival.name} ${LEVELS[s.lv[1]]} (${s.pts[1]} PV)` + (next ? ` · bilan au tour ${next.turn}` : '');
+  }
+  protected closures(): string {
+    const V = this.V;
+    const by = new Map<number, string[]>();
+    for (const z of V.zones) if (z.close !== undefined) by.set(z.close, [...(by.get(z.close) ?? []), z.name]);
+    return [...by].sort((a, b) => a[0] - b[0]).map(([k, zs]) => `Dès ${k}, plus de ${V.words.coups} en ${zs.join(', ')}.`).join(' ');
+  }
+  protected tensionNote(): string {
+    const g = this.game()!, V = this.V;
+    if (g.tension + 1 >= MAXT) return `⚠️ Un ${V.words.coup} de plus : ${V.words.crisis}.`;
+    const shut = V.zones.filter((_, zi) => zoneClosed(g, zi)).map(z => z.name);
+    return shut.length ? `${cap(V.words.coups)} interdits : ${shut.join(', ')}.` : `${cap(V.words.coups)} possibles partout.`;
+  }
+  protected nextLine(): string {
+    const g = this.game()!;
+    const n = g.sched.find(s => !s.res && s.turn > g.turn);
+    if (!n) return '';
+    return n.zones.length > 1 ? `Prochain : bilan final au tour ${n.turn}.` : `Prochain : bilan ${this.V.zones[n.zones[0]].name} au tour ${n.turn}.`;
+  }
+  protected hint(): string {
+    const g = this.game()!;
+    const n = g.sched.find(s => !s.res && s.turn >= g.turn);
+    const nx = n ? (n.zones.length > 1 ? `Bilan final au tour ${n.turn}.` : `Prochain bilan : ${this.V.zones[n.zones[0]].name}, fin du tour ${n.turn} — ${this.zoneLine(n.zones[0]).replace(/ · bilan.*$/, '')}.`) : '';
+    return `Choisissez une carte. ${nx}`;
+  }
+
+  /* ── Jeu ── */
+
+  protected begin(): void {
+    this.phase.set('play');
+    this.say(`Tour 1 : ${this.nextLine() || ''}`.trim());
+    this.emitProgress();
+  }
+
+  protected pickCard(uid: number): void {
+    if (this.phase() !== 'play') return;
+    this.resetSel();
+    this.sel.set(this.sel() === uid ? null : uid);
+    this.focus.set(null); this.zoneFocus.set(null);
+  }
+  private resetSel(keepCard = false): void {
+    if (!keepCard) this.sel.set(null);
+    this.mode.set(null);
+    this.pend.set({ at: [], cost: [] });
+    this.coupAt.set(null);
+  }
+  protected cancelMode(): void { this.resetSel(true); }
+
+  protected setMode(m: Mode): void {
+    const g = this.game()!, c = this.selCard();
+    if (!c || this.phase() !== 'play') return;
+    this.mode.set(m);
+    this.pend.set({ at: [], cost: [] });
+    this.coupAt.set(null);
+    if (m === 'inf') this.reachSet = reach(g, 'p');
+    if (m === 'event' && MECH[c.id].target === 'none') this.act({ k: 'event', uid: c.uid });
+  }
+
+  protected tapZone(zi: number): void {
+    this.focus.set(null);
+    this.zoneFocus.set(this.zoneFocus() === zi ? null : zi);
+  }
+
+  protected tapNode(i: number): void {
+    const g = this.game()!, c = this.selCard(), mode = this.mode();
+    if (this.phase() === 'play' && c && mode) {
+      if (mode === 'inf') {
+        if (!this.reachSet.has(i)) return;
+        // Coût au moment du placement (l'adversaire peut perdre le contrôle en route)
+        const pend = this.pend();
+        const p = g.p[i] + pend.at.filter(x => x === i).length;
+        const cost = g.r[i] >= this.V.nodes[i].stab + p ? 2 : 1;
+        if (cost > this.left()) return;
+        this.pend.set({ at: [...pend.at, i], cost: [...pend.cost, cost] });
+        return;
+      }
+      if (mode === 'coup') { if (coupTargets(g, 'p', opsOf(g, 'p', c)).includes(i)) this.coupAt.set(i); return; }
+      if (mode === 'event') {
+        if (!this.evTargets().has(i)) return;
+        this.act({ k: 'event', uid: c.uid, at: MECH[c.id].target === 'zone' ? this.V.nodes[i].zi : i });
+        return;
+      }
+    }
+    this.zoneFocus.set(null);
+    this.focus.set(this.focus() === i ? null : i);
+  }
+
+  protected undoPoint(): void {
+    const p = this.pend();
+    this.pend.set({ at: p.at.slice(0, -1), cost: p.cost.slice(0, -1) });
+  }
+  protected validateInf(): void {
+    const c = this.selCard();
+    if (!c || !this.pend().at.length) return;
+    this.act({ k: 'inf', uid: c.uid, at: this.pend().at });
+  }
+  protected confirmCoup(): void {
+    const c = this.selCard(), i = this.coupAt();
+    if (!c || i === null) return;
+    this.act({ k: 'coup', uid: c.uid, at: i });
+  }
+  protected classCard(): void {
+    const c = this.selCard(), g = this.game()!;
+    if (!c || g.classed.p) return;
+    this.act({ k: 'class', uid: c.uid });
+  }
+
+  private act(a: Action): void {
+    const g = this.game()!;
+    if (this.phase() !== 'play') return;
+    const rep = applyAction(g, 'p', a);
+    this.resetSel();
+    this.mine.set(rep);
+    this.game.set(g);
+    this.pulse(rep.changed, 'p');
+    if (rep.trig) this.pulse(rep.trig.fx.changed, 'r');
+    this.say(`Vous : ${this.cardName(rep.card)} — ${rep.text}.`);
+    if (rep.trig) this.say(`⚡ ${this.V.rival.The} : ${this.cardName(rep.card)}, ${rep.trig.fx.text}.`);
+    if (rep.coup && !rep.coup.ok) this.miss.emit();
+    this.emitProgress();
+    if (g.crisis) return this.crisisEnd();
+    this.phase.set('ai');
+    this.theirs.set(null);
+    this.later(() => this.aiStep(), this.reduced ? 250 : 900);
+  }
+
+  private aiStep(): void {
+    const g = this.game()!;
+    if (g.aiHand.length) {
+      const rep = applyAction(g, 'r', aiAction(g));
+      this.theirs.set(rep);
+      this.aiNote.set(intentOf(g, rep));
+      this.pulse(rep.changed, 'r');
+      if (rep.trig) this.pulse(rep.trig.fx.changed, 'p');
+      this.say(`${this.V.rival.emblem} ${this.cardName(rep.card)} — ${rep.text}.`);
+      if (rep.coup?.ok && rep.coup.removed) this.miss.emit();
+    }
+    this.game.set(g);
+    this.emitProgress();
+    if (g.acted >= ROUNDS) return this.endOfTurn();
+    this.phase.set('play');
+  }
+
+  private endOfTurn(): void {
+    const g = this.game()!;
+    const res = endTurn(g);
+    this.turnRep.set(res);
+    for (const z of res) {
+      this.say(`Bilan ${this.V.zones[z.zi].name} : France ${z.pts[0]}, ${this.V.rival.name} ${z.pts[1]}.`);
+      if (z.pts[1] > z.pts[0] && res.length === 1) this.miss.emit();
+    }
+    this.game.set(g);
+    this.phase.set(g.turn >= TURNS ? 'final' : 'turn');
+    this.emitProgress();
+  }
+
+  protected goNextTurn(): void {
+    const g = this.game()!;
+    if (!nextTurn(g)) { this.phase.set('final'); return; }
+    this.mine.set(null);
+    this.turnRep.set(null);
+    this.game.set(g);
+    this.phase.set('play');
+    this.say(`Tour ${g.turn} · ${this.V.words.tension} ${g.tension}.`);
+  }
+
+  protected showVerdict(): void {
+    const g = this.game()!;
+    const d = g.vpP - g.vpR;
+    this.won.set(d > 0);
+    this.verdict.set(d > 0
+      ? `${d >= 15 ? 'Victoire éclatante' : d >= 6 ? 'Victoire nette' : 'Victoire sur le fil'} : la France l’emporte de ${d} PV sur ${this.V.rival.the}.`
+      : d === 0 ? `Égalité parfaite : ni la France ni ${this.V.rival.the} ne prend l’ascendant.`
+      : `${this.V.rival.The} l’emporte de ${-d} PV : ${-d >= 15 ? 'un net recul de l’influence française.' : 'la partie était serrée.'}`);
+    this.finish();
+  }
+
+  private crisisEnd(): void {
+    this.won.set(false);
+    this.verdict.set(`💥 ${cap(this.V.words.crisis)} ! Votre ${this.V.words.coup} a mis le feu aux poudres : tout est gelé, votre crédit s’effondre.`);
+    this.finish();
+  }
+
+  private finish(): void {
+    if (this.finished) return;
+    this.finished = true;
+    const g = this.game()!;
+    const r = finalScore(g);
+    this.phase.set('over');
+    this.say(this.verdict());
+    if (r < 0.5) this.miss.emit();
+    this.progress.emit({ live: r, time: 0 });
+    this.later(() => this.done.emit(r), 2200);
+  }
+
+  private emitProgress(): void {
+    const g = this.game()!;
+    const t = ((g.turn - 1) * ROUNDS + g.acted) / (TURNS * ROUNDS);
+    this.progress.emit({ live: scoreFromDiff(projectedDiff(g)), time: clamp(1 - t, 0, 1) });
+  }
+
+  private pulse(ids: number[], s: Side): void {
+    if (!ids.length) return;
+    const m = new Map(this.flash());
+    for (const i of ids) m.set(i, s);
+    this.flash.set(m);
+    this.later(() => { const n = new Map(this.flash()); for (const i of ids) if (n.get(i) === s) n.delete(i); this.flash.set(n); }, 1500);
+  }
+  private later(f: () => void, ms: number): void { this.timers.push(setTimeout(f, ms)); }
+  private say(t: string): void { this.log.update(l => [t, ...l].slice(0, 10)); }
+}
+
+function cap(t: string): string { return t.charAt(0).toUpperCase() + t.slice(1); }
