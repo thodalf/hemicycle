@@ -926,7 +926,7 @@ function geometry(n: number): Geo {
     const seats: Seat[] = [];
     for (let i = 0; i < n; i++) {
       const top = i < half, k = top ? i : i - half, m = top ? half : n - half;
-      const x = 50 + (m === 1 ? 50 : (k * 100) / (m - 1)), y = top ? 39 : 75;
+      const x = 64 + (m === 1 ? 48 : (k * 96) / (m - 1)), y = top ? 39 : 75;
       seats.push({ x, y, t: `translate(${x} ${y}) rotate(${top ? 180 : 0}) scale(11 9)` });
     }
     const g: Geo = { seats, r: 5, rank: seats.map((_, i) => i), table: true, rows: [], aisles: [], r0: 0, floor: 0 };
@@ -1059,9 +1059,9 @@ let navInstances = 0;
           <rect width="200" height="101" [attr.fill]="'url(#' + uid + '-panel)'" />
           @if (h.geo.table) {
             <path d="M0 101V92H200V101Z" class="carpet" />
-            <rect x="40" y="47" width="120" height="20" rx="10" [attr.fill]="'url(#' + uid + '-wood)'" class="tbl" />
-            <path d="M52 57H148" class="tbl-l" />
-            <text x="10" y="41" class="lbl l">7 députés</text><text x="10" y="77" class="lbl l">7 sénateurs</text>
+            <rect x="54" y="47" width="120" height="20" rx="10" [attr.fill]="'url(#' + uid + '-wood)'" class="tbl" />
+            <path d="M66 57H162" class="tbl-l" />
+            <text x="6" y="41" class="lbl l">7 députés</text><text x="6" y="77" class="lbl l">7 sénateurs</text>
           } @else {
             <path [attr.d]="half(97)" class="tiers" />
             @for (r of h.geo.rows; track $index) { <path [attr.d]="'M' + (100 - r) + ' 97A' + r + ' ' + r + ' 0 0 1 ' + (100 + r) + ' 97'" class="tier" /> }
@@ -1399,10 +1399,10 @@ let navInstances = 0;
     .hc { position: absolute; left: 50%; bottom: 12.5%; transform: translateX(-50%); display: grid; justify-items: center; line-height: 1.05; pointer-events: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7);
       padding: 2px 9px 3px; border-radius: 3px; background: rgba(28, 8, 10, .62); box-shadow: 0 0 0 1px rgba(216, 180, 101, .35);
       .big { font-size: clamp(14px, 4.3vw, 20px); } small { font-size: 9.5px; color: #f1dfc3; white-space: nowrap; letter-spacing: .04em; } }
-    .hemi.cmp .hc { bottom: 36%; }
+    .hemi.cmp .hc { bottom: 36%; left: 57%; }
     .flash { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); font: 800 14px var(--font-body); color: #ffb4a6; text-shadow: 0 1px 3px #000; pointer-events: none; animation: rise 1.2s ease forwards; white-space: nowrap; &.good { color: #9fe3b8; } }
     @keyframes rise { to { transform: translate(-50%, -22px); opacity: 0; } }
-    .board { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 6px; padding: 7px 10px; border-radius: 4px; background: var(--nv-board); color: #d8d4c8;
+    .board { margin: 0; width: 100%; max-width: 520px; justify-self: center; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 6px; padding: 7px 10px; border-radius: 4px; background: var(--nv-board); color: #d8d4c8;
       box-shadow: inset 0 0 0 1px #2a2f38, inset 0 0 18px rgba(0,0,0,.6); font-size: 11px;
       > span { display: grid; justify-items: center; small { font: 600 9px var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: #8d8a80; } b { font-size: 20px; color: var(--nv-led); text-shadow: 0 0 6px rgba(242, 179, 61, .45); line-height: 1.1; } }
       .p b { color: #7fe0a2; text-shadow: 0 0 6px rgba(127, 224, 162, .4); } .c b { color: #ff8a73; text-shadow: 0 0 6px rgba(255, 138, 115, .4); }

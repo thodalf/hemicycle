@@ -242,7 +242,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
       loans: [],
       age: 0,
       health: 80,
-      flags: { plotEra: 1 },
+      flags: { plotEra: 1, actionsDone: 0 },
     },
     party: { ...party, factions: makeFactions(party.position), leaderNpcId: 'npc-vasseur', cohesion: 60 },
     otherParties: PARTIES.filter(p => p.id !== party.id),

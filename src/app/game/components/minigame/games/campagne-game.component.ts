@@ -628,7 +628,7 @@ let instances = 0;
         <span class="res" [attr.aria-label]="'Temps : ' + c.time + ' sur ' + pips.length"><small>Temps</small>
           <span class="pips">@for (i of pips; track i) { <i class="pip" [class.on]="i < c.time"></i> }</span></span>
         <span class="res" [attr.aria-label]="'Fonds : ' + c.money + ' €'"><small>Fonds</small><b class="mono">{{ c.money }} €</b></span>
-        <span class="poll" [class.up]="lastPoll() >= 50" [class.down]="lastPoll() < 50" [attr.aria-label]="'Sondage : ' + txt.me + ' ' + fmt(lastPoll()) + ' %'"><small>Sondage</small><b class="mono">@if (txt.me !== 'Vous') { <i>{{ txt.me }} </i> }{{ fmt(lastPoll()) }} %</b></span>
+        <span class="poll" [class.up]="lastPoll() >= 50" [class.down]="lastPoll() < 50" [attr.aria-label]="'Sondage : ' + txt.me + ' ' + fmt(lastPoll()) + ' %'"><small>Sondage{{ txt.me !== 'Vous' ? ' · ' + txt.me : '' }}</small><b class="mono">{{ fmt(lastPoll()) }} %</b></span>
       </div>
 
       <div class="mapw">
@@ -760,7 +760,7 @@ let instances = 0;
                 </button>
               }
             } @else if (focusZone(); as z) {
-              <p><b>{{ z.name }}</b> · {{ fmt(z.w, z.w < 1 ? 2 : 1) }} {{ txt.unit }} d’électeurs · @for (p of z.profiles; track p) { <span class="tag">{{ profileLabel(p) }}</span> }</p>
+              <p><b>{{ z.name }}</b> · {{ fmt(z.w, z.w < 1 ? 2 : 1) }} {{ txt.unit }} d’électeurs · @for (p of z.profiles; track $index) { <span class="tag">{{ profileLabel(p) }}</span> }</p>
               <p class="small">{{ txt.me }} <b class="mono">{{ fmt(zoneShare100(z)) }} %</b> · indécis {{ fmt(z.und * 100, 0) }} %
                 · élan <span class="mono m">{{ fmt(z.pf + z.pd) }}</span> contre <span class="mono t">{{ fmt(z.af + z.ad) }}</span>
                 @if (variant === 'referendum') { · participation <span class="mono m">{{ fmt(turn(z)[0] * 100, 0) }}</span>/<span class="mono t">{{ fmt(turn(z)[1] * 100, 0) }}</span> % }</p>

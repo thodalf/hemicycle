@@ -1,7 +1,7 @@
 import { CONVERSIONS, CONVERSION_COST, TALENTS_BY_ID, TalentId, talent } from '../data/talents';
 import { Injectable, computed, inject } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, Effect, GameState, StatKey } from '../models/game.models';
-import { RANKS } from '../data/ranks';
+import { RANKS, actionsDone } from '../data/ranks';
 import { createDecision } from '../data/decisions';
 import { countTrait, fireRecruit, weeklyTraits } from '../engine/recruits';
 import { applyEffects, availableFunds, spend, partySupport, pushNews, teamFunding } from '../engine/effects';
@@ -39,6 +39,10 @@ export class ProgressionService {
       label: ({ popularity: 'Popularité', influence: 'Influence', credibility: 'Crédibilité' } as Record<string, string>)[k] ?? k,
       current: Math.round(s.player.stats[k]), target: v, met: s.player.stats[k] >= v,
     }));
+    if (rule.minActions) {
+      const done = actionsDone(s);
+      reqs.push({ label: 'Actions menées', current: done, target: rule.minActions, met: done >= rule.minActions });
+    }
     if (rule.via === 'nomination') {
       const sup = Math.round(partySupport(s));
       reqs.push({ label: 'Soutien du parti', current: sup, target: rule.minPartySupport, met: sup >= rule.minPartySupport });
@@ -165,7 +169,7 @@ export class ProgressionService {
     const lastOffer = Number(p.flags['lastOffer'] ?? -99);
     if (rule?.via === 'nomination' && d.week - lastOffer >= 4) {
       const met = (Object.entries(rule.requires) as [StatKey, number][]).every(([k, v]) => s[k] >= v)
-        && partySupport(d) >= rule.minPartySupport;
+        && partySupport(d) >= rule.minPartySupport && actionsDone(d) >= (rule.minActions ?? 0);
       if (met && rng.chance(0.35)) {
         const decision = createDecision(rule.to === 'ministre' ? 'remaniement' : 'congres', d, rng, {});
         if (decision) {

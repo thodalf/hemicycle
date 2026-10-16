@@ -680,32 +680,109 @@ const BRIEF: Record<Variant, { title: string; brief: string }> = {
 const hhmm = (t: number): string => { const m = 20 * 60 + Math.round(t); return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
 const dur = (m: number): string => (m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}` : `${m} min`);
 const fmt = (n: number): string => n.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+/** Retire les pictogrammes (émojis) : l'interface dessine les siens */
+const plain = (s: string) => s.replace(/\p{Extended_Pictographic}️?\s?/gu, '').trim();
+/** Les lectorats, en pictogrammes au trait (repère 24 × 24) */
+const READER_IC = [
+  'M3 20.5h18M4.5 18h15M6 18v-7.5M10 18v-7.5M14 18v-7.5M18 18v-7.5M3.5 10h17L12 4.5z',
+  'M8.5 4.5a3 3 0 1 1 0 6a3 3 0 0 1 0-6zM3 20c0-3.5 2.5-6.5 5.5-6.5s5.5 3 5.5 6.5M16 6a2.6 2.6 0 1 1 0 5.2M15.5 13.6c3 .3 5.5 3 5.5 6.4',
+  'M4 15v-3a8 8 0 0 1 16 0v3M4 14.5h3.2v6H4zM16.8 14.5H20v6h-3.2z',
+  'M3.5 20.5h17M4.5 16.5l5-5.5 4 3.5 6.5-7.5M15.5 7h5v5',
+];
+const SRC_SHORT: Record<Src, string> = { maison: 'RÉDACTION', agence: 'AGENCE', officiel: 'COMMUNIQUÉ', correspondant: 'CORRESP.', institut: 'INSTITUT', anonyme: 'SOURCE ANON.', document: 'DOCUMENT', reseaux: 'RÉSEAUX' };
+/** Une photo de presse en niveaux de gris, selon la rubrique */
+const SCENE: Record<Rub, string> = {
+  politique: 'crowd', elections: 'crowd', affaire: 'crowd', societe: 'crowd', culture: 'stage', sport: 'stadium', economie: 'city', monde: 'city',
+  sciences: 'land', faitsdivers: 'land', maison: 'land', people: 'face',
+};
 let fxId = 0;
+let uneInstances = 0;
 
 @Component({
   selector: 'app-une-game',
   template: `
     @let d = desk();
-    <div class="une" [class]="'une v-' + d.v">
+    <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+      <defs>
+        <pattern [attr.id]="uid + '-ht'" width="3.2" height="3.2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <path d="M0 0h3.2v3.2H0zM1.6.25a1.35 1.35 0 1 0 .01 0z" fill-rule="evenodd" class="screen" />
+        </pattern>
+        <linearGradient [attr.id]="uid + '-sky'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9d9d9" /><stop offset="1" stop-color="#9a9a9a" /></linearGradient>
+        <radialGradient [attr.id]="uid + '-spot'" cx="50%" cy="20%" r="70%"><stop offset="0" stop-color="#e6e6e6" /><stop offset="1" stop-color="#3a3a3a" /></radialGradient>
+        <symbol [attr.id]="uid + '-crowd'" viewBox="0 0 120 80" preserveAspectRatio="xMidYMin slice">
+          <rect width="120" height="80" fill="#8c8c8c" /><rect width="120" height="46" [attr.fill]="'url(#' + uid + '-sky)'" />
+          <rect x="22" y="6" width="9" height="34" fill="#5c5c5c" /><rect x="31" y="6" width="9" height="34" fill="#d0d0d0" /><rect x="40" y="6" width="9" height="34" fill="#7a7a7a" />
+          <rect x="74" y="8" width="26" height="16" fill="#b5b5b5" /><path d="M77 11h20M77 15h14M77 19h17" stroke="#7d7d7d" stroke-width="1.6" />
+          <ellipse cx="62" cy="22" rx="6.2" ry="7.4" fill="#c4c4c4" /><path d="M55 20c0-7 14-7 14 0" fill="#3a3a3a" />
+          <path d="M47 44c2-10 8-13 15-13s13 3 15 13z" fill="#2f2f2f" /><path d="M59 31l3 6 3-6z" fill="#e8e8e8" />
+          <path d="M50 38h24l-3 26H53z" fill="#4a4a4a" /><rect x="58" y="34" width="8" height="3" fill="#1c1c1c" />
+          <g fill="#1f1f1f"><circle cx="8" cy="66" r="7" /><circle cx="24" cy="63" r="8" /><circle cx="41" cy="67" r="7.5" /><circle cx="58" cy="70" r="8" /><circle cx="76" cy="66" r="7" /><circle cx="93" cy="64" r="8" /><circle cx="111" cy="67" r="7.5" />
+            <rect x="-2" y="70" width="124" height="12" /></g>
+          <g fill="#3b3b3b"><circle cx="16" cy="58" r="5" /><circle cx="33" cy="57" r="5.5" /><circle cx="86" cy="57" r="5" /><circle cx="103" cy="58" r="5.5" /></g>
+        </symbol>
+        <symbol [attr.id]="uid + '-stage'" viewBox="0 0 120 80" preserveAspectRatio="xMidYMin slice">
+          <rect width="120" height="80" [attr.fill]="'url(#' + uid + '-spot)'" /><path d="M42 0h36l18 62H24z" fill="#ffffff" opacity=".18" />
+          <ellipse cx="60" cy="24" rx="6" ry="7" fill="#bdbdbd" /><path d="M53 22c0-8 14-8 14 0l-1 4c-2-5-10-5-12 0z" fill="#2a2a2a" />
+          <path d="M48 62c0-18 5-28 12-28s12 10 12 28z" fill="#2e2e2e" /><path d="M66 40l12-8" stroke="#2e2e2e" stroke-width="4" stroke-linecap="round" /><circle cx="79" cy="31" r="2.4" fill="#111" />
+          <rect y="62" width="120" height="18" fill="#4b4b4b" /><g fill="#141414"><circle cx="12" cy="78" r="8" /><circle cx="34" cy="80" r="9" /><circle cx="86" cy="80" r="9" /><circle cx="108" cy="78" r="8" /></g>
+        </symbol>
+        <symbol [attr.id]="uid + '-stadium'" viewBox="0 0 120 80" preserveAspectRatio="xMidYMid slice">
+          <rect width="120" height="34" fill="#3d3d3d" /><g fill="#8a8a8a">@for (q of dots; track $index) { <circle [attr.cx]="q[0]" [attr.cy]="q[1]" r=".9" /> }</g>
+          <rect y="30" width="120" height="6" fill="#262626" /><rect y="36" width="120" height="44" fill="#a8a8a8" /><path d="M0 50h120M60 36v44" stroke="#d6d6d6" stroke-width="1" />
+          <ellipse cx="66" cy="74" rx="16" ry="3" fill="#7c7c7c" />
+          <circle cx="62" cy="34" r="5" fill="#cfcfcf" /><path d="M55 40c4-2 10-2 14 1l3 14-6 1-1 15h-5l-1-14-6 12-5-2 6-15z" fill="#1d1d1d" /><path d="M69 42l9-6M55 44l-8 5" stroke="#1d1d1d" stroke-width="3.4" stroke-linecap="round" />
+          <ellipse cx="82" cy="66" rx="5" ry="4.6" fill="#f2f2f2" stroke="#2a2a2a" stroke-width="1" />
+        </symbol>
+        <symbol [attr.id]="uid + '-city'" viewBox="0 0 120 80" preserveAspectRatio="xMidYMid slice">
+          <rect width="120" height="80" [attr.fill]="'url(#' + uid + '-sky)'" />
+          <path d="M84 30c0-6 5-10 10-10s7-5 12-4 6 7 4 10" fill="#bcbcbc" />
+          <g fill="#4a4a4a"><rect x="4" y="34" width="14" height="46" /><rect x="20" y="20" width="16" height="60" /><rect x="38" y="40" width="12" height="40" /><rect x="52" y="12" width="15" height="68" /><rect x="70" y="30" width="12" height="50" /><rect x="84" y="44" width="30" height="36" /></g>
+          <rect x="96" y="22" width="5" height="24" fill="#3a3a3a" />
+          <g fill="#c8c8c8">@for (q of windows; track $index) { <rect [attr.x]="q[0]" [attr.y]="q[1]" width="2.2" height="2.6" /> }</g>
+          <rect y="72" width="120" height="8" fill="#262626" />
+        </symbol>
+        <symbol [attr.id]="uid + '-land'" viewBox="0 0 120 80" preserveAspectRatio="xMidYMid slice">
+          <rect width="120" height="80" [attr.fill]="'url(#' + uid + '-sky)'" /><circle cx="92" cy="16" r="7" fill="#efefef" />
+          <path d="M0 50l22-24 14 14 20-26 26 30 14-12 24 18v30H0z" fill="#6e6e6e" /><path d="M48 22l8-8 8 9-5 2-3-3-4 3z" fill="#e2e2e2" />
+          <path d="M0 58c30-8 60-6 120 4v18H0z" fill="#3c3c3c" /><path d="M54 80l6-22 6 22z" fill="#9a9a9a" />
+          <g fill="#1f1f1f"><path d="M10 64l5-14 5 14z" /><path d="M18 66l6-18 6 18z" /><path d="M96 66l5-15 5 15z" /></g>
+        </symbol>
+        <symbol [attr.id]="uid + '-face'" viewBox="0 0 120 80" preserveAspectRatio="xMidYMin slice">
+          <rect width="120" height="80" fill="#9d9d9d" /><circle cx="60" cy="28" r="40" fill="#b4b4b4" />
+          <path d="M28 80c2-20 14-28 32-28s30 8 32 28z" fill="#2c2c2c" /><path d="M52 52l8 12 8-12z" fill="#ececec" /><path d="M58 58h4l-1 14h-2z" fill="#5a5a5a" />
+          <ellipse cx="60" cy="33" rx="13" ry="16" fill="#cdcdcd" /><path d="M46 31c-1-14 8-19 14-19s16 4 14 19c-3-8-8-10-14-10s-11 2-14 10z" fill="#333" />
+          <path d="M54 34h4M62 34h4M57 42c2 1.5 4 1.5 6 0" stroke="#5e5e5e" stroke-width="1.4" stroke-linecap="round" fill="none" />
+        </symbol>
+      </defs>
+    </svg>
+    <div class="une" [class]="'une v-' + d.v" lang="fr">
       @if (!over()) {
         <div class="head">
           <div class="clock" role="timer" [attr.aria-label]="'Il est ' + hhmm(d.t) + ', bouclage à ' + hhmm(d.deadline)">
+            <svg class="face" viewBox="-50 -50 100 100" aria-hidden="true">
+              <circle r="47" class="rim" /><circle r="42" class="dial" />
+              @for (k of ticks; track k) { <path [attr.d]="k % 3 === 0 ? 'M0 -38V-31' : 'M0 -38V-34.5'" [attr.transform]="'rotate(' + k * 30 + ')'" [class.major]="k % 3 === 0" class="tk" /> }
+              <path d="M0 6V-22" [attr.transform]="'rotate(' + hourDeg(d.t) + ')'" class="hh" />
+              <path d="M0 8V-34" [attr.transform]="'rotate(' + minDeg(d.t) + ')'" class="mh" />
+              <path d="M0 -34V-41" [attr.transform]="'rotate(' + minDeg(d.deadline) + ')'" class="dl" />
+              <circle r="2.6" class="pin" />
+            </svg>
             <b class="mono">{{ hhmm(d.t) }}</b>
             <span class="tbar" aria-hidden="true"><span [style.width.%]="d.t / d.deadline * 100"></span></span>
-            <small [class.late]="d.deadline - d.t <= 30">bouclage {{ hhmm(d.deadline) }} · reste {{ dur(d.deadline - d.t) }}</small>
+            <small [class.late]="d.deadline - d.t <= 30">Bouclage {{ hhmm(d.deadline) }} · reste {{ dur(d.deadline - d.t) }}</small>
           </div>
-          <button type="button" class="btn small wait" (click)="wait()" [attr.aria-label]="'Attendre les dépêches jusqu’à ' + hhmm(nextQ())">⏩ Attendre<small>→ {{ hhmm(nextQ()) }}</small></button>
+          <button type="button" class="btn small wait" (click)="wait()" [attr.aria-label]="'Attendre les dépêches jusqu’à ' + hhmm(nextQ())">Attendre<small>→ {{ hhmm(nextQ()) }}</small></button>
         </div>
 
         <div class="meters" role="list" aria-label="Lectorats touchés">
           @for (r of readers; track $index) {
-            <span class="mtr" role="listitem" [attr.aria-label]="r.label + ' : ' + fmt(live().reach[$index])" [class.low]="live().aud > 8 && live().reach[$index] < live().aud / 4 * 0.55">
-              <i>{{ r.icon }}</i><span class="mb"><span [style.width.%]="reachPct($index)"></span></span>
+            <span class="mtr" role="listitem" [attr.aria-label]="r.label + ' : ' + fmt(live().reach[$index])" [attr.title]="r.label" [class.low]="live().aud > 8 && live().reach[$index] < live().aud / 4 * 0.55">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="readerIc[$index]" /></svg><span class="mb"><span [style.width.%]="reachPct($index)"></span></span>
             </span>
           }
           <span class="aud mono" aria-label="Audience totale">{{ fmt(Math.round(live().aud)) }}<small> lect.</small></span>
         </div>
-        <p class="line">📏 <b>Ligne :</b> {{ lineText() }} · ✍️ Édito {{ live().edito ? '✓' : 'à placer' }} · 💶 Pubs {{ live().ads }}/{{ d.adsReq }}</p>
+        <p class="line"><b>Consigne du rédacteur en chef :</b> {{ lineText() }} · Édito {{ live().edito ? '✓' : 'à placer' }} · Pubs {{ live().ads }}/{{ d.adsReq }}</p>
 
         <div class="tabs" role="tablist" aria-label="Pages du journal">
           @for (pg of d.pages; track $index; let pi = $index) {
@@ -719,7 +796,12 @@ let fxId = 0;
 
         @let pg = d.pages[tab()];
         <div class="sheet" [class.isune]="tab() === 0">
-          @if (tab() === 0) { <div class="mast" aria-hidden="true"><span>Le Courrier national</span><small>{{ editionLine() }}</small></div> }
+          @if (tab() === 0) {
+            <div class="mast" aria-hidden="true">
+              <i class="ear">{{ earLeft() }}</i><span>Le Courrier national</span><i class="ear r">2,80 €</i>
+              <small>{{ dateLine() }} · {{ editionLine() }}</small>
+            </div>
+          }
           @else { <div class="folio" aria-hidden="true"><span>{{ pg.name }}</span><span>Le Courrier national</span></div> }
           <div class="grid" role="group" [attr.aria-label]="pg.name + ', ' + pg.w + ' colonnes sur ' + pg.h + ' lignes'"
                [style.grid-template-columns]="'repeat(' + pg.w + ', minmax(0, 1fr))'" [style.grid-template-rows]="'repeat(' + pg.h + ', var(--row))'">
@@ -732,17 +814,24 @@ let fxId = 0;
             @for (p of placedOn(tab()); track p.s.id) {
               <button type="button" class="blk" [class]="'blk k-' + p.s.kind + ' z' + zoneOf(p)"
                       [class.sel]="sel()?.id === p.s.id" [class.stale]="p.s.stale" [class.fake]="p.s.checked && !p.s.truth" [class.target]="fixTarget() === p.s.id"
-                      [class.conf]="conflictOf(p)" [class.new]="fresh0() === p.s.id"
+                      [class.conf]="conflictOf(p)" [class.new]="fresh0() === p.s.id" [style.--w]="p.s.w"
                       [style.grid-column]="p.x + 1 + ' / span ' + p.s.w" [style.grid-row]="p.y + 1 + ' / span ' + p.s.h"
                       (click)="tapBlock(p)" [attr.aria-label]="blockLabel(p)" [attr.aria-pressed]="sel()?.id === p.s.id">
                 @if (p.s.ad) { <span class="adl">Publicité</span><span class="adn">{{ p.s.ad }}</span> }
-                @else if (p.s.filler) { <span class="fil-t">{{ p.s.kind === 'filet' ? '❖' : p.s.title }}</span> }
+                @else if (p.s.filler) {
+                  @if (p.s.kind === 'meteo') { <svg class="wx" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5a4 4 0 1 1 0 .01zM9 1v2M9 10v2M3.5 6.5h2M12.5 6.5h2M17 19.5H7.5a3.5 3.5 0 1 1 1-6.9A4.6 4.6 0 0 1 17.5 14a2.8 2.8 0 0 1-.5 5.5z" /></svg> }
+                  @if (p.s.kind === 'jeux') { <span class="xw" aria-hidden="true"></span> }
+                  <span class="fil-t">{{ p.s.kind === 'filet' ? '❖' : p.s.title }}</span>
+                }
                 @else {
-                  @if (p.s.kind === 'photo') { <span class="pic" aria-hidden="true">{{ rubIcon(p.s.rub) }}</span> }
+                  @if (p.s.kind === 'photo' || p.s.kind === 'portrait') {
+                    <svg class="pic" aria-hidden="true"><use [attr.href]="'#' + uid + '-' + sceneOf(p.s)" width="100%" height="100%" /><rect width="100%" height="100%" [attr.fill]="'url(#' + uid + '-ht)'" opacity=".82" /></svg>
+                  }
                   <span class="kick">{{ p.s.edito ? 'Éditorial' : rubLabel(p.s.rub) }}</span>
                   <span class="bt">{{ p.s.edito ? p.s.title.replace('Éditorial — ', '') : p.s.title }}</span>
-                  @if (p.s.stale) { <span class="flag bad">⚠ dépassé</span> }
-                  @else if (p.s.checked && !p.s.truth) { <span class="flag bad">✗ bidon</span> }
+                  @if (p.s.h > 1 && p.s.kind !== 'photo' && p.s.kind !== 'portrait') { <span class="txt" aria-hidden="true"></span> }
+                  @if (p.s.stale) { <span class="flag bad">dépassé</span> }
+                  @else if (p.s.checked && !p.s.truth) { <span class="flag bad">bidon</span> }
                   @else if (isDubious(p.s) && !p.s.checked) { <span class="flag q" aria-hidden="true">?</span> }
                 }
                 @for (f of fxOf(p.s.id); track f.id) { <span class="fx" [class]="'fx ' + f.tone">{{ f.text }}</span> }
@@ -751,7 +840,7 @@ let fxId = 0;
             @if (ghost(); as g) {
               @if (g.page === tab()) {
                 <div class="ghost" [class.bad]="g.err" [style.grid-column]="g.x + 1 + ' / span ' + g.w" [style.grid-row]="g.y + 1 + ' / span ' + g.h" aria-hidden="true">
-                  <span>{{ g.err ? '⛔' : '+' + fmt(Math.round(g.val)) }}</span>
+                  <span>{{ g.err ? 'impossible' : '+' + fmt(Math.round(g.val)) }}</span>
                 </div>
               }
             }
@@ -767,56 +856,57 @@ let fxId = 0;
               @if (!s.ad && s.kind !== 'filet') {
                 <div class="ints">
                   @for (r of readers; track $index) {
-                    <span class="ri" [attr.aria-label]="r.label + ' ' + fmt(s.int[$index])"><i>{{ r.icon }}</i><span class="rbar"><span [style.width.%]="Math.min(100, s.int[$index] / 6 * 100)"></span></span><b class="mono">{{ fmt(s.int[$index]) }}</b></span>
+                    <span class="ri" [attr.aria-label]="r.label + ' ' + fmt(s.int[$index])"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="readerIc[$index]" /></svg><span class="rbar"><span [style.width.%]="Math.min(100, s.int[$index] / 6 * 100)"></span></span><b class="mono">{{ fmt(s.int[$index]) }}</b></span>
                   }
                 </div>
               }
               <div class="tags">
-                @for (w of tagsOf(s); track $index) { <span class="tag" [class]="'tag ' + w.tone">{{ w.text }}</span> }
+                @for (w of tagsOf(s); track $index) { <span class="tag" [class]="'tag ' + w.tone">{{ plain(w.text) }}</span> }
               </div>
               @if (ghost(); as g) {
                 <div class="pv" [class.err]="g.err">
-                  @if (g.err) { <span>⛔ {{ g.err }}</span> }
+                  @if (g.err) { <span>Impossible : {{ g.err }}</span> }
                   @else {
                     <span><b>{{ d.pages[g.page].short }}</b>, {{ zoneLabel(g.page, g.y) }} : <b class="g">+{{ fmt(Math.round(g.val)) }} lecteurs</b> <small>(×{{ fmt(Math.round(g.weight * 100) / 100) }})</small></span>
-                    @for (w of g.warn; track $index) { <small class="warn">{{ w }}</small> }
+                    @for (w of g.warn; track $index) { <small class="warn">{{ plain(w) }}</small> }
                   }
                 </div>
               }
               <div class="acts">
                 @if (sel()?.where === 'fil') {
                   @if (s.fixOf !== undefined) {
-                    <button type="button" class="btn primary small" [disabled]="!afford('place')" (click)="doSwap(s.id)">🔁 Remplacer en page <small>−{{ cost('place') }}′</small></button>
+                    <button type="button" class="btn primary small" [disabled]="!afford('place')" (click)="doSwap(s.id)">Remplacer en page <small>−{{ cost('place') }}′</small></button>
                   } @else {
-                    @if (ghost(); as g) { @if (!g.err) { <button type="button" class="btn primary small" (click)="confirm()">📌 Placer <small>−{{ cost('place') }}′</small></button> } }
+                    @if (ghost(); as g) { @if (!g.err) { <button type="button" class="btn primary small" (click)="confirm()">Placer <small>−{{ cost('place') }}′</small></button> } }
                     @if (s.rot && s.w !== s.h) { <button type="button" class="btn small" (click)="doRotate(s.id)" aria-label="Pivoter le bloc">↻ Pivoter</button> }
-                    @if (!s.ad && !s.filler && s.w * s.h > 1) { <button type="button" class="btn small" [disabled]="!afford('cut')" (click)="doCut(s.id)">✂️ Couper <small>−{{ cost('cut') }}′</small></button> }
+                    @if (!s.ad && !s.filler && s.w * s.h > 1) { <button type="button" class="btn small" [disabled]="!afford('cut')" (click)="doCut(s.id)">Couper <small>−{{ cost('cut') }}′</small></button> }
                   }
-                  @if (canVerify(s)) { <button type="button" class="btn small" [disabled]="!afford('verify')" (click)="doVerify(s.id)">🔍 Vérifier <small>−{{ cost('verify') }}′</small></button> }
-                  @if (!s.ad && !s.unlimited && !s.edito) { <button type="button" class="btn small spike" (click)="doSpike(s.id)">🗑️ Au panier</button> }
+                  @if (canVerify(s)) { <button type="button" class="btn small" [disabled]="!afford('verify')" (click)="doVerify(s.id)">Vérifier <small>−{{ cost('verify') }}′</small></button> }
+                  @if (!s.ad && !s.unlimited && !s.edito) { <button type="button" class="btn small spike" (click)="doSpike(s.id)">Au panier</button> }
                 } @else {
-                  @if (canVerify(s)) { <button type="button" class="btn small" [disabled]="!afford('verify')" (click)="doVerify(s.id)">🔍 Vérifier <small>−{{ cost('verify') }}′</small></button> }
-                  <button type="button" class="btn small" [disabled]="!afford('remove')" (click)="doRemove(s.id)">↩️ Retirer de la page <small>−{{ cost('remove') }}′</small></button>
+                  @if (canVerify(s)) { <button type="button" class="btn small" [disabled]="!afford('verify')" (click)="doVerify(s.id)">Vérifier <small>−{{ cost('verify') }}′</small></button> }
+                  <button type="button" class="btn small" [disabled]="!afford('remove')" (click)="doRemove(s.id)">Retirer de la page <small>−{{ cost('remove') }}′</small></button>
                 }
               </div>
             </div>
           } @else {
-            <p class="hint">{{ hint() }}</p>
+            <p class="hint">{{ plain(hint()) }}</p>
           }
         </div>
 
-        <div class="filhead"><b>📠 Le fil</b><small>{{ news().length }} dépêche{{ news().length > 1 ? 's' : '' }} · elles périment au bout de {{ life }} min</small></div>
+        <div class="filhead"><b>Le fil des dépêches</b><small>{{ news().length }} dépêche{{ news().length > 1 ? 's' : '' }} · périment au bout de {{ life }} min</small></div>
         <div class="fil" role="listbox" aria-label="Dépêches à placer">
           @for (s of news(); track s.id) {
             <button type="button" class="card" role="option" [class.on]="sel()?.id === s.id" [class.scoop]="s.scoop" [class.fix]="s.fixOf !== undefined" [class.fake]="s.checked && !s.truth"
                     [attr.aria-selected]="sel()?.id === s.id" (click)="pick(s.id)" [attr.aria-label]="cardLabel(s)">
               <span class="c-top">
-                <span class="shape" [style.--w]="s.w" [style.--h]="s.h" aria-hidden="true">@for (q of range(s.w * s.h); track q) { <i></i> }</span>
-                <span class="c-k">{{ s.fixOf !== undefined ? 'Rectificatif' : s.scoop ? 'Scoop' : kindLabel(s) }}</span>
+                <span class="c-k">{{ s.fixOf !== undefined ? 'RECTIFICATIF' : s.scoop ? 'URGENT' : srcShort(s) }} · {{ hhmm(s.born) }}</span>
                 <span [class]="'c-src st' + srcStars(s)" aria-hidden="true">{{ starTxt(s) }}</span>
               </span>
+              <span class="c-r">{{ rubLabel(s.rub) }} · {{ kindLabel(s) }}</span>
               <span class="c-t">{{ s.title }}</span>
               <span class="c-b">
+                <span class="shape" [style.--w]="s.w" [style.--h]="s.h" aria-hidden="true">@for (q of range(s.w * s.h); track q) { <i></i> }</span>
                 <span class="c-int mono">{{ fmt(Math.round(sumInt(s))) }}<small> pts</small></span>
                 @for (b of badges(s); track $index) { <span class="bd">{{ b }}</span> }
                 @if (s.exp < 1e8) { <span class="age" [class.old]="s.exp - d.t <= 20" [attr.aria-hidden]="true"><span [style.width.%]="(s.exp - d.t) / life * 100"></span></span> }
@@ -828,27 +918,33 @@ let fxId = 0;
           @for (s of house(); track s.id) {
             <button type="button" class="chip" [class.on]="sel()?.id === s.id" [class.ad]="s.ad" [class.ed]="s.edito" (click)="pick(s.id)" [attr.aria-label]="cardLabel(s)" [attr.aria-pressed]="sel()?.id === s.id">
               <span class="shape" [style.--w]="s.w" [style.--h]="s.h" aria-hidden="true">@for (q of range(s.w * s.h); track q) { <i></i> }</span>
-              {{ s.ad ? '💶 ' + s.ad : s.edito ? '✍️ Édito' : s.kind === 'filet' ? '❖ Encadré ∞' : s.title }}
+              {{ s.ad ? 'Pub · ' + s.ad : s.edito ? 'Éditorial' : s.kind === 'filet' ? 'Encadré ❖ ∞' : s.title }}
             </button>
           }
         </div>
 
         <ul class="log" aria-live="polite">@for (l of log(); track $index) { <li [class]="l.tone">{{ l.text }}</li> }</ul>
         <div class="end">
-          <button type="button" class="btn primary" (click)="print()">🖨️ {{ armed() ? 'Confirmer : ' + live().empty + ' case' + (live().empty > 1 ? 's' : '') + ' blanche' + (live().empty > 1 ? 's' : '') : 'Envoyer à l’imprimerie' }}</button>
+          <button type="button" class="btn primary" (click)="print()">{{ armed() ? 'Confirmer : ' + live().empty + ' case' + (live().empty > 1 ? 's' : '') + ' blanche' + (live().empty > 1 ? 's' : '') : 'Envoyer à l’imprimerie' }}</button>
         </div>
       } @else {
         @if (final(); as sc) {
           <div class="print" aria-label="La Une imprimée">
-            <div class="mast big"><span>Le Courrier national</span><small>{{ editionLine() }}</small></div>
-            <div class="grid pgrid" [style.grid-template-columns]="'repeat(6, minmax(0, 1fr))'" [style.grid-template-rows]="'repeat(8, 30px)'">
+            <div class="mast big"><i class="ear">{{ earLeft() }}</i><span>Le Courrier national</span><i class="ear r">2,80 €</i><small>{{ dateLine() }} · {{ editionLine() }}</small></div>
+            <div class="grid pgrid" [style.grid-template-columns]="'repeat(6, minmax(0, 1fr))'" [style.grid-template-rows]="'repeat(8, var(--prow))'">
               @for (c of cellsOf(0); track c) {
                 <span class="blank" [style.grid-column]="(c % 6) + 1" [style.grid-row]="(c - (c % 6)) / 6 + 1"></span>
               }
               @for (p of placedOn(0); track p.s.id) {
-                <span class="pb" [class]="'pb k-' + p.s.kind" [class.hl]="sc.headline === p" [style.grid-column]="p.x + 1 + ' / span ' + p.s.w" [style.grid-row]="p.y + 1 + ' / span ' + p.s.h">
-                  @if (p.s.ad) { <em>Publicité · {{ p.s.ad }}</em> } @else if (p.s.filler) { <em>{{ p.s.kind === 'filet' ? '❖' : p.s.title }}</em> }
-                  @else { <b>{{ p.s.edito ? p.s.title.replace('Éditorial — ', '') : p.s.title }}</b> }
+                <span class="pb" [class]="'pb k-' + p.s.kind" [class.hl]="sc.headline === p" [style.--w]="p.s.w" [style.grid-column]="p.x + 1 + ' / span ' + p.s.w" [style.grid-row]="p.y + 1 + ' / span ' + p.s.h">
+                  @if (p.s.ad) { <em>Publicité</em><strong>{{ p.s.ad }}</strong> } @else if (p.s.filler) { <em>{{ p.s.kind === 'filet' ? '❖' : p.s.title }}</em> }
+                  @else {
+                    @if (p.s.kind === 'photo' || p.s.kind === 'portrait') {
+                      <svg class="pic" aria-hidden="true"><use [attr.href]="'#' + uid + '-' + sceneOf(p.s)" width="100%" height="100%" /><rect width="100%" height="100%" [attr.fill]="'url(#' + uid + '-ht)'" opacity=".82" /></svg>
+                    }
+                    <b>{{ p.s.edito ? p.s.title.replace('Éditorial — ', '') : p.s.title }}</b>
+                    @if (p.s.h > 1 && p.s.kind !== 'photo' && p.s.kind !== 'portrait') { <span class="txt" aria-hidden="true"></span> }
+                  }
                   @if (!p.s.truth || p.s.stale) { <i class="stamp">Démenti</i> }
                   @else if (p.s.accuse && !p.s.checked) { <i class="stamp law">Plainte</i> }
                 </span>
@@ -858,20 +954,20 @@ let fxId = 0;
           <div class="sum" aria-live="polite">
             <p class="verdict"><b>{{ message() }}</b></p>
             <div class="bars">
-              <span>📰 Audience</span><span class="bar"><span [style.width.%]="sc.audC * 100"></span></span><b class="mono">{{ Math.round(sc.audC * 100) }}</b>
-              <span>⚖️ Équilibre</span><span class="bar"><span [style.width.%]="sc.balC * 100"></span></span><b class="mono">{{ Math.round(sc.balC * 100) }}</b>
-              <span>▦ Remplissage</span><span class="bar"><span [style.width.%]="sc.fillC * 100"></span></span><b class="mono">{{ Math.round(sc.fillC * 100) }}</b>
-              <span>💶 Publicité</span><span class="bar"><span [style.width.%]="sc.adsC * 100"></span></span><b class="mono">{{ Math.round(sc.adsC * 100) }}</b>
-              <span>📏 Ligne</span><span class="bar"><span [style.width.%]="sc.lineC * 100"></span></span><b class="mono">{{ Math.round(sc.lineC * 100) }}</b>
+              <span>Audience</span><span class="bar"><span [style.width.%]="sc.audC * 100"></span></span><b class="mono">{{ Math.round(sc.audC * 100) }}</b>
+              <span>Équilibre</span><span class="bar"><span [style.width.%]="sc.balC * 100"></span></span><b class="mono">{{ Math.round(sc.balC * 100) }}</b>
+              <span>Remplissage</span><span class="bar"><span [style.width.%]="sc.fillC * 100"></span></span><b class="mono">{{ Math.round(sc.fillC * 100) }}</b>
+              <span>Publicité</span><span class="bar"><span [style.width.%]="sc.adsC * 100"></span></span><b class="mono">{{ Math.round(sc.adsC * 100) }}</b>
+              <span>Ligne</span><span class="bar"><span [style.width.%]="sc.lineC * 100"></span></span><b class="mono">{{ Math.round(sc.lineC * 100) }}</b>
             </div>
             <p class="chips">
-              <span class="chip2">📄 {{ sc.pagesFull }}/{{ d.pages.length }} pages complètes</span>
-              <span class="chip2" [class.bad]="sc.empty">▢ {{ sc.empty }} case{{ sc.empty > 1 ? 's' : '' }} blanche{{ sc.empty > 1 ? 's' : '' }}</span>
-              <span class="chip2" [class.bad]="sc.dementis.length">⚠️ {{ sc.dementis.length }} démenti{{ sc.dementis.length > 1 ? 's' : '' }}</span>
-              @if (d.v === 'scandale' || sc.proces.length) { <span class="chip2" [class.bad]="sc.proces.length">⚖️ {{ sc.proces.length }} plainte{{ sc.proces.length > 1 ? 's' : '' }} en diffamation</span> }
-              <span class="chip2">🔍 {{ d.caught }} intox déjouée{{ d.caught > 1 ? 's' : '' }}</span>
-              @if (sc.unmet) { <span class="chip2 bad">📏 {{ sc.unmet }}</span> }
-              @if (sc.conflicts) { <span class="chip2 bad">📏 {{ sc.conflicts }} entorse{{ sc.conflicts > 1 ? 's' : '' }} à la ligne</span> }
+              <span class="chip2">{{ sc.pagesFull }}/{{ d.pages.length }} pages complètes</span>
+              <span class="chip2" [class.bad]="sc.empty">{{ sc.empty }} case{{ sc.empty > 1 ? 's' : '' }} blanche{{ sc.empty > 1 ? 's' : '' }}</span>
+              <span class="chip2" [class.bad]="sc.dementis.length">{{ sc.dementis.length }} démenti{{ sc.dementis.length > 1 ? 's' : '' }}</span>
+              @if (d.v === 'scandale' || sc.proces.length) { <span class="chip2" [class.bad]="sc.proces.length">{{ sc.proces.length }} plainte{{ sc.proces.length > 1 ? 's' : '' }} en diffamation</span> }
+              <span class="chip2">{{ d.caught }} intox déjouée{{ d.caught > 1 ? 's' : '' }}</span>
+              @if (sc.unmet) { <span class="chip2 bad">Ligne : {{ sc.unmet }}</span> }
+              @if (sc.conflicts) { <span class="chip2 bad">{{ sc.conflicts }} entorse{{ sc.conflicts > 1 ? 's' : '' }} à la ligne</span> }
             </p>
           </div>
         }
@@ -879,116 +975,153 @@ let fxId = 0;
     </div>
   `,
   styles: `
-    :host { display: block; width: 100%; --row: 40px; --paper: #f6f1e4; --paper-2: #fbf8f0; --news-ink: #1d1b17; --news-ink-2: #5a554b; --news-red: #b3261e; }
-    .une { display: grid; gap: 7px; font-size: 13px; min-width: 0; }
+    :host { display: block; width: 100%; --row: 42px; --prow: 34px;
+      --paper: #f1ecdf; --paper-2: #f6f2e8; --news-ink: #1b1a17; --news-ink-2: #57534a; --news-red: #b3261e; --guide: #8fc0d6; --txtl: rgba(40, 36, 30, .3); --screen: #f1ecdf;
+      --slip: #fbf9f2; --slip-ink: #24231f; --slip-ink-2: #6a675e; --slip-line: #ddd6c4;
+      --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .26 0 0 0 0 .2 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+    @media (prefers-color-scheme: dark) {
+      :host-context(html:not([data-theme="light"])) { --paper: #d6cfbd; --paper-2: #ddd7c7; --screen: #d6cfbd; --guide: #6f9fb4; --slip: #20242b; --slip-ink: #e7e3d9; --slip-ink-2: #a7a59f; --slip-line: #363c46; }
+    }
+    :host-context(html[data-theme="dark"]) { --paper: #d6cfbd; --paper-2: #ddd7c7; --screen: #d6cfbd; --guide: #6f9fb4; --slip: #20242b; --slip-ink: #e7e3d9; --slip-ink-2: #a7a59f; --slip-line: #363c46; }
+    .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .screen { fill: var(--screen); }
+    .une { display: grid; gap: 8px; font-size: 13px; min-width: 0; }
     .head { display: flex; align-items: center; gap: 8px; }
-    .clock { flex: 1; min-width: 0; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 1px 8px;
-      b { font-size: 20px; grid-row: span 2; letter-spacing: .02em; } small { font-size: 11px; color: var(--ink-2); &.late { color: var(--bad); font-weight: 600; } } }
-    .tbar { height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden;
-      span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--bad)); } }
-    .wait { display: grid; justify-items: center; line-height: 1.1; min-height: 40px; small { font-size: 10px; color: var(--ink-3); } }
-    .meters { display: flex; align-items: center; gap: 6px; }
-    .mtr { flex: 1; display: flex; align-items: center; gap: 3px; min-width: 0; i { font-style: normal; font-size: 13px; }
-      &.low .mb span { background: var(--bad); } }
-    .mb { flex: 1; height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; span { display: block; height: 100%; background: var(--good); transition: width .3s ease; } }
+    .clock { flex: 1; min-width: 0; display: grid; grid-template-columns: auto auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; gap: 2px 8px;
+      .face { grid-row: span 2; width: 48px; height: 48px; }
+      b { font-size: 19px; letter-spacing: .02em; } .tbar { grid-column: 3; } small { grid-column: 2 / span 2; font-size: 11px; color: var(--ink-2); &.late { color: var(--bad); font-weight: 600; } } }
+    .face { .rim { fill: #2b2d31; } .dial { fill: #fbfaf6; } .tk { stroke: #1d1e21; stroke-width: 1.6; &.major { stroke-width: 3; } }
+      .late { fill: rgba(179, 38, 30, .14); } .hh { stroke: #111; stroke-width: 4.2; stroke-linecap: round; } .mh { stroke: #111; stroke-width: 2.6; stroke-linecap: round; }
+      .dl { stroke: #c62f22; stroke-width: 3; stroke-linecap: round; } .pin { fill: #c62f22; } }
+    .tbar { height: 5px; border-radius: 1px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden;
+      span { display: block; height: 100%; background: linear-gradient(90deg, var(--ink-3), var(--bad)); } }
+    .wait { display: grid; justify-items: center; line-height: 1.1; min-height: 42px; small { font-size: 10px; color: var(--ink-3); } }
+    .meters { display: flex; align-items: center; gap: 8px; }
+    .mtr { flex: 1; display: flex; align-items: center; gap: 4px; min-width: 0; svg { width: 15px; height: 15px; flex: none; fill: none; stroke: var(--ink-2); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      &.low .mb span { background: var(--bad); } &.low svg { stroke: var(--bad); } }
+    .mb { flex: 1; height: 5px; border-radius: 1px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; span { display: block; height: 100%; background: var(--ink-2); transition: width .3s ease; } }
     .aud { font-size: 13px; font-weight: 700; white-space: nowrap; small { font-weight: 400; font-size: 10px; color: var(--ink-3); } }
-    .line { margin: 0; font-size: 11.5px; color: var(--ink-2); }
-    .tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-    .tab { position: relative; display: flex; align-items: baseline; justify-content: center; gap: 6px; min-height: 36px; border-radius: 8px 8px 0 0; border: 1px solid var(--line); border-bottom-width: 3px;
+    .line { margin: 0; font-size: 11.5px; color: var(--ink-2); padding: 5px 8px; border-left: 3px solid var(--news-red); background: var(--surface-2); b { color: var(--ink); font-weight: 600; } }
+    .tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-bottom: -8px; position: relative; z-index: 1; }
+    .tab { position: relative; display: flex; align-items: baseline; justify-content: center; gap: 6px; min-height: 36px; border-radius: 5px 5px 0 0; border: 1px solid var(--line); border-bottom: 0;
       background: var(--surface-2); color: var(--ink-2); cursor: pointer; font: inherit; padding: 4px;
-      small { font-size: 11px; } &.on { background: var(--surface); color: var(--ink); border-bottom-color: var(--accent); }
-      .full { position: absolute; top: 1px; right: 4px; font-style: normal; color: var(--good); font-size: 11px; } }
-    .sheet { background: var(--paper); border-radius: 4px; padding: 6px 5px 5px; box-shadow: 0 1px 0 rgba(0,0,0,.05), 0 6px 18px -10px rgba(0,0,0,.4); color: var(--news-ink); }
-    .mast { display: grid; justify-items: center; border-bottom: 3px double var(--news-ink); margin-bottom: 4px; padding-bottom: 2px;
-      span { font: 700 19px/1.1 var(--font-display); letter-spacing: .01em; } small { font-size: 9.5px; color: var(--news-ink-2); text-transform: uppercase; letter-spacing: .08em; }
-      &.big span { font-size: 24px; } }
-    .folio { display: flex; justify-content: space-between; font: 600 10px var(--font-body); text-transform: uppercase; letter-spacing: .06em; color: var(--news-ink-2); border-bottom: 1px solid var(--news-ink); margin-bottom: 4px; padding-bottom: 2px; }
-    .grid { display: grid; gap: 2px; user-select: none; touch-action: manipulation; }
-    .cell { min-width: 0; min-height: 32px; border: 1px dashed #cfc6b2; border-radius: 2px; background: transparent; padding: 0; cursor: pointer;
-      &.fold { border-top: 2px solid #b7ac93; } &.ok { background: rgba(47, 125, 79, .12); border-color: rgba(47, 125, 79, .5); }
+      b { font-family: var(--font-display); } small { font-size: 11px; } &.on { background: var(--paper); color: var(--news-ink); box-shadow: inset 0 3px 0 var(--news-red); small { color: var(--news-ink-2); } }
+      .full { position: absolute; top: 2px; right: 5px; font-style: normal; color: var(--good); font-size: 11px; } }
+    .tab.on .full { color: #2f7d4f; }
+    .sheet { background: var(--grain), var(--paper); border-radius: 0 0 2px 2px; padding: 8px 6px 6px; box-shadow: 0 1px 0 rgba(0,0,0,.05), 0 10px 22px -12px rgba(0,0,0,.55); color: var(--news-ink); }
+    .mast { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; column-gap: 6px; border-bottom: 1px solid var(--news-ink); margin-bottom: 5px; padding-bottom: 3px;
+      > span { font: 700 21px/1.05 var(--font-display); letter-spacing: -.01em; text-align: center; white-space: nowrap; }
+      .ear { font: 600 8px/1.2 var(--font-body); font-style: normal; text-transform: uppercase; letter-spacing: .06em; color: var(--news-ink-2); border: 1px solid var(--news-ink-2); padding: 2px 3px; justify-self: start; max-width: 64px; &.r { justify-self: end; } }
+      small { grid-column: 1 / -1; margin-top: 3px; padding: 2px 0; border-top: 3px double var(--news-ink); font-size: 9px; color: var(--news-ink-2); text-transform: uppercase; letter-spacing: .08em; text-align: center; }
+      &.big > span { font-size: 27px; } }
+    .folio { display: flex; justify-content: space-between; font: 600 10px var(--font-body); text-transform: uppercase; letter-spacing: .06em; color: var(--news-ink-2); border-bottom: 2px solid var(--news-ink); margin-bottom: 5px; padding-bottom: 2px; span:last-child { font-family: var(--font-display); text-transform: none; letter-spacing: 0; font-size: 11px; } }
+    .grid { display: grid; gap: 3px; user-select: none; touch-action: manipulation; }
+    .cell { min-width: 0; min-height: 32px; border: 1px dashed var(--guide); border-radius: 0; background: transparent; padding: 0; cursor: pointer; opacity: .8;
+      &.fold { border-top: 1.5px solid #a99d84; } &.ok { background: rgba(47, 125, 79, .13); border-color: rgba(47, 125, 79, .6); opacity: 1; }
       &:focus-visible { outline: 3px solid var(--accent); outline-offset: -2px; } }
-    .blk { position: relative; z-index: 1; min-width: 0; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 3px 4px; text-align: left;
-      border: 0; border-top: 2px solid var(--news-ink); border-radius: 1px; background: var(--paper-2); color: var(--news-ink); cursor: pointer; font: inherit;
-      &.sel { box-shadow: 0 0 0 3px var(--accent); z-index: 2; } &:focus-visible { outline: 3px solid var(--accent); outline-offset: -2px; }
+    .blk { --w: 1; position: relative; z-index: 1; min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; align-items: stretch; gap: 1px; padding: 3px 3px 2px; text-align: left;
+      border: 0; border-top: 1.5px solid var(--news-ink); border-radius: 0; background: var(--paper); color: var(--news-ink); cursor: pointer; font: inherit;
+      &.sel { box-shadow: 0 0 0 2.5px var(--accent); z-index: 2; background: var(--paper-2); } &:focus-visible { outline: 3px solid var(--accent); outline-offset: -2px; }
       &.conf { box-shadow: inset 0 0 0 2px #d98a1c; } &.target { animation: blink 1s ease-in-out infinite; box-shadow: 0 0 0 3px var(--bad); }
-      &.stale { background: repeating-linear-gradient(135deg, #fbe3dd 0 6px, #f6d0c6 6px 12px); }
-      &.fake { background: #f3d3cc; }
+      &.stale { background: repeating-linear-gradient(135deg, rgba(179, 38, 30, .08) 0 6px, rgba(179, 38, 30, .16) 6px 12px); }
+      &.fake { background: rgba(179, 38, 30, .14); }
       &.new { animation: drop .4s cubic-bezier(.2, 1.3, .4, 1) both; } }
-    .kick { font: 700 8px/1 var(--font-body); text-transform: uppercase; letter-spacing: .06em; color: var(--news-red); white-space: nowrap; overflow: hidden; max-width: 100%; }
-    .bt { font: 600 11px/1.15 var(--font-display); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
-    .z0 .bt { font-size: 14px; -webkit-line-clamp: 3; } .z1 .bt { font-size: 12.5px; }
-    .k-manchette .bt { font-size: 16px; font-weight: 800; -webkit-line-clamp: 3; }
+    .kick { font: 700 8px/1.1 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--news-red); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; }
+    .bt { font: 700 11px/1.12 var(--font-display); overflow-wrap: break-word; hyphens: auto; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; flex: none; letter-spacing: -.005em; }
+    .txt { flex: 1 1 0; min-height: 0; margin-top: 2px;
+      background: linear-gradient(90deg, transparent calc(100% - 4px), var(--news-ink-2) calc(100% - 4px) calc(100% - 3.5px), transparent calc(100% - 3.5px)) 0 0 / calc(100% / var(--w) + .5px) 100% repeat-x,
+                  repeating-linear-gradient(180deg, var(--txtl) 0 1.3px, transparent 1.3px 3.6px);
+      -webkit-mask: linear-gradient(90deg, #000 calc(100% - 4px), transparent 0) 0 0 / calc(100% / var(--w)) 100% repeat-x; mask: linear-gradient(90deg, #000 calc(100% - 4px), transparent 0) 0 0 / calc(100% / var(--w)) 100% repeat-x; }
+    .z0 .bt { font-size: 14px; } .z1 .bt { font-size: 12px; }
+    .k-manchette .bt { font-size: 18px; font-weight: 800; line-height: 1.02; -webkit-line-clamp: 3; letter-spacing: -.015em; }
+    .k-manchette { border-top-width: 3px; }
     .k-breve .bt, .k-portrait .bt { font-size: 10px; -webkit-line-clamp: 2; } .k-breve .kick { display: none; }
-    .k-breve.z0 .bt { font-size: 10.5px; }
-    .k-edito { border-top: 0; border-left: 3px solid var(--news-ink); .bt { font-style: italic; } }
-    .k-photo { background: linear-gradient(160deg, #c9d3d8, #9eaab1); justify-content: flex-end; .kick { color: #fff; text-shadow: 0 1px 2px #000; } .bt { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.8); font-size: 10.5px; -webkit-line-clamp: 2; } }
-    .pic { position: absolute; top: 4px; right: 5px; font-size: 18px; opacity: .8; }
-    .k-pub { border-top: 0; align-items: center; justify-content: center; background: repeating-linear-gradient(45deg, #efe6cc 0 5px, #e6dbbb 5px 10px); outline: 1px solid #c8b98f; outline-offset: -1px; }
-    .adl { font: 700 8px var(--font-body); text-transform: uppercase; letter-spacing: .1em; color: var(--news-ink-2); } .adn { font: 700 11px/1.1 var(--font-display); text-align: center; }
-    .k-filet, .k-meteo, .k-jeux { border-top: 1px solid var(--news-ink-2); align-items: center; justify-content: center; background: #ece5d3; }
-    .fil-t { font: 600 10px/1.1 var(--font-body); color: var(--news-ink-2); text-align: center; }
-    .flag { position: absolute; right: 2px; bottom: 2px; font: 700 9px var(--font-body); padding: 1px 3px; border-radius: 3px; &.bad { background: var(--news-red); color: #fff; } &.q { background: #d98a1c; color: #fff; min-width: 12px; text-align: center; } }
-    .ghost { position: relative; z-index: 3; pointer-events: none; border: 2px dashed #2f7d4f; background: rgba(47, 125, 79, .18); border-radius: 2px; display: grid; place-items: center;
-      span { font: 800 13px var(--font-body); color: #1f5e39; background: rgba(255,255,255,.8); padding: 0 4px; border-radius: 4px; }
-      &.bad { border-color: var(--news-red); background: rgba(179, 38, 30, .16); span { color: var(--news-red); } } }
+    .k-breve { border-top-width: 1px; } .k-breve.z0 .bt { font-size: 10.5px; }
+    .k-edito { border-top: 0; border-left: 2px solid var(--news-ink); padding-left: 5px; .bt { font-style: italic; font-weight: 600; } .kick { color: var(--news-ink); } }
+    .k-photo, .k-portrait { border-top: 0; padding: 0 0 2px; .kick { padding: 1px 2px 0; } .bt { padding: 0 2px; font-size: 9.5px; font-weight: 600; font-style: italic; -webkit-line-clamp: 2; } }
+    .pic { display: block; flex: 1 1 0; min-height: 0; width: 100%; background: #888; }
+    .k-pub { border: 1.5px solid var(--news-ink); align-items: center; justify-content: center; text-align: center; background: var(--paper-2); outline: 1px solid var(--news-ink); outline-offset: -4px; }
+    .adl { font: 700 7.5px var(--font-body); text-transform: uppercase; letter-spacing: .12em; color: var(--news-ink-2); } .adn { font: 800 12px/1.05 var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+    .k-filet, .k-meteo, .k-jeux { border-top: 1px solid var(--news-ink-2); align-items: center; justify-content: center; gap: 2px; background: rgba(120, 104, 70, .1); }
+    .wx { width: 18px; height: 18px; fill: none; stroke: var(--news-ink); stroke-width: 1.4; stroke-linecap: round; flex: none; }
+    .xw { width: 26px; height: 18px; flex: none; border: 1px solid var(--news-ink); background: linear-gradient(90deg, var(--news-ink) 1px, transparent 1px) 0 0 / 5px 5px, linear-gradient(var(--news-ink) 1px, transparent 1px) 0 0 / 5px 5px, linear-gradient(45deg, transparent 60%, var(--news-ink) 60% 70%, transparent 70%) 0 0 / 10px 10px; }
+    .fil-t { font: 600 9.5px/1.1 var(--font-body); color: var(--news-ink-2); text-align: center; }
+    .flag { position: absolute; right: 2px; bottom: 2px; font: 700 8.5px var(--font-body); text-transform: uppercase; letter-spacing: .04em; padding: 1px 3px; border-radius: 1px; &.bad { background: var(--news-red); color: #fff; } &.q { background: #d98a1c; color: #fff; min-width: 12px; text-align: center; } }
+    .ghost { position: relative; z-index: 3; pointer-events: none; border: 2px dashed #2f7d4f; background: rgba(47, 125, 79, .16); display: grid; place-items: center;
+      span { font: 800 12px var(--font-body); color: #1f5e39; background: rgba(255,255,255,.85); padding: 0 4px; border-radius: 2px; }
+      &.bad { border-color: var(--news-red); background: rgba(179, 38, 30, .14); span { color: var(--news-red); } } }
     .fx { position: absolute; z-index: 5; top: 30%; left: 50%; transform: translateX(-50%); font: 800 13px var(--font-body); white-space: nowrap; pointer-events: none; animation: rise 1.1s ease forwards; text-shadow: 0 1px 2px #fff;
       &.good { color: #1f6b3e; } &.bad { color: var(--news-red); } &.info { color: var(--news-ink); } }
     @keyframes rise { to { transform: translate(-50%, -20px); opacity: 0; } }
-    @keyframes drop { from { transform: scale(.85); opacity: 0; } }
+    @keyframes drop { from { transform: scale(.9); opacity: 0; } }
     @keyframes blink { 50% { box-shadow: 0 0 0 3px transparent; } }
     .panel { min-height: 64px; }
     .hint { margin: 0; font-size: 12px; color: var(--ink-2); }
-    .det { display: grid; gap: 4px; padding: 7px 9px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); &.isfix { border-color: var(--bad); } }
-    .kicker { margin: 0; font-size: 11px; color: var(--ink-3); .rb-l { color: var(--accent); font-weight: 600; } }
-    .src.st1 { color: var(--bad); font-weight: 600; } .src.st2 { color: #b7791f; font-weight: 600; } .src.st3 { color: var(--good); }
-    .ttl { margin: 0; font: 600 15px/1.2 var(--font-display); }
+    .det { display: grid; gap: 5px; padding: 8px 10px; border-radius: 3px; background: var(--slip); color: var(--slip-ink); border: 1px solid var(--slip-line); &.isfix { border-color: var(--bad); } }
+    .kicker { margin: 0; font-size: 11px; color: var(--slip-ink-2); .rb-l { color: var(--news-red); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 10px; } }
+    :host-context(html[data-theme="dark"]) .kicker .rb-l { color: #f08a72; }
+    @media (prefers-color-scheme: dark) { :host-context(html:not([data-theme="light"])) .kicker .rb-l { color: #f08a72; } }
+    .src.st1 { color: var(--bad); font-weight: 600; } .src.st2 { color: var(--warn); font-weight: 600; } .src.st3 { color: var(--good); }
+    .ttl { margin: 0; font: 700 15px/1.2 var(--font-display); }
     .ints { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-    .ri { display: flex; align-items: center; gap: 3px; min-width: 0; i { font-style: normal; font-size: 12px; } b { font-size: 11px; } }
-    .rbar { flex: 1; height: 5px; border-radius: 3px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; min-width: 8px; span { display: block; height: 100%; background: var(--accent); } }
+    .ri { display: flex; align-items: center; gap: 3px; min-width: 0; svg { width: 13px; height: 13px; flex: none; fill: none; stroke: var(--slip-ink-2); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; } b { font-size: 11px; } }
+    .rbar { flex: 1; height: 4px; background: var(--slip-line); overflow: hidden; min-width: 8px; span { display: block; height: 100%; background: var(--slip-ink); } }
     .tags { display: flex; flex-wrap: wrap; gap: 4px; &:empty { display: none; } }
-    .tag { font-size: 11px; padding: 1px 6px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2);
+    .tag { font-size: 11px; padding: 1px 6px; border-radius: 2px; background: transparent; border: 1px solid var(--slip-line); color: var(--slip-ink-2);
       &.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; } &.good { background: var(--good-soft); color: var(--good); border-color: transparent; } }
-    .pv { display: grid; gap: 2px; font-size: 12px; padding: 5px 7px; border-radius: 8px; background: var(--surface); &.err { color: var(--bad); background: var(--bad-soft); }
+    .pv { display: grid; gap: 2px; font-size: 12px; padding: 5px 7px; border-radius: 2px; background: var(--surface-2); color: var(--ink); &.err { color: var(--bad); background: var(--bad-soft); }
       small { color: var(--ink-3); } .warn { color: var(--bad); } .g { color: var(--good); } }
     .acts { display: flex; flex-wrap: wrap; gap: 5px; .btn { min-height: 34px; } small { opacity: .75; font-size: 10.5px; } .spike { margin-left: auto; } }
-    .filhead { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; small { font-size: 10.5px; color: var(--ink-3); text-align: right; } }
-    .fil { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; gap: 5px; max-height: 232px; overflow-y: auto; overscroll-behavior: contain; padding: 1px; }
-    .card { display: grid; gap: 3px; align-content: start; padding: 5px 6px; min-height: 72px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+    .filhead { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--line); padding-bottom: 3px;
+      b { font: 600 13px var(--font-display); } small { font-size: 10.5px; color: var(--ink-3); text-align: right; } }
+    .fil { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; gap: 6px; max-height: 260px; overflow-y: auto; overscroll-behavior: contain; padding: 2px; }
+    .card { position: relative; display: grid; gap: 3px; align-content: start; padding: 6px 7px 6px 15px; min-height: 76px; border-radius: 1px; border: 1px solid var(--slip-line); color: var(--slip-ink); font: inherit; text-align: left; cursor: pointer;
+      background: radial-gradient(circle at 6px 50%, var(--surface) 2.2px, transparent 2.6px) 0 0 / 12px 10px repeat-y, linear-gradient(90deg, transparent 11px, var(--slip-line) 11px 12px, transparent 12px), var(--slip);
+      box-shadow: 0 1px 2px rgba(0,0,0,.08);
       &.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-      &.scoop { background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(90deg, #d4a017, var(--bad)) border-box; border: 2px solid transparent; }
-      &.fix { border-color: var(--bad); background: var(--bad-soft); } &.fake { opacity: .6; .c-t { text-decoration: line-through; } } }
-    .c-top { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ink-3); .c-k { flex: 1; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
-    .c-src { font-size: 9px; letter-spacing: -1px; &.st1 { color: var(--bad); } &.st2 { color: #b7791f; } &.st3 { color: var(--good); } }
-    .c-t { font: 600 12px/1.2 var(--font-display); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
-    .c-b { display: flex; align-items: center; gap: 4px; font-size: 10.5px; .bd { font-size: 11px; } }
-    .c-int { font-weight: 700; color: var(--accent); small { font-weight: 400; color: var(--ink-3); } }
-    .age { margin-left: auto; width: 26px; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; span { display: block; height: 100%; background: var(--good); } &.old span { background: var(--bad); } }
-    .shape { display: inline-grid; grid-template-columns: repeat(var(--w), 4px); grid-auto-rows: 4px; gap: 1px; flex: none; i { background: var(--ink-3); border-radius: 1px; } }
+      &.scoop { border-color: var(--news-red); .c-k { color: var(--news-red); font-weight: 700; } }
+      &.fix { border-color: var(--bad); background: radial-gradient(circle at 6px 50%, var(--surface) 2.2px, transparent 2.6px) 0 0 / 12px 10px repeat-y, var(--bad-soft); .c-k { color: var(--bad); font-weight: 700; } }
+      &.fake { opacity: .6; .c-t { text-decoration: line-through; } } }
+    .c-top { display: flex; align-items: center; gap: 5px; font: 500 9.5px var(--font-mono); color: var(--slip-ink-2); .c-k { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .02em; } }
+    .c-r { font: 9px var(--font-mono); color: var(--slip-ink-2); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 1px dashed var(--slip-line); padding-bottom: 2px; }
+    .c-src { font-size: 9px; letter-spacing: -1px; &.st1 { color: var(--bad); } &.st2 { color: var(--warn); } &.st3 { color: var(--good); } }
+    .c-t { font: 500 11.5px/1.25 var(--font-mono); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+    .c-b { display: flex; align-items: center; gap: 5px; font-size: 10.5px; .bd { font: 600 9px var(--font-body); text-transform: uppercase; padding: 0 3px; border: 1px solid var(--slip-line); border-radius: 1px; } }
+    .c-int { font-weight: 700; small { font-weight: 400; color: var(--slip-ink-2); } }
+    .age { margin-left: auto; width: 26px; height: 4px; background: var(--slip-line); overflow: hidden; span { display: block; height: 100%; background: var(--good); } &.old span { background: var(--bad); } }
+    .shape { display: inline-grid; grid-template-columns: repeat(var(--w), 4px); grid-auto-rows: 4px; gap: 1px; flex: none; i { background: currentColor; opacity: .55; } }
     .maison { display: flex; flex-wrap: wrap; gap: 4px; }
-    .chip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; font-size: 11.5px; cursor: pointer;
-      &.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); } &.ad { background: #f7ecd6; color: #6b4f12; } &.ed { font-style: italic; } }
-    .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 64px; overflow: auto; font-size: 11.5px; color: var(--ink-2);
+    .chip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 3px 9px; border-radius: 2px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; font-size: 11.5px; cursor: pointer;
+      &.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); } &.ad { border-style: double; border-width: 3px; padding: 1px 7px; } &.ed { font-style: italic; font-family: var(--font-display); } }
+    .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 64px; overflow: auto; font: 11px/1.3 var(--font-mono); color: var(--ink-2);
       .bad { color: var(--bad); } .good { color: var(--good); } }
     .end { display: flex; justify-content: flex-end; .btn { min-height: 40px; } }
-    .print { background: var(--paper); color: var(--news-ink); padding: 8px 6px; border-radius: 3px; box-shadow: 0 8px 22px -12px rgba(0,0,0,.5); animation: press .6s ease both; }
+    .print { background: var(--grain), var(--paper); color: var(--news-ink); padding: 10px 8px 12px; border-radius: 1px; position: relative; box-shadow: 0 14px 28px -14px rgba(0,0,0,.6), 0 1px 0 rgba(0,0,0,.08); animation: press .6s ease both;
+      &::after { content: ''; position: absolute; left: 0; right: 0; top: 52%; height: 22px; pointer-events: none; background: linear-gradient(180deg, transparent, rgba(0,0,0,.07) 48%, rgba(255,255,255,.35) 52%, transparent); } }
     @keyframes press { from { transform: translateY(12px) scale(.97); opacity: 0; } }
-    .blank { border: 1px dotted #d7cdb6; }
-    .pb { position: relative; overflow: hidden; padding: 2px 3px; border-top: 1.5px solid var(--news-ink); background: var(--paper-2); font: 600 9px/1.15 var(--font-display);
-      b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-weight: 600; } em { font: 600 8px var(--font-body); color: var(--news-ink-2); }
-      &.k-pub { border-top: 0; background: repeating-linear-gradient(45deg, #efe6cc 0 5px, #e6dbbb 5px 10px); display: grid; place-items: center; text-align: center; }
-      &.k-photo { background: linear-gradient(160deg, #c9d3d8, #9eaab1); }
-      &.k-filet, &.k-meteo, &.k-jeux { background: #ece5d3; border-top-width: 1px; display: grid; place-items: center; }
-      &.hl { border-top-width: 3px; b { font-size: 15px; line-height: 1.1; font-weight: 800; } } }
-    .stamp { position: absolute; right: 2px; top: 40%; transform: rotate(-12deg); font: 800 9px var(--font-body); font-style: normal; text-transform: uppercase; color: var(--news-red); border: 1.5px solid var(--news-red); padding: 0 3px; border-radius: 2px; background: rgba(255,255,255,.7);
+    .pgrid { gap: 4px 5px; }
+    .blank { border: 1px dotted rgba(120, 104, 70, .35); }
+    .pb { --w: 1; position: relative; overflow: hidden; background: var(--paper); display: flex; flex-direction: column; gap: 1px; padding: 2px 2px 1px; border-top: 1.5px solid var(--news-ink); font: 700 9px/1.12 var(--font-display);
+      b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; flex: none; overflow-wrap: break-word; hyphens: auto; } em { font: 600 8px var(--font-body); color: var(--news-ink-2); text-transform: uppercase; letter-spacing: .08em; }
+      strong { font: 800 11px/1.05 var(--font-display); text-transform: uppercase; }
+      .pic { flex: 1 1 0; } &.k-photo, &.k-portrait { border-top: 0; padding: 0; b { font-style: italic; font-weight: 600; font-size: 8px; -webkit-line-clamp: 1; } }
+      &.k-pub { border: 1.5px solid var(--news-ink); display: grid; place-content: center; text-align: center; outline: 1px solid var(--news-ink); outline-offset: -4px; }
+      &.k-filet, &.k-meteo, &.k-jeux { border-top-width: 1px; display: grid; place-items: center; background: rgba(120, 104, 70, .1); }
+      &.k-breve { border-top-width: 1px; font-size: 8.5px; }
+      &.k-edito { border-top: 0; border-left: 2px solid var(--news-ink); padding-left: 4px; font-style: italic; }
+      &.hl { border-top-width: 3px; b { font-size: 17px; line-height: 1.02; font-weight: 800; letter-spacing: -.015em; } } }
+    .stamp { position: absolute; right: 3px; top: 38%; transform: rotate(-12deg); font: 800 9px var(--font-body); font-style: normal; text-transform: uppercase; letter-spacing: .06em; color: var(--news-red); border: 1.5px solid var(--news-red); padding: 0 3px; border-radius: 1px; background: rgba(255,255,255,.55);
       &.law { color: #8a5a00; border-color: #8a5a00; } }
-    .sum { display: grid; gap: 8px; margin-top: 8px; }
-    .verdict { margin: 0; font-size: 14px; }
+    .sum { display: grid; gap: 8px; margin-top: 10px; }
+    .verdict { margin: 0; font: 600 15px/1.3 var(--font-display); }
     .bars { display: grid; grid-template-columns: auto 1fr 28px; gap: 5px 8px; align-items: center; font-size: 12px; b { text-align: right; } }
-    .bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--line); span { display: block; height: 100%; background: var(--accent); } }
+    .bar { height: 6px; border-radius: 1px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--line); span { display: block; height: 100%; background: var(--ink-2); } }
     .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; }
-    .chip2 { font-size: 11.5px; padding: 2px 7px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); &.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; } }
+    .chip2 { font-size: 11.5px; padding: 2px 7px; border-radius: 2px; background: var(--surface-2); border: 1px solid var(--line); &.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; } }
     .small { font-size: 12px; margin: 0; } .muted { color: var(--ink-3); }
-    @media (max-width: 380px) { :host { --row: 36px; } .k-manchette .bt { font-size: 14px; } .z0 .bt { font-size: 12.5px; } .bt { font-size: 10px; } }
+    @media (max-width: 380px) { :host { --row: 38px; --prow: 30px; } .k-manchette .bt { font-size: 15px; } .z0 .bt { font-size: 12.5px; } .bt { font-size: 10px; } .mast > span { font-size: 18px; } .mast .ear { display: none; } .mast.big > span { font-size: 22px; } }
+    @media (min-width: 720px) { :host { --row: 54px; --prow: 46px; } .k-manchette .bt { font-size: 26px; } .z0 .bt { font-size: 17px; } .z1 .bt { font-size: 14px; } .bt { font-size: 12.5px; } .mast > span { font-size: 34px; } .mast.big > span { font-size: 40px; }
+      .pb { font-size: 11px; &.hl b { font-size: 26px; } } .fil { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (prefers-reduced-motion: reduce) { .blk.new, .fx, .print, .blk.target { animation: none; } .mb span { transition: none; } }
   `,
 })
@@ -1006,6 +1139,14 @@ export class UneGameComponent implements OnInit, OnDestroy {
   protected readonly readers = READERS;
   protected readonly life = LIFE;
   protected readonly isDubious = isDubious;
+  protected readonly plain = plain;
+  protected readonly readerIc = READER_IC;
+  protected readonly uid = 'une' + ++uneInstances;
+  protected readonly ticks = Array.from({ length: 12 }, (_, i) => i);
+  /** Les gradins du stade (points de la foule) et les fenêtres de la ville, pour les photos */
+  protected readonly dots: number[][] = Array.from({ length: 360 }, (_, i) => [2 + (i % 40) * 3 + ((Math.floor(i / 40) % 2) * 1.5), 2.5 + Math.floor(i / 40) * 3]);
+  protected readonly windows: number[][] = [[4, 34, 14, 46], [20, 20, 16, 60], [38, 40, 12, 40], [52, 12, 15, 68], [70, 30, 12, 50], [84, 44, 30, 36]]
+    .flatMap(([x, y, w, h]) => { const o: number[][] = []; for (let yy = y + 3; yy < y + h - 8; yy += 5) for (let xx = x + 2; xx < x + w - 2; xx += 4) if ((xx * 7 + yy * 3) % 5) o.push([xx, yy]); return o; });
 
   protected readonly desk = signal<Desk>(newDesk('quotidien', 1, Math.random));
   protected readonly tab = signal(0);
@@ -1095,6 +1236,12 @@ export class UneGameComponent implements OnInit, OnDestroy {
 
   /* ── Libellés ── */
 
+  protected hourDeg(t: number): number { const m = 20 * 60 + t; return ((m / 60) % 12) * 30; }
+  protected minDeg(t: number): number { return ((20 * 60 + t) % 60) * 6; }
+  protected sceneOf(s: Story): string { return s.kind === 'portrait' ? 'face' : SCENE[s.rub] ?? 'land'; }
+  protected srcShort(s: Story): string { return s.pair !== undefined && s.src !== 'document' ? 'SOURCE ANON.' : SRC_SHORT[s.src]; }
+  protected earLeft(): string { return this.desk().v === 'electoral' ? 'Spécial élections' : this.desk().v === 'scandale' ? 'Édition spéciale' : 'Dernière édition'; }
+  protected dateLine(): string { const d = new Date(); return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ' · N° ' + (24000 + (d.getDate() * 37 + d.getMonth() * 11) % 999).toLocaleString('fr-FR'); }
   protected range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
   protected cellsOf(page: number): number[] {
     let c = this.cellCache.get(page);
@@ -1126,9 +1273,9 @@ export class UneGameComponent implements OnInit, OnDestroy {
     const b: string[] = [];
     if (s.checked && !s.truth) b.push('✗');
     else if (s.checked && s.src !== 'maison' && s.src !== 'officiel') b.push('✓');
-    if (s.accuse) b.push('⚖️');
-    if (s.src === 'institut') b.push('📊');
-    if (lineConflict(d.line, s, 0, 0) || (d.line === 'people' && s.rub === 'people')) b.push('📏');
+    if (s.accuse) b.push('diffam.');
+    if (s.src === 'institut') b.push('estim.');
+    if (lineConflict(d.line, s, 0, 0) || (d.line === 'people' && s.rub === 'people')) b.push('ligne');
     return b;
   }
 
@@ -1303,7 +1450,7 @@ export class UneGameComponent implements OnInit, OnDestroy {
     this.progress.emit({ live: this.live().score, time: clamp(1 - d.t / d.deadline) });
   }
 
-  private say(e: Ev): void { this.log.update(l => [e, ...l].slice(0, 6)); }
+  private say(e: Ev): void { this.log.update(l => [{ ...e, text: plain(e.text) }, ...l].slice(0, 6)); }
   private pop(sid: number, text: string, tone: Fx['tone']): void {
     const f: Fx = { sid, text, tone, id: ++fxId };
     this.fx.update(a => [...a, f]);

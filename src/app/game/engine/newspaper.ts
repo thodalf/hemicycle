@@ -6,6 +6,9 @@ import { cleanBody, degender, guessFem, pressHeadline, toThird } from './headlin
 import { clamp, fr } from './rng';
 import { inPower, office, seat } from './office';
 import { renownTier } from '../data/lifestyles';
+import { BREVES, FAITS_DIVERS, FaitDivers, pickFaitsDivers } from '../data/faits-divers';
+import type { RankId } from '../models/game.models';
+import { elide } from './headline';
 
 /* ============================================================
  *  La une : chaque mois, un vrai journal. Le gros titre est
@@ -185,6 +188,8 @@ function pressName(d: GameState, key: string): string {
     : d.player.rankId === 'premier_ministre' ? (fem ? 'La Première ministre' : 'Le Premier ministre')
     : d.player.rankId === 'ministre' ? (fem ? 'La ministre' : 'Le ministre')
     : null;
+  // Un·e inconnu·e reste anonyme : le journal parle « d'une militante », pas de vous
+  if (!famous(d)) { const [m, f] = RANK_ROLE[d.player.rankId] ?? ['un élu', 'une élue']; const r = fem ? f : m; return r.charAt(0).toUpperCase() + r.slice(1); }
   const h = [...key].reduce((t, c) => (t * 31 + c.charCodeAt(0)) >>> 0, 3);
   return role && h % 2 ? role : d.player.name;
 }
@@ -210,6 +215,21 @@ function thirdPersonBody(body: string, who: string, fem: boolean, key: string): 
   return `« ${body.replace(/[.!]\s*$/, '')} », ${by}.`;
 }
 
+/* ── Un·e inconnu·e reste anonyme dans le journal : on parle de sa fonction ── */
+
+const RANK_ROLE: Record<RankId, [string, string]> = {
+  militant: ['un militant', 'une militante'],
+  conseiller_municipal: ['un élu local', 'une élue locale'],
+  depute: ['un député', 'une députée'],
+  ministre: ['un ministre', 'une ministre'],
+  premier_ministre: ['le Premier ministre', 'la Première ministre'],
+  chef_parti: ['un chef de parti', 'une cheffe de parti'],
+  candidat_presidence: ['un candidat', 'une candidate'],
+  president: ['le président', 'la présidente'],
+  ancien_president: ['un ancien président', 'une ancienne présidente'],
+  roi: ['le roi', 'la reine'],
+};
+
 function toArticle(d: GameState, n: NewsItem, page: number, used?: Set<ArtTheme>): Article {
   const text = `${n.title} ${n.body ?? ''}`;
   const about = aboutPlayer(d, n);
@@ -220,7 +240,12 @@ function toArticle(d: GameState, n: NewsItem, page: number, used?: Set<ArtTheme>
   let raw = cleanBody(prose(n.body));
   if (!about && personFem !== undefined) raw = degender(raw, personFem);
   const body = (about ? thirdPersonBody(raw, who, d.player.gender === 'femme', n.id) : raw) || (n.tone === 'negative' ? 'Un mois difficile, commentent les observateurs.' : 'Les observateurs saluent l’initiative.');
-  return { id: n.id, kicker: h.kicker ?? KICKER[n.kind], title: h.title, body, tone: n.tone, theme: pickTheme(themesOf(text, n.kind, n.title), used), byline: byline(d, n.id), page };
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const lower = (x: string) => x.charAt(0).toLowerCase() + x.slice(1);
+  // Un·e inconnu·e : son nom disparaît, et sa fonction ne prend la majuscule qu'en tête de phrase
+  const anon = (t: string) => (famous(d) || !d.player.name ? t
+    : elide(t.replace(new RegExp(esc(d.player.name), 'g'), who).replace(new RegExp(esc(who), 'g'), (m: string, off: number, all: string) => (off === 0 || /[.!?«]\s*$/.test(all.slice(0, off)) ? m : lower(m)))));
+  return { id: n.id, kicker: h.kicker ?? KICKER[n.kind], title: anon(h.title), body: anon(body), tone: n.tone, theme: pickTheme(themesOf(text, n.kind, n.title), used), byline: byline(d, n.id), page };
 }
 
 /** Deux articles d'un même numéro n'ont jamais la même photo */
@@ -246,12 +271,21 @@ export function edition(d: GameState, week: number): Edition {
   const ranked = [...items].filter(n => !routine(n)).sort((a, b) => weight(b) - weight(a));
   const fallback: NewsItem = { id: `calme-${week}`, week, kind: 'actu', tone: 'neutral', title: office(d) === 'base' ? 'Un mois sans fracas' : `Calme plat ${seat(d)}`,
     body: 'Pas de crise, pas de scandale : le pays respire, et la classe politique prépare la suite. Les éditorialistes s’ennuient ferme.' };
-  const head = ranked[0] ?? fallback;
   const used = new Set<ArtTheme>();
-  const headline = toArticle(d, head, 1, used);
+  // Les mois calmes, les faits divers remplissent les pages
+  const fd = pickFaitsDivers(FAITS_DIVERS, d.seed, week, 5);
+  const fdArticle = (f: FaitDivers, i: number, page: number): Article => ({
+    id: `fd-${week}-${i}`, kicker: 'Faits divers', title: f.title, body: f.body, tone: 'neutral',
+    theme: pickTheme(themesOf(`${f.title} ${f.body}`, 'actu', f.title), used), byline: byline(d, `fd-${week}-${i}`), page,
+  });
+  const headline = ranked[0] ? toArticle(d, ranked[0], 1, used) : fd.length ? fdArticle(fd[0], 0, 1) : toArticle(d, fallback, 1, used);
   const rest = ranked.slice(1);
   const articles = rest.slice(0, 4).map((n, i) => toArticle(d, n, 2 + i, used));
+  for (let i = ranked[0] ? 0 : 1; articles.length < 4 && i < fd.length; i++) articles.push(fdArticle(fd[i], i, 2 + articles.length));
   const briefs = [...rest.slice(4), ...items.filter(routine)].slice(0, 8).map((n, i) => toArticle(d, n, 6 + Math.floor(i / 2), used));
+  if (briefs.length < 4) for (const [i, b] of pickFaitsDivers(BREVES, d.seed, week, 4 - briefs.length).entries()) {
+    briefs.push({ id: `br-${week}-${i}`, kicker: 'En bref', title: b.title, body: b.body, tone: 'neutral', theme: 'ville', byline: byline(d, `br-${week}-${i}`), page: 6 + Math.floor(briefs.length / 2) });
+  }
   const hist = (star ? d.barometre : d.barometreNat) ?? [];
   const cote = star ? Math.round(d.player.stats.popularity) : nationalMood(d);
   const prev = hist.length >= 2 ? hist[hist.length - 2] : cote;
@@ -270,7 +304,7 @@ export function edition(d: GameState, week: number): Edition {
     : { text: 'Faites-vous confiance au gouvernement pour améliorer votre quotidien ?', yes: cote };
   const mood = !star
     ? (cote >= 55 ? '☀️ Embellie : le moral des Français remonte.' : cote >= 40 ? '⛅ Temps variable : le pays attend de voir.' : cote >= 28 ? '🌧️ Ciel bas : la défiance s’installe.' : '⛈️ Orages : le pays gronde contre ses dirigeants.')
-    : cote >= 60 ? '☀️ Grand beau temps : votre cote rayonne.' : cote >= 45 ? '⛅ Éclaircies : l’opinion hésite, mais vous écoute.' : cote >= 30 ? '🌧️ Averses : le ciel se couvre au-dessus de vous.' : '⛈️ Orages : la tempête gronde dans l’opinion.';
+    : cote >= 60 ? `☀️ Grand beau temps : la cote de ${d.player.name} rayonne.` : cote >= 45 ? `⛅ Éclaircies : l’opinion hésite, mais écoute ${d.player.name}.` : cote >= 30 ? `🌧️ Averses : le ciel se couvre au-dessus de ${d.player.name}.` : `⛈️ Orages : la tempête gronde contre ${d.player.name}.`;
   return {
     week, number: 18_400 + week, date: monthLabel(week),
     headline, articles, briefs,

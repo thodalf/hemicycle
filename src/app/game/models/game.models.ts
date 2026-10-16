@@ -209,8 +209,8 @@ export interface CivilState {
 // ── Progression ─────────────────────────────────────────────
 
 export type PromotionRule =
-  | { via: 'election'; election: ElectionType; to: RankId; requires: StatRequirements }
-  | { via: 'nomination'; occasion: string; to: RankId; requires: StatRequirements; minPartySupport: number };
+  | { via: 'election'; election: ElectionType; to: RankId; requires: StatRequirements; minActions?: number }
+  | { via: 'nomination'; occasion: string; to: RankId; requires: StatRequirements; minPartySupport: number; minActions?: number };
 
 export interface RankDefinition {
   id: RankId;

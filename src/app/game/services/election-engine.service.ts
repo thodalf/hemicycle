@@ -3,7 +3,7 @@ import { campaignRefund } from '../engine/loans';
 import { campaignOpensAt, canDeclare, declareCandidacy, incumbentBonus, presidentialResult } from '../engine/presidency';
 import { Injectable, computed, inject } from '@angular/core';
 import { ElectionType, GameState, ScheduledElection } from '../models/game.models';
-import { ELECTIONS, RANKS } from '../data/ranks';
+import { ELECTIONS, RANKS, actionsDone } from '../data/ranks';
 import { createDebate } from '../engine/debate';
 import { monthlyBarometer, pushBarometer, ranking, takeBarometer, voteShares } from '../engine/electoral';
 import { entreDeuxToursDecision } from '../engine/entre-deux-tours';
@@ -116,7 +116,8 @@ export class ElectionEngineService {
       // Pas de scrutin local en travers de la campagne présidentielle
       return;
     }
-    const ok = Object.entries(rule.requires).every(([k, v]) => d.player.stats[k as keyof typeof d.player.stats] >= v);
+    const ok = Object.entries(rule.requires).every(([k, v]) => d.player.stats[k as keyof typeof d.player.stats] >= v)
+      && actionsDone(d) >= (rule.minActions ?? 0);
     if (!ok) return;
 
     const cfg = ELECTIONS[rule.election];

@@ -63,7 +63,8 @@ const c = (id: string, label: string, effects: Effect[], outcome: string, extra:
 const GATEWAY_EVENTS: RandomEvent[] = [
   {
     tag: 'offre_chronique', weight: 2,
-    eligible: d => !d.press && !d.player.flags['closed_press'],
+    // Il faut s'être fait remarquer dans les médias
+    eligible: d => !d.press && !d.player.flags['closed_press'] && Number(d.player.flags['cat_medias'] ?? 0) >= 6 && d.player.stats.popularity >= 25,
     build: d => ({
       title: 'Les médias vous font la cour',
       context: `Votre sens de la formule a été remarqué. Trois rédactions proposent à ${d.player.name} une chronique régulière, payée.`,
@@ -77,7 +78,7 @@ const GATEWAY_EVENTS: RandomEvent[] = [
   },
   {
     tag: 'offre_journal', weight: 1,
-    eligible: d => !d.press && !d.player.flags['closed_press'],
+    eligible: d => !d.press && !d.player.flags['closed_press'] && Number(d.player.flags['cat_medias'] ?? 0) + Number(d.player.flags['cat_dossiers'] ?? 0) >= 8 && d.player.stats.credibility >= 30,
     build: () => ({
       title: 'Un quotidien cherche une plume',
       context: `La directrice du ${OUTLETS.presse.name.replace(/^Le /, '')} vous invite à déjeuner : « Vous écrivez bien. Et si vous écriviez pour nous ? »`,

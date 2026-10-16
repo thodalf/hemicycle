@@ -3,15 +3,15 @@ import { ElectionConfig, ElectionType, RankDefinition, RankId } from '../models/
 export const RANKS: Record<RankId, RankDefinition> = {
   militant: {
     id: 'militant', label: 'Militant·e', order: 0, monthlyActionPoints: 5, monthlyIncome: 2400,
-    promotion: { via: 'election', election: 'municipales', to: 'conseiller_municipal', requires: { popularity: 20, influence: 15 } },
+    promotion: { via: 'election', election: 'municipales', to: 'conseiller_municipal', requires: { popularity: 26, influence: 22, credibility: 24 }, minActions: 18 },
   },
   conseiller_municipal: {
     id: 'conseiller_municipal', label: 'Conseiller·e municipal·e', order: 1, monthlyActionPoints: 6, monthlyIncome: 2900,
-    promotion: { via: 'election', election: 'legislatives', to: 'depute', requires: { popularity: 35, influence: 30, credibility: 30 } },
+    promotion: { via: 'election', election: 'legislatives', to: 'depute', requires: { popularity: 38, influence: 34, credibility: 34 }, minActions: 50 },
   },
   depute: {
     id: 'depute', label: 'Député·e', order: 2, monthlyActionPoints: 7, monthlyIncome: 7600,
-    promotion: { via: 'nomination', occasion: 'Remaniement ministériel', to: 'ministre', requires: { influence: 50, credibility: 50 }, minPartySupport: 50 },
+    promotion: { via: 'nomination', occasion: 'Remaniement ministériel', to: 'ministre', requires: { influence: 52, credibility: 52 }, minPartySupport: 50, minActions: 90 },
   },
   ministre: {
     id: 'ministre', label: 'Ministre', order: 3, monthlyActionPoints: 8, monthlyIncome: 10600,
@@ -72,3 +72,9 @@ export const DECLARE_WINDOW = 18;
 export const START_AGE: Record<string, number> = {
   carriere: 26, presidentielle: 52, bercy: 47, royaute: 45, franc_macon: 38, editorialiste: 31, infiltre: 27, contact: 41, invasion: 49, guerre_totale: 56, complot: 44,
 };
+
+/** Le nombre d'actions menées (les anciennes parties n'ont pas de compteur : on l'estime) */
+export function actionsDone(d: { week: number; player: { flags: Record<string, number | boolean> } }): number {
+  const f = d.player.flags['actionsDone'];
+  return typeof f === 'number' ? f : d.week * 3;
+}

@@ -274,6 +274,9 @@ export class ActionPlannerService {
       if (action.cooldown) d.cooldowns[action.id] = d.week + action.cooldown;
 
       recordObjectiveEvent(d, 'category', action.category);
+      // Les compteurs d'engagement : l'investiture et les offres se méritent
+      d.player.flags['actionsDone'] = (typeof d.player.flags['actionsDone'] === 'number' ? d.player.flags['actionsDone'] : d.week * 3) + 1;
+      d.player.flags[`cat_${action.category}`] = Number(d.player.flags[`cat_${action.category}`] ?? 0) + 1;
       onAction(d, action);
       checkCharte(d, action.id, rng);
       if (cost.renown) d.player.renown = Math.max(0, (d.player.renown ?? 0) - cost.renown);

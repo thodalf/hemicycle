@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms' | 'agenda' | 'prompteur' | 'chiffrage' | 'depouillement' | 'tactique' | 'portrait' | 'cellule' | 'infiltration' | 'campagne' | 'enquete' | 'urbanisme' | 'echiquier' | 'navette' | 'une' | 'reseau';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms' | 'agenda' | 'prompteur' | 'chiffrage' | 'depouillement' | 'tactique' | 'portrait' | 'cellule' | 'infiltration' | 'campagne' | 'enquete' | 'urbanisme' | 'echiquier' | 'navette' | 'une' | 'reseau' | 'ligne' | 'regle';
 
 export interface TriItem {
   text: string;
@@ -753,6 +753,30 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'reseau_tgv', kind: 'reseau', icon: '🚄', title: 'Les lignes à grande vitesse',
     rule: 'Reliez les grandes villes de France avec votre budget : la montagne coûte cher, et une ville laissée à quai trop longtemps fait suspendre le plan.',
+  },
+  {
+    id: 'ligne_paris', kind: 'ligne', icon: '🚇', title: 'Le métro de Paris',
+    rule: 'En temps réel : tracez vos lignes de station en station en glissant le doigt, et amenez chaque voyageur à une station de sa forme ; franchir la Seine demande un pont. Une station qui déborde ferme le réseau.',
+  },
+  {
+    id: 'ligne_lyon', kind: 'ligne', icon: '🚋', title: 'Les lignes de Lyon',
+    rule: 'En temps réel : reliez les stations entre Rhône et Saône sans laisser aucun quai déborder pendant six semaines.',
+  },
+  {
+    id: 'ligne_marseille', kind: 'ligne', icon: '⛴️', title: 'Le métro de Marseille',
+    rule: 'En temps réel : desservez une ville coincée entre mer et collines ; passer sous le Vieux-Port demande un tunnel.',
+  },
+  {
+    id: 'regle_hemicycle', kind: 'regle', icon: '📜', title: 'La règle est la règle',
+    rule: 'Poussez les mots pour réécrire le règlement : formez ou brisez les phrases (« MUR EST STOP », « DÉPUTÉ EST TOI »…) jusqu’à toucher ce qui est GAGNE. Flèches ou ZQSD, Retour arrière pour annuler, R pour recommencer.',
+  },
+  {
+    id: 'regle_ministere', kind: 'regle', icon: '🗂️', title: 'Le règlement administratif',
+    rule: 'Au ministère aussi, la règle est écrite au sol : poussez les mots, changez-la, et atteignez le tampon. Flèches ou ZQSD, Retour arrière pour annuler.',
+  },
+  {
+    id: 'regle_campagne', kind: 'regle', icon: '🗳️', title: 'Les règles de la campagne',
+    rule: 'Réécrivez les règles de la campagne, mot par mot, pour atteindre l’urne. Flèches ou ZQSD, Retour arrière pour annuler.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',
