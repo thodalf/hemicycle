@@ -16,6 +16,9 @@
         <span class="eyebrow on-stage">{{ d().title }}</span>
         <span class="stage-meta">
           <span class="crowd" title="Le bord politique du public">Public {{ crowd() }}</span>
+          @if (d().stakes === 'entre_deux_tours') {
+            <span class="crowd e2t" title="À la fin du débat, l’audience se traduit dans les sondages du second tour : jusqu’à 5 points, dans un sens ou dans l’autre.">Sondages {{ pollShiftLabel() }} pts</span>
+          }
           @if (d().status === 'en_cours') {
             <span class="rounds" [attr.aria-label]="'Manche ' + d().round + ' sur ' + d().maxRounds">
               @for (r of roundDots(); track $index) { <i [class]="r"></i> }

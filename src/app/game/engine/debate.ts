@@ -551,9 +551,10 @@ export function debateRewards(debate: DebateState): Effect[] {
       nul: [{ kind: 'momentum', delta: 3 }],
     },
     entre_deux_tours: {
-      gagne: [{ kind: 'flagAdd', key: 'e2t', delta: 5 }, { kind: 'momentum', delta: 15 }, { kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'npcStat', npcId: opp, stat: 'popularity', delta: -6 }],
-      perdu: [{ kind: 'flagAdd', key: 'e2t', delta: -5 }, { kind: 'momentum', delta: -12 }, { kind: 'stat', stat: 'popularity', delta: -3 }, { kind: 'stat', stat: 'stress', delta: 12 }],
-      nul: [{ kind: 'flagAdd', key: 'e2t', delta: 1 }, { kind: 'momentum', delta: 2 }],
+      // L'effet sur le second tour passe par les sondages (jusqu'à ±5 points) : voir debatePollShift
+      gagne: [{ kind: 'momentum', delta: 15 }, { kind: 'stat', stat: 'popularity', delta: 4 }, { kind: 'npcStat', npcId: opp, stat: 'popularity', delta: -6 }],
+      perdu: [{ kind: 'momentum', delta: -12 }, { kind: 'stat', stat: 'popularity', delta: -3 }, { kind: 'stat', stat: 'stress', delta: 12 }],
+      nul: [{ kind: 'momentum', delta: 2 }],
     },
     duel_interne: {
       gagne: [{ kind: 'faction', factionId: '*', delta: 6 }, { kind: 'stat', stat: 'influence', delta: 4 }, { kind: 'npcStat', npcId: opp, stat: 'influence', delta: -6 }],
@@ -565,8 +566,6 @@ export function debateRewards(debate: DebateState): Effect[] {
   const effects = [...R[debate.stakes][status], { kind: 'npcRelation', npcId: opp, delta: -8 } as Effect];
   if (ko && status === 'gagne') effects.push({ kind: 'stat', stat: 'popularity', delta: 3 }, { kind: 'stat', stat: 'politicalCapital', delta: 8 });
   if (ko && status === 'perdu') effects.push({ kind: 'stat', stat: 'credibility', delta: -4 }, { kind: 'stat', stat: 'stress', delta: 10 });
-  // Un K.-O. le soir du grand débat marque le second tour
-  if (ko && debate.stakes === 'entre_deux_tours') effects.push({ kind: 'flagAdd', key: 'e2t', delta: status === 'gagne' ? 2 : -2 });
   // Positionnement idéologique et réaction des courants
   if (debate.stanceShift) effects.push({ kind: 'stance', delta: debate.stanceShift });
   for (const [factionId, raw] of Object.entries(debate.partyImpact) as [FactionId, number][]) {
@@ -575,4 +574,15 @@ export function debateRewards(debate: DebateState): Effect[] {
   }
   if (debate.flipflops) effects.push({ kind: 'stat', stat: 'credibility', delta: -2 * debate.flipflops });
   return effects;
+}
+
+/**
+ * Le grand débat d'entre-deux-tours déplace les sondages du second tour :
+ * jusqu'à 5 points, selon la balance de l'audience à la fin du débat (un K.-O. pèse un point de plus).
+ */
+export function debatePollShift(debate: DebateState): number {
+  const base = debate.audience / 15 + (debate.ko ? (debate.status === 'gagne' ? 1 : debate.status === 'perdu' ? -1 : 0) : 0);
+  // Un débat gagné ne fait jamais perdre de points, un débat perdu n'en fait jamais gagner
+  const signed = debate.status === 'gagne' ? Math.max(1.5, base) : debate.status === 'perdu' ? Math.min(-1.5, base) : base;
+  return Math.round(Math.max(-5, Math.min(5, signed)) * 10) / 10;
 }

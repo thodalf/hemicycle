@@ -240,6 +240,8 @@ export class TurnService {
         this.advance(d, rng);
         report.months += 1;
         // Un projet qui aboutit peut ouvrir une scène (promotion du livre…) : on la laisse au joueur
+        // Le débat d'entre-deux-tours ne se saute jamais : il se joue
+        if (d.debate?.stakes === 'entre_deux_tours') { report.reason = 'Le débat d’entre-deux-tours vous attend'; break; }
         if (d.project) { d.debate = null; d.protest = null; d.scene = null; }
         // Les scrutins ordinaires : vous suivez la consigne du groupe ; les autres vous rappellent
         if (d.vote && !autoVote(d, rng)) { report.reason = `Scrutin à l’Assemblée : ${d.vote.title}`; break; }

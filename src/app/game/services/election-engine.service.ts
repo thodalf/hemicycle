@@ -170,6 +170,7 @@ export class ElectionEngineService {
     e.finalists = finalists;
     e.secondRoundWeek = d.week + 1;
     d.player.flags['e2t'] = 0;
+    d.player.flags['e2tPoll'] = 0;
     const poll = voteShares(d, 'presidentielle', finalists, rng, 2.5);
     d.polls.push({ week: d.week, electionId: e.id, results: poll });
     const name = this.candidate(rival).name;
@@ -195,8 +196,16 @@ export class ElectionEngineService {
     const finalists = e.finalists!;
     const bonus = { player: Number(d.player.flags['e2t'] ?? 0) };
     const secondRound = voteShares(d, 'presidentielle', finalists, rng, 3, bonus);
+    // Le débat télévisé : jusqu'à ±5 points, directement sur le résultat
+    const shift = Number(d.player.flags['e2tPoll'] ?? 0);
+    if (shift && finalists.includes('player')) {
+      const rival = finalists.find(id => id !== 'player')!;
+      secondRound['player'] = Math.max(1, Math.min(99, Math.round((secondRound['player'] + shift) * 10) / 10));
+      secondRound[rival] = Math.round((100 - secondRound['player']) * 10) / 10;
+    }
     const winnerId = ranking(secondRound)[0][0];
     d.player.flags['e2t'] = 0;
+    d.player.flags['e2tPoll'] = 0;
     this.finish(d, e, e.firstRound!, secondRound, winnerId, rng);
   }
 

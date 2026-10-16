@@ -1,3 +1,4 @@
+import { debatePollShift } from '../../engine/debate';
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DOMAIN_LABELS, DebateCard, DebateExchange, DebateMove, Domain } from '../../models/game.models';
@@ -31,6 +32,9 @@ const MOVES: DebateMove[] = ['faits', 'emotion', 'attaque', 'parade'];
   styleUrl: './debate-arena.component.scss',
 })
 export class DebateArenaComponent {
+  /** Projection : ce que le débat ferait gagner ou perdre au second tour s'il s'arrêtait maintenant */
+  protected readonly pollShift = computed(() => debatePollShift(this.d()));
+  protected readonly pollShiftLabel = computed(() => `${this.pollShift() > 0 ? '+' : ''}${this.pollShift().toLocaleString('fr-FR')}`);
   protected readonly game = inject(GameStateService);
   protected readonly svc = inject(DebateService);
   private readonly fx = inject(FxService);
