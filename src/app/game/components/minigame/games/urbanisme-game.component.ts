@@ -1068,8 +1068,8 @@ interface Plan {
   styles: `
     :host { display: block; width: 100%;
       /* Le plan : des teintes de papier, assombries d’elles-mêmes en thème sombre */
-      --p-street: color-mix(in srgb, #ebe7dd 84%, var(--surface));
-      --p-lot: color-mix(in srgb, #dde2c9 86%, var(--surface));
+      --p-street: color-mix(in srgb, #ebe7dd 80%, var(--surface));
+      --p-lot: color-mix(in srgb, #dde2c9 82%, var(--surface));
       --p-cad: color-mix(in srgb, #a9ab95 80%, var(--surface));
       --p-frame: color-mix(in srgb, #6f6a5c 70%, var(--surface)); }
     .urb { display: grid; gap: 7px; font-size: 13px; }
@@ -1111,10 +1111,10 @@ interface Plan {
     .p-tram { fill: #f4f2ee; stroke: #c23a32; stroke-width: .35; }
     .plan use.new { animation: drop .45s cubic-bezier(.2, 1.4, .4, 1) both; transform-box: fill-box; transform-origin: center; }
     @keyframes drop { from { transform: translateY(-3px) scale(.6); opacity: 0; } }
-    .plan-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font: 600 9.5px var(--font-body); color: var(--ink-2); padding: 0 2px;
-      .north { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--ink-3); font-size: 8.5px; position: relative; }
-      .north::before { content: ''; position: absolute; top: -4px; border: 3px solid transparent; border-bottom: 4px solid var(--ink-2); border-top: 0; }
-      .scale { display: inline-flex; align-items: center; gap: 0; i { width: 18px; height: 4px; border: 1px solid var(--ink-2); } i:first-child { background: var(--ink-2); } small { margin-left: 4px; font-size: 9.5px; } }
+    .plan-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font: 600 9.5px var(--font-body); color: #4f4b40; padding: 0 2px;
+      .north { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; border: 1px solid #7a7566; font-size: 8.5px; position: relative; }
+      .north::before { content: ''; position: absolute; top: -4px; border: 3px solid transparent; border-bottom: 4px solid #4f4b40; border-top: 0; }
+      .scale { display: inline-flex; align-items: center; gap: 0; i { width: 18px; height: 4px; border: 1px solid #4f4b40; } i:first-child { background: #4f4b40; } small { margin-left: 4px; font-size: 9.5px; } }
       .key { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; }
       .k-flood { width: 12px; height: 9px; border: 1px dashed #2f6fbf; background: repeating-linear-gradient(-45deg, transparent 0 2px, rgba(47,111,191,.55) 2px 3px); }
       .k-stop { width: 8px; height: 8px; border-radius: 50%; background: #fff; border: 2px solid #c23a32; } }
@@ -1257,7 +1257,7 @@ export class UrbanismeGameComponent implements OnInit, OnDestroy {
         const v = peaks.reduce((t, [qx, qy]) => t + Math.exp(-((px - qx) ** 2 + (py - qy) ** 2) / (2 * 5.6 * 5.6)), 0);
         if (v > best) { best = v; bx = px; by = py; }
       }
-      pl.peak = { x: rd(bx), y: rd(by), label: `${Math.round(140 + best * 26)} m` };
+      pl.peak = { x: rd(Math.min(bx, 70)), y: rd(by), label: `${Math.round(140 + best * 26)} m` };
     }
     // La rivière : le lit en eau, ses quais, et le chenal le plus long en courbe douce
     const riv = cells.map((x, i) => (isRiver(i) ? i : -1)).filter(i => i >= 0);

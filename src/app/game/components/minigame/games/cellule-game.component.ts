@@ -1210,9 +1210,9 @@ let uidSeq = 0;
     .border { fill: none; stroke: #fff; stroke-opacity: .85; stroke-width: .45; stroke-linejoin: round; }
     .cordon { fill: none; stroke: #3a3fb8; stroke-width: 1.1; stroke-dasharray: 1.6 .9; }
     .vaxline { fill: none; stroke: #1f8a5a; stroke-width: 1; }
-    .sat { fill: none; stroke: #ff3b2f; stroke-width: .9; animation: blink 1.2s ease-in-out infinite; }
-    .tl-case { fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-    .tl { fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+    .sat { fill: none; stroke: #ff5a3c; stroke-width: .55; stroke-dasharray: 1.4 .8; animation: blink 1.6s ease-in-out infinite; }
+    .tl-case { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .tl { fill: none; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
     .tl-st { fill: #fff; stroke-width: .9; }
     .choro { opacity: .8; } .parcel { opacity: .72; } .vchar { opacity: .85; }
     .w-sh { opacity: .52; } .w-dp { opacity: .7; } .w-basin { opacity: .7; }
@@ -1604,8 +1604,8 @@ export class CelluleGameComponent implements OnInit, OnDestroy {
     const s = this.sim.s, cells = s.cells;
     // Des limites de districts irrégulières : une grille de sommets légèrement décalés
     const V = (x: number, y: number): [number, number] => [
-      x * 10 + (x === 0 || x === W ? 0 : (hh(x * 31 + y, 7) - 0.5) * 3.2),
-      y * 10 + (y === 0 || y === H ? 0 : (hh(x * 17 + y * 5, 9) - 0.5) * 3.2),
+      x * 10 + (x === 0 || x === W ? 0 : (hh(x * 31 + y, 7) - 0.5) * 2.4),
+      y * 10 + (y === 0 || y === H ? 0 : (hh(x * 17 + y * 5, 9) - 0.5) * 2.4),
     ];
     const poly = (i: number) => {
       const x = cx(i), y = cy(i), p = [V(x, y), V(x + 1, y), V(x + 1, y + 1), V(x, y + 1)];
@@ -1629,7 +1629,7 @@ export class CelluleGameComponent implements OnInit, OnDestroy {
       const d = `M${pts.map(p => p.join(' ')).join('L')}`;
       sc.top.push({ d, c: 'tl-case' }, { d, c: 'tl', s: `stroke:${LINE_COL[k % 2]}` });
     });
-    s.lines.forEach((l, k) => l.forEach(i => { const [x, y] = centre(i); sc.top.push({ d: ellD(x, y, 1.9), c: 'tl-st', s: `stroke:${LINE_COL[k % 2]}` }); }));
+    s.lines.forEach((l, k) => l.forEach(i => { const [x, y] = centre(i); sc.top.push({ d: ellD(x, y, 1.5), c: 'tl-st', s: `stroke:${LINE_COL[k % 2]}` }); }));
     // Confinement (cordon), vaccination, saturation
     cells.forEach((c, i) => {
       if (c.lock > 0) sc.top.push({ d: poly(i), c: 'cordon' });

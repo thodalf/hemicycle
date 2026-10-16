@@ -798,6 +798,11 @@ export class ReseauSim {
 
 /* ============================================================
  *  Le composant
+ *  Rendu : la lisibilité d’un plan de métro, sur un fond de
+ *  carte discret (rues, parcs, fleuve ; pour le TGV, la France
+ *  en relief et ses voisins). Lignes à jonctions arrondies,
+ *  décalées en parallèle sur les tronçons partagés, rames en
+ *  voitures qui circulent, anneaux de saturation nets.
  * ============================================================ */
 
 interface StView {
@@ -805,9 +810,92 @@ interface StView {
   load: string | null; loadColor: string; timer: string | null; hub: boolean;
   pax: string[]; more: number; mx: number; my: number; label: string; lx: number; ly: number; anchor: string; ring: number;
 }
-interface SegView { key: string; x1: number; y1: number; x2: number; y2: number; color: string; cls: string }
+interface LineView { key: string; d: string; closed: string; color: string; cls: string }
 interface Sum { title: string; o: Outcome; best: string; worst: string }
-interface Alert { text: string; tone: string }
+interface Alert { text: string; tone: string; icon: GlyphId }
+interface Part { d: string; f?: string; s?: string; w?: number }
+type GlyphId = 'people' | 'smile' | 'track' | 'euro' | 'train' | 'wagon' | 'tunnel' | 'bridge' | 'star' | 'line' | 'lock' | 'gift' | 'warn' | 'alarm' | 'eye' | 'cut' | 'bin' | 'check';
+type SwatchId = Kind | 'city' | 'mnt' | 'load' | 'timer' | 'ghost' | 'works' | 'hub';
+
+const r1 = (v: number) => Math.round(v * 10) / 10;
+const r2 = (v: number) => Math.round(v * 100) / 100;
+const disc = (x: number, y: number, r: number) => `M${r2(x - r)} ${r2(y)}a${r2(r)} ${r2(r)} 0 1 0 ${r2(2 * r)} 0a${r2(r)} ${r2(r)} 0 1 0 ${r2(-2 * r)} 0z`;
+
+/** Courbe fermée lissée (Catmull-Rom) passant par les points */
+function smooth(pts: Pt[], closed = true): string {
+  const n = pts.length;
+  if (n < 3) return '';
+  const P = (k: number) => pts[closed ? (k + n) % n : Math.max(0, Math.min(n - 1, k))];
+  let d = `M${r2(pts[0].x)} ${r2(pts[0].y)}`;
+  for (let k = 0; k < (closed ? n : n - 1); k++) {
+    const p0 = P(k - 1), p1 = P(k), p2 = P(k + 1), p3 = P(k + 2);
+    d += `C${r2(p1.x + (p2.x - p0.x) / 6)} ${r2(p1.y + (p2.y - p0.y) / 6)} ${r2(p2.x - (p3.x - p1.x) / 6)} ${r2(p2.y - (p3.y - p1.y) / 6)} ${r2(p2.x)} ${r2(p2.y)}`;
+  }
+  return closed ? d + 'Z' : d;
+}
+/** Une tache organique (parc, bois) */
+function blob(cx: number, cy: number, rx: number, ry: number, seed: number): string {
+  const pts: Pt[] = [];
+  for (let k = 0; k < 9; k++) {
+    const a = (k / 9) * Math.PI * 2, j = 0.78 + 0.22 * Math.abs(Math.sin(seed * 12.9898 + k * 78.233));
+    pts.push({ x: cx + Math.cos(a) * rx * j, y: cy + Math.sin(a) * ry * j });
+  }
+  return smooth(pts);
+}
+const ll = (a: [number, number][]) => a.map(([lon, lat]) => proj(lon, lat));
+const llPts = (a: [number, number][]) => ll(a).map(p => `${p.x},${p.y}`).join(' ');
+
+/* ── Fond de carte ── */
+
+const PARKS: Record<'metro' | 'tram', string[]> = {
+  metro: [blob(10, 47, 6, 9, 1), blob(89, 58, 7, 5, 2), blob(63, 29, 3, 2.4, 3), blob(44, 90, 5, 3.4, 4), blob(30, 16, 3.4, 2.6, 5), blob(72, 84, 3, 2.2, 6)],
+  tram: [blob(18, 30, 6, 4.5, 7), blob(74, 18, 5, 4, 8), blob(52, 84, 7, 4.5, 9), blob(88, 80, 4.5, 4, 10), blob(36, 50, 3, 2.4, 11)],
+};
+const TGV_RIVERS: [number, number][][] = [
+  [[0.1, 49.47], [0.8, 49.42], [1.1, 49.44], [1.6, 49.1], [2.1, 48.98], [2.35, 48.86], [2.8, 48.55], [3.4, 48.5], [4.07, 48.3], [4.5, 47.85], [4.72, 47.6]],
+  [[-2.2, 47.28], [-1.55, 47.22], [-0.55, 47.42], [0.1, 47.25], [0.69, 47.39], [1.33, 47.59], [1.91, 47.9], [2.4, 47.7], [2.95, 47.3], [3.16, 46.99], [3.5, 46.55], [4.07, 46.04], [4.0, 45.5], [3.88, 45.05]],
+  [[6.14, 46.2], [5.8, 45.95], [5.4, 45.8], [4.84, 45.76], [4.8, 45.3], [4.89, 44.93], [4.75, 44.4], [4.81, 43.95], [4.63, 43.68], [4.7, 43.38]],
+  [[-1.15, 45.55], [-0.75, 45.1], [-0.58, 44.84], [-0.2, 44.5], [0.62, 44.2], [1.1, 43.95], [1.44, 43.6], [1.0, 43.2], [0.7, 42.85]],
+  [[4.84, 45.76], [4.85, 46.3], [4.88, 46.8], [5.2, 47.25], [5.9, 47.85]],
+];
+const FR = FRANCE_LL;
+const NEIGHBOURS: [number, number][][] = [
+  // Belgique, Luxembourg, Allemagne, Suisse, Italie
+  [[2.55, 51.09], [3.37, 51.37], [4.2, 51.45], [4.2, 52.6], [11, 52.6], [11, 44.4], [8.8, 44.35], [8.2, 43.92], [7.5, 43.78], ...FR.slice(1, 15).reverse()],
+  // Espagne
+  [[-6, 43.55], [-4, 43.47], [-1.78, 43.37], [-0.6, 42.8], [0.7, 42.7], [1.7, 42.5], [3.17, 42.45], [3.25, 42.2], [3.1, 41.6], [-6, 41.6]],
+  // Angleterre
+  [[-6, 51.6], [1.7, 51.6], [1.4, 51.15], [1.0, 50.95], [0.3, 50.76], [-0.8, 50.78], [-1.4, 50.74], [-2.4, 50.62], [-3.5, 50.33], [-4.2, 50.36], [-5.1, 50.02], [-6, 50.1]],
+];
+const PLACE_LABELS: { t: string; lon: number; lat: number; sea?: boolean; end?: boolean }[] = [
+  { t: 'Royaume-Uni', lon: -2.4, lat: 50.98 }, { t: 'Belgique', lon: 4.25, lat: 50.68 }, { t: 'Allemagne', lon: 8.6, lat: 49.7, end: true },
+  { t: 'Suisse', lon: 8.6, lat: 46.95, end: true }, { t: 'Italie', lon: 8.6, lat: 45.1, end: true }, { t: 'Espagne', lon: -1.2, lat: 42.65 },
+  { t: 'Manche', lon: -2.2, lat: 49.95, sea: true }, { t: 'Atlantique', lon: -3.7, lat: 46.4, sea: true }, { t: 'Méditerranée', lon: 4.9, lat: 42.75, sea: true },
+];
+
+/* ── Pictogrammes de l’interface (24 × 24) ── */
+
+const GLYPHS: Record<GlyphId, Part[]> = {
+  people: [{ d: 'M9 4.5a3 3 0 1 1 0 6a3 3 0 0 1 0-6zM3 19.5c0-3.3 2.7-6 6-6s6 2.7 6 6v.5H3zM16.5 6.5a2.5 2.5 0 1 1 0 5a2.5 2.5 0 0 1 0-5zM15.9 13.3c2.9.2 5.1 2.6 5.1 5.5V20h-4.4v-.5c0-2.4-.3-4.4-.7-6.2z', f: 'currentColor' }],
+  smile: [{ d: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18zM8.2 14.2c2.1 2 5.5 2 7.6 0', s: 'currentColor', w: 1.6 }, { d: disc(9, 10, 1.1) + disc(15, 10, 1.1), f: 'currentColor' }],
+  track: [{ d: 'M8 2.5L6 21.5M16 2.5l2 19M7.4 6.5h9.2M6.9 11h10.2M6.4 15.5h11.2M5.9 20h12.2', s: 'currentColor', w: 1.5 }],
+  euro: [{ d: 'M17.5 6.6A6.6 6.6 0 1 0 17.5 17.4M4.5 10.4h8.5M4.5 13.6h8.5', s: 'currentColor', w: 1.7 }],
+  train: [{ d: 'M6 3.5h12a2.5 2.5 0 0 1 2.5 2.5v9.5a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3V6A2.5 2.5 0 0 1 6 3.5z', f: 'currentColor' }, { d: 'M6 6.2h12v5H6z', f: 'var(--gl-hl, #fff)' }, { d: disc(8, 15, 1.1) + disc(16, 15, 1.1), f: 'var(--gl-hl, #fff)' }, { d: 'M7.5 18.5L5 21.5M16.5 18.5l2.5 3', s: 'currentColor', w: 1.6 }],
+  wagon: [{ d: 'M2.5 7h19v9.5h-19z', f: 'currentColor' }, { d: 'M4.5 9h3.5v3.5H4.5zM10.2 9h3.6v3.5h-3.6zM16 9h3.5v3.5H16z', f: 'var(--gl-hl, #fff)' }, { d: disc(6.5, 18.2, 1.6) + disc(17.5, 18.2, 1.6), f: 'currentColor' }, { d: 'M.5 12h2M21.5 12h2', s: 'currentColor', w: 1.4 }],
+  tunnel: [{ d: 'M2.5 21V12a9.5 9.5 0 0 1 19 0v9z', f: 'currentColor' }, { d: 'M6.5 21v-8.5a5.5 5.5 0 0 1 11 0V21z', f: 'var(--gl-hl, #fff)' }, { d: 'M10 21l.6-6M14 21l-.6-6', s: 'currentColor', w: 1.2 }],
+  bridge: [{ d: 'M2 9.5h20M2 14.5h20M4 14.5c3-4 13-4 16 0M6 9.5v5M10 9.5v3.4M14 9.5v3.4M18 9.5v5', s: 'currentColor', w: 1.6 }, { d: 'M2 18c2-1.3 4 1.3 6 0s4-1.3 6 0 4 1.3 6 0', s: 'currentColor', w: 1.3 }],
+  star: [{ d: 'M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z', f: 'currentColor' }],
+  line: [{ d: 'M3 18L9 8h6l6-4', s: 'currentColor', w: 3 }, { d: disc(9, 8, 2.2) + disc(15, 8, 2.2), f: 'var(--gl-hl, #fff)' }, { d: 'M9 5.8a2.2 2.2 0 1 0 0 4.4a2.2 2.2 0 1 0 0-4.4zM15 5.8a2.2 2.2 0 1 0 0 4.4a2.2 2.2 0 1 0 0-4.4z', s: 'currentColor', w: 1.4 }],
+  lock: [{ d: 'M5.5 10.5h13v10h-13z', f: 'currentColor' }, { d: 'M8 10.5V7.5a4 4 0 0 1 8 0v3', s: 'currentColor', w: 1.8 }],
+  gift: [{ d: 'M3.5 8h17v4h-17zM5 12h14v8.5H5z', f: 'currentColor' }, { d: 'M11 8h2v12.5h-2z', f: 'var(--gl-hl, #fff)' }, { d: 'M12 8c-1-3.5-5.5-4.5-5.5-1.8S12 8 12 8zM12 8c1-3.5 5.5-4.5 5.5-1.8S12 8 12 8z', s: 'currentColor', w: 1.4 }],
+  warn: [{ d: 'M12 2.8l10.2 17.6H1.8z', f: 'currentColor' }, { d: 'M11.1 8.6h1.8l-.3 6.2h-1.2zM11.1 16.2h1.8V18h-1.8z', f: 'var(--gl-hl, #fff)' }],
+  alarm: [{ d: disc(12, 12, 9.5), f: 'currentColor' }, { d: 'M11 6.5h2l-.3 7h-1.4zM11 15.6h2v2h-2z', f: 'var(--gl-hl, #fff)' }],
+  eye: [{ d: 'M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12zM9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0z', s: 'currentColor', w: 1.6 }],
+  cut: [{ d: 'M5.5 4.5a2.8 2.8 0 1 0 0 5.6a2.8 2.8 0 1 0 0-5.6zM5.5 13.9a2.8 2.8 0 1 0 0 5.6a2.8 2.8 0 1 0 0-5.6zM8 8.6L20 18M8 15.4L20 6', s: 'currentColor', w: 1.6 }],
+  bin: [{ d: 'M4 6.5h16M9.5 6.5V4h5v2.5M6 6.5l1 14h10l1-14M10 10v7M14 10v7', s: 'currentColor', w: 1.6 }],
+  check: [{ d: disc(12, 12, 10), f: 'currentColor' }, { d: 'M7.4 12.3l3 3 6.2-6.4', s: 'var(--gl-hl, #fff)', w: 1.9 }],
+};
+const GLYPH_LIST = (Object.keys(GLYPHS) as GlyphId[]).map(id => ({ id, parts: GLYPHS[id] }));
 
 const BRIEF: Record<Variant, string> = {
   metro: 'Reliez les stations : chaque voyageur veut rejoindre la forme dessinée à côté de lui. Une station qui déborde trois semaines ferme le réseau.',
@@ -816,47 +904,91 @@ const BRIEF: Record<Variant, string> = {
 };
 const TITLE: Record<Variant, string> = { metro: 'Plan du métro du Grand Paris', tram: 'Plan du tramway', tgv: 'Carte des lignes à grande vitesse' };
 
-const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
-  ligne: { icon: '🎨', name: 'Nouvelle ligne' }, rame: { icon: '🚆', name: 'Une rame' }, wagon: { icon: '🚃', name: 'Deux wagons' },
-  tunnel: { icon: '🚇', name: 'Tunnels' }, pole: { icon: '⭐', name: 'Pôle d’échanges' }, budget: { icon: '💶', name: 'Crédits' },
+const OFFER_INFO: Record<OfferId, { icon: GlyphId; name: string }> = {
+  ligne: { icon: 'line', name: 'Nouvelle ligne' }, rame: { icon: 'train', name: 'Une rame' }, wagon: { icon: 'wagon', name: 'Deux wagons' },
+  tunnel: { icon: 'tunnel', name: 'Tunnels' }, pole: { icon: 'star', name: 'Pôle d’échanges' }, budget: { icon: 'euro', name: 'Crédits' },
 };
+/** Écart entre deux lignes parallèles sur un tronçon partagé */
+const GAP = 1.9;
+let uidSeq = 0;
 
 @Component({
   selector: 'app-reseau-game',
   template: `
     @let o = live();
     <div class="rz" [class]="'rz v-' + variant">
+      <svg class="defs" aria-hidden="true" focusable="false" width="0" height="0">
+        <defs>
+          @for (g of glyphs; track g.id) {
+            <symbol [attr.id]="uid + '-g-' + g.id" viewBox="0 0 24 24">
+              @for (p of g.parts; track $index) { <path [attr.d]="p.d" [attr.fill]="p.f ?? 'none'" [attr.stroke]="p.s ?? null" [attr.stroke-width]="p.w ?? null" stroke-linecap="round" stroke-linejoin="round" /> }
+            </symbol>
+          }
+        </defs>
+      </svg>
+
       <div class="head">
         <span>Semaine <b class="mono">{{ week() }}</b>/{{ maxWeeks }}</span>
-        <span [attr.aria-label]="'Voyageurs arrivés : ' + o.delivered + ' sur ' + o.total">🧍 <b class="mono">{{ o.delivered }}</b><small class="mono">/{{ o.total }}</small></span>
-        <span [attr.aria-label]="'Satisfaction : ' + pct(o.sat)">😊 <b class="mono">{{ o.delivered ? pct(o.sat) : '—' }}</b></span>
-        <span class="bud" [attr.aria-label]="'Budget : ' + budgetLong()">{{ variant === 'metro' ? '🛤️' : '💶' }} <b class="mono">{{ budget() }}</b></span>
+        <span class="hs" [attr.aria-label]="'Voyageurs arrivés : ' + o.delivered + ' sur ' + o.total"><svg class="gi" aria-hidden="true"><use [attr.href]="g('people')" /></svg><b class="mono">{{ o.delivered }}</b><small class="mono">/{{ o.total }}</small></span>
+        <span class="hs" [attr.aria-label]="'Satisfaction : ' + pct(o.sat)"><svg class="gi" aria-hidden="true"><use [attr.href]="g('smile')" /></svg><b class="mono">{{ o.delivered ? pct(o.sat) : '—' }}</b></span>
+        <span class="hs bud" [attr.aria-label]="'Budget : ' + budgetLong()"><svg class="gi" aria-hidden="true"><use [attr.href]="g(variant === 'metro' ? 'track' : 'euro')" /></svg><b class="mono">{{ budget() }}</b></span>
       </div>
       @if (!over() && week() <= 2) { <p class="brief">{{ brief }}</p> }
       @if (alerts().length) {
-        <ul class="alerts" aria-live="polite">@for (a of alerts(); track $index) { <li [class]="a.tone">{{ a.text }}</li> }</ul>
+        <ul class="alerts" aria-live="polite">@for (a of alerts(); track $index) { <li [class]="a.tone"><svg class="gi" aria-hidden="true"><use [attr.href]="g(a.icon)" /></svg><span>{{ a.text }}</span></li> }</ul>
       }
 
       <div class="map-wrap">
         <svg #map class="map" [attr.viewBox]="'0 0 ' + mw + ' ' + mh" (click)="mapTap($event)" role="group" [attr.aria-label]="mapTitle">
+          <defs>
+            <pattern [attr.id]="uid + '-streets'" patternUnits="userSpaceOnUse" width="9" height="9" patternTransform="rotate(-11)">
+              <path d="M0 0H9M0 0V9" class="st-major" /><path d="M0 4.5H9M4.5 0V9M0 2.25H9M0 6.75H9" class="st-minor" />
+            </pattern>
+            <radialGradient [attr.id]="uid + '-dense'" cx=".5" cy=".5" r=".55"><stop offset="0" stop-color="#fff" stop-opacity=".9" /><stop offset=".55" stop-color="#fff" stop-opacity=".45" /><stop offset="1" stop-color="#fff" stop-opacity=".12" /></radialGradient>
+            <mask [attr.id]="uid + '-dm'"><rect [attr.width]="mw" [attr.height]="mh" [attr.fill]="u('dense')" /></mask>
+            <pattern [attr.id]="uid + '-hach'" patternUnits="userSpaceOnUse" width="1.6" height="1.6" patternTransform="rotate(60)">
+              <path d="M0 .8h1" class="hach" />
+            </pattern>
+            <clipPath [attr.id]="uid + '-fr'"><polygon [attr.points]="francePts" /></clipPath>
+            <filter [attr.id]="uid + '-relief'" x="-15%" y="-15%" width="130%" height="130%"><feGaussianBlur stdDeviation="1.3" /></filter>
+            <filter [attr.id]="uid + '-coast'" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.6" /></filter>
+            <filter [attr.id]="uid + '-sh'" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy=".25" stdDeviation=".3" flood-color="#000" flood-opacity=".3" /></filter>
+          </defs>
           @if (variant === 'tgv') {
             <rect class="sea" x="0" y="0" [attr.width]="mw" [attr.height]="mh" />
+            @for (n of neighbours; track $index) { <polygon class="nb-coast" [attr.points]="n" [attr.filter]="u('coast')" /> }
+            <polygon class="coast" [attr.points]="francePts" [attr.filter]="u('coast')" />
+            @for (n of neighbours; track $index) { <polygon class="nb" [attr.points]="n" /> }
             <polygon class="land" [attr.points]="francePts" />
-            @for (m of mountains; track m.name) {
-              <polygon class="mnt" [attr.points]="m.pts" />
-              <text class="mnt-l" [attr.x]="m.x" [attr.y]="m.y">{{ m.name }}</text>
-            }
+            <g [attr.clip-path]="u('fr')">
+              <g [attr.filter]="u('relief')">@for (m of mountains; track m.name) { <path class="mnt" [attr.d]="m.d" /> }</g>
+              @for (m of mountains; track m.name) { <path [attr.d]="m.core" [attr.fill]="u('hach')" class="mnt-h" /> }
+              @for (r of tgvRivers; track $index) { <polyline class="fr-river" [attr.points]="r" /> }
+            </g>
+            <polygon class="border" [attr.points]="francePts" />
+            @for (p of placeLabels; track p.t) { <text [attr.class]="p.sea ? 'sea-l' : 'nb-l'" [attr.x]="p.x" [attr.y]="p.y" [attr.text-anchor]="p.end ? 'end' : 'middle'">{{ p.t }}</text> }
+            @for (m of mountains; track m.name) { <text class="mnt-l" [attr.x]="m.x" [attr.y]="m.y">{{ m.name }}</text> }
           } @else {
             <rect class="ground" x="0" y="0" [attr.width]="mw" [attr.height]="mh" />
+            <rect [attr.width]="mw" [attr.height]="mh" [attr.fill]="u('streets')" [attr.mask]="'url(#' + uid + '-dm)'" />
+            @for (p of parks; track $index) { <path class="park" [attr.d]="p" /> }
+            <polyline class="bank" [attr.points]="riverPts" [attr.stroke-width]="(variant === 'tram' ? 4.5 : 3.4) + 1.6" />
             <polyline class="river" [attr.points]="riverPts" [attr.stroke-width]="variant === 'tram' ? 4.5 : 3.4" />
             <text class="river-l" [attr.x]="riverLabel.x" [attr.y]="riverLabel.y">{{ riverName }}</text>
           }
-          @for (g of segView(); track g.key) {
-            <line [attr.class]="g.cls" [attr.x1]="g.x1" [attr.y1]="g.y1" [attr.x2]="g.x2" [attr.y2]="g.y2" [attr.stroke]="g.color" />
+          <g class="scale" [attr.transform]="'translate(3 ' + (mh - 3.2) + ')'"><path d="M0 0h10" class="sc-bar" /><path d="M0 -.8v1.6M5 -.5v1M10 -.8v1.6" class="sc-tick" /><text x="11.4" y=".9" class="sc-l">{{ scaleLabel }}</text></g>
+          @for (l of lineView(); track l.key) {
+            <path class="case" [class.dim]="l.cls.includes('dim')" [attr.d]="l.d" />
+            <path [attr.class]="l.cls" [attr.d]="l.d" [attr.stroke]="l.color" />
+            @if (l.closed) { <path class="seg closed" [attr.d]="l.closed" [attr.stroke]="l.color" /> }
           }
-          @for (w of works(); track w.key) { <text class="work" [attr.x]="w.x" [attr.y]="w.y">🚧</text> }
+          @for (w of works(); track w.key) {
+            <g class="work" [attr.transform]="'translate(' + w.x + ' ' + w.y + ')'"><rect x="-2.2" y="-1.1" width="4.4" height="2.2" rx=".3" class="w-bg" /><path d="M-1.6 1.1l1.6-2.2h1.1l-1.6 2.2zM.6 1.1l1.6-2.2v1.4l-.6.8z" class="w-st" /></g>
+          }
           @for (t of trainView(); track t.key) {
-            <rect class="train" [attr.x]="t.x - 1.5" [attr.y]="t.y - 1" width="3" height="2" rx=".6" [attr.fill]="t.color" [attr.transform]="'rotate(' + t.a + ' ' + t.x + ' ' + t.y + ')'" />
+            <g class="train" [attr.transform]="'translate(' + t.x + ' ' + t.y + ') rotate(' + t.a + ')'">
+              <path class="car" [attr.d]="carD" [attr.fill]="t.color" /><path class="win" [attr.d]="winD" />
+            </g>
           }
           @for (g of ghostView(); track $index) {
             <path class="ghost" [attr.d]="g.d" />
@@ -866,8 +998,11 @@ const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
             <g [attr.class]="st.cls" role="button" tabindex="0" [attr.aria-label]="st.aria" (keydown.enter)="tap(st.id)" (keydown.space)="$event.preventDefault(); tap(st.id)">
               <circle class="hit" [attr.cx]="st.x" [attr.cy]="st.y" r="5.5" />
               @if (st.ring) { <circle class="endring" [attr.cx]="st.x" [attr.cy]="st.y" [attr.r]="st.r + 2.6" [attr.stroke]="lineColor(selLine() ?? 0)" /> }
-              @if (st.load) { <circle class="load" [attr.cx]="st.x" [attr.cy]="st.y" [attr.r]="st.r + 1.7" [attr.stroke]="st.loadColor" [attr.stroke-dasharray]="st.load" [attr.transform]="'rotate(-90 ' + st.x + ' ' + st.y + ')'" /> }
-              @if (st.timer) { <circle class="timer" [attr.cx]="st.x" [attr.cy]="st.y" [attr.r]="st.r + 3.4" [attr.stroke-dasharray]="st.timer" [attr.transform]="'rotate(-90 ' + st.x + ' ' + st.y + ')'" /> }
+              @if (st.load) {
+                <circle class="track-ring" [attr.cx]="st.x" [attr.cy]="st.y" [attr.r]="st.r + 1.7" />
+                <circle class="load" [attr.cx]="st.x" [attr.cy]="st.y" [attr.r]="st.r + 1.7" [attr.stroke]="st.loadColor" [attr.stroke-dasharray]="st.load" [attr.transform]="'rotate(-90 ' + st.x + ' ' + st.y + ')'" />
+              }
+              @if (st.timer) { <path class="timer-fill" [attr.d]="st.timer" /><path class="timer" [attr.d]="st.timer" /> }
               @if (st.hub) { <circle class="hubring" [attr.cx]="st.x" [attr.cy]="st.y" [attr.r]="st.r + 0.9" /> }
               <path class="shape" [attr.d]="st.d" />
               @for (p of st.pax; track $index) { <path class="pax" [attr.d]="p" /> }
@@ -881,9 +1016,9 @@ const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
       @if (!over()) {
         @if (offers(); as of) {
           <div class="offers" role="group" aria-label="Dotation de la semaine">
-            <span class="ot">🎁 Dotation de la semaine : choisissez</span>
+            <span class="ot"><svg class="gi" aria-hidden="true"><use [attr.href]="g('gift')" /></svg>Dotation de la semaine : choisissez</span>
             @for (f of of; track $index) {
-              <button type="button" class="offer" [disabled]="busy()" (click)="choose($index)"><span class="oi">{{ f.icon }}</span><b>{{ f.name }}</b><small>{{ f.desc }}</small></button>
+              <button type="button" class="offer" [disabled]="busy()" (click)="choose($index)"><svg class="oi" aria-hidden="true"><use [attr.href]="g(f.icon)" /></svg><b>{{ f.name }}</b><small>{{ f.desc }}</small></button>
             }
           </div>
         }
@@ -895,13 +1030,13 @@ const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
               <i [style.background]="l.color"></i>{{ l.label }}
             </button>
           }
-          @if (locked()) { <span class="locked" [attr.aria-label]="locked() + ' lignes encore fermées'">🔒 ×{{ locked() }}</span> }
+          @if (locked()) { <span class="locked" [attr.aria-label]="locked() + ' lignes encore fermées'"><svg class="gi" aria-hidden="true"><use [attr.href]="g('lock')" /></svg>×{{ locked() }}</span> }
         </div>
         <div class="stock" aria-label="Réserve">
-          <span title="Rames en réserve">🚆 <b class="mono">{{ stock().trains }}</b></span>
-          <span title="Wagons en réserve">🚃 <b class="mono">{{ stock().wagons }}</b></span>
-          <span [title]="tokenTitle">{{ tokenIcon }} <b class="mono">{{ stock().tunnels }}</b></span>
-          <span title="Pôles d’échanges à aménager">⭐ <b class="mono">{{ stock().poles }}</b></span>
+          <span title="Rames en réserve"><svg class="gi" aria-hidden="true"><use [attr.href]="g('train')" /></svg><b class="mono">{{ stock().trains }}</b></span>
+          <span title="Wagons en réserve"><svg class="gi" aria-hidden="true"><use [attr.href]="g('wagon')" /></svg><b class="mono">{{ stock().wagons }}</b></span>
+          <span [title]="tokenTitle"><svg class="gi" aria-hidden="true"><use [attr.href]="g(tokenIcon)" /></svg><b class="mono">{{ stock().tunnels }}</b></span>
+          <span title="Pôles d’échanges à aménager"><svg class="gi" aria-hidden="true"><use [attr.href]="g('star')" /></svg><b class="mono">{{ stock().poles }}</b></span>
         </div>
 
         @if (lineInfo(); as li) {
@@ -910,25 +1045,25 @@ const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
             @if (li.cap) { <div class="pstat">{{ li.cap }}</div> }
             <div class="pbtns">
               <span class="grp"><button type="button" class="btn small" [disabled]="busy() || !li.trains" (click)="train(-1)" aria-label="Retirer une rame">−</button>
-                <span class="mono">🚆 {{ li.trains }}</span>
+                <span class="mono cnt"><svg class="gi" aria-hidden="true"><use [attr.href]="g('train')" /></svg>{{ li.trains }}</span>
                 <button type="button" class="btn small" [disabled]="busy() || !stock().trains || li.stops < 2" (click)="train(1)" aria-label="Ajouter une rame">+</button></span>
               <span class="grp"><button type="button" class="btn small" [disabled]="busy() || !li.wagons" (click)="wagon(-1)" aria-label="Retirer un wagon">−</button>
-                <span class="mono">🚃 {{ li.wagons }}</span>
+                <span class="mono cnt"><svg class="gi" aria-hidden="true"><use [attr.href]="g('wagon')" /></svg>{{ li.wagons }}</span>
                 <button type="button" class="btn small" [disabled]="busy() || !stock().wagons || li.wagons >= li.trains * wagonsPerTrain" (click)="wagon(1)" aria-label="Ajouter un wagon">+</button></span>
               @if (li.stops >= 2) {
                 <button type="button" class="btn small" [disabled]="busy()" (click)="flip()">⇄ Autre bout</button>
-                <button type="button" class="btn small" [disabled]="busy()" (click)="removeLast()">✂ Dernier tronçon</button>
-                <button type="button" class="btn small" [disabled]="busy()" (click)="deleteLine()">🗑 Supprimer</button>
+                <button type="button" class="btn small ib" [disabled]="busy()" (click)="removeLast()"><svg class="gi" aria-hidden="true"><use [attr.href]="g('cut')" /></svg>Dernier tronçon</button>
+                <button type="button" class="btn small ib" [disabled]="busy()" (click)="deleteLine()"><svg class="gi" aria-hidden="true"><use [attr.href]="g('bin')" /></svg>Supprimer</button>
               }
             </div>
           </div>
         } @else if (stationInfo(); as si) {
           <div class="panel">
-            <div class="pt"><b>{{ si.glyph }} {{ si.name }}</b> <span>{{ si.kind }}</span></div>
+            <div class="pt"><b><svg class="kg" viewBox="-3 -3 6 6" aria-hidden="true"><path [attr.d]="si.shape" /></svg>{{ si.name }}</b> <span>{{ si.kind }}</span></div>
             <div class="pstat">{{ si.wait }}</div>
             @if (si.dests) { <div class="pstat">{{ si.dests }}</div> }
             <div class="pstat">{{ si.lines }}</div>
-            @if (si.canHub) { <div class="pbtns"><button type="button" class="btn small" [disabled]="busy()" (click)="hub(si.id)">⭐ Aménager un pôle d’échanges</button></div> }
+            @if (si.canHub) { <div class="pbtns"><button type="button" class="btn small ib" [disabled]="busy()" (click)="hub(si.id)"><svg class="gi" aria-hidden="true"><use [attr.href]="g('star')" /></svg>Aménager un pôle d’échanges</button></div> }
           </div>
         }
         <p class="info" aria-live="polite">{{ info() }}</p>
@@ -947,8 +1082,8 @@ const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
             <span>Semaines tenues : <b class="mono">{{ sm.o.weeks }}/{{ maxWeeks }}</b></span>
             <span>{{ variant === 'tgv' ? 'Villes desservies' : 'Stations desservies' }} : <b class="mono">{{ sm.o.served }}/{{ sm.o.stations }}</b></span>
           </div>
-          <p>✅ <b>Ligne phare.</b> {{ sm.best }}</p>
-          <p>⚠️ <b>Point noir.</b> {{ sm.worst }}</p>
+          <p class="rv"><svg class="gi ok" aria-hidden="true"><use [attr.href]="g('check')" /></svg><span><b>Ligne phare.</b> {{ sm.best }}</span></p>
+          <p class="rv"><svg class="gi warn" aria-hidden="true"><use [attr.href]="g('warn')" /></svg><span><b>Point noir.</b> {{ sm.worst }}</span></p>
           <p class="score">Note du réseau : <b class="mono">{{ round(sm.o.score * 100) }}/100</b></p>
         </div>
       }
@@ -956,7 +1091,23 @@ const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
       <details class="legend">
         <summary>Légende et règles</summary>
         <ul>
-          @for (l of legend; track l.label) { <li><span class="sw">{{ l.icon }}</span> {{ l.label }}</li> }
+          @for (l of legend; track l.label) {
+            <li>
+              <svg class="sw" viewBox="-5 -5 10 10" aria-hidden="true">
+                @switch (l.sw) {
+                  @case ('mnt') { <path d="M-4.5 3.5L-1.5-2.5 0 0l1.5-2.5L4.5 3.5z" class="sw-mnt" /> }
+                  @case ('load') { <circle r="3.4" class="sw-track" /><circle r="3.4" class="sw-load" stroke-dasharray="14 22" transform="rotate(-90)" /><circle r="1.8" class="shape" /> }
+                  @case ('timer') { <path d="M0 0V-3.8A3.8 3.8 0 0 1 3.3 1.9z" class="timer-fill" /><path d="M0 0V-3.8A3.8 3.8 0 0 1 3.3 1.9z" class="timer" /><circle r="1.8" class="shape" /> }
+                  @case ('ghost') { <circle r="2.4" class="ghost" /> }
+                  @case ('works') { <rect x="-3.4" y="-1.7" width="6.8" height="3.4" rx=".4" class="w-bg" /><path d="M-2.4 1.7l2.4-3.4h1.7l-2.4 3.4zM1 1.7l2.4-3.4v2.2l-.9 1.2z" class="w-st" /> }
+                  @case ('hub') { <circle r="3" class="hubring" /><circle r="2.1" class="shape" /> }
+                  @case ('city') { <circle r="2.6" class="shape" /> }
+                  @default { <path [attr.d]="kindPath(l.sw)" class="shape" /> }
+                }
+              </svg>
+              {{ l.label }}
+            </li>
+          }
         </ul>
         <p>{{ rules }}</p>
       </details>
@@ -965,55 +1116,90 @@ const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
     </div>
   `,
   styles: `
-    :host { display: block; width: 100%; }
+    :host { display: block; width: 100%;
+      /* Fond de carte : des teintes tirées du thème, discrètes en clair comme en sombre */
+      --m-ground: color-mix(in srgb, var(--surface-2) 86%, #c9bf9f);
+      --m-street: color-mix(in srgb, var(--ink) 11%, transparent);
+      --m-street2: color-mix(in srgb, var(--ink) 6%, transparent);
+      --m-park: color-mix(in srgb, var(--surface-2) 66%, #8dbd6e);
+      --m-water: color-mix(in srgb, var(--surface-2) 40%, #6ea6d4);
+      --m-bank: color-mix(in srgb, var(--surface-2) 72%, #6ea6d4);
+      --m-sea: color-mix(in srgb, var(--surface) 62%, #6aa6d6);
+      --m-shallow: color-mix(in srgb, var(--surface) 35%, #bfe0f2);
+      --m-land: color-mix(in srgb, var(--surface-2) 84%, #b8b27c);
+      --m-nb: color-mix(in srgb, var(--surface-2) 78%, var(--ink-3));
+      --m-mnt: color-mix(in srgb, var(--surface-2) 30%, #8f6c43);
+      --m-case: var(--surface-2); }
     .rz { display: grid; gap: 7px; }
+    .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .gi { width: 15px; height: 15px; flex: none; vertical-align: -3px; --gl-hl: var(--surface); }
+    .gi.ok { color: var(--good); } .gi.warn { color: #d08a12; }
     .head { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; align-items: center; font-size: 12.5px; small { color: var(--ink-3); } }
+    .hs { display: inline-flex; align-items: center; gap: 4px; .gi { color: var(--ink-2); } }
     .brief { margin: 0; font-size: 12px; color: var(--ink-2); }
     .alerts { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12px;
-      li { padding: 4px 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); }
-      li.bad { background: var(--bad-soft); border-color: var(--bad); color: var(--ink); }
-      li.warn { border-color: #e0a100; } }
+      li { display: flex; gap: 6px; align-items: flex-start; padding: 4px 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); .gi { margin-top: 1px; color: var(--ink-3); } }
+      li.bad { background: var(--bad-soft); border-color: var(--bad); color: var(--ink); .gi { color: var(--bad); --gl-hl: var(--bad-soft); } }
+      li.warn { border-color: #e0a100; .gi { color: #d08a12; } } }
     .map-wrap { justify-self: center; width: 100%; max-width: 480px; }
-    .map { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-    .ground { fill: var(--surface-2); }
-    .sea { fill: color-mix(in srgb, #4a90c8 16%, var(--surface)); }
-    .land { fill: var(--surface-2); stroke: var(--line); stroke-width: .5; }
-    .mnt { fill: color-mix(in srgb, #a07a4a 22%, transparent); stroke: color-mix(in srgb, #a07a4a 45%, transparent); stroke-width: .3; stroke-dasharray: 1 .8; }
-    .mnt-l { font: italic 2.3px var(--font-body); fill: #9a7646; text-anchor: middle; pointer-events: none; }
-    .river { fill: none; stroke: #79acd8; stroke-linejoin: round; stroke-linecap: round; opacity: .75; }
-    .river-l { font: italic 2.6px var(--font-body); fill: #4d86b8; pointer-events: none; }
-    .seg { stroke-width: 2.1; stroke-linecap: round; transition: opacity .2s; }
+    .map { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+      box-shadow: 0 6px 18px -12px rgba(0,0,0,.45); }
+    .ground { fill: var(--m-ground); }
+    .st-major { fill: none; stroke: var(--m-street); stroke-width: .38; } .st-minor { fill: none; stroke: var(--m-street2); stroke-width: .16; }
+    .park { fill: var(--m-park); }
+    .bank { fill: none; stroke: var(--m-bank); stroke-linejoin: round; stroke-linecap: round; }
+    .river { fill: none; stroke: var(--m-water); stroke-linejoin: round; stroke-linecap: round; }
+    .river-l { font: italic 500 2.6px var(--font-display, Georgia, serif); letter-spacing: .12px; fill: color-mix(in srgb, #2f6e9f 75%, var(--ink-3)); pointer-events: none; }
+    .sea { fill: var(--m-sea); }
+    .coast, .nb-coast { fill: none; stroke: var(--m-shallow); stroke-width: 3.2; stroke-linejoin: round; }
+    .nb { fill: var(--m-nb); stroke: color-mix(in srgb, var(--ink-3) 40%, transparent); stroke-width: .25; stroke-linejoin: round; }
+    .land { fill: var(--m-land); }
+    .border { fill: none; stroke: color-mix(in srgb, var(--ink-2) 55%, transparent); stroke-width: .35; stroke-linejoin: round; }
+    .mnt { fill: var(--m-mnt); opacity: .55; }
+    .mnt-h { opacity: .5; } .hach { stroke: color-mix(in srgb, #6d4f2c 70%, var(--ink-3)); stroke-width: .22; }
+    .fr-river { fill: none; stroke: color-mix(in srgb, #4f8fc4 80%, var(--surface)); stroke-width: .42; stroke-linejoin: round; stroke-linecap: round; opacity: .85; }
+    .nb-l { font: 600 2.1px var(--font-body); letter-spacing: .25px; text-transform: uppercase; fill: var(--ink-3); pointer-events: none; }
+    .sea-l { font: italic 2.4px var(--font-display, Georgia, serif); fill: color-mix(in srgb, #2f6e9f 70%, var(--ink-3)); text-anchor: middle; pointer-events: none; }
+    .mnt-l { font: italic 600 2.2px var(--font-display, Georgia, serif); fill: color-mix(in srgb, #7a5a33 80%, var(--ink-2)); text-anchor: middle; pointer-events: none; }
+    .sc-bar { stroke: var(--ink-2); stroke-width: .5; } .sc-tick { stroke: var(--ink-2); stroke-width: .3; } .sc-l { font: 600 2px var(--font-body); fill: var(--ink-2); }
+    .case { fill: none; stroke: var(--m-case); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; &.dim { opacity: .3; } }
+    .seg { fill: none; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s; }
     .seg.dim { opacity: .3; }
-    .seg.hl { stroke-width: 2.6; }
+    .seg.hl { stroke-width: 2.5; }
     .seg.closed { stroke-dasharray: 1.2 1.6; opacity: .55; }
     .seg.idle { stroke-dasharray: 3 1.5; }
-    .work { font-size: 3.4px; text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
-    .train { stroke: #fff; stroke-width: .35; pointer-events: none; }
+    .work { pointer-events: none; } .w-bg { fill: #fff; stroke: #c23a32; stroke-width: .3; } .w-st { fill: #c23a32; }
+    .train { pointer-events: none; }
+    .car { stroke: var(--surface); stroke-width: .3; }
+    .win { fill: rgba(255, 255, 255, .78); }
     .ghost { fill: none; stroke: var(--ink-3); stroke-width: .5; stroke-dasharray: 1 .8; opacity: .8; pointer-events: none; }
     .ghost-l { font: 600 2.2px var(--font-body); fill: var(--ink-3); text-anchor: middle; pointer-events: none; }
     .st { cursor: pointer; outline: none; }
     .st:focus-visible .hit { stroke: var(--accent); stroke-width: .6; fill: color-mix(in srgb, var(--accent) 12%, transparent); }
     .hit { fill: transparent; }
-    .shape { fill: var(--surface); stroke: var(--ink); stroke-width: .75; }
+    .shape { fill: var(--surface); stroke: var(--ink); stroke-width: .75; stroke-linejoin: round; }
+    .st .shape { filter: drop-shadow(0 .25px .35px rgba(0, 0, 0, .35)); }
     .st.sel .shape { fill: #f4d35e; }
     .st.fresh .shape { animation: pop .9s ease; transform-box: fill-box; transform-origin: center; }
     .st.reach .shape { stroke-width: 1.1; }
     .st.cut .shape { opacity: .55; }
     .hubring { fill: none; stroke: var(--ink); stroke-width: .45; }
     .endring { fill: none; stroke-width: .7; stroke-dasharray: 1.2 .9; animation: spin 4s linear infinite; transform-box: fill-box; transform-origin: center; }
+    .track-ring { fill: none; stroke: color-mix(in srgb, var(--ink) 12%, transparent); stroke-width: .9; }
     .load { fill: none; stroke-width: .9; stroke-linecap: round; }
-    .timer { fill: none; stroke: var(--bad); stroke-width: 1.3; animation: blink 1.1s ease-in-out infinite; }
+    .timer-fill { fill: var(--bad); opacity: .22; animation: blink 1.1s ease-in-out infinite; }
+    .timer { fill: none; stroke: var(--bad); stroke-width: .6; stroke-linejoin: round; }
     .pax { fill: var(--ink-2); pointer-events: none; }
     .more, .lbl { font: 700 2.2px var(--font-body); fill: var(--ink-2); pointer-events: none; }
-    .lbl { font-weight: 600; font-size: 2.5px; fill: var(--ink); paint-order: stroke; stroke: var(--surface-2); stroke-width: .7px; }
-    .v-tgv .lbl { stroke: var(--surface-2); }
+    .lbl { font-weight: 600; font-size: 2.5px; fill: var(--ink); paint-order: stroke; stroke: var(--m-land); stroke-width: .7px; stroke-linejoin: round; }
     @keyframes pop { 0% { transform: scale(.3); } 70% { transform: scale(1.25); } 100% { transform: none; } }
-    @keyframes blink { 50% { opacity: .35; } }
+    @keyframes blink { 50% { opacity: .08; } }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .offers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; .ot { grid-column: 1 / -1; font-size: 12px; font-weight: 600; } }
-    .offer { display: grid; justify-items: center; gap: 1px; min-height: 64px; padding: 6px 4px; border-radius: 10px; border: 1.5px solid var(--accent); background: var(--surface); color: var(--ink); cursor: pointer;
-      font: 12px var(--font-body); text-align: center;
-      .oi { font-size: 19px; line-height: 1; } b { font-size: 12.5px; } small { font-size: 11px; color: var(--ink-2); line-height: 1.25; }
+    .offers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; .ot { grid-column: 1 / -1; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 5px; .gi { color: var(--accent); } } }
+    .offer { display: grid; justify-items: center; gap: 2px; min-height: 64px; padding: 7px 4px; border-radius: 10px; border: 1.5px solid var(--accent); background: var(--surface); color: var(--ink); cursor: pointer;
+      font: 12px var(--font-body); text-align: center; --gl-hl: var(--surface);
+      .oi { width: 22px; height: 22px; color: var(--accent); } b { font-size: 12.5px; } small { font-size: 11px; color: var(--ink-2); line-height: 1.25; }
+      &:hover:not(:disabled) { background: var(--accent-soft, var(--surface-2)); --gl-hl: var(--accent-soft, var(--surface-2)); }
       &:disabled { opacity: .5; } }
     .lines { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
     .chip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; min-width: 44px; padding: 3px 10px; border-radius: 999px; border: 2px solid; background: var(--surface); color: var(--ink);
@@ -1023,26 +1209,32 @@ const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
       &.empty { border-style: dashed; }
       &.strike { text-decoration: line-through; }
       &:disabled { opacity: .55; } }
-    .locked { font-size: 12px; color: var(--ink-3); }
-    .stock { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); }
-    .panel { display: grid; gap: 4px; padding: 7px 9px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); font-size: 12.5px;
+    .locked { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--ink-3); }
+    .stock { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); span { display: inline-flex; align-items: center; gap: 4px; } }
+    .panel { display: grid; gap: 4px; padding: 7px 9px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); font-size: 12.5px; --gl-hl: var(--surface-2);
       .pt { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; span { color: var(--ink-2); font-size: 12px; } }
       .pstat { font-size: 12px; color: var(--ink-2); } }
+    .kg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; path { fill: var(--surface); stroke: var(--ink); stroke-width: .7; } }
     .pbtns { display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
-      .grp { display: inline-flex; align-items: center; gap: 4px; .btn { min-width: 34px; } } }
+      .grp { display: inline-flex; align-items: center; gap: 4px; .btn { min-width: 34px; } }
+      .cnt { display: inline-flex; align-items: center; gap: 3px; min-width: 34px; justify-content: center; }
+      .ib { display: inline-flex; align-items: center; gap: 4px; } }
     .info { margin: 0; min-height: 2.6em; font-size: 12px; color: var(--ink); }
     .foot { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
-    .sum { display: grid; gap: 5px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); font-size: 12.5px;
-      &.good { border-color: var(--good); background: var(--good-soft); } &.bad { border-color: var(--bad); background: var(--bad-soft); }
+    .sum { display: grid; gap: 5px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); font-size: 12.5px; --gl-hl: var(--surface-2);
+      &.good { border-color: var(--good); background: var(--good-soft); --gl-hl: var(--good-soft); } &.bad { border-color: var(--bad); background: var(--bad-soft); --gl-hl: var(--bad-soft); }
       p { margin: 0; } .verdict { font-size: 14px; } .score { color: var(--ink-2); } }
+    .rv { display: flex; gap: 6px; align-items: flex-start; .gi { margin-top: 1px; } }
     .stats { display: flex; flex-wrap: wrap; gap: 3px 14px; color: var(--ink-2); }
     .legend { font-size: 12px; color: var(--ink-2);
       summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--ink); }
       ul { list-style: none; margin: 4px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 10px; }
       li { display: flex; gap: 6px; align-items: center; } p { margin: 4px 0 0; } }
-    .sw { display: inline-grid; place-items: center; flex: none; min-width: 20px; height: 20px; font-size: 13px; color: var(--ink); }
+    .sw { flex: none; width: 20px; height: 20px; overflow: visible; .shape { stroke-width: .6; } .ghost { stroke-width: .5; } }
+    .sw-mnt { fill: var(--m-mnt); stroke: color-mix(in srgb, #6d4f2c 70%, var(--ink-3)); stroke-width: .4; stroke-linejoin: round; }
+    .sw-track { fill: none; stroke: color-mix(in srgb, var(--ink) 12%, transparent); stroke-width: .9; } .sw-load { fill: none; stroke: #e07b00; stroke-width: .9; stroke-linecap: round; }
     .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 110px; overflow: auto; font-size: 11.5px; color: var(--ink-2); }
-    @media (prefers-reduced-motion: reduce) { .timer, .endring, .st.fresh .shape { animation: none; } .seg { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .timer-fill, .endring, .st.fresh .shape { animation: none; } .seg, .case { transition: none; } }
   `,
 })
 export class ReseauGameComponent implements OnInit, OnDestroy {
@@ -1054,7 +1246,12 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
 
   private readonly mapEl = viewChild<ElementRef<SVGSVGElement>>('map');
 
+  protected readonly uid = `rz${++uidSeq}`;
+  protected readonly glyphs = GLYPH_LIST;
   protected readonly round = Math.round;
+  /** Une voiture de rame, vue du dessus (longueur 2,6, largeur 1,5) */
+  protected readonly carD = 'M-1.3 -.75h2.1a.5 .75 0 0 1 .5 .75a.5 .75 0 0 1-.5 .75h-2.1a.25 .25 0 0 1-.25-.25v-1a.25 .25 0 0 1 .25-.25z';
+  protected readonly winD = 'M-1 -.2h1.9v.4H-1z';
   protected variant: Variant = 'metro';
   protected maxWeeks = 14;
   protected mw = 100;
@@ -1062,18 +1259,26 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
   protected brief = '';
   protected rules = '';
   protected mapTitle = '';
+  protected scaleLabel = '';
   protected wagonsPerTrain = 2;
-  protected tokenIcon = '🚇';
+  protected tokenIcon: GlyphId = 'tunnel';
   protected tokenTitle = '';
   protected riverPts = '';
   protected riverName = '';
   protected riverLabel: Pt = { x: 0, y: 0 };
+  protected parks: string[] = [];
   protected francePts = FRANCE.map(p => `${p.x},${p.y}`).join(' ');
-  protected mountains = MOUNTAINS.map(m => ({
-    name: m.name, pts: m.poly.map(p => `${p.x},${p.y}`).join(' '),
-    x: Math.round(m.poly.reduce((t, p) => t + p.x, 0) / m.poly.length), y: Math.round(m.poly.reduce((t, p) => t + p.y, 0) / m.poly.length),
-  }));
-  protected legend: { icon: string; label: string }[] = [];
+  protected readonly neighbours = NEIGHBOURS.map(llPts);
+  protected readonly tgvRivers = TGV_RIVERS.map(llPts);
+  protected readonly placeLabels = PLACE_LABELS.map(p => ({ ...p, ...proj(p.lon, p.lat), ...(p.end ? { x: Math.min(99, proj(p.lon, p.lat).x) } : {}) }));
+  protected mountains = MOUNTAINS.map(m => {
+    const cxm = m.poly.reduce((t, p) => t + p.x, 0) / m.poly.length, cym = m.poly.reduce((t, p) => t + p.y, 0) / m.poly.length;
+    return {
+      name: m.name, d: smooth(m.poly), core: smooth(m.poly.map(p => ({ x: cxm + (p.x - cxm) * 0.72, y: cym + (p.y - cym) * 0.72 }))),
+      x: Math.round(cxm), y: Math.round(cym),
+    };
+  });
+  protected legend: { sw: SwatchId; label: string }[] = [];
 
   private sim!: ReseauSim;
   private undo: SimState[] = [];
@@ -1102,18 +1307,18 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
   protected readonly offers = computed(() => {
     this.ver();
     const of = this.sim.s.offers;
-    return of ? of.map(o => ({ icon: o.id === 'budget' && this.variant === 'metro' ? '🛤️' : OFFER_INFO[o.id].icon, name: this.offerName(o.id, o.n), desc: this.offerDesc(o.id, o.n) })) : null;
+    return of ? of.map(o => ({ icon: o.id === 'budget' && this.variant === 'metro' ? 'track' as GlyphId : o.id === 'tunnel' ? this.tokenIcon : OFFER_INFO[o.id].icon, name: this.offerName(o.id, o.n), desc: this.offerDesc(o.id, o.n) })) : null;
   });
 
   protected readonly alerts = computed<Alert[]>(() => {
     this.ver();
     const sim = this.sim, s = sim.s;
     if (s.over) return [];
-    const out: Alert[] = sim.activeEvents().map(e => ({ text: e.text, tone: e.type === 'subvention' ? '' : 'warn' }));
+    const out: Alert[] = sim.activeEvents().map(e => ({ text: e.text, tone: e.type === 'subvention' ? '' : 'warn', icon: e.type === 'subvention' ? 'euro' : 'warn' }));
     for (const st of s.stations) {
-      if (st.over > 0) out.push({ text: `${st.over >= sim.c.limit - 1 ? '🚨' : '⚠️'} ${st.name} saturée depuis ${st.over} semaine${st.over > 1 ? 's' : ''} (${sim.waitingAt(st.id)}/${sim.capOf(st)}) : fermeture à ${sim.c.limit}.`, tone: 'bad' });
+      if (st.over > 0) out.push({ text: `${st.name} saturée depuis ${st.over} semaine${st.over > 1 ? 's' : ''} (${sim.waitingAt(st.id)}/${sim.capOf(st)}) : fermeture à ${sim.c.limit}.`, tone: 'bad', icon: st.over >= sim.c.limit - 1 ? 'alarm' : 'warn' });
     }
-    if (s.pending.length) out.push({ text: `🔮 La semaine prochaine : ${s.pending.map(p => p.name).join(', ')} (en pointillé sur le plan).`, tone: '' });
+    if (s.pending.length) out.push({ text: `La semaine prochaine : ${s.pending.map(p => p.name).join(', ')} (en pointillé sur le plan).`, tone: '', icon: 'eye' });
     return out;
   });
 
@@ -1163,37 +1368,67 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
     }
     const lines = s.lines.filter(l => l.stops.length >= 2 && l.stops.includes(id)).map(l => sim.lineName(l.id));
     return {
-      id, name: st.name, glyph: KIND_GLYPH[st.kind], kind: s.v === 'tgv' ? `${st.pop.toString().replace('.', ',')} M d’habitants` : KIND_LABEL[s.v][st.kind] ?? '',
+      id, name: st.name, shape: shapePath(st.kind === 'ville' ? 'rond' : st.kind, 0, 0, 2), kind: s.v === 'tgv' ? `${st.pop.toString().replace('.', ',')} M d’habitants` : KIND_LABEL[s.v][st.kind] ?? '',
       wait: `${here.length} voyageur${here.length > 1 ? 's' : ''} en attente pour ${cap} places${st.hub ? ' (pôle d’échanges)' : ''}${st.over ? ` · saturée depuis ${st.over} semaine${st.over > 1 ? 's' : ''}` : ''}.`,
       dests, lines: lines.length ? `Desservie par : ${lines.join(', ')}.` : 'Aucune ligne ne la dessert.',
       canHub: !st.hub && s.poles > 0,
     };
   });
 
-  /** Les tronçons, décalés quand plusieurs lignes partagent le même */
-  protected readonly segView = computed<SegView[]>(() => {
+  /** Le tracé de chaque ligne : décalé en parallèle là où plusieurs lignes partagent un tronçon, avec des jonctions propres */
+  private readonly geometry = computed(() => {
     this.ver();
-    const sim = this.sim, s = sim.s, sel = this.selLine();
+    const s = this.sim.s;
     const shared = new Map<string, number[]>();
     for (const l of s.lines) for (const g of l.segs) {
       const k = g.a < g.b ? `${g.a}-${g.b}` : `${g.b}-${g.a}`;
       shared.set(k, [...(shared.get(k) ?? []), l.id]);
     }
-    const out: SegView[] = [];
-    for (const l of s.lines) {
-      const idle = l.trains === 0 || sim.strike(l.id);
-      for (const g of l.segs) {
-        const k = g.a < g.b ? `${g.a}-${g.b}` : `${g.b}-${g.a}`;
-        const ids = shared.get(k)!;
-        const A = s.stations[Math.min(g.a, g.b)], B = s.stations[Math.max(g.a, g.b)];
+    return s.lines.map(l => {
+      const segs: { p: Pt; q: Pt; a: number; b: number }[] = [];
+      for (let k = 0; k + 1 < l.stops.length; k++) {
+        const a = l.stops[k], b = l.stops[k + 1];
+        const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+        const ids = shared.get(key) ?? [l.id];
+        const A = s.stations[Math.min(a, b)], B = s.stations[Math.max(a, b)];
         const len = Math.max(0.01, dist(A, B)), nx = -(B.y - A.y) / len, ny = (B.x - A.x) / len;
-        const off = (ids.indexOf(l.id) - (ids.length - 1) / 2) * 2.1;
-        const cls = ['seg'];
-        if (sel !== null && sel !== l.id) cls.push('dim');
-        if (sel === l.id) cls.push('hl');
-        if (sim.closedPair(g.a, g.b)) cls.push('closed'); else if (idle) cls.push('idle');
-        out.push({ key: `${l.id}:${k}`, x1: r1(A.x + nx * off), y1: r1(A.y + ny * off), x2: r1(B.x + nx * off), y2: r1(B.y + ny * off), color: LINE_COLORS[l.id], cls: cls.join(' ') });
+        const off = (ids.indexOf(l.id) - (ids.length - 1) / 2) * GAP;
+        const P = s.stations[a], Q = s.stations[b];
+        segs.push({ p: { x: P.x + nx * off, y: P.y + ny * off }, q: { x: Q.x + nx * off, y: Q.y + ny * off }, a, b });
       }
+      // Jonctions : intersection des deux tronçons décalés, si elle reste près de la station
+      for (let k = 0; k + 1 < segs.length; k++) {
+        const s1 = segs[k], s2 = segs[k + 1], st = s.stations[s1.b];
+        const d1 = { x: s1.q.x - s1.p.x, y: s1.q.y - s1.p.y }, d2 = { x: s2.q.x - s2.p.x, y: s2.q.y - s2.p.y };
+        const den = d1.x * d2.y - d1.y * d2.x;
+        if (Math.abs(den) < 1e-6) continue;
+        const t = ((s2.p.x - s1.p.x) * d2.y - (s2.p.y - s1.p.y) * d2.x) / den;
+        const X = { x: s1.p.x + d1.x * t, y: s1.p.y + d1.y * t };
+        if (dist(X, st) < GAP * 1.6) { s1.q = X; s2.p = { ...X }; }
+      }
+      return segs;
+    });
+  });
+
+  protected readonly lineView = computed<LineView[]>(() => {
+    const geo = this.geometry(), sim = this.sim, s = sim.s, sel = this.selLine();
+    const out: LineView[] = [];
+    for (const l of s.lines) {
+      const segs = geo[l.id];
+      if (!segs.length) continue;
+      const idle = l.trains === 0 || sim.strike(l.id);
+      let d = '', closed = '', pen: Pt | null = null;
+      for (const g of segs) {
+        const P = `${r2(g.p.x)} ${r2(g.p.y)}`, Q = `${r2(g.q.x)} ${r2(g.q.y)}`;
+        if (sim.closedPair(g.a, g.b)) { closed += `M${P}L${Q}`; pen = null; continue; }
+        d += pen && dist(pen, g.p) < 0.01 ? `L${Q}` : `${pen ? 'L' : 'M'}${P}L${Q}`;
+        pen = g.q;
+      }
+      const cls = ['seg'];
+      if (sel !== null && sel !== l.id) cls.push('dim');
+      if (sel === l.id) cls.push('hl');
+      if (idle) cls.push('idle');
+      out.push({ key: `${l.id}`, d, closed, color: LINE_COLORS[l.id], cls: cls.join(' ') });
     }
     return out;
   });
@@ -1204,22 +1439,35 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
     return this.sim.activeEvents().filter(e => e.type === 'travaux').map(e => ({ key: `${e.a}-${e.b}`, x: r1((s.stations[e.a].x + s.stations[e.b].x) / 2), y: r1((s.stations[e.a].y + s.stations[e.b].y) / 2) }));
   });
 
+  /** Les rames : une motrice et ses wagons, qui suivent le tracé décalé de leur ligne */
   protected readonly trainView = computed(() => {
-    this.ver();
+    const geo = this.geometry();
     const t = this.anim(), sim = this.sim, s = sim.s;
     const out: { key: string; x: number; y: number; a: number; color: string }[] = [];
     for (const l of s.lines) {
       if (l.stops.length < 2 || !l.trains || sim.strike(l.id)) continue;
-      const pts = l.stops.map(i => s.stations[i]);
+      const pts: Pt[] = [];
+      for (const g of geo[l.id]) { if (!pts.length || dist(pts[pts.length - 1], g.p) > 0.01) pts.push(g.p); pts.push(g.q); }
       const lens = pts.slice(1).map((p, i) => dist(pts[i], p));
       const tot = lens.reduce((a, b) => a + b, 0);
-      for (let k = 0; k < l.trains; k++) {
-        let u = (k + 0.5) / l.trains + (t > 0 ? t * 2 * sim.freq(l) : 0);
-        u = u % 2; if (u > 1) u = 2 - u;
-        let d = u * tot, i = 0;
+      if (tot < 0.1) continue;
+      const at = (dd: number) => {
+        let d = Math.max(0, Math.min(tot, dd)), i = 0;
         while (i < lens.length - 1 && d > lens[i]) { d -= lens[i]; i++; }
         const A = pts[i], B = pts[i + 1], f = lens[i] ? Math.min(1, d / lens[i]) : 0;
-        out.push({ key: `${l.id}-${k}`, x: r1(A.x + (B.x - A.x) * f), y: r1(A.y + (B.y - A.y) * f), a: Math.round(Math.atan2(B.y - A.y, B.x - A.x) * 180 / Math.PI), color: LINE_COLORS[l.id] });
+        return { x: r1(A.x + (B.x - A.x) * f), y: r1(A.y + (B.y - A.y) * f), a: Math.round(Math.atan2(B.y - A.y, B.x - A.x) * 180 / Math.PI) };
+      };
+      for (let k = 0; k < l.trains; k++) {
+        let u = (k + 0.5) / l.trains + (t > 0 ? t * 2 * sim.freq(l) : 0);
+        u = u % 2;
+        const back = u > 1;
+        if (back) u = 2 - u;
+        const cars = 1 + Math.floor(l.wagons / l.trains) + (k < l.wagons % l.trains ? 1 : 0);
+        const span = (cars - 1) * 2.75, head = u * Math.max(0, tot - span) + (back ? 0 : span);
+        for (let c = 0; c < cars; c++) {
+          const p = at(back ? head + c * 2.75 : head - c * 2.75);
+          out.push({ key: `${l.id}-${k}-${c}`, ...p, a: back ? p.a + 180 : p.a, color: LINE_COLORS[l.id] });
+        }
       }
     }
     return out;
@@ -1243,7 +1491,7 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
       const here = by.get(st.id) ?? [];
       const cap = sim.capOf(st);
       const lf = here.length / cap;
-      const C = 2 * Math.PI * (r + 1.7), T = 2 * Math.PI * (r + 3.4);
+      const C = 2 * Math.PI * (r + 1.7), T = r + 3.2;
       const shown = here.slice(0, 8);
       const px0 = st.x + r + 1.9, py0 = st.y - 1.2;
       const left = st.x > (s.v === 'tgv' ? 80 : 84);
@@ -1259,12 +1507,19 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
       const served = s.lines.some(l => l.stops.length >= 2 && l.stops.includes(st.id));
       const kindLabel = s.v === 'tgv' ? `${st.pop.toString().replace('.', ',')} M d’habitants` : KIND_LABEL[s.v][st.kind];
       const lbl = s.v === 'tgv';
+      // Minuterie de fermeture : un secteur qui se remplit, semaine après semaine
+      let timer: string | null = null;
+      if (st.over) {
+        const f = Math.min(1, st.over / sim.c.limit), a = f * Math.PI * 2 - Math.PI / 2;
+        timer = f >= 1 ? disc(st.x, st.y, T)
+          : `M${st.x} ${st.y}V${r2(st.y - T)}A${T} ${T} 0 ${f > 0.5 ? 1 : 0} 1 ${r2(st.x + Math.cos(a) * T)} ${r2(st.y + Math.sin(a) * T)}Z`;
+      }
       return {
         id: st.id, x: st.x, y: st.y, d: shapePath(st.kind === 'ville' ? 'rond' : st.kind, st.x, st.y, r), r, cls: cls.join(' '),
         aria: `${st.name}, ${kindLabel}, ${here.length} voyageur${here.length > 1 ? 's' : ''} en attente sur ${cap}${st.over ? `, saturée depuis ${st.over} semaine${st.over > 1 ? 's' : ''}` : ''}${served ? '' : ', non desservie'}${st.id === endSt ? ', bout de ligne actif' : ''}`,
         load: lf >= 0.34 ? `${r2(Math.min(1, lf) * C)} ${r2(C)}` : null,
         loadColor: lf > 1 ? 'var(--bad)' : lf >= 0.75 ? '#e07b00' : '#e0b000',
-        timer: st.over ? `${r2((st.over / sim.c.limit) * T)} ${r2(T)}` : null,
+        timer,
         hub: st.hub, pax, more: Math.max(0, here.length - shown.length),
         mx: left ? st.x - r - 11 : px0 + 9.2, my: py0 + 4.6,
         label: lbl ? st.name : '', lx: left ? st.x - r - 1.2 : st.x + r + 1.2, ly: st.y + r + 2.4, anchor: left ? 'end' : 'start',
@@ -1281,13 +1536,15 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
     this.maxWeeks = c.weeks; this.mw = c.w; this.mh = c.h; this.wagonsPerTrain = c.wagonsPerTrain;
     this.brief = BRIEF[this.variant];
     this.mapTitle = TITLE[this.variant];
-    this.tokenIcon = this.variant === 'tram' ? '🌉' : '🚇';
+    this.tokenIcon = this.variant === 'tram' ? 'bridge' : 'tunnel';
     this.tokenTitle = this.variant === 'tram' ? 'Ponts sur la Loire' : this.variant === 'metro' ? 'Tunnels sous la Seine' : 'Tunnels de montagne';
+    this.scaleLabel = this.variant === 'tgv' ? '100 km' : this.variant === 'tram' ? '1 km' : '2,5 km';
     if (this.variant !== 'tgv') {
       const r = RIVERS[this.variant];
       this.riverPts = r.pts.map(p => `${p.x},${p.y}`).join(' ');
       this.riverName = r.name;
       this.riverLabel = this.variant === 'metro' ? { x: 80, y: 70 } : { x: 6, y: 67 };
+      this.parks = PARKS[this.variant];
     }
     this.setupLegend();
     this.info.set(this.variant === 'tgv' ? 'Choisissez une ligne en bas, puis touchez deux villes pour tracer un premier tronçon.' : 'Choisissez une ligne en bas, puis touchez deux stations pour tracer un premier tronçon.');
@@ -1303,13 +1560,13 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
 
   private setupLegend(): void {
     const v = this.variant, c = this.sim.c;
-    const kinds = v === 'tgv' ? [] : (['rond', 'tri', 'carre', 'croix', 'losange'] as Kind[]).map(k => ({ icon: KIND_GLYPH[k], label: KIND_LABEL[v][k] ?? '' }));
+    const kinds = v === 'tgv' ? [] : (['rond', 'tri', 'carre', 'croix', 'losange'] as Kind[]).map(k => ({ sw: k as SwatchId, label: KIND_LABEL[v][k] ?? '' }));
     this.legend = [
       ...kinds,
-      ...(v === 'tgv' ? [{ icon: '●', label: 'Ville (taille selon la population)' }, { icon: '⛰️', label: 'Massif : tronçon 2,5 fois plus cher' }] : []),
-      { icon: '◌', label: 'Anneau orange : quai qui se remplit' }, { icon: '⭕', label: 'Anneau rouge clignotant : saturation (semaines)' },
-      { icon: '⋯', label: 'Pointillés : station de la semaine prochaine' }, { icon: '🚧', label: 'Tronçon fermé (travaux)' },
-      { icon: '⭐', label: 'Pôle d’échanges : +' + c.hubCap + ' places, correspondance rapide' },
+      ...(v === 'tgv' ? [{ sw: 'city' as SwatchId, label: 'Ville (taille selon la population)' }, { sw: 'mnt' as SwatchId, label: 'Massif : tronçon 2,5 fois plus cher' }] : []),
+      { sw: 'load', label: 'Anneau orange : quai qui se remplit' }, { sw: 'timer', label: 'Secteur rouge : saturation (semaines)' },
+      { sw: 'ghost', label: 'Pointillés : station de la semaine prochaine' }, { sw: 'works', label: 'Tronçon fermé (travaux)' },
+      { sw: 'hub', label: 'Pôle d’échanges : +' + c.hubCap + ' places, correspondance rapide' },
     ];
     const tok = v === 'metro' ? 'Franchir la Seine demande un tunnel (rendu si vous démolissez).' : v === 'tram' ? 'Franchir la Loire demande un pont. Un tronçon coûte 6 M€ plus 15 M€ par kilomètre ; démolir un tronçon d’une semaine passée ne rembourse que la moitié.' : 'Un tronçon coûte 1 Md€ pour 100 km, 2,5 fois plus en montagne ; un tunnel de montagne, s’il en reste, supprime ce surcoût. Démolir ne rembourse que la moitié.';
     this.rules = `Règles : touchez une ligne puis des stations pour la prolonger, par le bout signalé par l’anneau tournant (touchez l’autre bout pour l’en changer). Chaque semaine, les voyageurs prennent le plus court chemin, correspondances comprises ; chaque montée dans un train consomme une place de la ligne. Capacité d’une ligne : ${c.trainCap} places par rame et ${c.wagonCap} par wagon, plus si la ligne est courte (rames plus fréquentes), moins si elle est longue. Une station tolère ${c.cap} voyageurs en attente${v === 'tgv' ? ' (plus pour une grande ville)' : ''} ; saturée ${c.limit} semaines, elle fait fermer le réseau. ${tok} La satisfaction baisse à chaque semaine d’attente et à chaque correspondance. Note : voyageurs arrivés, satisfaction, et semaines tenues.`;
@@ -1317,6 +1574,9 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
 
   /* ── Interactions ── */
 
+  protected u(name: string): string { return `url(#${this.uid}-${name})`; }
+  protected g(id: GlyphId): string { return `#${this.uid}-g-${id}`; }
+  protected kindPath(k: SwatchId): string { return shapePath(k as Kind, 0, 0, 2.6); }
   protected lineColor(i: number): string { return LINE_COLORS[i]; }
 
   protected mapTap(e: MouseEvent): void {
@@ -1396,7 +1656,7 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
     this.snap();
     const err = this.sim.makeHub(id);
     if (err) { this.undo.pop(); this.info.set(err); return; }
-    this.info.set(`⭐ ${this.sim.s.stations[id].name} devient un pôle d’échanges : plus de place sur les quais, correspondances plus rapides.`);
+    this.info.set(`${this.sim.s.stations[id].name} devient un pôle d’échanges : plus de place sur les quais, correspondances plus rapides.`);
     this.bump();
   }
 
@@ -1489,6 +1749,3 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
     }
   }
 }
-
-const r1 = (v: number) => Math.round(v * 10) / 10;
-const r2 = (v: number) => Math.round(v * 100) / 100;
