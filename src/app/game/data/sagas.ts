@@ -159,6 +159,94 @@ export const SAGA_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'saga_jouvence', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('jouvence', 24),
+    build: () => ({
+      title: 'Une source dans les Pyrénées',
+      context: 'La maire d’Esquirac, petit village des Pyrénées, vous tend une photo d’elle prise l’an dernier, puis vous montre son visage : dix ans de moins, au bas mot. « Trois bains dans la source du lavoir. Et je ne suis pas la seule. Demain, ce sera dans tous les journaux. »',
+      choices: [
+        c('proteger', 'Faire protéger la source et prévenir les scientifiques', [start('jouvence'), g(8, 0, -1), s('politicalCapital', -2)], 'Une barrière, deux gendarmes et un hydrogéologue : la source est à l’abri. Pour l’instant.'),
+        c('celebrer', 'Saluer une bonne nouvelle pour le village', [start('jouvence'), g(0, 5, 3)], 'Le village fait la fête. Le lendemain, les premiers cars arrivent.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_exode', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('exode', 28),
+    build: () => ({
+      title: 'Partez',
+      context: 'Une vidéo de deux minutes, tournée dans un pré du Gers, appelle les citadins à « tout quitter pour la vraie vie ». Cent millions de vues en une semaine. Un maire rural vous appelle, affolé : « Quarante familles sont arrivées ce week-end. Je n’ai ni logements ni places à l’école. »',
+      choices: [
+        c('cellule', 'Réclamer une cellule nationale d’accueil dans les territoires', [start('exode'), g(8, 0, 0), s('politicalCapital', -2)], 'Préfets, maires et bailleurs se réunissent le soir même. On vous trouve alarmiste.'),
+        c('mode', 'Y voir une mode passagère', [start('exode'), g(0, 5, 2)], 'La mode passe. Elle passe par quatre cent mille déménagements.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_pluie', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('pluie', 26),
+    build: () => ({
+      title: 'Il pleut sur commande',
+      context: 'En pleine sécheresse, la fondatrice d’une jeune pousse toulousaine vous emmène au milieu d’un champ craquelé du Lauragais. Elle consulte sa montre, lève la main : trois minutes plus tard, il pleut. « Nous allons vendre la pluie. Aux régions, aux agriculteurs, à qui voudra. »',
+      choices: [
+        c('encadrer', 'Exiger un cadre public avant toute vente', [start('pluie'), g(8, 0, 0), s('politicalCapital', -2)], 'Elle grimace, puis accepte de s’asseoir avec les services de l’État. Le champ, lui, boit.'),
+        c('applaudir', 'Applaudir l’innovation française', [start('pluie'), g(0, 5, 3)], 'Votre message est repris partout. Le lendemain, trois régions passent commande.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_rouille', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('rouille', 30),
+    build: () => ({
+      title: 'Le béton qui s’effrite',
+      context: 'Un ingénieur des ouvrages d’art vous tend un morceau de béton couvert d’un duvet blanc. Il l’écrase entre ses doigts comme un biscuit : « C’est vivant. Ça mange le béton. Et c’est déjà dans trois parkings de la ville. »',
+      choices: [
+        c('fermer', 'Faire fermer les ouvrages touchés et alerter les laboratoires', [start('rouille'), g(8, 0, -1), s('politicalCapital', -2)], 'Les parkings ferment dans l’heure. Les automobilistes râlent ; les ingénieurs respirent.'),
+        c('discret', 'Rester discret pour ne pas affoler', [start('rouille'), g(0, 5, 3)], 'Personne ne s’affole. Le duvet blanc, lui, gagne un étage par semaine.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_abeilles', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('abeilles', 22),
+    build: () => ({
+      title: 'Des ruches vides',
+      context: 'Un apiculteur de la Drôme vous attend devant votre permanence, une ruche ouverte dans les bras. Vide. « Pas un cadavre, pas une maladie. Elles sont parties. Toutes. Et chez mes voisins aussi. »',
+      choices: [
+        c('alerte', 'Déclencher une alerte nationale sur les pollinisateurs', [start('abeilles'), g(8, 0, -1), s('politicalCapital', -2)], 'Les laboratoires reçoivent des ruches vides par colis express.'),
+        c('local', 'Y voir un problème local', [start('abeilles'), g(0, 5, 3)], 'Le problème local s’étend à quarante départements en un mois.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_or', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('or', 24),
+    build: () => ({
+      title: 'Une pépite grosse comme un œuf',
+      context: 'Une géologue du bureau des mines pose sur votre table une pépite grosse comme un œuf, ramassée par un randonneur dans un ruisseau des Cévennes. « Il y en a d’autres. Beaucoup d’autres. Dans une semaine, tout le monde le saura. »',
+      choices: [
+        c('encadrer', 'Faire geler les permis et encadrer la vallée', [start('or'), g(8, 0, -1), s('politicalCapital', -2)], 'Les préfets reçoivent la consigne dans la nuit. Les spéculateurs, eux, trépignent.'),
+        c('chance', 'Y voir une chance pour la région', [start('or'), g(0, 5, 3)], 'La vallée se réjouit. Dans une semaine, elle sera envahie.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_miroir', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('miroir', 26),
+    build: () => ({
+      title: 'Un miroir sans reflet',
+      context: 'Un antiquaire de Bourges vous fait descendre dans sa cave. Dans un grand miroir doré, pas de reflet : une rue pavée, un tramway à vapeur, et un passant qui vous fait signe. L’antiquaire chuchote : « On peut passer. J’y suis allé hier. Ils ont un roi. »',
+      choices: [
+        c('proteger', 'Placer le miroir sous la protection de l’État', [start('miroir'), g(8, 0, 0), s('politicalCapital', -2)], 'La cave de l’antiquaire devient le lieu le mieux gardé de France. Il réclame un loyer.'),
+        c('billets', 'Laisser l’antiquaire vendre des billets', [start('miroir'), g(-2, 5, 4)], 'Cinq euros le passage. La file d’attente fait déjà le tour du pâté de maisons.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_fantomes', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('fantomes', 22),
+    build: () => ({
+      title: 'Une dame dans la galerie des Glaces',
+      context: 'Une gardienne du château de Versailles vous montre une vidéo tournée la veille à minuit : une dame en robe à paniers traverse la galerie des Glaces, s’arrête, sourit à la caméra, fait une révérence et s’efface. « Elle revient tous les soirs. Elle est très polie. »',
+      choices: [
+        c('enquete', 'Demander une enquête scientifique discrète', [start('fantomes'), g(8, 0, 0), s('politicalCapital', -2)], 'Des physiciens installent des capteurs dans la galerie. La dame les salue poliment.'),
+        c('partager', 'Partager la vidéo : c’est merveilleux', [start('fantomes'), g(-2, 5, 4)], 'Cent millions de vues. Et deux cents cars de touristes devant les grilles le lendemain.'),
+      ],
+    }),
+  },
 ];
 
 /* ── Rebondissements ───────────────────────────────────────── */
@@ -859,6 +947,461 @@ export const SAGA_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  // La fontaine de jouvence
+  {
+    tag: 'jouvence_routes', weight: 1, eligible: on('jouvence', 0, 1),
+    build: () => ({
+      title: 'Esquirac assiégé',
+      context: 'Les routes de la vallée sont bloquées par des milliers de voitures, des camping-cars s’installent dans les prés, et les habitants d’Esquirac ne peuvent plus descendre en ville.',
+      choices: [
+        c('navettes', 'Organiser navettes, parkings et accès réservés aux habitants', [g(5, -3, 2), s('energy', -3)], 'Parkings en fond de vallée, navettes toutes les dix minutes : le village respire.'),
+        c('laisser', 'Laisser faire : c’est la saison', [g(-1, 4, 0)], 'Les bouchons remontent jusqu’au col.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jouvence_etude', weight: 1, eligible: on('jouvence', 1, 2),
+    build: () => ({
+      title: 'Une étude en double aveugle',
+      context: 'Des chercheurs toulousains proposent une étude rigoureuse : mille volontaires, la moitié avec l’eau d’Esquirac, l’autre avec de l’eau du robinet. Les pèlerins crient au sacrilège, les sceptiques ricanent.',
+      choices: [
+        { ...c('defendre', 'Défendre l’étude devant la presse', [g(5, -3, 3)], 'Vous expliquez pourquoi on doit savoir, plutôt que croire. L’étude démarre, sous les applaudissements des uns et les grognements des autres.'), play: 'conference_presse' },
+        c('ajourner', 'Ajourner l’étude pour ne froisser personne', [g(0, 3, -1)], 'Personne n’est froissé. Personne ne sait rien non plus.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jouvence_trafic', weight: 1, eligible: on('jouvence', 2, 3),
+    build: () => ({
+      title: 'Mille euros le litre',
+      context: 'L’eau d’Esquirac se vend sous le manteau à mille euros le litre ; des contrefaçons tirées au robinet inondent les marchés, et des citernes disparaissent la nuit.',
+      choices: [
+        c('operation', 'Lancer une opération contre le trafic', [g(6, -5, 1)], 'Douaniers et gendarmes saisissent citernes et bidons. Les prix s’effondrent, la source remonte.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Les trafiquants avaient été prévenus : les citernes ont disparu, et les prix doublent.' } }),
+        c('tolerer', 'Laisser le marché se réguler', [g(1, 3, -1)], 'Le marché se régule : l’eau coûte désormais deux mille euros.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jouvence_retraites', weight: 1, eligible: on('jouvence', 3),
+    build: () => ({
+      title: 'Les caisses de retraite s’affolent',
+      context: 'Les gestionnaires des caisses de retraite publient une note alarmiste : si l’eau tient ses promesses, il faudra revoir tout le système. Les syndicats exigent d’être reçus.',
+      choices: [
+        { ...c('recevoir', 'Recevoir syndicats et gestionnaires pour désamorcer la panique', [g(4, -3, 5)], 'Autour de la table, chacun admet qu’on ne réforme pas les retraites sur la foi d’un lavoir. La panique retombe.'), play: 'negociation_syndicale' },
+        c('rapport', 'Commander un rapport et attendre', [g(0, 3, -3)], 'Le rapport est attendu dans dix-huit mois. Les rumeurs, elles, n’attendent pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jouvence_verdict', weight: 1, eligible: on('jouvence', 4),
+    build: () => ({
+      title: 'Les résultats de l’étude',
+      context: 'Les résultats de l’étude tombent cette semaine. Un journaliste vous invite à les commenter en direct, et il a déjà préparé ses questions pièges.',
+      choices: [
+        { ...c('expliquer', 'Expliquer les résultats en direct, sans rien promettre', [g(2, -2, 6)], 'Ni miracle ni arnaque : vous dites ce qu’on sait, et ce qu’on ignore. Le pays apprécie la franchise.'), play: 'interview_piege' },
+        c('scientifiques', 'Laisser parler les scientifiques', [g(1, 1, 0)], 'Les scientifiques parlent d’intervalles de confiance. Le pays zappe.'),
+      ],
+    }),
+  },
+  // Le grand exode
+  {
+    tag: 'exode_mairie', weight: 1, eligible: on('exode', 0, 1),
+    build: () => ({
+      title: 'Le maire débordé',
+      context: 'Le maire d’un village de la Creuse a vu sa commune passer de trois cents à neuf cents habitants. Il n’a qu’une secrétaire de mairie à mi-temps, et menace de démissionner.',
+      choices: [
+        c('renforts', 'Envoyer des renforts administratifs aux petites mairies', [g(5, -3, 2), s('energy', -3)], 'Des fonctionnaires volontaires débarquent avec leurs ordinateurs. Le maire retire sa démission.'),
+        c('debrouiller', 'Laisser les communes se débrouiller', [g(0, 3, -2)], 'Le maire démissionne. Trois autres l’imitent dans la semaine.'),
+      ],
+    }),
+  },
+  {
+    tag: 'exode_classes', weight: 1, eligible: on('exode', 1, 2),
+    build: () => ({
+      title: 'Des écoles pleines à craquer',
+      context: 'Les écoles rurales manquent de places, d’enseignants et de cars scolaires. Les syndicats d’enseignants réclament des moyens d’urgence avant la rentrée.',
+      choices: [
+        { ...c('negocier', 'Négocier un plan d’urgence pour les écoles rurales', [g(6, -3, 2)], 'Classes rouvertes, enseignants volontaires, cars supplémentaires : la rentrée se fera.'), play: 'negociation_syndicale' },
+        c('regrouper', 'Regrouper les classes dans les bourgs', [g(2, 1, -3)], 'Les trajets s’allongent, les parents grondent.'),
+        c('attendre', 'Attendre la rentrée suivante', [g(0, 3, -2)], 'Les maires installent des préfabriqués à leurs frais, en maugréant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'exode_loyers', weight: 1, eligible: on('exode', 2, 3),
+    build: () => ({
+      title: 'Paris à moitié prix',
+      context: 'Les loyers parisiens ont chuté de moitié, des commerces ferment, et des propriétaires endettés s’affolent. Les investisseurs réclament un plan de sauvetage de l’immobilier urbain.',
+      choices: [
+        c('reconvertir', 'Reconvertir les logements vides en logements abordables', [g(5, -3, 2), s('politicalCapital', -3)], 'Étudiants, soignants, jeunes actifs : les immeubles vides se remplissent autrement.'),
+        c('racheter', 'Racheter les biens des investisseurs', [g(2, 0, -4), { kind: 'economy', deficit: 0.1 }], 'Les investisseurs sont soulagés. Les contribuables, beaucoup moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'exode_conseil', weight: 1, eligible: on('exode', 3),
+    build: () => ({
+      title: 'La fibre ou les chemins',
+      context: 'Dans un village du Morvan, nouveaux venus et anciens s’affrontent en conseil municipal : les uns veulent la fibre et des pistes cyclables, les autres leurs chemins creux et leur tranquillité.',
+      choices: [
+        { ...c('consulter', 'Organiser une grande consultation de village', [g(3, -3, 6)], 'Fibre le long des routes, chemins creux classés : chacun repart avec quelque chose, et tout le monde finit au café.'), play: 'consultation' },
+        c('trancher', 'Trancher pour la fibre partout', [g(4, 0, -4)], 'La fibre passe. Les anciens ne vous saluent plus au marché.'),
+        c('laisser', 'Laisser le conseil municipal s’écharper', [g(0, 3, -3)], 'La séance dure jusqu’à deux heures du matin. Rien n’est voté.'),
+      ],
+    }),
+  },
+  {
+    tag: 'exode_petites_lignes', weight: 1, eligible: on('exode', 3, 4),
+    build: () => ({
+      title: 'Rouvrir les petites lignes',
+      context: 'Des dizaines de lignes ferroviaires fermées depuis des décennies pourraient rouvrir pour desservir les villages repeuplés. La facture est lourde, et le chantier hasardeux.',
+      choices: [
+        c('rouvrir', 'Rouvrir en urgence les lignes les plus utiles', [g(6, -4, 2)], 'Les premiers autorails repartent entre les prés. Dans les gares de campagne, on applaudit.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Les vieux rails ne tiennent pas : les premiers trains roulent au pas, et les retards deviennent légendaires.' } }),
+        c('cars', 'Se contenter de cars', [g(1, 3, 0)], 'Les cars passent deux fois par jour. Quand ils passent.'),
+      ],
+    }),
+  },
+  // La machine à pluie
+  {
+    tag: 'pluie_encheres', weight: 1, eligible: on('pluie', 0, 1),
+    build: () => ({
+      title: 'La pluie aux enchères',
+      context: 'Averse ouvre des enchères pour ses prochaines averses. La Provence propose le double de l’Occitanie ; les petites communes du Gers n’ont pas de quoi enchérir.',
+      choices: [
+        c('priorites', 'Imposer une priorité aux zones les plus sèches', [g(5, -3, 2)], 'Les averses vont d’abord là où la terre craque. Les grandes régions râlent, les petites respirent.'),
+        c('encheres', 'Laisser jouer les enchères', [g(0, 4, -2)], 'Il pleut sur les golfs de la Côte d’Azur. Dans le Gers, on regarde le ciel.'),
+      ],
+    }),
+  },
+  {
+    tag: 'pluie_nuages_voles', weight: 1, eligible: on('pluie', 1, 2),
+    build: () => ({
+      title: 'Les nuages volés',
+      context: 'Une région accuse l’Occitanie de « siphonner ses nuages ». Les présidents de région s’invectivent par communiqués interposés et menacent de saisir la justice.',
+      choices: [
+        { ...c('table', 'Réunir les régions autour d’une même table', [g(5, -3, 3)], 'Un calendrier commun des averses est signé à l’aube. Les communiqués rageurs cessent.'), play: 'negociation_coalition' },
+        c('tribunaux', 'Laisser les tribunaux trancher', [g(1, 3, -2)], 'Les avocats se frottent les mains. Les nuages, eux, passent la frontière.'),
+      ],
+    }),
+  },
+  {
+    tag: 'pluie_grele', weight: 1, eligible: on('pluie', 2, 3),
+    build: () => ({
+      title: 'La grêle sur les vignes',
+      context: 'Une averse commandée par une coopérative a tourné à la grêle : trois cents hectares de vignes hachés en dix minutes. Les vignerons exigent réparation, Averse invoque un « aléa ».',
+      choices: [
+        c('fonds', 'Créer un fonds d’indemnisation financé par les ventes de pluie', [g(5, -3, 3), s('politicalCapital', -3)], 'Les vignerons sont indemnisés en un mois. Averse paie, et révise ses protocoles.'),
+        c('justice', 'Renvoyer vers les tribunaux', [g(1, 3, -3)], 'Le procès est prévu dans trois ans. Les vignes, elles, ne repousseront pas d’ici là.'),
+      ],
+    }),
+  },
+  {
+    tag: 'pluie_crue', weight: 1, eligible: on('pluie', 3),
+    build: () => ({
+      title: 'La rivière qui déborde',
+      context: 'Une averse trop généreuse a fait déborder une rivière dans un bourg du Tarn-et-Garonne qui n’avait rien commandé ; les habitants ont été mis à l’abri à temps. Averse propose de « faire moins pleuvoir » en dispersant les nuages, une technique jamais testée.',
+      choices: [
+        c('disperser', 'Autoriser la dispersion, sous contrôle des météorologues', [g(6, -5, 1)], 'Les nuages s’effilochent au-dessus de la vallée. Le soleil revient, la rivière rentre dans son lit.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Les nuages dispersés vont crever trois vallées plus loin ; il faut des jours pour tout éponger.' } }),
+        c('secours', 'S’en tenir aux secours classiques', [g(1, 3, 0)], 'Pompiers, pompes et sacs de sable. Averse, elle, continue de vendre.'),
+      ],
+    }),
+  },
+  {
+    tag: 'pluie_loi', weight: 1, eligible: on('pluie', 4),
+    build: () => ({
+      title: 'À qui appartient le ciel ?',
+      context: 'Le Parlement débat d’une loi sur la propriété du ciel. Vous pouvez prendre la parole pour défendre l’idée que la pluie est un bien commun.',
+      choices: [
+        { ...c('tribune', 'Défendre à la tribune le ciel comme bien commun', [g(4, -3, 4)], 'Votre formule, « la pluie ne se privatise pas », est reprise jusqu’au Conseil d’État.'), play: 'eloquence' },
+        c('juristes', 'Laisser le débat aux juristes', [g(1, 1, 0)], 'Les juristes débattent de la hauteur à laquelle commence le ciel. Le pays décroche.'),
+      ],
+    }),
+  },
+  // La rouille blanche
+  {
+    tag: 'rouille_pont', weight: 1, eligible: on('rouille', 0, 1),
+    build: () => ({
+      title: 'Un pont à fermer',
+      context: 'Le principal pont de la ville est touché. Le fermer, c’est une heure de détour pour cent mille personnes chaque jour ; le garder ouvert, c’est parier sur la solidité d’un béton malade.',
+      choices: [
+        c('fermer', 'Fermer le pont et organiser des navettes', [g(5, -3, 1), s('energy', -3)], 'Bacs, bus, vélos : la ville s’organise. Les inspections confirment que c’était nécessaire.'),
+        c('pietons', 'Le réserver aux piétons', [g(2, 1, 0)], 'Les voitures font le détour, les piétons traversent vite. Personne n’est vraiment rassuré.'),
+        c('ouvert', 'Le laisser ouvert, sous surveillance', [g(-1, 4, 1)], 'La circulation continue. Chaque matin, un ingénieur mesure les fissures, la mine sombre.'),
+      ],
+    }),
+  },
+  {
+    tag: 'rouille_tours', weight: 1, eligible: on('rouille', 1, 2),
+    build: () => ({
+      title: 'Des tours à évacuer',
+      context: 'Les ingénieurs recommandent d’évacuer trois tours rongées à la base. Mille deux cents familles doivent être relogées, et certaines refusent de quitter leur appartement.',
+      choices: [
+        { ...c('concerter', 'Organiser une concertation avec les habitants', [g(4, -3, 5)], 'Les habitants choisissent leur relogement, quartier par quartier. Le déménagement se fait sans drame.'), play: 'consultation' },
+        c('ordonner', 'Ordonner l’évacuation sans délai', [g(4, 0, -5)], 'L’évacuation est rapide et froide. Les images de familles avec leurs cartons font le tour des réseaux.'),
+        c('attendre', 'Attendre une contre-expertise', [g(0, 4, 0)], 'Les experts contre-expertisent. Le duvet blanc, lui, monte d’un étage.'),
+      ],
+    }),
+  },
+  {
+    tag: 'rouille_cimentiers', weight: 1, eligible: on('rouille', 2, 3),
+    build: () => ({
+      title: 'Le béton breveté',
+      context: 'Les géants du ciment proposent un « béton immunisé » breveté, à prix d’or. Un laboratoire public affirme pouvoir faire aussi bien, en libre accès, mais avec six mois de retard.',
+      choices: [
+        c('public', 'Soutenir le laboratoire public', [g(5, -2, 3), s('politicalCapital', -3)], 'La formule est publiée en libre accès. Les cimentiers grincent des dents, les maires applaudissent.'),
+        c('brevet', 'Acheter le béton breveté, tout de suite', [g(3, 0, -4), { kind: 'economy', deficit: 0.1 }], 'Les chantiers démarrent vite. La facture, elle, fait scandale.'),
+      ],
+    }),
+  },
+  {
+    tag: 'rouille_essai', weight: 1, eligible: on('rouille', 3),
+    build: () => ({
+      title: 'L’essai de l’antidote',
+      context: 'Une équipe de Grenoble a mis au point un antifongique qui stoppe la rouille blanche en laboratoire. Elle propose un essai grandeur nature sur un viaduc entier, fermé à la circulation.',
+      choices: [
+        c('essai', 'Autoriser l’essai grandeur nature', [g(7, -5, 2)], 'Le duvet blanc noircit, puis tombe en poussière. Le viaduc est sauvé.', { risk: { baseChance: 0.4, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -3)], failureNews: 'L’antifongique teint le viaduc en vert vif et n’arrête rien : il faut tout reprendre de zéro.' } }),
+        c('labo', 'Exiger encore six mois de tests en laboratoire', [g(1, 3, 0)], 'Les chercheurs testent. La rouille, elle, ne prend pas de vacances.'),
+      ],
+    }),
+  },
+  {
+    tag: 'rouille_rumeurs', weight: 1, eligible: on('rouille', 2, 3, 4),
+    build: () => ({
+      title: 'Ma maison est-elle rongée ?',
+      context: 'Des escrocs démarchent les retraités pour des « traitements anti-rouille » hors de prix, et une rumeur affirme que tous les immeubles d’avant 1980 vont s’effondrer.',
+      choices: [
+        { ...c('verifier', 'Démonter les rumeurs en direct', [g(1, -2, 6)], 'Plans, chiffres, inspections : vous démontez la rumeur point par point. Les démarcheurs disparaissent.'), play: 'factcheck_direct' },
+        c('prefectures', 'Laisser les préfectures communiquer', [g(0, 3, -3)], 'Les communiqués sont exacts et illisibles. La rumeur court plus vite.'),
+      ],
+    }),
+  },
+  // Le printemps silencieux
+  {
+    tag: 'abeilles_haies', weight: 1, eligible: on('abeilles', 0, 1),
+    build: () => ({
+      title: 'Des haies et des prairies',
+      context: 'Une association propose de replanter des milliers de kilomètres de haies et de prairies fleuries pour accueillir les derniers pollinisateurs sauvages. Les agriculteurs hésitent à céder du terrain.',
+      choices: [
+        c('planter', 'Lancer un grand plan haies et prairies', [g(4, -2, 4), s('politicalCapital', -3)], 'Des milliers de volontaires plantent des aubépines et des sureaux. Les premiers bourdons sauvages reviennent.'),
+        c('reporter', 'Remettre à plus tard', [g(0, 3, 0)], 'Le plan attend dans un tiroir. Les prairies, elles, n’attendent pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'abeilles_pinceaux', weight: 1, eligible: on('abeilles', 1, 2),
+    build: () => ({
+      title: 'Volontaires au pinceau',
+      context: 'Dans la Drôme, les arboriculteurs demandent des bras pour polliniser les vergers à la main. Des milliers de citadins se proposent, mais il faut les former, les loger et les assurer.',
+      choices: [
+        c('organiser', 'Organiser une grande mobilisation de volontaires', [g(5, -3, 4), s('energy', -3)], 'Des trains entiers de volontaires, pinceau à la main. Les cerisiers donneront, cette année.'),
+        c('saisonniers', 'Laisser les exploitants payer des saisonniers', [g(2, 1, -2)], 'Les grandes exploitations s’en sortent. Les petites, non.'),
+      ],
+    }),
+  },
+  {
+    tag: 'abeilles_prix', weight: 1, eligible: on('abeilles', 1, 2, 3),
+    build: () => ({
+      title: 'Trente euros le kilo de cerises',
+      context: 'Le kilo de cerises dépasse trente euros, les pommes deviennent un luxe. Une émission vous invite à répondre en direct aux questions des téléspectateurs, et l’animateur aime les questions qui piquent.',
+      choices: [
+        { ...c('repondre', 'Répondre aux questions en direct', [g(1, -2, 6)], 'Vous expliquez, chiffres à l’appui, ce que l’État fait. Le pays respire un peu.'), play: 'interview_piege' },
+        c('decliner', 'Décliner l’invitation', [g(0, 2, -3)], 'Une chaise vide sur le plateau. L’animateur s’en donne à cœur joie.'),
+      ],
+    }),
+  },
+  {
+    tag: 'abeilles_pesticides', weight: 1, eligible: on('abeilles', 2, 3),
+    build: () => ({
+      title: 'Interdire les pesticides ?',
+      context: 'Les apiculteurs réclament l’interdiction immédiate de trois pesticides. Le lobby agricole promet des tracteurs sur les Champs-Élysées si le texte passe.',
+      choices: [
+        { ...c('moratoire', 'Négocier un moratoire avec les syndicats agricoles', [g(5, -3, 3)], 'Un moratoire de deux ans, des aides à la transition : les tracteurs restent dans les cours de ferme.'), play: 'negociation_syndicale' },
+        c('decret', 'Interdire par décret, tout de suite', [g(5, -2, -5)], 'Les pesticides sont interdits. Les tracteurs bloquent Paris trois jours.'),
+        c('attendre', 'Attendre les conclusions scientifiques', [g(0, 4, -1)], 'Les scientifiques travaillent. Les ruches restent vides.'),
+      ],
+    }),
+  },
+  {
+    tag: 'abeilles_essaim', weight: 1, eligible: on('abeilles', 3, 4),
+    build: () => ({
+      title: 'Un essaim dans les Cévennes',
+      context: 'Dans une vallée isolée des Cévennes, un apiculteur a trouvé un essaim sauvage en pleine santé. Les généticiens veulent l’étudier ; les apiculteurs veulent le multiplier tout de suite.',
+      choices: [
+        c('proteger', 'Protéger la vallée et multiplier l’essaim avec prudence', [g(6, -4, 2)], 'Des essaims filles sont confiés à des apiculteurs de tout le pays. Ils tiennent.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Les premières reines élevées en laboratoire dépérissent ; l’essaim cévenol, affaibli, doit être laissé en paix.' } }),
+        c('vendre', 'Laisser l’apiculteur vendre ses reines au plus offrant', [g(1, 3, -2)], 'Les reines partent à prix d’or vers l’étranger.'),
+      ],
+    }),
+  },
+  // La ruée vers l'or
+  {
+    tag: 'or_concessions', weight: 1, eligible: on('or', 0, 1),
+    build: () => ({
+      title: 'La bataille des piquets',
+      context: 'Des centaines de chercheurs d’or plantent des piquets partout, se disputent les berges et réclament des titres de propriété. Le maire de Valcrouse est débordé.',
+      choices: [
+        c('registre', 'Créer un registre public des concessions', [g(5, -3, 2)], 'Un bureau ouvre dans la salle des fêtes. Chaque piquet a désormais un nom et un numéro.'),
+        c('premier', 'Laisser jouer la règle du premier arrivé', [g(-1, 4, -2)], 'Le premier arrivé est souvent le plus matinal, et le plus têtu. La tension monte sur les berges.'),
+      ],
+    }),
+  },
+  {
+    tag: 'or_mercure', weight: 1, eligible: on('or', 1, 2),
+    build: () => ({
+      title: 'Du mercure dans le Gardon',
+      context: 'Des orpailleurs utilisent du mercure pour séparer l’or. Les truites meurent dans le Gardon, et des écologistes s’enchaînent aux châtaigniers de Valcrouse.',
+      choices: [
+        { ...c('concertation', 'Interdire le mercure et réunir orpailleurs et écologistes', [g(5, -3, 3)], 'Interdiction, contrôles, batées à l’eau claire : orpailleurs et écologistes signent une charte de la rivière.'), play: 'consultation' },
+        c('fermer_yeux', 'Fermer les yeux : l’économie locale décolle', [g(0, 4, -3)], 'Les rivières se troublent. Les pêcheurs, eux, ont compris.'),
+      ],
+    }),
+  },
+  {
+    tag: 'or_clandestins', weight: 1, eligible: on('or', 2, 3),
+    build: () => ({
+      title: 'Les orpailleurs de l’ombre',
+      context: 'Dans les vallées voisines, des réseaux d’orpaillage clandestin exploitent des chantiers sauvages la nuit et revendent l’or à l’étranger. Gendarmes et douaniers proposent une grande opération.',
+      choices: [
+        c('operation', 'Lancer l’opération avec la gendarmerie et les douanes', [g(6, -5, 1)], 'En une nuit, quarante chantiers sauvages sont démantelés sans incident. L’or saisi rejoint les coffres de la Banque de France.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Les réseaux avaient été prévenus : les chantiers sont vides, et l’or a déjà passé la frontière.' } }),
+        c('surveiller', 'Se contenter de surveiller', [g(1, 3, 0)], 'Les rapports s’accumulent. Les chantiers aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'or_saloons', weight: 1, eligible: on('or', 2, 3, 4),
+    build: () => ({
+      title: 'Valcrouse, ville champignon',
+      context: 'Valcrouse compte désormais trois « saloons », une salle de jeux clandestine et une boutique de batées ouverte jour et nuit. Les habitants de toujours demandent qu’on leur rende leur village.',
+      choices: [
+        { ...c('fete', 'Organiser une grande fête pour réconcilier anciens et nouveaux venus', [g(2, -2, 6)], 'Bal, châtaignes grillées et concours de batée : pour un soir, Valcrouse redevient un village.'), play: 'fete_village' },
+        c('arrete', 'Fermer les saloons par arrêté', [g(3, 1, -3)], 'Les saloons ferment. Ils rouvrent le lendemain sous le nom de « salons de thé ».'),
+        c('laisser', 'Laisser faire : c’est folklorique', [g(-1, 4, 1)], 'Les touristes adorent. Les anciens, beaucoup moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'or_compagnie', weight: 1, eligible: on('or', 3, 4),
+    build: () => ({
+      title: 'L’offre de la compagnie',
+      context: 'Une compagnie minière étrangère propose de racheter tout le filon : des milliards pour l’État, une mine à ciel ouvert pour la vallée. Les spéculateurs applaudissent, les Cévenols blêmissent.',
+      choices: [
+        { ...c('fonds', 'Chiffrer un fonds public d’exploitation raisonnée', [g(6, -3, 3)], 'Un fonds public, des prélèvements limités, une part pour chaque commune : votre plan tient la route, et la vallée respire.'), play: 'chiffrage' },
+        c('vendre', 'Accepter l’offre', [g(3, 2, -6), { kind: 'economy', deficit: -0.1 }], 'Les milliards tombent. Les bulldozers aussi.'),
+      ],
+    }),
+  },
+  // Le miroir
+  {
+    tag: 'miroir_ambassade', weight: 1, eligible: on('miroir', 0, 1),
+    build: () => ({
+      title: 'Une ambassade dans la cave',
+      context: 'Le gouvernement de l’autre France propose d’ouvrir une ambassade dans la cave de Bourges, avec un ambassadeur en perruque poudrée. Il faut inventer le protocole d’une relation diplomatique sans précédent.',
+      choices: [
+        { ...c('protocole', 'Rédiger vous-même le protocole des deux France', [g(5, -3, 3)], 'Révérences, poignées de main, cidre au thym : la première rencontre officielle est un modèle du genre.'), play: 'protocole' },
+        c('refuser', 'Refuser : on ne reconnaît pas un reflet', [g(1, 3, -3)], 'L’ambassadeur repart en soupirant. De l’autre côté, la presse parle de « mépris républicain ».'),
+      ],
+    }),
+  },
+  {
+    tag: 'miroir_batteries', weight: 1, eligible: on('miroir', 1, 2),
+    build: () => ({
+      title: 'La batterie qui ne s’use jamais',
+      context: 'Des industriels veulent importer de l’autre France une invention étonnante : une batterie au sel qui ne s’use jamais. Les physiciens craignent qu’on ne comprenne pas ce qu’on rapporte.',
+      choices: [
+        c('commission', 'Encadrer les échanges par une commission scientifique', [g(5, -3, 1)], 'Chaque objet est étudié avant de passer. La batterie au sel est autorisée, et elle fonctionne.'),
+        c('libre', 'Laisser les industriels importer librement', [g(0, 4, 2), { kind: 'economy', growth: 0.1 }], 'Les batteries au sel se vendent par millions. Certaines se mettent à fredonner la nuit.'),
+      ],
+    }),
+  },
+  {
+    tag: 'miroir_double', weight: 1, eligible: on('miroir', 2, 3),
+    build: () => ({
+      title: 'Votre double',
+      context: 'Votre double demande un rendez-vous. Même visage, même voix, mais une autre vie : de l’autre côté, vous tenez une pâtisserie réputée et n’avez jamais fait de politique. Les caméras attendent devant la cave.',
+      choices: [
+        c('diner', 'Dîner discrètement avec votre double, sans caméras', [g(3, -3, 4), s('stress', -3)], 'Vous parlez toute la nuit. Au matin, vous en savez un peu plus sur vous-même, et vous repartez avec une excellente recette de tarte.'),
+        c('television', 'Faire du rendez-vous un événement télévisé', [g(0, 3, 2), s('popularity', 2)], 'Audience record. Le pays entier compare désormais tout le monde à son double.'),
+      ],
+    }),
+  },
+  {
+    tag: 'miroir_comparaisons', weight: 1, eligible: on('miroir', 2, 3, 4),
+    build: () => ({
+      title: 'Et si c’était mieux là-bas ?',
+      context: 'Une émission compare chaque soir les deux France : leurs trains, leurs impôts, leurs fromages. Un sondage affirme qu’un Français sur trois aimerait « passer de l’autre côté ».',
+      choices: [
+        { ...c('verifier', 'Démonter les comparaisons trompeuses en direct', [g(1, -3, 5)], 'Leurs trains sont ponctuels, mais ils n’ont jamais inventé la Sécurité sociale. Le pays respire.'), play: 'factcheck_direct' },
+        c('laisser', 'Laisser dire : ce n’est que de la télévision', [g(0, 4, -3)], 'Les audiences grimpent. Le vertige aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'miroir_retour', weight: 1, eligible: on('miroir', 4),
+    build: () => ({
+      title: 'Le grand retour',
+      context: 'Le miroir se trouble et rétrécit chaque jour. Des centaines de voyageurs des deux côtés doivent rentrer chez eux avant qu’il ne se referme. Il faut organiser le grand retour.',
+      choices: [
+        c('organiser', 'Organiser le grand retour, minute par minute', [g(5, -4, 2)], 'Une file ordonnée, des valises, des adieux émus : chacun rentre chez soi à temps.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -3)], failureNews: 'Le passage rétrécit plus vite que prévu : des voyageurs doivent patienter des jours avant qu’il ne se rouvre un instant.' } }),
+        c('debrouiller', 'Laisser chacun se débrouiller', [g(0, 4, -2)], 'Bousculades de valises, cris, réclamations : le retour tourne au vaudeville.'),
+      ],
+    }),
+  },
+  // Les apparitions
+  {
+    tag: 'fantomes_files', weight: 1, eligible: on('fantomes', 0, 1, 2),
+    build: () => ({
+      title: 'Huit heures de queue',
+      context: 'Devant Versailles, la file d’attente s’étire jusqu’à la gare. Les touristes campent, les camelots vendent des « kits anti-fantômes », et le château menace de fermer ses portes.',
+      choices: [
+        c('creneaux', 'Instaurer des créneaux réservés et des visites nocturnes encadrées', [g(5, -3, 2)], 'Réservations, lampes de poche et guides en costume : les nuits de Versailles deviennent une affaire bien réglée.'),
+        c('fermer', 'Fermer les châteaux jusqu’à nouvel ordre', [g(2, 2, -4)], 'Les grilles se ferment. La foule reste devant, à guetter les fenêtres.'),
+        c('laisser', 'Laisser faire : c’est bon pour le tourisme', [g(-1, 4, 1)], 'La file atteint la gare suivante.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fantomes_louvre', weight: 1, eligible: on('fantomes', 1, 2, 3),
+    build: () => ({
+      title: 'Le mousquetaire du Louvre',
+      context: 'Le mousquetaire du Louvre est apparu en direct pendant le journal de 20 heures, a soulevé son chapeau et s’est effacé. Les chaînes du monde entier réclament votre réaction, et quelques journalistes rêvent de vous piéger.',
+      choices: [
+        { ...c('humour', 'Répondre avec humour et sang-froid', [g(1, -2, 6)], '« Il a de meilleures manières que certains de mes collègues. » Votre phrase fait le tour du monde.'), play: 'interview_piege' },
+        c('esquiver', 'Refuser de commenter', [g(0, 3, -2)], 'Votre silence est commenté plus que le mousquetaire.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fantomes_mediums', weight: 1, eligible: on('fantomes', 2, 3),
+    build: () => ({
+      title: 'Les marchands d’au-delà',
+      context: 'Des médiums vendent des « séances de contact » à cinq cents euros, et une application promet de vous mettre en relation avec vos ancêtres. Les associations de consommateurs s’alarment.',
+      choices: [
+        c('poursuivre', 'Faire poursuivre les escroqueries', [g(4, -3, 2), s('credibility', 1)], 'Les séances frauduleuses ferment, l’application disparaît des boutiques en ligne. Les vrais curieux respirent.'),
+        c('tolerer', 'Laisser chacun croire ce qu’il veut', [g(0, 4, -1)], 'Les séances affichent complet. Les ancêtres, eux, ne répondent pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fantomes_querelle', weight: 1, eligible: on('fantomes', 3),
+    build: () => ({
+      title: 'Science, foi et médiums',
+      context: 'Physiciens, évêques et médiums s’invectivent sur tous les plateaux. On vous propose d’organiser un grand dîner au Collège de France pour apaiser la querelle.',
+      choices: [
+        { ...c('diner', 'Organiser le dîner, plan de table compris', [g(4, -3, 5)], 'Un physicien entre un évêque et une médium : à la fin du dîner, ils rient ensemble. Personne n’a changé d’avis, tout le monde s’est calmé.'), play: 'plan_table' },
+        c('abstenir', 'Ne pas s’en mêler', [g(0, 3, -3)], 'La querelle s’envenime. Les fantômes, eux, ne prennent pas parti.'),
+      ],
+    }),
+  },
+  {
+    tag: 'fantomes_chambord', weight: 1, eligible: on('fantomes', 4),
+    build: () => ({
+      title: 'Le dernier bal de Chambord',
+      context: 'Le dernier grand bal est annoncé à Chambord. Un million de personnes veulent y assister. Il faut organiser l’accueil, la sécurité et la retransmission.',
+      choices: [
+        c('ecrans', 'Organiser une soirée maîtrisée, retransmise sur écrans géants', [g(5, -4, 4)], 'La foule regarde le bal sur des écrans géants dans le parc, en silence. Les danseurs s’inclinent vers elle avant de s’effacer.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -3)], failureNews: 'Les écrans géants tombent en panne au moment du bal ; la soirée tourne à la cohue, sans gravité, mais sous l’œil de toutes les caméras du monde.' } }),
+        c('grilles', 'Ouvrir grand les grilles', [g(0, 4, 2)], 'Tout le monde entre. Personne ne voit rien.'),
+      ],
+    }),
+  },
 ];
 
 /* ── Actions de l'onglet ───────────────────────────────────── */
@@ -942,4 +1485,60 @@ export const SAGA_ACTIONS: ActionDefinition[] = [
   act('danse', undefined, { id: 'sg_danse_presse', label: 'Rassurer en conférence de presse', description: 'Des faits, des chiffres, et pas un mot de trop.', minigame: 'conference_presse', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(0, -1, 6)] }),
   act('danse', [1, 2, 3], { id: 'sg_danse_recherche', label: 'Financer la recherche sur la fièvre', description: 'Prélèvements, imagerie, enquêtes : trouver la cause.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(8, -2)] }),
   act('danse', [2, 3, 4], { id: 'sg_danse_musiciens', label: 'Mobiliser les musiciens', description: 'Des orchestres qui jouent de plus en plus lentement, nuit et jour.', cost: { ap: 1, politicalCapital: 4 }, maxPerMonth: 1, effects: [g(3, -5, 4)] }),
+  // La fontaine de jouvence
+  act('jouvence', undefined, { id: 'sg_jouvence_village', label: 'Passer quelques jours à Esquirac', description: 'Le lavoir, la mairie, les campings : écouter un village submergé.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('jouvence', undefined, { id: 'sg_jouvence_hydrologues', label: 'Réunir hydrogéologues et médecins', description: 'Débit, minéraux, dossiers médicaux : séparer le miracle de l’espoir.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('jouvence', undefined, { id: 'sg_jouvence_radio', label: 'Parler de la source à la radio', description: 'Ni miracle ni arnaque : ce que l’on sait, ce que l’on ignore.', minigame: 'matinale', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('jouvence', [1, 2, 3, 4], { id: 'sg_jouvence_perimetre', label: 'Classer la source en périmètre protégé', description: 'Captage, clôtures, gardes : l’eau n’appartient à personne.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('jouvence', [2, 3, 4], { id: 'sg_jouvence_contrefacons', label: 'Traquer les contrefaçons', description: 'Analyses, saisies, et des bidons d’eau du robinet vendus à prix d’or.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une saisie très médiatisée ne trouve que de l’eau minérale ordinaire ; les trafiquants se moquent de l’État.' } }),
+  // Le grand exode
+  act('exode', undefined, { id: 'sg_exode_villages', label: 'Faire le tour des villages repeuplés', description: 'Mairies, écoles, cafés : voir comment on vit à neuf cents quand on était trois cents.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('exode', undefined, { id: 'sg_exode_prefets', label: 'Réunir maires ruraux et préfets', description: 'Logements, médecins, transports : faire le compte de ce qui manque.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('exode', undefined, { id: 'sg_exode_courrier', label: 'Répondre aux lettres des nouveaux ruraux', description: 'Pas de réseau, pas de médecin, des voisins méfiants : des centaines de lettres.', minigame: 'courrier', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('exode', [1, 2, 3, 4], { id: 'sg_exode_fibre', label: 'Accélérer la fibre et les trains régionaux', description: 'Câbles, gares, cars : relier les villages au reste du pays.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('exode', [1, 2, 3], { id: 'sg_exode_logements', label: 'Financer des logements dans les bourgs', description: 'Réhabiliter les maisons vides plutôt que bâtir en plein champ.', cost: { ap: 1, politicalCapital: 4 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Les premiers logements sortent de terre loin de tout ; personne n’en veut, et la polémique enfle.' } }),
+  // La machine à pluie
+  act('pluie', undefined, { id: 'sg_pluie_terrain', label: 'Visiter les champs assoiffés', description: 'Terre craquelée, puits à sec, et des agriculteurs qui guettent le ciel.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('pluie', undefined, { id: 'sg_pluie_meteorologues', label: 'Réunir les météorologues', description: 'Nuages, vents, effets secondaires : comprendre ce qu’on déclenche.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('pluie', undefined, { id: 'sg_pluie_pacte', label: 'Négocier un pacte de la pluie avec Averse', description: 'Des prix plafonnés, des priorités publiques, et des comptes à rendre.', minigame: 'negociation_alliance', cost: { ap: 1, energy: 4 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('pluie', [1, 2, 3, 4], { id: 'sg_pluie_agence', label: 'Créer une agence publique de la pluie', description: 'Autorisations, contrôles, registre des averses.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('pluie', [1, 2, 3], { id: 'sg_pluie_diner', label: 'Inviter les présidents de région à dîner', description: 'Un cassoulet, un vin de Provence et une trêve des nuages.', cost: { ap: 1, money: 2000 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Le dîner tourne au règlement de comptes entre deux présidents de région ; la presse s’en régale.' } }),
+  // La rouille blanche
+  act('rouille', undefined, { id: 'sg_rouille_inspections', label: 'Accompagner les inspecteurs du béton', description: 'Lampes, marteaux, carottages : ausculter les ouvrages un par un.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('rouille', undefined, { id: 'sg_rouille_mycologues', label: 'Réunir mycologues et ingénieurs', description: 'Ceux qui connaissent les champignons, ceux qui connaissent le béton.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('rouille', undefined, { id: 'sg_rouille_presse', label: 'Rassurer sur la solidité des bâtiments', description: 'Ce qui est sûr, ce qui ne l’est pas, et comment le savoir.', minigame: 'conference_presse', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('rouille', [1, 2, 3, 4], { id: 'sg_rouille_fonds', label: 'Débloquer un fonds de reconstruction', description: 'Étais, démolitions, béton neuf : rebâtir avant que ça ne cède.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('rouille', [2, 3, 4], { id: 'sg_rouille_relogement', label: 'Organiser le relogement des familles évacuées', description: 'Des logements proches, des déménageurs, et un interlocuteur pour chaque famille.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Des familles relogées dans des hôtels lointains se sentent abandonnées ; la colère monte.' } }),
+  // Le printemps silencieux
+  act('abeilles', undefined, { id: 'sg_abeilles_ruchers', label: 'Visiter les ruchers', description: 'Combinaison blanche, enfumoir, et des ruches qu’on espère pleines.', cost: { ap: 1, energy: 5 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('abeilles', undefined, { id: 'sg_abeilles_chercheurs', label: 'Réunir entomologistes et chimistes', description: 'Virus, pesticides, ondes, climat : mettre toutes les pistes sur la table.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('abeilles', undefined, { id: 'sg_abeilles_radio', label: 'Expliquer la crise des pollinisateurs à la radio', description: 'Pourquoi les fruits manquent, et ce que chacun peut faire.', minigame: 'matinale', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('abeilles', [1, 2, 3, 4], { id: 'sg_abeilles_aides', label: 'Débloquer des aides pour les apiculteurs', description: 'Reconstituer les cheptels, racheter des reines, tenir jusqu’au retour des essaims.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('abeilles', [1, 2, 3], { id: 'sg_abeilles_brigades', label: 'Financer des brigades de pollinisation', description: 'Des équipes formées au pinceau, de verger en verger.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une brigade pollinise le mauvais verger, celui d’un député voisin : la photo fait rire tout le pays.' } }),
+  // La ruée vers l'or
+  act('or', undefined, { id: 'sg_or_vallee', label: 'Arpenter la vallée', description: 'Berges, concessions, campements : se montrer là où tout se joue.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('or', undefined, { id: 'sg_or_geologues', label: 'Cartographier le filon avec les géologues', description: 'Savoir où est l’or, c’est savoir où seront les problèmes.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('or', undefined, { id: 'sg_or_maires', label: 'Faire la tournée des maires cévenols', description: 'Valcrouse et ses voisines : écouter ceux qui tiennent les villages.', minigame: 'tournee_maires', cost: { ap: 1, energy: 5 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('or', [1, 2, 3, 4], { id: 'sg_or_comptoirs', label: 'Créer des comptoirs d’or agréés', description: 'Traçabilité, contrôles, et plus un gramme vendu sous le manteau.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('or', [1, 2, 3], { id: 'sg_or_speculation', label: 'Taxer la spéculation foncière', description: 'Une taxe sur les terrains revendus à prix d’or.', cost: { ap: 1, politicalCapital: 4 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.25, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'La taxe est contournée en une semaine par des montages astucieux ; les spéculateurs se moquent de l’État.' } }),
+  // Le miroir
+  act('miroir', undefined, { id: 'sg_miroir_traversee', label: 'Franchir le miroir en visite officielle', description: 'Une journée de l’autre côté : écouter, observer, revenir.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('miroir', undefined, { id: 'sg_miroir_physiciens', label: 'Réunir les physiciens du passage', description: 'Le miroir respire, rétrécit, s’élargit : comprendre ses humeurs.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('miroir', undefined, { id: 'sg_miroir_delegation', label: 'Recevoir une délégation de l’autre France', description: 'Perruques poudrées, cidre au thym et beaucoup de tact.', minigame: 'visite_etat', cost: { ap: 1, energy: 4 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('miroir', [1, 2, 3, 4], { id: 'sg_miroir_regles', label: 'Fixer les règles du passage', description: 'Visas, douanes, quotas : qui passe, quand, et pour combien de temps.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('miroir', [1, 2, 3], { id: 'sg_miroir_banquet', label: 'Offrir un banquet aux deux France', description: 'Croissants d’un côté, cidre au thym de l’autre : trinquer à la paix des reflets.', cost: { ap: 1, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Le toast de l’ambassadeur sur « la France qui a réussi » jette un froid glacial.' } }),
+  // Les apparitions
+  act('fantomes', undefined, { id: 'sg_fantomes_veille', label: 'Passer une nuit de veille à Versailles', description: 'Une lampe, un thermos, et des capteurs dans la galerie des Glaces.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('fantomes', undefined, { id: 'sg_fantomes_savants', label: 'Réunir physiciens et historiens', description: 'Qui sont ces apparitions, et pourquoi maintenant ?', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('fantomes', undefined, { id: 'sg_fantomes_presse', label: 'Tenir une conférence de presse au château', description: 'Ni moquerie ni mystère : ce que l’on sait, ce que l’on ignore.', minigame: 'conference_presse', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('fantomes', [1, 2, 3, 4], { id: 'sg_fantomes_accueil', label: 'Organiser l’accueil des foules dans les châteaux', description: 'Réservations, navettes, parcours nocturnes : canaliser la ruée.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('fantomes', [1, 2, 3], { id: 'sg_fantomes_guides', label: 'Former des guides des apparitions', description: 'Des historiens en lanterne pour raconter, rassurer, et éloigner les escrocs.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Un guide jure en direct avoir parlé à la dame de la galerie ; la frénésie repart de plus belle.' } }),
 ];
