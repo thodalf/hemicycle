@@ -542,7 +542,7 @@ export function canDo(G: Game, act: Action): string | null {
 
 export interface Fx { msg: string; bad?: boolean }
 
-export function applyAction(G: Game, act: Action, r: Rnd): Fx[] {
+export function applyAction(G: Game, act: Action): Fx[] {
   const out: Fx[] = [];
   const c = COST[act.t];
   G.temps -= c.temps;
