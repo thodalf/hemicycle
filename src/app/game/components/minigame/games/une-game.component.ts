@@ -721,7 +721,7 @@ let fxId = 0;
         <div class="sheet" [class.isune]="tab() === 0">
           @if (tab() === 0) { <div class="mast" aria-hidden="true"><span>Le Courrier national</span><small>{{ editionLine() }}</small></div> }
           @else { <div class="folio" aria-hidden="true"><span>{{ pg.name }}</span><span>Le Courrier national</span></div> }
-          <div class="grid" role="grid" [attr.aria-label]="pg.name + ', ' + pg.w + ' colonnes sur ' + pg.h + ' lignes'"
+          <div class="grid" role="group" [attr.aria-label]="pg.name + ', ' + pg.w + ' colonnes sur ' + pg.h + ' lignes'"
                [style.grid-template-columns]="'repeat(' + pg.w + ', minmax(0, 1fr))'" [style.grid-template-rows]="'repeat(' + pg.h + ', var(--row))'">
             @for (c of cellsOf(tab()); track c) {
               @let cx = c % pg.w;
@@ -952,7 +952,7 @@ let fxId = 0;
       small { color: var(--ink-3); } .warn { color: var(--bad); } .g { color: var(--good); } }
     .acts { display: flex; flex-wrap: wrap; gap: 5px; .btn { min-height: 34px; } small { opacity: .75; font-size: 10.5px; } .spike { margin-left: auto; } }
     .filhead { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; small { font-size: 10.5px; color: var(--ink-3); text-align: right; } }
-    .fil { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; max-height: 232px; overflow-y: auto; overscroll-behavior: contain; padding: 1px; }
+    .fil { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; gap: 5px; max-height: 232px; overflow-y: auto; overscroll-behavior: contain; padding: 1px; }
     .card { display: grid; gap: 3px; align-content: start; padding: 5px 6px; min-height: 72px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; text-align: left; cursor: pointer;
       &.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
       &.scoop { background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(90deg, #d4a017, var(--bad)) border-box; border: 2px solid transparent; }

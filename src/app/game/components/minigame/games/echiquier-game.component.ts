@@ -25,6 +25,8 @@ export type Side = 'p' | 'r';
 export type CardId = 'aide' | 'garantie' | 'commerce' | 'visite' | 'culture' | 'sommet' | 'mediation' | 'sanctions' | 'elections' | 'bilan'
   | 'propagande' | 'prets' | 'incident' | 'espionnage' | 'desinfo' | 'reseau';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ENV: Record<string, string | undefined> = (globalThis as any).process?.env ?? {};
 export const TURNS = 8;
 export const ROUNDS = 3;
 export const HAND = 4;
@@ -318,7 +320,7 @@ export function newGame(v: Variant, diff: number, seed: number): Game {
     v, diff, seed: seed | 0, turn: 1, acted: 0, tension: 0, vpP: 0, vpR: 0,
     p: new Array(n).fill(0), r: new Array(n).fill(0), shield: new Array(n).fill(''),
     deck: [], discard: [], hand: [], aiHand: [], uid: 0, sched: [], classed: { p: false, r: false }, crisis: null, urg: [],
-    aiBonus: Number(process?.env?.['BONUS'] ?? 0), aiNoise: Number(process?.env?.['NOISE'] ?? NaN) || clamp(1.4 - 1.6 * (diff - 0.8), 0.3, 1.4),
+    aiBonus: 0, aiNoise: Number(ENV['NOISE'] ?? NaN) || clamp(2 * 3 ** ((1 - diff) / 0.2), 0.2, 6),
   };
   for (const [k, c] of Object.entries(V.start.p)) g.p[V.nodes.findIndex(x => x.id === k)] = c;
   for (const [k, c] of Object.entries(V.start.r)) g.r[V.nodes.findIndex(x => x.id === k)] = c;
@@ -479,7 +481,7 @@ export function nextTurn(g: Game): boolean {
 }
 
 /** Score final 0…1 selon l'écart de PV (0,5 = égalité) ; la crise plafonne à 0,35 */
-const K_SCORE = Number(process?.env?.['KS'] ?? 22);
+const K_SCORE = Number(ENV['KS'] ?? 22);
 export function scoreFromDiff(d: number): number { return clamp(0.5 + 0.5 * Math.tanh(d / K_SCORE), 0.02, 0.98); }
 export function finalScore(g: Game): number {
   const s = scoreFromDiff(g.vpP - g.vpR);
@@ -724,7 +726,7 @@ export function applyAction(g: Game, s: Side, a: Action): ActReport {
     rep.changed = [...counts.keys()];
     rep.text = [...counts].map(([i, k]) => `+${k} ${nm(i)}`).join(', ') || 'aucun placement';
   } else if (a.k === 'coup') {
-    const roll = a.roll ?? (process?.env?.['DICE'] ? 3 + (g.tension % 2) : 1 + Math.floor(rnd(g) * 6));
+    const roll = a.roll ?? 1 + Math.floor(rnd(g) * 6);
     const c = doCoup(g, s, ops, a.at, roll);
     rep.coup = c;
     rep.changed = [a.at];
@@ -800,14 +802,13 @@ export function options(g: Game, s: Side, noise = 0): Choice[] {
 }
 
 /** Choix d'action : la meilleure option, brouillée selon l'imprécision */
-const TOPK = Number(process?.env?.['TOPK'] ?? 6);
 export function choose(g: Game, s: Side, noise: number): Action {
   const hand = s === 'p' ? g.hand : g.aiHand;
   const side = (uid: number) => MECH[hand.find(c => c.uid === uid)!.id].side;
   // Les options crédibles seulement : on ne classe que les cartes adverses, et l'on hésite entre les meilleures
   let opts = options(g, s, 0).filter(c => c.a.k !== 'class' || side(c.a.uid) === other(s)).sort((a, b) => b.v - a.v);
   if (!opts.length) opts = options(g, s, 0);
-  opts = opts.slice(0, TOPK);
+  opts = opts.slice(0, g.diff < 0.95 && s === 'r' ? 8 : 6);
   let best = opts[0], bv = -Infinity;
   for (const c of opts) {
     const v = c.v + (noise ? gauss(g) * noise : 0);
@@ -816,4 +817,39 @@ export function choose(g: Game, s: Side, noise: number): Action {
   return best.a;
 }
 
-export function aiAction(g: Game): Action { return choose(g, 'r', g.aiNoise); }
+/** L'adversaire ; en difficulté élevée, il anticipe votre meilleure réponse */
+export function aiAction(g: Game): Action {
+  if (g.diff < 1.25 && !ENV['DEEP']) return choose(g, 'r', g.aiNoise);
+  return lookahead(g, 'r', 5, g.aiNoise * 0.5);
+}
+
+const cloneGame = (g: Game): Game => ({
+  ...g, p: [...g.p], r: [...g.r], shield: [...g.shield], deck: [...g.deck], discard: [...g.discard], hand: [...g.hand], aiHand: [...g.aiHand],
+  sched: g.sched.map(x => ({ ...x })), classed: { ...g.classed }, urg: [...g.urg],
+});
+
+/** Deux coups d'avance : chaque option est jugée après la meilleure réponse adverse */
+export function lookahead(g: Game, s: Side, width: number, noise = 0): Action {
+  const hand = s === 'p' ? g.hand : g.aiHand;
+  const side = (uid: number) => MECH[hand.find(c => c.uid === uid)!.id].side;
+  const opts = options(g, s, 0).filter(c => c.a.k !== 'class' || side(c.a.uid) === other(s)).sort((a, b) => b.v - a.v).slice(0, width);
+  if (!opts.length) return choose(g, s, 0);
+  const o = other(s);
+  let best = opts[0].a, bv = -Infinity;
+  for (const c of opts) {
+    const K = c.a.k === 'coup' ? 3 : 1;
+    let tot = 0;
+    for (let k = 0; k < K; k++) {
+      const h = cloneGame(g);
+      h.seed = (g.seed + 7919 * (k + 1)) | 0;
+      applyAction(h, s, c.a.k === 'coup' ? { ...c.a, roll: [2, 4, 6][k] } : c.a);
+      if (h.crisis === s) { tot -= 100; continue; }
+      const replies = o === 'p' ? h.acted < ROUNDS && h.hand.length : h.aiHand.length;
+      if (replies) applyAction(h, o, choose(h, o, 0));
+      tot += evaluate(h, s);
+    }
+    const v = tot / K + (noise ? gauss(g) * noise : 0);
+    if (v > bv) { bv = v; best = c.a; }
+  }
+  return best;
+}

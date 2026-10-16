@@ -286,16 +286,25 @@ export function startMargin(G: Game, believed = true): number {
   return (t.p - t.c) / Math.max(1, t.p + t.c);
 }
 function calibrate(G: Game): void {
-  const tgt = -0.06 - 0.08 * clamp((G.diff - 0.8) / 0.6, -0.5, 1.5);
+  const tgt = -0.06 - 0.08 * clamp((G.diff - 0.8) / 0.6, -0.5, 1.5) - (G.v === 'budget' ? 0.015 : 0);
   const coal = G.groups.filter(g => g.coal), opp = G.groups.filter(g => !g.coal);
   for (let k = 0; k < 80; k++) {
     const m = startMargin(G);
     if (Math.abs(m - tgt) <= 0.02) break;
     const coalSeats = coal.reduce((t, g) => t + g.an, 0);
-    // On déplace des sièges entre le premier groupe de la majorité et l'opposition la plus hostile
-    const from = m > tgt ? [...coal].sort((a, b) => b.an - a.an)[0] : [...opp].sort((a, b) => sOf(G, a) - sOf(G, b) || b.an - a.an)[0];
-    const to = m > tgt ? [...opp].sort((a, b) => sOf(G, a) - sOf(G, b) || b.an - a.an)[0] : [...coal].sort((a, b) => b.an - a.an)[0];
-    if (m > tgt && coalSeats <= AN_SEATS * 0.3) break;
+    // Des sièges passent entre le premier groupe de la majorité et l'opposition « pivot » (hostile mais persuadable),
+    // pour que l'arithmétique se joue sur des groupes qu'on peut convaincre
+    const pivot = (g: Group) => { const S = sOf(G, g); return S > 0 ? 99 : Math.abs(S + 2.5); };
+    const big = [...coal].sort((a, b) => b.an - a.an)[0];
+    const piv = [...opp].filter(g => g.an < 130).sort((a, b) => pivot(a) - pivot(b) || b.an - a.an)[0] ?? opp[0];
+    const from = m > tgt ? big : [...opp].sort((a, b) => sOf(G, a) - sOf(G, b) || b.an - a.an)[0];
+    const to = m > tgt ? piv : big;
+    if (m > tgt && coalSeats <= AN_SEATS * 0.3) {
+      // La majorité est déjà maigre : l'opposition la plus conciliante durcit sa posture
+      const soft = [...opp].sort((a, b) => sOf(G, b) - sOf(G, a))[0];
+      soft.base--;
+      continue;
+    }
     if (m < tgt && coalSeats >= AN_SEATS * 0.53) break;
     const n = Math.min(4, from.an - 5);
     if (n <= 0) break;
