@@ -52,7 +52,7 @@ export const CONF: Record<Variant, VConf> = {
     weeks: 12, w: 100, h: 100, lines0: 1, linesMax: 3, trains0: 2, wagons0: 0, tunnels0: 1, poles0: 0,
     budget0: 110, income: 25, fare: 0.6, refundOld: 0.5, cap: 7, hubCap: 6, limit: 3,
     trainCap: 8, wagonCap: 4, wagonsPerTrain: 2, ref: 60, transfer: 5, hubTransfer: 2,
-    maxLen: 42, minDist: 14, start: 4, maxStations: 15, gifts: [5, 9], demand: 1,
+    maxLen: 42, minDist: 14, start: 4, maxStations: 15, gifts: [5, 9], demand: 1.08,
   },
   tgv: {
     weeks: 12, w: 100, h: 97, lines0: 2, linesMax: 5, trains0: 3, wagons0: 0, tunnels0: 1, poles0: 0,
@@ -305,7 +305,7 @@ export class ReseauSim {
       const a = this.rand() * Math.PI * 2, r = Math.sqrt(this.rand()) * R;
       const p = { x: Math.round(cx + Math.cos(a) * r), y: Math.round(cy + Math.sin(a) * r) };
       if (p.x < 7 || p.y < 7 || p.x > c.w - 7 || p.y > c.h - 7) continue;
-      if (distPoly(p, river) < 4.5) continue;
+      if (distPoly(p, river) < 5.5) continue;
       if (taken.some(q => dist(p, q) < md)) continue;
       return { ...p, kind, name: this.takeName(kind), pop: 0 };
     }
@@ -728,7 +728,7 @@ export class ReseauSim {
     if (type === 'greve') {
       const l = running.sort((a, b) => b.carried - a.carried)[this.int(Math.min(2, running.length))];
       ev.line = l.id;
-      ev.text = s.v === 'tgv' ? `✊ Grève des cheminots : la ${this.lineName(l.id).toLowerCase()} ne roule pas cette semaine.` : `✊ Grève des conducteurs : la ${this.lineName(l.id).toLowerCase()} ne roule pas cette semaine.`;
+      ev.text = s.v === 'tgv' ? `✊ Grève des cheminots : ${this.lineRef(l.id)} ne roule pas cette semaine.` : `✊ Grève des conducteurs : ${this.lineRef(l.id)} ne roule pas cette semaine.`;
     } else if (type === 'travaux') {
       const g = segs[this.int(segs.length)];
       ev.a = g.a; ev.b = g.b; ev.to = w + 1;
@@ -759,7 +759,7 @@ export class ReseauSim {
     const sat = D ? s.satSum / D : 0;
     const weeks = s.over ? (s.lost ? s.week - 1 : s.maxWeeks) : s.week - 1;
     const surv = weeks / s.maxWeeks;
-    const q = Math.pow(frac, 1.25) * (0.55 + 0.45 * sat);
+    const q = Math.pow(frac, 1.4) * (0.5 + 0.5 * sat);
     const score = clamp(0.1 * surv + 0.9 * q * Math.pow(surv, 1.5), 0, 1);
     const served = s.stations.filter(st => s.lines.some(l => l.stops.length >= 2 && l.stops.includes(st.id))).length;
     return { score, frac, sat, delivered: D, total, waiting: s.pax.length, weeks, surv, served, stations: s.stations.length };
@@ -781,6 +781,8 @@ export class ReseauSim {
   /* ── Libellés ── */
 
   lineName(li: number): string { return this.s.v === 'tgv' ? `LGV ${li + 1}` : this.s.v === 'tram' ? `Ligne T${li + 1}` : `Ligne ${li + 1}`; }
+  /** « la ligne 2 », « la ligne T2 », « la LGV 2 » */
+  lineRef(li: number): string { const n = this.lineName(li); return 'la ' + (n.startsWith('Ligne') ? 'l' + n.slice(1) : n); }
   tokenName(n = 1): string { return this.s.v === 'tram' ? (n > 1 ? 'ponts' : 'pont') : (n > 1 ? 'tunnels' : 'tunnel'); }
   money(n: number): string {
     const v = this.s.v;
@@ -932,7 +934,7 @@ const OFFER_INFO: Record<OfferId, { icon: string; name: string }> = {
         <p class="info" aria-live="polite">{{ info() }}</p>
         <div class="foot">
           <button type="button" class="btn small" [disabled]="!canUndo() || busy()" (click)="undoLast()">↶ Annuler</button>
-          <button type="button" class="btn primary small" [disabled]="busy() || !!offers()" (click)="endWeek()">{{ week() >= maxWeeks ? 'Dernière semaine ▶' : 'Lancer la semaine ▶' }}</button>
+          <button type="button" class="btn primary small" [disabled]="busy() || !!offers()" (click)="endWeek()">{{ offers() ? 'Choisissez la dotation ↑' : week() >= maxWeeks ? 'Dernière semaine ▶' : 'Lancer la semaine ▶' }}</button>
         </div>
       }
 
@@ -1100,7 +1102,7 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
   protected readonly offers = computed(() => {
     this.ver();
     const of = this.sim.s.offers;
-    return of ? of.map(o => ({ icon: OFFER_INFO[o.id].icon, name: this.offerName(o.id, o.n), desc: this.offerDesc(o.id, o.n) })) : null;
+    return of ? of.map(o => ({ icon: o.id === 'budget' && this.variant === 'metro' ? '🛤️' : OFFER_INFO[o.id].icon, name: this.offerName(o.id, o.n), desc: this.offerDesc(o.id, o.n) })) : null;
   });
 
   protected readonly alerts = computed<Alert[]>(() => {
@@ -1345,10 +1347,10 @@ export class ReseauGameComponent implements OnInit, OnDestroy {
     const ends = [l.stops[0], l.stops[l.stops.length - 1]];
     if (l.stops.length >= 2 && ends.includes(id)) {
       if (sim.lineEnd(l) !== id) { sim.setEnd(li, id); this.info.set(`${sim.lineName(li)} : prolongement depuis ${st.name}.`); return this.bump(); }
-      this.info.set(`${st.name} est le bout actif de la ${sim.lineName(li).toLowerCase()} : touchez une autre station pour prolonger.`);
+      this.info.set(`${st.name} est le bout actif de ${sim.lineRef(li)} : touchez une autre station pour prolonger.`);
       return this.bump();
     }
-    if (l.stops.includes(id)) { this.info.set(`${st.name} est déjà sur la ${sim.lineName(li).toLowerCase()}. Pour voir ses voyageurs, désélectionnez la ligne.`); return; }
+    if (l.stops.includes(id)) { this.info.set(`${st.name} est déjà sur ${sim.lineRef(li)}. Pour voir ses voyageurs, désélectionnez la ligne.`); return; }
     const why = sim.checkExtend(li, id);
     if (why) { this.info.set(`${st.name} : ${why}`); return; }
     this.snap();
