@@ -890,7 +890,7 @@ interface Verdict { title: string; good: boolean; bad: boolean; delivered: numbe
 
         @if (!started()) {
           <div class="ov">
-            <div class="card intro">
+            <div class="gcard intro">
               <b class="ttl">{{ def().title }}</b>
               <ul>
                 <li>Glissez d’une station à l’autre pour tracer une ligne (ou touchez deux stations à la suite).</li>
@@ -903,7 +903,7 @@ interface Verdict { title: string; good: boolean; bad: boolean; delivered: numbe
           </div>
         } @else if (offersV(); as of) {
           <div class="ov">
-            <div class="card">
+            <div class="gcard">
               <b class="ttl">Semaine {{ h.week }}</b>
               <p class="sub">🚆 Une locomotive est livrée. Choisissez un renfort :</p>
               <div class="offers">
@@ -915,7 +915,7 @@ interface Verdict { title: string; good: boolean; bad: boolean; delivered: numbe
           </div>
         } @else if (verdict(); as v) {
           <div class="ov end">
-            <div class="card" [class.good]="v.good" [class.bad]="v.bad" role="status">
+            <div class="gcard" [class.good]="v.good" [class.bad]="v.bad" role="status">
               <b class="ttl">{{ v.title }}</b>
               <p class="sub">Passagers transportés : <b class="mono">{{ v.delivered }}</b> · Semaines tenues : <b class="mono">{{ v.weeks }}/{{ weeks }}</b></p>
               <p class="sub">Note du réseau : <b class="mono">{{ v.score }}/100</b></p>
@@ -926,7 +926,7 @@ interface Verdict { title: string; good: boolean; bad: boolean; delivered: numbe
         }
       </div>
 
-      <div class="bar">
+      <div class="gbar">
         <div class="slots" role="toolbar" aria-label="Lignes">
           @for (s of slots(); track s.slot) {
             <button type="button" class="slot" [class.used]="s.line !== null" [class.sel]="s.sel" [style.--c]="s.color" [attr.aria-label]="s.aria" [attr.aria-pressed]="s.sel" (click)="pickSlot(s.slot)"></button>
@@ -1026,7 +1026,7 @@ interface Verdict { title: string; good: boolean; bad: boolean; delivered: numbe
     .ov { position: absolute; inset: 0; display: grid; place-items: center; padding: 10px; border-radius: 14px;
       background: color-mix(in srgb, var(--paper) 60%, transparent); backdrop-filter: blur(1.5px); }
     .ov.end { background: color-mix(in srgb, var(--paper) 30%, transparent); backdrop-filter: none; align-items: end; }
-    .card { display: grid; gap: 8px; max-width: 360px; width: 100%; padding: 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+    .gcard { display: grid; gap: 8px; max-width: 360px; width: 100%; padding: 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
       font-size: 13px; color: var(--ink);
       .ttl { font-size: 15px; } .sub { margin: 0; color: var(--ink-2); font-size: 12.5px; }
       ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--ink-2); font-size: 12.5px; }
@@ -1038,7 +1038,7 @@ interface Verdict { title: string; good: boolean; bad: boolean; delivered: numbe
       &:hover, &:focus-visible { border-color: var(--accent); } }
     .pill { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); padding: 4px 10px; border-radius: 999px; background: var(--ink); color: var(--surface);
       font-size: 11.5px; white-space: nowrap; pointer-events: none; opacity: .85; }
-    .bar { display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: space-between; align-items: center; }
+    .gbar { display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: space-between; align-items: center; }
     .slots { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .slot { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--c); background: var(--surface); cursor: pointer; padding: 0;
       &.used { background: var(--c); } &.sel { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--c); } }

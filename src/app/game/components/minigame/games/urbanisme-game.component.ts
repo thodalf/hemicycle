@@ -1040,7 +1040,7 @@ interface Plan {
           }
           <div class="hand" [style.--n]="c.handSize" role="toolbar" aria-label="Projets de l’année">
             @for (k of hand(); track k.id; let h = $index) {
-              <button type="button" class="card" [class]="'card c-' + cat(k.k)" [class.on]="mode() === 'card' && sel() === h" [class.free]="k.free" [disabled]="cardOff(k) || busy()"
+              <button type="button" class="gcard" [class]="'gcard c-' + cat(k.k)" [class.on]="mode() === 'card' && sel() === h" [class.free]="k.free" [disabled]="cardOff(k) || busy()"
                       (click)="pick(h)" [attr.aria-pressed]="mode() === 'card' && sel() === h" [attr.aria-label]="name(k.k) + ', ' + (k.free ? 'offert' : cost(k.k) + ' millions')">
                 <span class="pc"><span>{{ k.free ? 'Offert' : 'Permis' }}</span><span class="mono">n° {{ permit(k.id) }}</span></span>
                 <svg class="ci" viewBox="0 0 10 10" aria-hidden="true">
@@ -1150,7 +1150,7 @@ interface Plan {
     .parts { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 11.5px; }
     /* Les projets : des permis de construire */
     .hand { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 5px; }
-    .card { --cat: #8a7f6c; position: relative; display: grid; justify-items: center; align-content: start; gap: 2px; padding: 0 4px 6px; min-height: 76px; border-radius: 6px; border: 1px solid var(--line); border-top: 3px solid var(--cat);
+    .gcard { --cat: #8a7f6c; position: relative; display: grid; justify-items: center; align-content: start; gap: 2px; padding: 0 4px 6px; min-height: 76px; border-radius: 6px; border: 1px solid var(--line); border-top: 3px solid var(--cat);
       background: var(--surface); cursor: pointer; color: var(--ink); font: inherit; overflow: hidden; transition: transform .15s ease, box-shadow .15s ease;
       box-shadow: 0 1px 0 rgba(0,0,0,.04);
       &.c-hab { --cat: #b4633f; } &.c-srv { --cat: #4f7cad; } &.c-eco { --cat: #7b7f86; } &.c-vert { --cat: #4f8a3f; } &.c-tram { --cat: #c23a32; }
@@ -1176,8 +1176,8 @@ interface Plan {
     .bars { display: grid; grid-template-columns: auto 1fr 28px; gap: 5px 8px; align-items: center; font-size: 12px; b { text-align: right; } > span:nth-child(3n + 1) { display: inline-flex; align-items: center; gap: 4px; } }
     .small { font-size: 12px; margin: 0; }
     .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 76px; overflow: auto; font-size: 11.5px; color: var(--ink-2); }
-    @media (max-width: 400px) { .stats small { font-size: 8.5px; } .card .ct { display: none; } .card .pc { font-size: 7.5px; } }
-    @media (prefers-reduced-motion: reduce) { .plan use.new, .fx, .sfx, .event, .card { animation: none; transition: none; } .card.on { transform: none; } }
+    @media (max-width: 400px) { .stats small { font-size: 8.5px; } .gcard .ct { display: none; } .gcard .pc { font-size: 7.5px; } }
+    @media (prefers-reduced-motion: reduce) { .plan use.new, .fx, .sfx, .event, .gcard { animation: none; transition: none; } .gcard.on { transform: none; } }
   `,
 })
 export class UrbanismeGameComponent implements OnInit, OnDestroy {

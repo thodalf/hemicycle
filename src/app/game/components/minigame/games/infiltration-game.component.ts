@@ -791,12 +791,12 @@ function buildPlan(room: Room, theme: Theme): Plan {
       </div>
       <div class="goals">
         @for (t of room().required; track t) {
-          <span class="chip" [class.good]="st().got.includes(t)"><svg class="gi" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + sid('i-' + itemKind(t))" width="10" height="10" /></svg>{{ room().label.get(t) }} {{ st().got.includes(t) ? '✓' : '' }}</span>
+          <span class="gchip" [class.good]="st().got.includes(t)"><svg class="gi" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + sid('i-' + itemKind(t))" width="10" height="10" /></svg>{{ room().label.get(t) }} {{ st().got.includes(t) ? '✓' : '' }}</span>
         }
         @for (t of room().bonus; track t) {
-          <span class="chip" [class.accent]="st().got.includes(t)"><svg class="gi" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + sid('i-' + itemKind(t))" width="10" height="10" /></svg>Bonus : {{ room().label.get(t) }} {{ st().got.includes(t) ? '✓' : '' }}</span>
+          <span class="gchip" [class.accent]="st().got.includes(t)"><svg class="gi" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + sid('i-' + itemKind(t))" width="10" height="10" /></svg>Bonus : {{ room().label.get(t) }} {{ st().got.includes(t) ? '✓' : '' }}</span>
         }
-        <span class="chip" [class.good]="exitReady()"><svg class="gi" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + sid('i-exit')" width="10" height="10" /></svg>{{ room().def.exit?.label ?? 'Sortie' }}</span>
+        <span class="gchip" [class.good]="exitReady()"><svg class="gi" viewBox="0 0 10 10" aria-hidden="true"><use [attr.href]="'#' + sid('i-exit')" width="10" height="10" /></svg>{{ room().def.exit?.label ?? 'Sortie' }}</span>
       </div>
       <p class="brief">
         @if (over()) { <b>{{ summary()?.title }}</b> }
@@ -1271,7 +1271,7 @@ function buildPlan(room: Room, theme: Theme): Plan {
     .alerts { display: inline-flex; gap: 5px;
       i { width: 11px; height: 11px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid color-mix(in srgb, var(--bad) 70%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
       i.on { border-color: #8a1610; background: radial-gradient(circle at 35% 35%, #ffb3a6, #e0352a 45%, #8a1610); box-shadow: 0 0 6px rgba(240, 60, 40, .7); } }
-    .goals { display: flex; flex-wrap: wrap; gap: 4px; .chip { font-size: 11px; display: inline-flex; align-items: center; gap: 4px; } }
+    .goals { display: flex; flex-wrap: wrap; gap: 4px; .gchip { font-size: 11px; display: inline-flex; align-items: center; gap: 4px; } }
     .gi { width: 15px; height: 15px; flex: none; color: var(--ink-2); }
     .brief { margin: 0; font-size: 12.5px; color: var(--ink-2); min-height: 2.6em; }
     .board { padding: 3px; border-radius: 6px; background: var(--frame); width: 100%; max-width: 470px; justify-self: center; user-select: none; box-sizing: border-box;

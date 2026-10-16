@@ -734,7 +734,7 @@ let instances = 0;
         @case ('play') {
           <div class="hand" role="toolbar" aria-label="Vos cartes">
             @for (k of cards(); track k.key) {
-              <button type="button" class="card" [class.ev]="k.event" [class.urgent]="k.urgent" [class.on]="sel() === k.key" [disabled]="!k.ok"
+              <button type="button" class="gcard" [class.ev]="k.event" [class.urgent]="k.urgent" [class.on]="sel() === k.key" [disabled]="!k.ok"
                       (click)="pick(k.key)" [attr.aria-pressed]="sel() === k.key" [attr.aria-label]="k.name + ', ' + (k.cost || 'gratuit') + (k.expiring ? ', expire cette semaine' : '')">
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="k.icon" /></svg>
                 <span class="nm">{{ k.name }}</span>
@@ -931,7 +931,7 @@ let instances = 0;
     .brief li { font-size: 12.5px; color: var(--cg-paper-ink-2); margin: 2px 0; }
     .brief .btn, .reveal .btn { justify-self: end; min-height: 36px; }
     .hand { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
-    .card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'i n' 'c c'; align-items: center; gap: 3px 6px; min-height: 56px; padding: 7px 7px 5px;
+    .gcard { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'i n' 'c c'; align-items: center; gap: 3px 6px; min-height: 56px; padding: 7px 7px 5px;
       border-radius: 3px; border: 1px solid var(--cg-paper-line); border-top: 3px solid #50606e; background: var(--cg-paper); color: var(--cg-paper-ink); cursor: pointer; font: inherit; text-align: left;
       box-shadow: 0 1px 2px rgba(0,0,0,.08);
       .ic { grid-area: i; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; color: #3c4a58; }
@@ -943,8 +943,8 @@ let instances = 0;
       &.urgent { border-color: #b3261e; border-top-color: #b3261e; background: color-mix(in srgb, #b3261e 9%, var(--cg-paper)); .ic { color: #b3261e; } }
       &.on { outline: 2.5px solid var(--accent); outline-offset: 1px; transform: translateY(-2px); box-shadow: 0 6px 12px -6px rgba(0,0,0,.4); }
       &:disabled { opacity: .42; cursor: default; } }
-    :host-context(html[data-theme="dark"]) .card .ic { color: #b9c4cf; }
-    @media (prefers-color-scheme: dark) { :host-context(html:not([data-theme="light"])) .card .ic { color: #b9c4cf; } }
+    :host-context(html[data-theme="dark"]) .gcard .ic { color: #b9c4cf; }
+    @media (prefers-color-scheme: dark) { :host-context(html:not([data-theme="light"])) .gcard .ic { color: #b9c4cf; } }
     .info { min-height: 50px; }
     .ih { display: flex; align-items: center; gap: 6px; font-size: 13.5px; }
     .iic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -988,7 +988,7 @@ let instances = 0;
       .hand { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
       .foot { grid-template-columns: minmax(0, 440px) minmax(0, 1fr); }
     }
-    @media (prefers-reduced-motion: reduce) { .tile .shape, .tallybar .me { transition: none; } .tile.up .shape, .tile.down .shape { animation: none; } .card.on { transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .tile .shape, .tallybar .me { transition: none; } .tile.up .shape, .tile.down .shape { animation: none; } .gcard.on { transform: none; } }
   `,
 })
 export class CampagneGameComponent implements OnInit, OnDestroy {

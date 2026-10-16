@@ -1111,8 +1111,8 @@ let navInstances = 0;
         @switch (phase()) {
           @case ('intro') {
             @if (intro(); as it) {
-              <div class="card intro" role="dialog" [attr.aria-label]="it.title">
-                <p class="eyebrow">Ordre du jour</p>
+              <div class="gcard intro" role="dialog" [attr.aria-label]="it.title">
+                <p class="geyebrow">Ordre du jour</p>
                 <p class="it-t"><svg class="it-i" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="stageIcon()" /></svg> <b>{{ it.title }}</b></p>
                 @if (G.stage === 0) {
                   <p class="small">{{ brief }}@if (G.v === 'budget') { Cible : {{ fmt(G.target, 1) }} % du PIB. }</p>
@@ -1261,7 +1261,7 @@ let navInstances = 0;
 
             @if (confirm(); as k) {
               @let cp = confirmProj();
-              <div class="card sheet" role="dialog" [attr.aria-label]="k === '493' ? 'Engager la responsabilité du gouvernement' : 'Vote bloqué'">
+              <div class="gcard sheet" role="dialog" [attr.aria-label]="k === '493' ? 'Engager la responsabilité du gouvernement' : 'Vote bloqué'">
                 @if (k === '493') {
                   <p><b>Article 49, alinéa 3</b> — le texte est adopté sans vote, sauf si une motion de censure réunit {{ CENSURE }} députés. L’opposition s’en souviendra (−1 de soutien chacun, définitivement).</p>
                 } @else {
@@ -1302,8 +1302,8 @@ let navInstances = 0;
           }
           @case ('result') {
             @if (result(); as R) {
-              <div class="card result" aria-live="polite">
-                <p class="eyebrow">{{ R.kind === 'cmp' ? 'Procès-verbal' : 'Scrutin public' }}</p>
+              <div class="gcard result" aria-live="polite">
+                <p class="geyebrow">{{ R.kind === 'cmp' ? 'Procès-verbal' : 'Scrutin public' }}</p>
                 <p class="it-t"><b>{{ R.title }}</b></p>
                 @if (R.res.length) {
                   <ul class="amdts">
@@ -1329,14 +1329,14 @@ let navInstances = 0;
             }
           }
           @case ('over') {
-            <div class="card sum jo" aria-live="polite">
+            <div class="gcard sum jo" aria-live="polite">
               <p class="jo-h">Journal officiel de la République française</p>
               <p class="jo-t">{{ G.status === 'won' ? loiTitle() : 'Texte non adopté' }}</p>
               <p class="verdict-big" [class.ok]="G.status === 'won'"><b>{{ endMessage() }}</b></p>
               <div class="bars">
-                <span>{{ G.status === 'won' ? 'Ambition préservée' : 'Ambition du texte' }}</span><span class="bar"><span [style.width.%]="ambNow() * 100"></span></span><b class="mono">{{ pct(ambNow()) }}</b>
-                @if (G.v === 'budget') { <span>Déficit {{ fmt(defNow(), 2) }} %</span><span class="bar"><span [style.width.%]="defFactor(G) * 100"></span></span><b class="mono">{{ defNow() <= G.target + 0.001 ? '✓' : '✗' }}</b> }
-                <span>Score</span><span class="bar"><span [style.width.%]="score() * 100"></span></span><b class="mono">{{ pct(score()) }}</b>
+                <span>{{ G.status === 'won' ? 'Ambition préservée' : 'Ambition du texte' }}</span><span class="gbar"><span [style.width.%]="ambNow() * 100"></span></span><b class="mono">{{ pct(ambNow()) }}</b>
+                @if (G.v === 'budget') { <span>Déficit {{ fmt(defNow(), 2) }} %</span><span class="gbar"><span [style.width.%]="defFactor(G) * 100"></span></span><b class="mono">{{ defNow() <= G.target + 0.001 ? '✓' : '✗' }}</b> }
+                <span>Score</span><span class="gbar"><span [style.width.%]="score() * 100"></span></span><b class="mono">{{ pct(score()) }}</b>
               </div>
               <ul class="final">
                 @for (a of finalArts(); track a.id) {
@@ -1410,8 +1410,8 @@ let navInstances = 0;
       .verdict { grid-column: 1 / -1; justify-self: center; font: 700 11px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: #ff8a73; &.ok { color: #7fe0a2; } } }
     .cmpl { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; font-size: 11.5px; > span { display: block; } b { color: var(--nv-led); font-size: 15px !important; } .okc { color: #7fe0a2; } .koc { color: #ff8a73; } }
     .panel { display: grid; gap: 6px; min-width: 0; }
-    .card { display: grid; gap: 6px; padding: 12px; border-radius: 3px; background: var(--nv-paper); color: var(--nv-ink); border: 1px solid var(--nv-rule); box-shadow: 0 2px 10px -6px rgba(0,0,0,.35); animation: pop .3s ease both; min-width: 0; }
-    .eyebrow { margin: 0; font: 600 10px var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--nv-red); border-bottom: 1px solid var(--nv-rule); padding-bottom: 4px; }
+    .gcard { display: grid; gap: 6px; padding: 12px; border-radius: 3px; background: var(--nv-paper); color: var(--nv-ink); border: 1px solid var(--nv-rule); box-shadow: 0 2px 10px -6px rgba(0,0,0,.35); animation: pop .3s ease both; min-width: 0; }
+    .geyebrow { margin: 0; font: 600 10px var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--nv-red); border-bottom: 1px solid var(--nv-rule); padding-bottom: 4px; }
     @keyframes pop { from { transform: translateY(4px); opacity: 0; } }
     .it-t { margin: 0; font: 600 15px/1.25 var(--font-display); display: flex; align-items: center; gap: 7px; }
     .it-i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -1419,7 +1419,7 @@ let navInstances = 0;
       li { padding-left: 16px; position: relative; &::before { content: '—'; position: absolute; left: 0; color: var(--nv-ink-2); } }
       li.bad { color: var(--nv-red); } li.in { animation: pop .3s ease both; } }
     .go { justify-self: end; min-height: 38px; }
-    .small { font-size: 12px; margin: 0; } .muted { color: var(--ink-3); } .card .muted, .paper .muted { color: var(--nv-ink-2); }
+    .small { font-size: 12px; margin: 0; } .muted { color: var(--ink-3); } .gcard .muted, .paper .muted { color: var(--nv-ink-2); }
     .hint { margin: 0; font-size: 11.5px; color: var(--nv-ink-2); font-style: italic; }
     .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 3px; margin-bottom: -7px; position: relative; z-index: 1;
       button { min-height: 36px; border: 1px solid var(--nv-rule); border-bottom: 0; border-radius: 6px 6px 0 0; background: var(--nv-paper-2); color: var(--nv-ink-2); font: inherit; font-size: 12px; cursor: pointer; padding: 2px 4px;
@@ -1480,11 +1480,11 @@ let navInstances = 0;
     .jo-t { margin: 0; text-align: center; font: 600 15px/1.25 var(--font-display); }
     .verdict-big { margin: 0; font-size: 13px; text-align: center; color: var(--nv-red); &.ok { color: var(--good); } }
     .bars { display: grid; grid-template-columns: auto minmax(0, 1fr) 40px; gap: 5px 8px; align-items: center; font-size: 12px; b { text-align: right; }
-      .bar { display: block; height: 7px; border-radius: 1px; background: var(--nv-paper-2); border: 1px solid var(--nv-rule); overflow: hidden; span { display: block; height: 100%; background: var(--nv-ink); } } }
+      .gbar { display: block; height: 7px; border-radius: 1px; background: var(--nv-paper-2); border: 1px solid var(--nv-rule); overflow: hidden; span { display: block; height: 100%; background: var(--nv-ink); } } }
     .final { border-top: 1px solid var(--nv-rule); padding-top: 6px !important; }
     .final li { font: 13px/1.3 var(--font-display); display: flex; gap: 6px; span { font: 700 12px var(--font-body); width: 14px; flex: none; } &.l2 span { color: var(--good); } &.l1 span { color: #9a6a10; } &.l0 { color: var(--nv-ink-2); text-decoration: line-through; span { color: var(--nv-red); } } }
     .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 76px; overflow: auto; font: 11px/1.3 var(--font-mono); color: var(--ink-2); li:first-child { color: var(--ink); } }
-    @media (prefers-reduced-motion: reduce) { .card, .lines li.in, .amdts li.in, .flash { animation: none; } .s { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .gcard, .lines li.in, .amdts li.in, .flash { animation: none; } .s { transition: none; } }
   `,
 })
 export class NavetteGameComponent implements OnInit, OnDestroy {

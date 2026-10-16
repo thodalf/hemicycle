@@ -1024,7 +1024,7 @@ let uidSeq = 0;
         }
         <div class="lines" role="toolbar" aria-label="Lignes">
           @for (l of lineChips(); track l.id) {
-            <button type="button" class="chip" [class.sel]="selLine() === l.id" [class.empty]="l.empty" [class.strike]="l.strike"
+            <button type="button" class="gchip" [class.sel]="selLine() === l.id" [class.empty]="l.empty" [class.strike]="l.strike"
                     [style.border-color]="l.color" [style.background]="selLine() === l.id ? l.color : null" [style.color]="selLine() === l.id ? '#fff' : null"
                     [attr.aria-pressed]="selLine() === l.id" [attr.aria-label]="l.aria" [disabled]="busy()" (click)="pickLine(l.id)">
               <i [style.background]="l.color"></i>{{ l.label }}
@@ -1202,7 +1202,7 @@ let uidSeq = 0;
       &:hover:not(:disabled) { background: var(--accent-soft, var(--surface-2)); --gl-hl: var(--accent-soft, var(--surface-2)); }
       &:disabled { opacity: .5; } }
     .lines { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-    .chip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; min-width: 44px; padding: 3px 10px; border-radius: 999px; border: 2px solid; background: var(--surface); color: var(--ink);
+    .gchip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; min-width: 44px; padding: 3px 10px; border-radius: 999px; border: 2px solid; background: var(--surface); color: var(--ink);
       font: 600 12.5px var(--font-body); cursor: pointer;
       i { width: 10px; height: 10px; border-radius: 50%; }
       &.sel i { background: #fff !important; }

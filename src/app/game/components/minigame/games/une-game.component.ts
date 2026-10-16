@@ -897,7 +897,7 @@ let uneInstances = 0;
         <div class="filhead"><b>Le fil des dépêches</b><small>{{ news().length }} dépêche{{ news().length > 1 ? 's' : '' }} · périment au bout de {{ life }} min</small></div>
         <div class="fil" role="listbox" aria-label="Dépêches à placer">
           @for (s of news(); track s.id) {
-            <button type="button" class="card" role="option" [class.on]="sel()?.id === s.id" [class.scoop]="s.scoop" [class.fix]="s.fixOf !== undefined" [class.fake]="s.checked && !s.truth"
+            <button type="button" class="gcard" role="option" [class.on]="sel()?.id === s.id" [class.scoop]="s.scoop" [class.fix]="s.fixOf !== undefined" [class.fake]="s.checked && !s.truth"
                     [attr.aria-selected]="sel()?.id === s.id" (click)="pick(s.id)" [attr.aria-label]="cardLabel(s)">
               <span class="c-top">
                 <span class="c-k">{{ s.fixOf !== undefined ? 'RECTIFICATIF' : s.scoop ? 'URGENT' : srcShort(s) }} · {{ hhmm(s.born) }}</span>
@@ -916,7 +916,7 @@ let uneInstances = 0;
         </div>
         <div class="maison" role="toolbar" aria-label="Rubriques maison et publicités">
           @for (s of house(); track s.id) {
-            <button type="button" class="chip" [class.on]="sel()?.id === s.id" [class.ad]="s.ad" [class.ed]="s.edito" (click)="pick(s.id)" [attr.aria-label]="cardLabel(s)" [attr.aria-pressed]="sel()?.id === s.id">
+            <button type="button" class="gchip" [class.on]="sel()?.id === s.id" [class.ad]="s.ad" [class.ed]="s.edito" (click)="pick(s.id)" [attr.aria-label]="cardLabel(s)" [attr.aria-pressed]="sel()?.id === s.id">
               <span class="shape" [style.--w]="s.w" [style.--h]="s.h" aria-hidden="true">@for (q of range(s.w * s.h); track q) { <i></i> }</span>
               {{ s.ad ? 'Pub · ' + s.ad : s.edito ? 'Éditorial' : s.kind === 'filet' ? 'Encadré ❖ ∞' : s.title }}
             </button>
@@ -954,11 +954,11 @@ let uneInstances = 0;
           <div class="sum" aria-live="polite">
             <p class="verdict"><b>{{ message() }}</b></p>
             <div class="bars">
-              <span>Audience</span><span class="bar"><span [style.width.%]="sc.audC * 100"></span></span><b class="mono">{{ Math.round(sc.audC * 100) }}</b>
-              <span>Équilibre</span><span class="bar"><span [style.width.%]="sc.balC * 100"></span></span><b class="mono">{{ Math.round(sc.balC * 100) }}</b>
-              <span>Remplissage</span><span class="bar"><span [style.width.%]="sc.fillC * 100"></span></span><b class="mono">{{ Math.round(sc.fillC * 100) }}</b>
-              <span>Publicité</span><span class="bar"><span [style.width.%]="sc.adsC * 100"></span></span><b class="mono">{{ Math.round(sc.adsC * 100) }}</b>
-              <span>Ligne</span><span class="bar"><span [style.width.%]="sc.lineC * 100"></span></span><b class="mono">{{ Math.round(sc.lineC * 100) }}</b>
+              <span>Audience</span><span class="gbar"><span [style.width.%]="sc.audC * 100"></span></span><b class="mono">{{ Math.round(sc.audC * 100) }}</b>
+              <span>Équilibre</span><span class="gbar"><span [style.width.%]="sc.balC * 100"></span></span><b class="mono">{{ Math.round(sc.balC * 100) }}</b>
+              <span>Remplissage</span><span class="gbar"><span [style.width.%]="sc.fillC * 100"></span></span><b class="mono">{{ Math.round(sc.fillC * 100) }}</b>
+              <span>Publicité</span><span class="gbar"><span [style.width.%]="sc.adsC * 100"></span></span><b class="mono">{{ Math.round(sc.adsC * 100) }}</b>
+              <span>Ligne</span><span class="gbar"><span [style.width.%]="sc.lineC * 100"></span></span><b class="mono">{{ Math.round(sc.lineC * 100) }}</b>
             </div>
             <p class="chips">
               <span class="chip2">{{ sc.pagesFull }}/{{ d.pages.length }} pages complètes</span>
@@ -1075,7 +1075,7 @@ let uneInstances = 0;
     .filhead { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--line); padding-bottom: 3px;
       b { font: 600 13px var(--font-display); } small { font-size: 10.5px; color: var(--ink-3); text-align: right; } }
     .fil { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; gap: 6px; max-height: 260px; overflow-y: auto; overscroll-behavior: contain; padding: 2px; }
-    .card { position: relative; display: grid; gap: 3px; align-content: start; padding: 6px 7px 6px 15px; min-height: 76px; border-radius: 1px; border: 1px solid var(--slip-line); color: var(--slip-ink); font: inherit; text-align: left; cursor: pointer;
+    .gcard { position: relative; display: grid; gap: 3px; align-content: start; padding: 6px 7px 6px 15px; min-height: 76px; border-radius: 1px; border: 1px solid var(--slip-line); color: var(--slip-ink); font: inherit; text-align: left; cursor: pointer;
       background: radial-gradient(circle at 6px 50%, var(--surface) 2.2px, transparent 2.6px) 0 0 / 12px 10px repeat-y, linear-gradient(90deg, transparent 11px, var(--slip-line) 11px 12px, transparent 12px), var(--slip);
       box-shadow: 0 1px 2px rgba(0,0,0,.08);
       &.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
@@ -1091,7 +1091,7 @@ let uneInstances = 0;
     .age { margin-left: auto; width: 26px; height: 4px; background: var(--slip-line); overflow: hidden; span { display: block; height: 100%; background: var(--good); } &.old span { background: var(--bad); } }
     .shape { display: inline-grid; grid-template-columns: repeat(var(--w), 4px); grid-auto-rows: 4px; gap: 1px; flex: none; i { background: currentColor; opacity: .55; } }
     .maison { display: flex; flex-wrap: wrap; gap: 4px; }
-    .chip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 3px 9px; border-radius: 2px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; font-size: 11.5px; cursor: pointer;
+    .gchip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 3px 9px; border-radius: 2px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; font-size: 11.5px; cursor: pointer;
       &.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); } &.ad { border-style: double; border-width: 3px; padding: 1px 7px; } &.ed { font-style: italic; font-family: var(--font-display); } }
     .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 64px; overflow: auto; font: 11px/1.3 var(--font-mono); color: var(--ink-2);
       .bad { color: var(--bad); } .good { color: var(--good); } }
@@ -1115,7 +1115,7 @@ let uneInstances = 0;
     .sum { display: grid; gap: 8px; margin-top: 10px; }
     .verdict { margin: 0; font: 600 15px/1.3 var(--font-display); }
     .bars { display: grid; grid-template-columns: auto 1fr 28px; gap: 5px 8px; align-items: center; font-size: 12px; b { text-align: right; } }
-    .bar { height: 6px; border-radius: 1px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--line); span { display: block; height: 100%; background: var(--ink-2); } }
+    .gbar { height: 6px; border-radius: 1px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--line); span { display: block; height: 100%; background: var(--ink-2); } }
     .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; }
     .chip2 { font-size: 11.5px; padding: 2px 7px; border-radius: 2px; background: var(--surface-2); border: 1px solid var(--line); &.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; } }
     .small { font-size: 12px; margin: 0; } .muted { color: var(--ink-3); }

@@ -1172,7 +1172,7 @@ const GAUGE_MINOR = Array.from({ length: MAXT * 4 }, (_, k) => k / 4).filter(v =
 
           <div class="hand" role="toolbar" aria-label="Vos cartes">
             @for (c of cards(); track c.uid) {
-              <button type="button" class="card" [class.on]="c.on" [class.foe]="c.side === 'r'" [class.neu]="c.side === 'n'" [disabled]="phase() !== 'play'"
+              <button type="button" class="gcard" [class.on]="c.on" [class.foe]="c.side === 'r'" [class.neu]="c.side === 'n'" [disabled]="phase() !== 'play'"
                       (click)="pickCard(c.uid)" [attr.aria-pressed]="c.on" [attr.aria-label]="c.name + ', ' + c.ops + ' opérations, ' + c.owner">
                 <span class="tab mono">OPS <b class="ops">{{ c.ops }}</b></span>
                 <span class="ic" aria-hidden="true">{{ c.icon }}</span>
@@ -1391,7 +1391,7 @@ const GAUGE_MINOR = Array.from({ length: MAXT * 4 }, (_, k) => k / 4).filter(v =
 
     /* ── Cartes : dossiers diplomatiques ── */
     .hand { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding-top: 3px; }
-    .card { position: relative; display: grid; justify-items: center; align-content: start; gap: 3px; min-height: 96px; padding: 17px 4px 14px; border-radius: 2px 2px 3px 3px;
+    .gcard { position: relative; display: grid; justify-items: center; align-content: start; gap: 3px; min-height: 96px; padding: 17px 4px 14px; border-radius: 2px 2px 3px 3px;
       border: 1px solid #c3b89c; border-top: 0; color: var(--paper-ink); font: inherit; cursor: pointer; min-width: 0;
       background: repeating-linear-gradient(180deg, transparent 0 11px, var(--paper-rule) 11px 12px) 0 22px / 100% calc(100% - 22px) no-repeat, linear-gradient(170deg, var(--paper), var(--paper-2));
       box-shadow: 0 1px 2px rgba(40,30,10,.25), 0 3px 0 -1px var(--paper-2), 0 3px 1px -1px rgba(40,30,10,.25); transition: transform .15s ease, box-shadow .15s ease;
@@ -1404,7 +1404,7 @@ const GAUGE_MINOR = Array.from({ length: MAXT * 4 }, (_, k) => k / 4).filter(v =
       .cn { font-size: 9.6px; font-weight: 600; line-height: 1.18; letter-spacing: .01em; text-align: center; text-transform: uppercase; overflow-wrap: anywhere; &.long { font-size: 8.4px; letter-spacing: -.02em; } }
       .ow { position: absolute; bottom: 3px; right: 4px; max-width: calc(100% - 8px); padding: 0 3px; border: 1px solid currentColor; border-radius: 2px; font: 700 7.5px var(--font-body); letter-spacing: .08em;
         text-transform: uppercase; color: #2c4f9e; transform: rotate(-4deg); opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
-    .card.foe .ow { color: var(--stamp); } .card.neu .ow { color: #6c6758; }
+    .gcard.foe .ow { color: var(--stamp); } .gcard.neu .ow { color: #6c6758; }
     .act { min-height: 52px; }
     .row, .modes { display: flex; flex-wrap: wrap; gap: 6px; .btn { min-height: 36px; } }
     .row { justify-content: flex-end; }
@@ -1425,9 +1425,9 @@ const GAUGE_MINOR = Array.from({ length: MAXT * 4 }, (_, k) => k / 4).filter(v =
         --paper: #36332b; --paper-2: #2c2a24; --paper-ink: #ebe5d5; --paper-rule: rgba(255,255,255,.05); --stamp: #ef7c6e;
       }
       :host-context(html:not([data-theme=light])) .relief { opacity: .62; }
-      :host-context(html:not([data-theme=light])) .card { border-color: #4a463b; }
-      :host-context(html:not([data-theme=light])) .card .ic { border-color: rgba(230,220,200,.4); filter: grayscale(1) invert(.85); }
-      :host-context(html:not([data-theme=light])) .card .ow { color: #9cc0ee; }
+      :host-context(html:not([data-theme=light])) .gcard { border-color: #4a463b; }
+      :host-context(html:not([data-theme=light])) .gcard .ic { border-color: rgba(230,220,200,.4); filter: grayscale(1) invert(.85); }
+      :host-context(html:not([data-theme=light])) .gcard .ow { color: #9cc0ee; }
     }
     :host-context(html[data-theme=dark]) {
       --fr: #4f8fd6; --fr-d: #a9cbf2; --fr-l: #1f3350; --rv: #d9574a; --rv-d: #f3a597; --rv-l: #4a2622;
@@ -1437,13 +1437,13 @@ const GAUGE_MINOR = Array.from({ length: MAXT * 4 }, (_, k) => k / 4).filter(v =
       --paper: #36332b; --paper-2: #2c2a24; --paper-ink: #ebe5d5; --paper-rule: rgba(255,255,255,.05); --stamp: #ef7c6e;
     }
     :host-context(html[data-theme=dark]) .relief { opacity: .62; }
-    :host-context(html[data-theme=dark]) .card { border-color: #4a463b; }
-    :host-context(html[data-theme=dark]) .card .ic { border-color: rgba(230,220,200,.4); filter: grayscale(1) invert(.85); }
-    :host-context(html[data-theme=dark]) .card .ow { color: #9cc0ee; }
+    :host-context(html[data-theme=dark]) .gcard { border-color: #4a463b; }
+    :host-context(html[data-theme=dark]) .gcard .ic { border-color: rgba(230,220,200,.4); filter: grayscale(1) invert(.85); }
+    :host-context(html[data-theme=dark]) .gcard .ow { color: #9cc0ee; }
 
     @media (max-width: 400px) { .head { padding-left: 9px; gap: 4px 6px; } .tension { width: 104px; } .vp .score b, .h-turn .big { font-size: 19px; } }
     @media (prefers-reduced-motion: reduce) {
-      .node, .reg, .card { transition: none; } .node.fl-p, .node.fl-r, .reg.fl-p, .reg.fl-r { animation: none; } .gauge .needle { transition: none; }
+      .node, .reg, .gcard { transition: none; } .node.fl-p, .node.fl-r, .reg.fl-p, .reg.fl-r { animation: none; } .gauge .needle { transition: none; }
     }
   `,
 })
