@@ -126,8 +126,8 @@ const RATE = [0, 0.02, 0.05, 0.1, 0.16];
 const CASE_CAP = 0.8;
 
 const NAMES: Record<Variant, string[]> = {
-  feux: ['Saint-Aubin', 'Rochebrune', 'Mirabel', 'Puymorin', 'Castelvieil', 'Sainte-Colombe', 'Beauvallon', 'Bellegarde', 'Fontvieille', 'Les Adrets', 'Val-des-Pins', 'Lanvaux'],
-  crue: ['Le Bas-Bourg', 'Port-Neuf', 'La Varenne', 'Les Saules', 'Le Gué', 'Moulin-Bas', 'Les Prés', 'Saint-Roch', 'L’Écluse', 'Les Îlots'],
+  feux: ['Saint-Aubin', 'Rochebrune', 'Mirabel', 'Puymorin', 'Castelvieil', 'Sainte-Colombe', 'Beauvallon', 'Bellegarde', 'Fontvieille', 'Montauroux', 'Val-des-Pins', 'Lanvaux'],
+  crue: ['Port-Neuf', 'Saint-Roch', 'Bassevelle', 'Moulineaux', 'Rivecourt', 'Varenne-sur-Rive', 'Saint-Pierre-du-Gué', 'Écluzelles', 'Sauleville', 'Villeneuve-les-Prés'],
   epidemie: [],
 };
 
@@ -444,13 +444,13 @@ export class CelluleSim {
     s.ap -= T.cost;
     if (T.limited) s.uses[tool] = (s.uses[tool] ?? 0) - 1;
     s.actions.push({ turn: s.turn, tool, i, area: this.area(tool, i) });
-    const where = c.name && this.isTown(c) ? c.name : coord(i);
+    const at = this.isTown(c) ? `à ${c.name}` : `en ${coord(i)}`;
     switch (tool) {
       case 'pompiers': {
         const was = c.fire;
         if (was === 1) this.extinguish(i); else if (was > 1) c.fire--;
         for (const j of [i, ...nb4(i)]) if (FLAM[cells[j].t] && cells[j].fire === 0) cells[j].wet = Math.max(cells[j].wet, 1);
-        return was === 1 ? `🚒 Feu éteint en ${where}, les abords sont arrosés.` : was > 1 ? `🚒 Le feu faiblit en ${where} : encore un passage pour l’éteindre.` : `🚒 Les pompiers arrosent ${where} et ses abords.`;
+        return was === 1 ? `🚒 Feu éteint ${at}, les abords sont arrosés.` : was > 1 ? `🚒 Le feu faiblit ${at} : encore un passage pour l’éteindre.` : `🚒 Les pompiers arrosent les abords ${at}.`;
       }
       case 'canadair': {
         let n = 0;
@@ -459,13 +459,13 @@ export class CelluleSim {
         }
         return `✈️ Largage du Canadair : ${n ? `${n} foyer${n > 1 ? 's' : ''} éteint${n > 1 ? 's' : ''}` : 'retardant déposé'}.`;
       }
-      case 'coupefeu': c.t = 'coupe'; c.wet = 0; return `🪓 Coupe-feu ouvert en ${where}.`;
+      case 'coupefeu': c.t = 'coupe'; c.wet = 0; return `🪓 Coupe-feu ouvert ${at}.`;
       case 'evac': c.evac = true; return `🚌 ${c.name} est évacué : ${fmtPop(c.pop)} habitants à l’abri.`;
-      case 'digue': c.dike = true; return `🧱 Digue montée en ${where} (+2 m).`;
+      case 'digue': c.dike = true; return `🧱 Digue montée ${at} (+2 m).`;
       case 'pompe': {
         c.pump = 1;
-        if (c.water && this.effElev(c) >= s.level) { c.water = false; return `⛽ Les pompes assèchent ${where}.`; }
-        return c.water ? `⛽ Pompes en ${where}, mais l’eau est encore trop haute.` : `⛽ Pompes prêtes en ${where} (+1 m ce tour).`;
+        if (c.water && this.effElev(c) >= s.level) { c.water = false; return this.isTown(c) ? `⛽ Les pompes mettent au sec les rues de ${c.name}.` : `⛽ Les pompes assèchent la case ${coord(i)}.`; }
+        return c.water ? `⛽ Pompes ${at}, mais l’eau est encore trop haute.` : `⛽ Pompes prêtes ${at} (+1 m ce tour).`;
       }
       case 'bassin':
         c.t = 'bassin'; c.water = true; s.level -= 0.5; s.malus++;
@@ -535,7 +535,7 @@ export class CelluleSim {
     for (const i of newly) {
       const c = cells[i];
       c.fire = FLAM[c.t]!.burn; c.hit = s.turn;
-      if (c.t === 'village') r.events.push(c.evac ? `🔥 ${c.name} prend feu : les habitants sont à l’abri.` : `🔥 ${c.name} prend feu ! Il reste un tour pour l’éteindre.`);
+      if (c.t === 'village') r.events.push(c.evac ? `🔥 ${c.name} prend feu : les habitants sont à l’abri.` : `🔥 ${c.name} prend feu ! Il reste un tour pour l’éteindre (deux passages de pompiers, ou un Canadair).`);
     }
     for (const c of cells) { if (c.wet > 0) c.wet--; if (c.retard > 0) c.retard--; }
     // Reprises et nouveaux départs de feu, jamais collés à un village
@@ -572,7 +572,7 @@ export class CelluleSim {
       const depth = s.level - this.effElev(c);
       c.damaged = true;
       c.lost = Math.min(c.pop, c.lost + Math.round(c.pop * (depth >= 1.5 ? 0.5 : 0.3)));
-      if (!c.down && c.lost >= c.pop * 0.6) { c.down = true; r.lost++; r.events.push(`🏚️ ${c.name} est sinistrée.`); }
+      if (!c.down && c.lost >= c.pop * 0.6) { c.down = true; r.lost++; r.events.push(`🏚️ ${c.name} est sinistré : la majorité des habitants a tout perdu.`); }
     }
     const newly = this.floodNext();
     s.level += s.rain[s.turn - 1] ?? 0;
@@ -580,7 +580,7 @@ export class CelluleSim {
       const c = cells[i];
       if (!c.dike || this.effElev(c) >= s.level || !(c.water || nb4(i).some(j => cells[j].water))) continue;
       c.dike = false;
-      r.events.push(`🧱 L’eau passe par-dessus la digue ${c.name ? `de ${c.name}` : 'en ' + coord(i)} : elle cède.`);
+      r.events.push(`🧱 L’eau passe par-dessus la digue ${c.name ? `à ${c.name}` : 'en ' + coord(i)} : elle cède.`);
     }
     for (const c of cells) if (c.water && c.t !== 'riviere' && c.t !== 'bassin' && this.effElev(c) >= s.level) c.water = false;
     for (const i of newly) {
@@ -694,7 +694,7 @@ export class CelluleSim {
     if (w && w.lost >= Math.max(300, w.pop * 0.4)) {
       const name = s.v === 'epidemie' ? `Le district ${coord(worstZ)}` : w.name;
       const what = s.v === 'epidemie' ? `${fmtPop(w.lost)} personnes contaminées` : `${fmtPop(w.lost)} sinistrés sur ${fmtPop(w.pop)}`;
-      const warn = w.fc && w.hit && w.fc < w.hit ? `, alors que les prévisions l’annonçaient menacé dès le tour ${w.fc}` : w.hit ? `, touché au tour ${w.hit}` : '';
+      const warn = w.fc && w.hit && w.fc < w.hit ? `, alors que les prévisions annonçaient la menace dès le tour ${w.fc}` : w.hit ? ` (premier impact au tour ${w.hit})` : '';
       worst = `${name} : ${what}${warn}.`;
     } else {
       const waste = s.actions.find(a => a.tool === 'evac' && !cells[a.i].hit);
@@ -865,7 +865,7 @@ const BRIEF: Record<Variant, string> = {
     .wet::after { content: ''; position: absolute; inset: 0; background: rgba(80, 150, 230, .35); z-index: 1; }
     .retard::after { content: ''; position: absolute; inset: 0; background: rgba(220, 70, 120, .35); z-index: 1; }
     /* Crue */
-    .t-riviere, .t-bassin { background: #2f6c9e !important; }
+    .t-riviere, .t-bassin { background: #1d4a78 !important; background-image: repeating-linear-gradient(170deg, transparent 0 6px, rgba(255,255,255,.18) 6px 8px) !important; }
     .t-champ { background-image: repeating-linear-gradient(0deg, transparent 0 4px, rgba(120, 90, 30, .25) 4px 5px); }
     .t-ville { box-shadow: inset 0 0 0 2px #5b4a32; }
     .flood::after { content: ''; position: absolute; inset: 0; z-index: 1; background: rgba(40, 110, 190, .72); }
@@ -882,8 +882,7 @@ const BRIEF: Record<Variant, string> = {
     .fc1::before, .fc2::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; }
     .fc1::before { box-shadow: inset 0 0 0 2px #ffb100; background: repeating-linear-gradient(45deg, transparent 0 5px, rgba(255, 177, 0, .28) 5px 7px); }
     .fc2::before { box-shadow: inset 0 0 0 2px #ff3b1f; background: repeating-linear-gradient(45deg, transparent 0 4px, rgba(255, 59, 31, .4) 4px 7px); animation: blink 1.4s ease-in-out infinite; }
-    .ok { outline: 2px dashed #fff; outline-offset: -3px; }
-    .no { filter: saturate(.6) brightness(.85); }
+    .ok { outline: 2px dashed rgba(255, 255, 255, .85); outline-offset: -3px; }
     .fresh { animation: pop .9s ease; }
     .focus { outline: 3px solid #f4d35e; outline-offset: -3px; }
     @keyframes blink { 50% { opacity: .5; } }
@@ -1031,7 +1030,7 @@ export class CelluleGameComponent implements OnInit, OnDestroy {
       const p = fc.get(i) ?? 0;
       if (p >= 0.7) { cls.push('fc2'); state.push(s.v === 'crue' ? 'sera inondé' : `menace forte (${Math.round(p * 100)} %)`); }
       else if (p >= 0.25) { cls.push('fc1'); state.push(`menace (${Math.round(p * 100)} %)`); }
-      if (tool) cls.push(sim.check(tool, i) === null ? 'ok' : 'no');
+      if (tool && sim.check(tool, i) === null) cls.push('ok');
       if (fresh.has(i)) cls.push('fresh');
       if (focus === i) cls.push('focus');
       return { i, cls: cls.join(' '), icon, sub, badge, corner, bg, aria: `${coord(i)} : ${state.join(', ')}` };
