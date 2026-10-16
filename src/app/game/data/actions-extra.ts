@@ -491,9 +491,9 @@ const COUNTRY: ActionDefinition[] = [
   { id: 'debat_lyceens', label: 'Répondre aux questions d’une classe de terminale', category: 'terrain', minRank: 'militant',
     description: 'Une heure dans un amphi de lycée : climat, réseaux, avenir. Pas de langue de bois possible.', cost: { ap: 1, energy: 6 }, cooldown: 3, effects: [seg('jeunes', 3), { kind: 'dossier', domain: 'education', delta: 2 }] },
   // Sommets et visites d'État
-  { id: 'grandes_manoeuvres', minigame: 'bataille', label: 'Diriger les grandes manœuvres de l’armée', category: 'elysee', minRank: 'militant', onlyRanks: ['president', 'roi'],
-    description: 'Au camp de Mourmelon, un exercice grandeur nature : le chef des armées commande lui-même, sous l’œil des généraux et des caméras.', cost: { ap: 1, energy: 8 }, cooldown: 6,
-    effects: [st('credibility', 2), { kind: 'dossier', domain: 'securite', delta: 3 }, { kind: 'intl', prestige: 1 }] },
+  { id: 'grandes_manoeuvres', minigame: 'manoeuvres', label: 'Diriger les grandes manœuvres de l’armée', category: 'elysee', minRank: 'militant', onlyRanks: ['president', 'roi'],
+    description: 'Un exercice grandeur nature au camp de Mourmelon, Bleu contre Rouge : le chef des armées commande lui-même face à une force adverse simulée. Une démonstration de force que les voisins hostiles observent de près.', cost: { ap: 1, energy: 8 }, cooldown: 6,
+    effects: [st('credibility', 2), { kind: 'dossier', domain: 'securite', delta: 3 }, { kind: 'intl', prestige: 1, tension: 3 }] },
   { id: 'sommet_conseil_ue', minigame: 'sommet_ue', label: 'Négocier au Conseil européen', category: 'elysee', minRank: 'president', onlyRanks: ['president'],
     description: 'Une nuit de négociation à Bruxelles, article par article, face à vingt-six dirigeants (six autour de vous).', cost: { ap: 1, energy: 12 }, cooldown: 4,
     effects: [{ kind: 'intl', prestige: 5 }, st('credibility', 2), { kind: 'economy', confidence: 2 }, seg('cadres', 1)] },

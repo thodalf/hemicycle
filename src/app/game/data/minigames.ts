@@ -590,6 +590,10 @@ export const MINIGAMES: MinigameDef[] = [
     rule: 'Au tour par tour : déplacez chaque unité puis attaquez. Forêts et villes protègent, la rivière ne se passe qu’aux gués, l’artillerie tire loin. Tenez les villes ou mettez l’ennemi en déroute en huit tours.',
   },
   {
+    id: 'manoeuvres', kind: 'tactique', icon: '🎖️', title: 'Les grandes manœuvres',
+    rule: 'Un exercice grandeur nature, Bleu contre Rouge : manœuvrez vos unités face à la force adverse simulée, tenez les objectifs ou neutralisez le plastron en huit tours. Aucune guerre : un entraînement sous l’œil de l’état-major.',
+  },
+  {
     id: 'bataille_navale', kind: 'tactique', icon: '🏴‍☠️', title: 'La bataille navale',
     rule: 'Au tour par tour : frégates, patrouilleurs, hélicoptère et sous-marin contre la flottille pirate. Reprenez les ports et coulez les vedettes en huit tours.',
   },
