@@ -837,6 +837,70 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Ils tirent sur leurs ancres à chaque coup de mistral. Une ville n’est pas un navire : tôt ou tard, ils auront besoin de nous. Ce jour-là, il faudra être prêts, et fermes.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
     ],
   },
+  {
+    key: 'sc:saga_shadow', icon: '📱', when: d => d.saga?.id === 'shadow' && !d.saga.outcome,
+    name: () => 'Pr Odile Ferrachat', role: () => 'Constitutionnaliste, spécialiste de la démocratie numérique',
+    options: () => [
+      { id: 'sc_shadow_point', label: 'Demander ce qu’on a voté ce soir', hint: 'Elle regarde le vote du soir chaque jour, un carnet sur les genoux.', ask: 'Odile, ils ont voté quoi, ce soir ?', cooldown: 1,
+        run: () => ({ answer: 'Une piscine municipale gratuite et la fin des réunions le vendredi. Ce n’est pas un coup d’État, c’est une soif. Offrez-leur un vrai lieu pour voter, et l’application redeviendra une émission.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_cafe', icon: '☕', when: d => d.saga?.id === 'cafe' && !d.saga.outcome,
+    name: () => 'Henriette Dumoulin', role: () => 'Torréfactrice à Roubaix, porte-parole des brûleries indépendantes',
+    options: () => [
+      { id: 'sc_cafe_point', label: 'Demander des nouvelles des brûleries', hint: 'Elle sent le grain grillé à dix mètres, même quand il n’y a plus de grain.', ask: 'Henriette, il reste du café ?', cooldown: 1,
+        run: () => ({ answer: 'Trois sacs, que je garde pour les mariages et les enterrements. Le reste du temps, on torréfie de la chicorée et on parle. Vous savez, un café, c’était surtout une excuse pour se voir.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_sable', icon: '⏳', when: d => d.saga?.id === 'sable' && !d.saga.outcome,
+    name: () => 'Rozenn Le Goff', role: () => 'Géologue, spécialiste des sédiments côtiers',
+    options: () => [
+      { id: 'sc_sable_point', label: 'Demander combien de sable il reste', hint: 'Elle garde dans son bureau des flacons de sable de toutes les plages de France.', ask: 'Rozenn, on tient combien de temps ?', cooldown: 1,
+        run: () => ({ answer: 'Le sable, c’est de la montagne qui a mis dix mille ans à descendre les rivières, et on l’a consommé comme s’il tombait du ciel. Recyclons ce qu’on a déjà coulé, et laissons les plages tranquilles.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_agora', icon: '🙋', when: d => d.saga?.id === 'agora' && !d.saga.outcome,
+    name: () => 'Paulette Darrigade', role: () => 'Institutrice retraitée, présidente de l’assemblée de Montcaubet',
+    options: () => [
+      { id: 'sc_agora_point', label: 'Demander ce qu’on a voté samedi', hint: 'Elle tient le registre des votes à la plume, depuis le tout premier samedi.', ask: 'Paulette, qu’a voté l’assemblée ?', cooldown: 1,
+        run: () => ({ answer: 'Un banc devant l’école, la réfection du lavoir, et une motion pour que vous veniez manger la garbure. Les gens ne veulent pas tout décider, vous savez : ils veulent qu’on les écoute avant.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_faille', icon: '🕳️', when: d => d.saga?.id === 'faille' && !d.saga.outcome,
+    name: () => 'Dr Armelle Courtois-Benali', role: () => 'Géologue, responsable de la surveillance de la faille',
+    options: () => [
+      { id: 'sc_faille_point', label: 'Demander si la faille avance', hint: 'Elle dort dans un camping-car garé au bord du vide.', ask: 'Armelle, elle avance encore ?', cooldown: 1,
+        run: () => ({ answer: 'Quatre mètres cette semaine, contre onze la semaine dernière. La craie est lente, patiente, têtue. Si l’on soulage la nappe et qu’on éloigne les curieux, elle finira par se lasser avant nous.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_reve', icon: '🌙', when: d => d.saga?.id === 'reve' && !d.saga.outcome,
+    name: () => 'Dr Clémence Aubertin', role: () => 'Neurologue, directrice d’un laboratoire du sommeil',
+    options: () => [
+      { id: 'sc_reve_point', label: 'Demander ce qu’on a rêvé cette nuit', hint: 'Elle note ses propres rêves chaque matin, dans un carnet bleu.', ask: 'Clémence, qu’a-t-on rêvé cette nuit ?', cooldown: 1,
+        run: () => ({ answer: 'La voix a chanté deux mots de plus. Sur les écrans, les cerveaux des dormeurs s’accordent comme des violons. Je ne sais pas ce que c’est, mais ce n’est pas une menace. Protégez-le du bruit.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_archives', icon: '🗄️', when: d => d.saga?.id === 'archives' && !d.saga.outcome,
+    name: () => 'Mathurin Vasseur-Lemaire', role: () => 'Conservateur général du patrimoine, à la tête de la commission d’authentification',
+    options: () => [
+      { id: 'sc_archives_point', label: 'Demander où en est le tri', hint: 'Il reconnaît un papier de 1972 à son odeur.', ask: 'Mathurin, combien de faux ?', cooldown: 1,
+        run: () => ({ answer: 'Mille deux cents, pour l’instant, sur un million. Les faussaires sont pressés, nous non. Un vrai document a presque toujours un défaut : il est ennuyeux. Méfiez-vous de ceux qui disent exactement ce qu’on veut entendre.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_boycott', icon: '🧀', when: d => d.saga?.id === 'boycott' && !d.saga.outcome,
+    name: () => 'Bénédicte Chauvelot', role: () => 'Conseillère commerciale, ancienne négociatrice au commerce extérieur',
+    options: () => [
+      { id: 'sc_boycott_point', label: 'Demander où en est la riposte', hint: 'Elle connaît le prix du comté dans quarante pays.', ask: 'Bénédicte, ils tiennent encore ?', cooldown: 1,
+        run: () => ({ answer: 'Les Méridiens commencent à manquer de camembert, et leurs restaurateurs se plaignent. Un boycott, c’est un concours d’endurance : tenez vos producteurs, ouvrez d’autres portes, et ne cédez rien sur le fond.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -920,7 +984,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45, 'sc:saga_eveil': 54, 'sc:saga_parc': 47, 'sc:saga_lune': 39, 'sc:saga_voyageur': 41, 'sc:saga_midi': 52, 'sc:saga_somnolence': 47, 'sc:saga_souterrain': 34, 'sc:saga_maree': 49, 'sc:saga_pirates': 54, 'sc:saga_voyante': 38, 'sc:saga_silence': 44, 'sc:saga_volcans': 45, 'sc:saga_danse': 51, 'sc:saga_jouvence': 44, 'sc:saga_exode': 61, 'sc:saga_pluie': 36, 'sc:saga_rouille': 41, 'sc:saga_abeilles': 63, 'sc:saga_or': 67, 'sc:saga_miroir': 58, 'sc:saga_fantomes': 55, 'sc:saga_robots': 48, 'sc:saga_monnaie': 57, 'sc:saga_heritage': 78, 'sc:saga_moteur': 42, 'sc:saga_sommet': 56, 'sc:saga_degel': 45, 'sc:saga_tour': 46, 'sc:saga_flottante': 58,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45, 'sc:saga_eveil': 54, 'sc:saga_parc': 47, 'sc:saga_lune': 39, 'sc:saga_voyageur': 41, 'sc:saga_midi': 52, 'sc:saga_somnolence': 47, 'sc:saga_souterrain': 34, 'sc:saga_maree': 49, 'sc:saga_pirates': 54, 'sc:saga_voyante': 38, 'sc:saga_silence': 44, 'sc:saga_volcans': 45, 'sc:saga_danse': 51, 'sc:saga_jouvence': 44, 'sc:saga_exode': 61, 'sc:saga_pluie': 36, 'sc:saga_rouille': 41, 'sc:saga_abeilles': 63, 'sc:saga_or': 67, 'sc:saga_miroir': 58, 'sc:saga_fantomes': 55, 'sc:saga_robots': 48, 'sc:saga_monnaie': 57, 'sc:saga_heritage': 78, 'sc:saga_moteur': 42, 'sc:saga_sommet': 56, 'sc:saga_degel': 45, 'sc:saga_tour': 46, 'sc:saga_flottante': 58, 'sc:saga_shadow': 51, 'sc:saga_cafe': 63, 'sc:saga_sable': 44, 'sc:saga_agora': 71, 'sc:saga_faille': 47, 'sc:saga_reve': 52, 'sc:saga_archives': 66, 'sc:saga_boycott': 55,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

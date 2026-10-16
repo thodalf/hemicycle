@@ -335,6 +335,94 @@ export const SAGA_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'saga_shadow', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('shadow', 26),
+    build: () => ({
+      title: 'Décret n° 1',
+      context: 'Vingt et une heures. En direct sur votre téléphone, Sacha Merlin, onze millions d’abonnés, lit le résultat du vote du soir : « Décret n° 1 du Gouvernement des Millions : le dimanche, les centres-villes seront piétons. » Quatre millions de votants. Le lendemain matin, un maire de votre département fait poser des barrières.',
+      choices: [
+        c('prefet', 'Saisir le préfet et rappeler aux maires ce que dit la loi', [start('shadow'), g(8, 0, -1), s('politicalCapital', -2)], 'Le préfet envoie une circulaire. Le maire la lit en direct sur la chaîne de Sacha Merlin, sous les rires, mais il retire ses barrières.'),
+        c('jeu', 'Y voir un jeu inoffensif', [start('shadow'), g(0, 5, 3)], 'Le pays s’amuse avec vous. Le lendemain soir, six millions de votants.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_cafe', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('cafe', 22),
+    build: () => ({
+      title: 'Peut-être le dernier',
+      context: 'Au comptoir du café de la place, Jojo, le patron, pose devant vous un petit noir fumant et vous tend le journal : une maladie inconnue ravage les caféiers du monde entier. « Les grossistes ont doublé leurs prix ce matin. Si ça continue, je ferme à Noël. Et après moi, il n’y a plus rien d’ouvert au village. »',
+      choices: [
+        c('reunir', 'Réunir cafetiers, torréfacteurs et botanistes', [start('cafe'), g(8, 0, -1), s('politicalCapital', -2)], 'Autour d’une table de bistrot, devant des tasses de chicorée, chacun apporte ses chiffres. Personne ne rit, mais tout le monde reste.'),
+        c('the', 'En plaisanter : les Français boiront du thé', [start('cafe'), g(0, 5, 3)], 'La formule fait rire tout le pays. Les cafetiers, beaucoup moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_sable', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('sable', 24),
+    build: () => ({
+      title: 'La benne vide',
+      context: 'Sur le chantier de la nouvelle école, les bétonnières sont arrêtées et les maçons assis sur des parpaings. Le chef de chantier vous montre une benne vide : « Plus de sable. Ni ici, ni chez les fournisseurs, ni chez leurs fournisseurs. Ce matin, on m’a proposé un camion entier, sans facture et sans plaque. »',
+      choices: [
+        c('filiere', 'Réunir carriers, bâtisseurs et géologues', [start('sable'), g(8, 0, -1), s('politicalCapital', -2)], 'Les carriers apportent des cartes, les bâtisseurs des factures, les géologues de mauvaises nouvelles. Au moins, tout le monde est autour de la table.'),
+        c('passager', 'Parler d’un problème passager', [start('sable'), g(0, 5, 3)], 'Le pays se rassure. La nuit suivante, des camions sans plaque descendent vers les plages.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_agora', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('agora', 26),
+    build: () => ({
+      title: 'Samedi à Montcaubet',
+      context: 'Le maire de Montcaubet, dans le Gers, vous a invité à « son dernier conseil municipal ». À la fin de la séance, il ôte son écharpe, la pose sur la table et annonce que désormais, les quatre cent douze habitants voteront tout eux-mêmes, chaque samedi, à la salle des fêtes. Les applaudissements durent dix minutes.',
+      choices: [
+        c('accompagner', 'Proposer un juriste et le concours du préfet, pour que tout reste légal', [start('agora'), g(8, 0, -1), s('politicalCapital', -2)], 'Le juriste arrive avec le Code général des collectivités territoriales. Les habitants lui servent une garbure et l’invitent à voter avec eux.'),
+        c('applaudir', 'Applaudir avec la salle', [start('agora'), g(0, 5, 3)], 'La vidéo de vos applaudissements fait le tour du pays. Le samedi suivant, onze communes voisines imitent Montcaubet.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_faille', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('faille', 24),
+    build: () => ({
+      title: 'Le champ fendu',
+      context: 'Un agriculteur beauceron vous appelle, la voix blanche : « Venez voir. » Au milieu de son blé, une fissure de trois mètres de large file jusqu’à l’horizon. Il y jette un caillou ; on ne l’entend pas toucher le fond. « Hier, elle s’arrêtait au pylône. Ce matin, elle est au chemin. »',
+      choices: [
+        c('geologues', 'Faire venir les géologues et évacuer les fermes voisines', [start('faille'), g(8, 0, -1), s('politicalCapital', -2)], 'Les géologues arrivent avec leurs sondes, les gendarmes avec leurs rubalises. Les fermiers voisins font leurs valises en maugréant.'),
+        c('curiosite', 'Y voir une curiosité géologique', [start('faille'), g(0, 5, 3)], 'La photo du champ fendu fait la une. Le lendemain, deux cents voitures sont garées au bord du blé.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_reve', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('reve', 24),
+    build: () => ({
+      title: 'Les volets bleus',
+      context: 'Au petit déjeuner, votre attachée de presse vous raconte son rêve de la nuit : une maison aux volets bleus au bord d’un fleuve, un jardin de lavande, une voix qui chante. Vous reposez votre tasse. C’est exactement le vôtre. À la radio, l’animateur avoue avoir rêvé la même chose, et le standard explose.',
+      choices: [
+        c('etudier', 'Demander aux scientifiques d’étudier le phénomène, sans tapage', [start('reve'), g(8, 0, -1), s('politicalCapital', -2)], 'Des neurologues équipent mille volontaires de casques de sommeil. Les volontaires rêvent de volets bleus ; les casques ne voient rien.'),
+        c('raconter', 'Raconter votre rêve en public', [start('reve'), g(-2, 5, 4)], 'Votre récit ému fait le tour du pays. Le lendemain, une marque d’oreillers vous propose un contrat.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_archives', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('archives', 28),
+    build: () => ({
+      title: 'Mémoire ouverte',
+      context: 'Un dimanche soir, votre téléphone ne cesse plus de vibrer. Un site anonyme vient de publier un million de documents classifiés, de 1965 à nos jours. Votre conseiller vous tend une tablette : « Il y a de tout : des secrets d’État, des notes de préfets, des menus de dîners officiels. Et sans doute des faux. »',
+      choices: [
+        c('historiens', 'Réunir une commission d’historiens et d’archivistes', [start('archives'), g(8, 0, -1), s('politicalCapital', -2)], 'Les archivistes arrivent avec des gants blancs, les historiens avec des thermos. Ils ne dormiront pas beaucoup.'),
+        c('transparence', 'Saluer une victoire de la transparence', [start('archives'), g(0, 5, 3)], 'Votre message est partagé un million de fois. Le lendemain, un document manifestement faux vous cite.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_boycott', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('boycott', 28),
+    build: () => ({
+      title: 'Trois mille meules',
+      context: 'Dans une cave d’affinage du Jura, un fromager vous montre des rayonnages à perte de vue : trois mille meules de comté destinées à la Méridia, bloquées depuis ce matin. Le gouvernement méridien appelle au boycott de tous les produits français. « Fromages, vins, parfums, avions : tout. Ils disent que c’est pour nous apprendre à voter. »',
+      choices: [
+        c('riposte', 'Réunir filières, douanes et diplomates pour préparer la riposte', [start('boycott'), g(8, 0, -1), s('politicalCapital', -2)], 'Autour de la table : un fromager, une parfumeuse, un ingénieur aéronautique et une conseillère commerciale. Ils découvrent qu’ils ont le même problème.'),
+        c('symbolique', 'Minimiser : un boycott symbolique', [start('boycott'), g(0, 5, 3)], 'Le boycott n’a rien de symbolique. Le lendemain, la Méridia suspend une commande de quarante avions.'),
+      ],
+    }),
+  },
 ];
 
 /* ── Rebondissements ───────────────────────────────────────── */
@@ -1938,6 +2026,454 @@ export const SAGA_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  // Le gouvernement parallèle
+  {
+    tag: 'shadow_dimanches', weight: 1, eligible: on('shadow', 0, 1),
+    build: () => ({
+      title: 'Les barrières du dimanche',
+      context: 'Une trentaine de maires ont fermé leurs centres-villes aux voitures le dimanche, sur « décret » du Gouvernement des Millions. Des habitants applaudissent, des commerçants protestent, et les préfets demandent des consignes.',
+      choices: [
+        c('cadre', 'Recevoir les maires un par un et leur proposer un cadre légal', [g(5, -3, 1), s('energy', -3)], 'Arrêtés municipaux en bonne et due forme, concertation avec les commerçants : les dimanches piétons deviennent ceux des maires, et plus ceux de l’application.'),
+        c('laisser', 'Laisser faire : c’est leur commune', [g(-1, 4, 0)], 'Le soir même, le Gouvernement des Millions célèbre « sa » victoire en direct.'),
+      ],
+    }),
+  },
+  {
+    tag: 'shadow_note', weight: 1, eligible: on('shadow', 1, 2),
+    build: () => ({
+      title: 'La note confidentielle',
+      context: 'Le « ministre de l’Intérieur » de Sacha Merlin lit en direct une note confidentielle d’un vrai ministère, mot pour mot, devant trois millions de spectateurs. Quelqu’un, au cœur de l’État, renseigne le Gouvernement des Millions.',
+      choices: [
+        { ...c('enquete', 'Mener l’enquête vous-même', [g(5, -4, 2)], 'La fuite venait d’un jeune contractuel, fasciné par l’application. Il est muté sans bruit, et le Gouvernement des Millions perd sa meilleure source.'), play: 'enquete_fuite' },
+        c('minimiser', 'Minimiser : une note sans importance', [g(0, 4, -2)], 'La note était importante. La semaine suivante, une autre fuite suit.'),
+      ],
+    }),
+  },
+  {
+    tag: 'shadow_referendum', weight: 1, eligible: on('shadow', 2, 3),
+    build: () => ({
+      title: 'Le vote du soir contre le vote du dimanche',
+      context: 'Pour reprendre la main, le gouvernement soumet à référendum une réforme de la participation : un droit de pétition renforcé et un référendum d’initiative citoyenne, encadré. Sacha Merlin appelle à voter non, « pour que le vote du soir reste libre ».',
+      choices: [
+        { ...c('campagne', 'Mener la campagne du Oui, région par région', [g(5, -4, 3)], 'Marchés, salles des fêtes, débats jusque sur la chaîne de Sacha Merlin : le Oui l’emporte, et le vote du dimanche reprend des couleurs.'), play: 'campagne_referendum' },
+        c('retrait', 'Rester en retrait de la campagne', [g(0, 4, -3)], 'La campagne se fait sans vous. Le soir du scrutin, l’application revendique plus de votants que les urnes.'),
+      ],
+    }),
+  },
+  {
+    tag: 'shadow_comptes', weight: 1, eligible: on('shadow', 3),
+    build: () => ({
+      title: 'Les comptes fantômes',
+      context: 'Des chercheurs découvrent qu’une part des votes du soir provient de comptes automatisés, achetés en masse à l’étranger. Le révéler peut dégonfler le phénomène, ou passer pour une manœuvre du pouvoir.',
+      choices: [
+        c('publier', 'Publier l’expertise, données brutes à l’appui', [g(6, -5, 1)], 'Méthode, chiffres, code source : chacun peut vérifier. Même les fidèles de Sacha Merlin découvrent qu’ils votaient aux côtés de robots.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'L’expertise contient une erreur de calcul, repérée en direct par un « ministre » de l’application ; le pouvoir est accusé de manipulation.' } }),
+        c('garder', 'Garder l’information pour plus tard', [g(1, 3, -1)], 'Plus tard, il est trop tard : l’information fuit par un autre canal, et l’on vous reproche de l’avoir cachée.'),
+      ],
+    }),
+  },
+  {
+    tag: 'shadow_face', weight: 1, eligible: on('shadow', 4),
+    build: () => ({
+      title: 'Le face-à-face',
+      context: 'Sacha Merlin vous défie : un débat en direct sur sa chaîne, la veille du « vote de confiance ». Vingt millions de spectateurs attendus, et des questions choisies par les internautes, parmi les plus retorses.',
+      choices: [
+        { ...c('debattre', 'Accepter le débat, et répondre sur le fond', [g(5, -4, 3)], 'Calme, précis, souriant : vous démontez trois « décrets » impossibles et saluez une idée juste. Sacha Merlin, beau joueur, finit par concéder qu’« un pays, ce n’est pas un sondage ».'), play: 'interview_piege' },
+        c('refuser', 'Refuser : la République ne débat pas avec une application', [g(0, 4, -2)], 'Une chaise vide, en direct, devant vingt millions de spectateurs. L’image fait le tour du pays.'),
+      ],
+    }),
+  },
+  // La fin du café
+  {
+    tag: 'cafe_stocks', weight: 1, eligible: on('cafe', 0, 1),
+    build: () => ({
+      title: 'Les sacs du Havre',
+      context: 'Au Havre, des négociants gardent des milliers de sacs de café dans leurs entrepôts, en attendant que les prix montent encore. Les petits torréfacteurs, eux, n’ont plus un grain à griller.',
+      choices: [
+        c('repartir', 'Négocier une répartition équitable des stocks', [g(5, -3, 1), s('energy', -3)], 'Un quota pour chaque torréfacteur, un prix plafonné pour les comptoirs : les négociants grognent, et les brûleries rallument leurs fours.'),
+        c('marche', 'Laisser faire le marché', [g(-1, 4, 1)], 'Le marché fait son travail : les prix doublent encore.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cafe_reunion', weight: 1, eligible: on('cafe', 1, 2),
+    build: () => ({
+      title: 'Les caféiers de La Réunion',
+      context: 'À La Réunion, la rouille noire atteint les plantations de bourbon pointu, parmi les derniers caféiers épargnés de la planète. Les planteurs réclament une cellule de crise : traiter, isoler les parcelles, sauver ce qui peut l’être avant qu’elle ne gagne toute l’île.',
+      choices: [
+        { ...c('cellule', 'Prendre la tête de la cellule de crise', [g(5, -4, 2)], 'Parcelle après parcelle, la rouille est contenue sur les hauts de l’île. Les derniers caféiers sains deviennent la pépinière de la France.'), play: 'cellule_epidemie' },
+        c('experts', 'Laisser faire les agronomes', [g(0, 4, -2)], 'Les agronomes rendent un excellent rapport. La rouille, elle, n’a pas attendu.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cafe_bistrot', weight: 1, eligible: on('cafe', 2, 3),
+    build: () => ({
+      title: 'Le dernier bistrot du canton',
+      context: 'À Saint-Ferréol-des-Prés, le dernier bistrot du canton allait fermer. Les habitants l’ont racheté ensemble pour en faire un café-épicerie-relais-poste, et vous invitent à la réouverture : on y servira de la chicorée, et l’on y dansera.',
+      choices: [
+        { ...c('fete', 'Venir trinquer à la chicorée', [g(2, -3, 6)], 'Accordéon, tarte aux pommes et chicorée au lait : le bistrot rouvre, et la photo de votre grimace à la première gorgée fait sourire tout le pays.'), play: 'fete_village' },
+        c('cheque', 'Envoyer un chèque, sans vous déplacer', [g(2, 2, -3)], 'Le chèque arrive. Le village aurait préféré vous voir.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cafe_faux_grains', weight: 1, eligible: on('cafe', 3),
+    build: () => ({
+      title: 'Les faux grains',
+      context: 'Des escrocs vendent à prix d’or des grains « d’avant la rouille » : du marc séché, de l’orge teintée, parfois pire. Les torréfacteurs honnêtes réclament un label pour que les clients s’y retrouvent.',
+      choices: [
+        c('label', 'Créer un label « grain vrai », contrôlé par les torréfacteurs', [g(6, -5, 1)], 'Un tampon, un registre, des contrôles surprises : les faux grains disparaissent des marchés, et les vrais torréfacteurs retrouvent leurs clients.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Le premier lot labellisé se révèle être de l’orge teintée ; la photo du tampon officiel fait rire tout le pays.' } }),
+        c('prudence', 'Mettre en garde les consommateurs, sans plus', [g(1, 3, -1)], 'Les mises en garde circulent. Les faux grains aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'cafe_replanter', weight: 1, eligible: on('cafe', 4),
+    build: () => ({
+      title: 'La replantation',
+      context: 'Les botanistes ont sélectionné un caféier qui résiste à la rouille. Reste à financer la replantation, ici et chez les pays producteurs, et à décider qui paiera : l’État, les torréfacteurs ou chaque tasse.',
+      choices: [
+        { ...c('arbitrer', 'Arbitrer vous-même le plan de replantation', [g(5, -4, 3)], 'Un centime par tasse, une part pour les planteurs, une part pour les comptoirs : le plan tient debout, et les premiers plants partent dans des caisses capitonnées.'), play: 'arbitrage_budgetaire' },
+        c('grands', 'Laisser les grands torréfacteurs s’en charger', [g(0, 4, -2)], 'Les grands torréfacteurs replantent… pour eux seuls. Les petits comptoirs attendront.'),
+      ],
+    }),
+  },
+  // La pénurie de sable
+  {
+    tag: 'sable_dunes', weight: 1, eligible: on('sable', 0, 1),
+    build: () => ({
+      title: 'Les dunes de nuit',
+      context: 'Sur la côte vendéenne, des camions chargent du sable en pleine nuit. Les maires du littoral réclament des patrouilles, et des associations de protection des dunes campent sur les plages, lampe frontale au front.',
+      choices: [
+        c('patrouilles', 'Organiser des patrouilles avec les gendarmes et les gardes du littoral', [g(5, -3, 1), s('energy', -3)], 'Projecteurs, barrières et procès-verbaux : les camions de nuit se font rares, et les dunes reprennent leur souffle.'),
+        c('cameras', 'Laisser les maires s’équiper de caméras', [g(-1, 4, 1)], 'Les caméras filment très bien les camions. Elles ne les arrêtent pas.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sable_dragues', weight: 1, eligible: on('sable', 1, 2),
+    build: () => ({
+      title: 'Les dragues clandestines',
+      context: 'Au large de la Bretagne, des dragues sans pavillon raclent les fonds marins à la faveur de la nuit, puis filent vers des ports lointains. La Marine propose une opération pour les arraisonner toutes, en une seule marée.',
+      choices: [
+        { ...c('operation', 'Diriger l’opération d’arraisonnement', [g(5, -4, 2)], 'À l’aube, les dragues sont escortées jusqu’à Brest, cales pleines de preuves. Les fonds marins respirent, et les trafiquants ont perdu leur flotte.'), play: 'bataille_navale' },
+        c('douanes', 'Laisser les douanes surveiller les ports', [g(0, 4, -2)], 'Les dragues changent de port. Puis de pavillon.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sable_quartier', weight: 1, eligible: on('sable', 2, 3),
+    build: () => ({
+      title: 'Le quartier sans sable',
+      context: 'Une commune de la Drôme veut bâtir tout un quartier sans béton : terre crue, bois, chanvre et pierre de réemploi. Son maire vous demande de l’aider à le dessiner, et à le défendre devant les sceptiques.',
+      choices: [
+        { ...c('dessiner', 'Dessiner le quartier avec le maire', [g(4, -3, 5)], 'Une école en pisé, des logements de bois, une halle en pierre de réemploi : le quartier sort de terre sans un grain de sable de rivière, et les visiteurs affluent.'), play: 'urbanisme_commune' },
+        c('normes', 'Attendre que les normes soient prêtes', [g(1, 3, -4)], 'Les normes seront prêtes dans quatre ans. Les familles, elles, attendent un logement maintenant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sable_entrepot', weight: 1, eligible: on('sable', 3),
+    build: () => ({
+      title: 'L’entrepôt du port',
+      context: 'Des enquêteurs ont localisé l’entrepôt portuaire où convergent les camions de sable volé. Une descente coordonnée pourrait démanteler toute la filière, si l’information ne fuit pas avant.',
+      choices: [
+        c('descente', 'Coordonner une descente avec la justice', [g(6, -5, 2)], 'Quatre heures du matin : quarante camions saisis, des cartons de registres, et une filière remontée jusqu’aux ports d’embarquement.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'L’entrepôt est vide à l’arrivée des enquêteurs ; quelqu’un avait prévenu la filière.' } }),
+        c('surveiller', 'Continuer à surveiller', [g(1, 3, -1)], 'La surveillance continue. Les camions aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'sable_loi', weight: 1, eligible: on('sable', 4),
+    build: () => ({
+      title: 'Bâtir sans piller',
+      context: 'Il faut réécrire en urgence les normes de construction pour autoriser le béton recyclé, le bois et la terre crue. Les assureurs veulent des garanties, les bâtisseurs de la souplesse, et les parlementaires y ajoutent leurs amendements.',
+      choices: [
+        { ...c('loi', 'Porter la loi jusqu’au bout de la navette', [g(5, -4, 3)], 'Trois lectures, une commission mixte et une nuit blanche : la loi « Bâtir sans piller » est adoptée, et les grues repartent dès le lendemain.'), play: 'cmp' },
+        c('decret', 'Tout régler par décret, et vite', [g(0, 4, -2)], 'Le décret est attaqué devant le Conseil d’État par trois fédérations. Les grues attendent.'),
+      ],
+    }),
+  },
+  // La commune directe
+  {
+    tag: 'agora_budget', weight: 1, eligible: on('agora', 0, 1),
+    build: () => ({
+      title: 'Le budget à main levée',
+      context: 'Montcaubet a voté son budget à main levée, en trois heures, sans le moindre document comptable. Le comptable public s’arrache les cheveux, et le préfet menace de tout annuler.',
+      choices: [
+        c('comptable', 'Envoyer un comptable public siéger chaque samedi', [g(5, -3, 1), s('energy', -3)], 'Le comptable public apprend la belote, les habitants la comptabilité publique. Le budget suivant est voté en règle, et toujours à main levée.'),
+        c('annuler', 'Laisser le préfet annuler le budget', [g(-1, 4, 0)], 'Le budget est annulé. Montcaubet le revote le samedi suivant, à l’identique, sous l’œil des caméras.'),
+      ],
+    }),
+  },
+  {
+    tag: 'agora_propositions', weight: 1, eligible: on('agora', 1, 2),
+    build: () => ({
+      title: 'Trois cents samedis',
+      context: 'Trois cents communes directes vous adressent les propositions votées dans leurs assemblées. Il y a de tout : des idées admirables, d’autres farfelues, et quelques-unes qui figurent déjà dans la loi.',
+      choices: [
+        { ...c('trier', 'Trier vous-même les propositions, en public', [g(5, -3, 2)], 'Une épicerie communale, des navettes vers le marché, une bibliothèque ouverte le dimanche : les bonnes idées remontent, et les communes se sentent enfin entendues.'), play: 'consultation' },
+        c('classer', 'Les classer sans suite', [g(0, 4, -2)], 'Trois cents communes reçoivent le même accusé de réception. Elles votent, à l’unanimité, qu’il est insultant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'agora_plan', weight: 1, eligible: on('agora', 2, 3),
+    build: () => ({
+      title: 'Le plan voté trois fois',
+      context: 'Après trois votes contradictoires, Montcaubet n’a plus de plan d’urbanisme : on a voté un lotissement, puis un verger à sa place, puis les deux à la fois. L’assemblée vous demande de l’aider à tout remettre à plat, ensemble.',
+      choices: [
+        { ...c('dessiner', 'Dessiner le plan avec l’assemblée, samedi après samedi', [g(4, -3, 5)], 'Une école agrandie, un verger communal, des logements pour les jeunes du village : le plan est voté à 81 %, et il tient debout.'), play: 'urbanisme_commune' },
+        c('prefet', 'Laisser le préfet imposer un plan', [g(1, 3, -4)], 'Le plan du préfet est très bien fait. Personne ne l’a voté.'),
+      ],
+    }),
+  },
+  {
+    tag: 'agora_partielle', weight: 1, eligible: on('agora', 3),
+    build: () => ({
+      title: 'Le candidat du samedi',
+      context: 'Les communes directes présentent un candidat à une législative partielle dans le Gers, sur un programme d’une ligne : « Tout voter, tout le temps. » Votre camp vous demande de mener campagne, canton par canton, pour défendre une autre idée de la participation.',
+      choices: [
+        { ...c('campagne', 'Mener une campagne de terrain, respectueuse des samedis', [g(5, -4, 2)], 'Marchés, salles des fêtes, débats contradictoires : vous défendez l’assemblée pour les grandes décisions et l’élu pour le reste. Le soir du scrutin, le candidat du samedi vient vous serrer la main.'), play: 'campagne_legislatives' },
+        c('abstenir', 'Ne pas vous en mêler', [g(0, 4, -2)], 'Le candidat du samedi est élu. Il promet de faire voter chaque amendement à Montcaubet.'),
+      ],
+    }),
+  },
+  {
+    tag: 'agora_loi', weight: 1, eligible: on('agora', 4),
+    build: () => ({
+      title: 'La loi d’expérimentation',
+      context: 'Un texte est prêt : les communes qui le souhaitent pourront voter leurs grandes décisions en assemblée, sous le contrôle d’un conseil élu et d’un comptable public. Encore faut-il qu’il soit voté à Paris, et accepté à Montcaubet.',
+      choices: [
+        c('presenter', 'Aller présenter la loi un samedi, à Montcaubet', [g(5, -4, 3)], 'Quarante minutes de discours, deux heures de questions, puis la salle vote : la loi est approuvée à main levée, avant même le Parlement.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -3)], failureNews: 'À Montcaubet, la salle rejette la loi à six voix près, en direct ; à Paris, les députés hésitent à la voter.' } }),
+        c('paris', 'La faire voter à Paris, sans passer par le Gers', [g(0, 4, -2)], 'La loi est votée à Paris. À Montcaubet, on vote une motion de défiance contre elle.'),
+      ],
+    }),
+  },
+  // La grande faille
+  {
+    tag: 'faille_fermes', weight: 1, eligible: on('faille', 0, 1),
+    build: () => ({
+      title: 'Les fermes du bord',
+      context: 'La faille approche de six fermes. Les familles refusent de partir : leurs bêtes, leurs silos et leurs souvenirs sont là. Les géologues donnent trois semaines, peut-être moins.',
+      choices: [
+        c('demenager', 'Organiser le déménagement, bêtes et silos compris', [g(5, -3, 1), s('energy', -3)], 'Bétaillères, convois de tracteurs, voisins solidaires : en dix jours, les six fermes sont déménagées. La faille n’avale qu’une grange vide.'),
+        c('attendre', 'Attendre l’avis définitif des géologues', [g(-1, 4, 0)], 'L’avis définitif arrive la nuit même où un silo bascule dans le vide.'),
+      ],
+    }),
+  },
+  {
+    tag: 'faille_riviere', weight: 1, eligible: on('faille', 1, 2),
+    build: () => ({
+      title: 'La rivière détournée',
+      context: 'La faille a capté une rivière beauceronne. L’eau s’engouffre dans le gouffre, ressort plus loin, menace d’inonder trois bourgs en aval, et creuse encore la craie à chaque crue.',
+      choices: [
+        { ...c('cellule', 'Prendre la tête de la cellule de crise', [g(5, -4, 2)], 'Digues provisoires, pompes, bassins de rétention : la rivière retrouve son lit, les bourgs restent au sec, et la faille ralentit.'), play: 'cellule_crue' },
+        c('prefet', 'Laisser le préfet gérer', [g(0, 4, -2)], 'Le préfet gère. L’eau aussi, à sa façon.'),
+      ],
+    }),
+  },
+  {
+    tag: 'faille_hameaux', weight: 1, eligible: on('faille', 2, 3),
+    build: () => ({
+      title: 'Rebâtir à l’écart',
+      context: 'Trois hameaux évacués demandent à être reconstruits. Les géologues ont tracé une bande interdite le long de la faille : on n’y rebâtira jamais. Il faut déblayer, reloger, et reconstruire au bon endroit.',
+      choices: [
+        { ...c('reconstruire', 'Piloter vous-même la reconstruction', [g(4, -3, 5)], 'Ruines déblayées, familles relogées avant l’hiver, et des hameaux neufs à bonne distance du vide : la Beauce respire.'), play: 'urbanisme_reconstruction' },
+        c('indemniser', 'Indemniser, et laisser chacun se débrouiller', [g(1, 3, -4)], 'Les chèques arrivent. Faute de mieux, certains rebâtissent au bord du vide.'),
+      ],
+    }),
+  },
+  {
+    tag: 'faille_curieux', weight: 1, eligible: on('faille', 3),
+    build: () => ({
+      title: 'Les selfies au bord du vide',
+      context: 'Des centaines de milliers de curieux se pressent au bord de la faille. Les buvettes prospèrent, les bords s’effritent, et les gendarmes redoutent l’accident.',
+      choices: [
+        c('belvederes', 'Ouvrir des belvédères sûrs, et fermer tout le reste', [g(6, -5, 2)], 'Trois belvédères, des navettes et des guides géologues : les curieux voient mieux, de plus loin, et les bords se reposent.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Le premier belvédère se fissure le jour de son inauguration ; il est évacué sous l’œil des caméras.' } }),
+        c('commerce', 'Laisser faire : c’est bon pour le commerce', [g(1, 3, -1)], 'Le commerce va bien. Les bords, beaucoup moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'faille_combler', weight: 1, eligible: on('faille', 4),
+    build: () => ({
+      title: 'Consolider les extrémités',
+      context: 'Les géologues proposent de consolider les deux extrémités de la faille et de soulager la nappe. Le chantier est colossal, et chaque poste doit être chiffré au plus juste avant d’être présenté au pays.',
+      choices: [
+        { ...c('chiffrer', 'Chiffrer le plan vous-même, poste par poste', [g(5, -4, 3)], 'Remblais, injections, pompages : le plan est chiffré au million près, voté sans drame, et les premiers camions partent le lendemain.'), play: 'chiffrage' },
+        c('promettre', 'Promettre de tout combler, quel qu’en soit le coût', [g(0, 4, -2)], 'La promesse fait la une. Les géologues rappellent qu’on ne comble pas soixante kilomètres de vide.'),
+      ],
+    }),
+  },
+  // Le rêve partagé
+  {
+    tag: 'reve_registre', weight: 1, eligible: on('reve', 0, 1),
+    build: () => ({
+      title: 'Le registre des rêves',
+      context: 'Des millions de témoignages affluent : dessins de la maison, airs fredonnés, détails du jardin. Les chercheurs demandent qu’on les recueille sérieusement, avant qu’ils ne se perdent dans le vacarme des réseaux.',
+      choices: [
+        c('registre', 'Ouvrir un registre public des rêves, anonyme et protégé', [g(5, -3, 1), s('energy', -3)], 'Un formulaire simple, des archivistes, des neurologues : trois millions de récits recueillis en un mois, et un premier motif qui se dessine.'),
+        c('reseaux', 'Laisser les réseaux s’en charger', [g(-1, 4, 1)], 'Les réseaux s’en chargent. On y trouve des milliers de maisons aux volets bleus, dont beaucoup sont à vendre.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reve_salle', weight: 1, eligible: on('reve', 1, 2),
+    build: () => ({
+      title: 'La salle sous la ville',
+      context: 'Depuis quelques nuits, les rêveurs voient dans la maison une trappe, un escalier, puis une salle voûtée qu’un ancien carrier reconnaît : une salle oubliée des carrières sous Paris. Des milliers de fidèles s’apprêtent à y descendre.',
+      choices: [
+        { ...c('descendre', 'La trouver avant la foule, avec un guide de l’Inspection des carrières', [g(5, -4, 2)], 'Au bout d’une galerie oubliée : une salle voûtée, une fresque de fleuve et de volets bleus peinte il y a deux siècles, et un vers gravé dans la pierre. Les chercheurs en tremblent d’émotion.'), play: 'infiltration_catacombes' },
+        c('murer', 'Faire murer les accès', [g(0, 4, -2)], 'Les accès sont murés. Les fidèles en trouvent d’autres.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reve_oreillers', weight: 1, eligible: on('reve', 2, 3),
+    build: () => ({
+      title: 'Rêvez ensemble, dormez mieux',
+      context: 'Une marque de literie lance une campagne nationale : « Rêvez ensemble. » D’autres vendent des tisanes censées « choisir la suite du rêve ». Les associations de consommateurs réclament une règle, et les journalistes une réponse.',
+      choices: [
+        { ...c('encadrer', 'Annoncer l’interdiction de toute publicité prétendant agir sur le rêve', [g(4, -3, 5)], 'Plus un oreiller ne promet de rêve partagé. Les marques changent leurs slogans, et le rêve redevient à tout le monde.'), play: 'conference_presse' },
+        c('commerce', 'Laisser jouer la liberté du commerce', [g(1, 3, -4)], 'Les tisanes « suite du rêve » se vendent par millions. Elles ne font rien, sauf dormir.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reve_prophete', weight: 1, eligible: on('reve', 3),
+    build: () => ({
+      title: 'Le campement des rêveurs',
+      context: 'Un ancien agent immobilier se proclame « interprète de la voix » et rassemble des dizaines de milliers de fidèles au bord de la Loire, dans l’attente que la maison apparaisse. Certains ont tout vendu pour le suivre.',
+      choices: [
+        c('mediation', 'Envoyer médiateurs, travailleurs sociaux et juristes au campement', [g(6, -5, 2)], 'Des tentes chauffées, des conseillers pour ceux qui ont tout vendu, un juriste pour examiner les comptes de l’« interprète » : le campement se vide doucement, sans heurts.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Les médiateurs sont accueillis avec des chants et des fleurs, puis priés de repartir ; l’« interprète » annonce que l’État « a peur du rêve ».' } }),
+        c('ignorer', 'Ignorer : chacun croit ce qu’il veut', [g(1, 3, -1)], 'Le campement grandit. L’« interprète » ouvre une souscription.'),
+      ],
+    }),
+  },
+  {
+    tag: 'reve_berceuse', weight: 1, eligible: on('reve', 4),
+    build: () => ({
+      title: 'La berceuse des mariniers',
+      context: 'Des musicologues pensent avoir identifié l’air : une berceuse de mariniers de la Loire, oubliée depuis un siècle. Les rêveurs proposent de la chanter tous ensemble, un soir, au bord du fleuve, et vous demandent de monter sur scène.',
+      choices: [
+        { ...c('chanter', 'Monter sur scène au grand concert des rêveurs', [g(5, -4, 3)], 'Au bord de la Loire, cent mille personnes chantent la berceuse à mi-voix. Vous ne chantez pas très juste, mais vous chantez.'), play: 'festival' },
+        c('droits', 'Laisser une maison de disques racheter les droits', [g(0, 4, -2)], 'La berceuse sort en version dansante. Cette nuit-là, la voix se tait dans tous les rêves.'),
+      ],
+    }),
+  },
+  // Les archives secrètes
+  {
+    tag: 'archives_familles', weight: 1, eligible: on('archives', 0, 1),
+    build: () => ({
+      title: 'Le nom d’un grand-père',
+      context: 'Des milliers de familles découvrent dans les documents le nom d’un parent : un résistant oublié, un fonctionnaire zélé, un diplomate courageux. Elles demandent à consulter les originaux, et à être accompagnées.',
+      choices: [
+        c('salles', 'Ouvrir des salles de lecture accompagnées dans chaque département', [g(5, -3, 1), s('energy', -3)], 'Des archivistes, des historiens, et du temps : les familles lisent les originaux, et beaucoup repartent apaisées.'),
+        c('ligne', 'Ouvrir une simple ligne téléphonique', [g(-1, 4, 0)], 'La ligne sonne occupé jour et nuit. Les familles se tournent vers les forums.'),
+      ],
+    }),
+  },
+  {
+    tag: 'archives_source', weight: 1, eligible: on('archives', 1, 2),
+    build: () => ({
+      title: 'D’où vient la fuite ?',
+      context: 'Les enquêteurs ont remonté la piste jusqu’à un service d’archives ministériel. Un agent, un prestataire ou un visiteur a copié un million de pages. Il faut le trouver, et savoir s’il a aussi glissé des faux.',
+      choices: [
+        { ...c('enquete', 'Mener l’enquête vous-même', [g(5, -4, 2)], 'C’était un archiviste à la retraite, convaincu de rendre au peuple ce qui lui appartenait. Il n’a jamais rien falsifié, et il fournit la liste exacte de ce qu’il a copié : les faux viennent d’ailleurs.'), play: 'enquete_fuite' },
+        c('police', 'Laisser la police s’en charger', [g(0, 4, -2)], 'L’enquête suit son cours, lentement. Les faux, eux, se multiplient.'),
+      ],
+    }),
+  },
+  {
+    tag: 'archives_citation', weight: 1, eligible: on('archives', 2, 3),
+    build: () => ({
+      title: 'La citation inventée',
+      context: 'Une phrase attribuée à un ancien Premier ministre, tirée d’un « procès-verbal secret », enflamme le pays. Les historiens soupçonnent un faux, et une émission vous met au défi de rendre en direct chaque citation à son véritable auteur.',
+      choices: [
+        { ...c('defi', 'Relever le défi, sources à l’appui', [g(4, -3, 5)], 'Citation après citation, vous rendez à chacun ses mots, et montrez que la phrase venait d’un roman des années quatre-vingt. Le faux s’effondre en direct.'), play: 'qui_a_dit' },
+        c('decliner', 'Décliner : l’histoire n’est pas un jeu', [g(1, 3, -4)], 'L’émission se fait sans vous. La fausse citation reste en tête des recherches.'),
+      ],
+    }),
+  },
+  {
+    tag: 'archives_telegramme', weight: 1, eligible: on('archives', 3),
+    build: () => ({
+      title: 'Le télégramme de 1983',
+      context: 'Un télégramme de 1983, fort peu flatteur pour un pays ami, provoque la colère de son gouvernement. Son ambassadeur refuse tout rendez-vous officiel, mais donne ce soir une réception. Une lettre d’explication doit parvenir sur son bureau, sans esclandre.',
+      choices: [
+        { ...c('remettre', 'Vous charger vous-même de déposer la lettre', [g(5, -4, 2)], 'Le lendemain, l’ambassadeur appelle : « Nous avons tous écrit des télégrammes que nous regrettons. » La crise s’apaise.'), play: 'infiltration_ambassade' },
+        c('communique', 'Publier un communiqué d’excuses', [g(1, 3, -3)], 'Le communiqué est jugé tiède par le pays ami, et rampant par l’opposition.'),
+      ],
+    }),
+  },
+  {
+    tag: 'archives_loi', weight: 1, eligible: on('archives', 4),
+    build: () => ({
+      title: 'La loi de la mémoire',
+      context: 'Un texte est prêt : ouverture des archives après trente ans, sauf exceptions motivées devant un juge, et publication annotée des documents authentifiés. Il faut le présenter au pays, et le faire voter avant que la tempête ne reparte.',
+      choices: [
+        c('presenter', 'Présenter la loi dans une grande allocution, documents à l’appui', [g(5, -4, 3)], 'Vous montrez un vrai télégramme, un faux, et la manière de les distinguer. Le pays comprend, et la loi passe à une large majorité.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -3)], failureNews: 'L’un des documents « authentifiés » montrés pendant l’allocution se révèle être un faux ; l’opposition jubile.' } }),
+        c('reclasser', 'Reclasser secret tout ce qui peut l’être', [g(0, 4, -2)], 'On reclasse. Le lendemain, le site anonyme publie le décret de reclassement.'),
+      ],
+    }),
+  },
+  // Le grand boycott
+  {
+    tag: 'boycott_caves', weight: 1, eligible: on('boycott', 0, 1),
+    build: () => ({
+      title: 'Les caves débordent',
+      context: 'Caves d’affinage et chais débordent de produits destinés à la Méridia. Les producteurs demandent de l’aide pour stocker, et surtout pour vendre ailleurs.',
+      choices: [
+        c('stocker', 'Ouvrir des entrepôts publics et des prêts de trésorerie', [g(5, -3, 1), s('energy', -3)], 'Entrepôts frigorifiques réquisitionnés, prêts à taux zéro : les producteurs respirent, et les meules continuent de vieillir dignement.'),
+        c('attendre', 'Attendre que la Méridia revienne à la raison', [g(-1, 4, 0)], 'La Méridia ne revient pas à la raison. Les premiers fromagers bradent leurs stocks.'),
+      ],
+    }),
+  },
+  {
+    tag: 'boycott_reception', weight: 1, eligible: on('boycott', 1, 2),
+    build: () => ({
+      title: 'La réception de l’ambassade méridienne',
+      context: 'L’ambassadeur de la Méridia refuse tout contact officiel, mais donne ce soir une réception pour la fête nationale de son pays. Une proposition discrète de sortie de crise doit parvenir sur son bureau, sans esclandre, et sans que la presse le sache.',
+      choices: [
+        { ...c('deposer', 'Vous glisser jusqu’au bureau de l’ambassadeur', [g(5, -4, 2)], 'Le lendemain, l’ambassadeur sollicite un « contact informel ». La Méridia autorise à nouveau l’importation des pièces d’avion.'), play: 'infiltration_ambassade' },
+        c('bouder', 'Boycotter la réception à votre tour', [g(0, 4, -2)], 'Le geste plaît aux réseaux. La Méridia en profite pour durcir le ton.'),
+      ],
+    }),
+  },
+  {
+    tag: 'boycott_foire', weight: 1, eligible: on('boycott', 2, 3),
+    build: () => ({
+      title: 'La grande foire des producteurs',
+      context: 'Les filières boycottées organisent une grande foire dans toutes les préfectures : comtés, cognacs, parfums et foulards à prix de producteur. Encore faut-il y attirer les Français, et y faire honneur à chaque stand.',
+      choices: [
+        { ...c('foire', 'Arpenter la foire, de stand en stand', [g(4, -3, 5)], 'Quarante fromages goûtés, dix mille mains serrées et un foulard au cou : la foire attire trois millions de visiteurs, et les caves se vident un peu.'), play: 'bain_de_foule' },
+        c('grandes_surfaces', 'Laisser les grandes surfaces racheter les stocks', [g(1, 3, -4)], 'Les grandes surfaces rachètent à prix cassés. Les producteurs crient au pillage.'),
+      ],
+    }),
+  },
+  {
+    tag: 'boycott_mission', weight: 1, eligible: on('boycott', 3),
+    build: () => ({
+      title: 'Les nouveaux clients',
+      context: 'Des acheteurs de trois continents s’intéressent aux produits boycottés. Une grande mission commerciale pourrait signer des contrats en quelques semaines, à condition d’être bien préparée et que les producteurs suivent.',
+      choices: [
+        c('mission', 'Conduire une mission commerciale sur trois continents', [g(6, -5, 1)], 'Douze pays, quarante contrats, et un comté servi au banquet officiel d’une capitale lointaine : les filières respirent.', { risk: { baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Les contrats annoncés n’étaient que des lettres d’intention ; la mission rentre presque bredouille.' } }),
+        c('europe', 'Attendre une riposte européenne', [g(1, 3, -1)], 'L’Europe réfléchit. Les producteurs, eux, comptent leurs pertes.'),
+      ],
+    }),
+  },
+  {
+    tag: 'boycott_table', weight: 1, eligible: on('boycott', 4),
+    build: () => ({
+      title: 'Un plateau de fromages entre deux délégations',
+      context: 'La Méridia accepte de négocier. Ses émissaires exigent que la France revienne sur son vote européen ; ses consommateurs, eux, réclament leur camembert. Tout se jouera en une nuit.',
+      choices: [
+        { ...c('negocier', 'Mener la négociation sans rien céder d’essentiel', [g(5, -4, 3)], 'Une nuit, deux délégations, un plateau de fromages au milieu de la table : les droits de douane sont levés, et la France ne retire rien de son vote.'), play: 'negociation_alliance' },
+        c('ceder', 'Céder à Bruxelles pour en finir', [g(0, 4, -2)], 'La France adoucit sa position. La Méridia célèbre « une leçon de démocratie ».'),
+      ],
+    }),
+  },
 ];
 
 /* ── Actions de l'onglet ───────────────────────────────────── */
@@ -2133,4 +2669,60 @@ export const SAGA_ACTIONS: ActionDefinition[] = [
   act('flottante', [1, 2, 3, 4], { id: 'sg_flottante_fisc', label: 'Taxer les résidents de Nautilia', description: 'Domicile fiscal, taxe de sortie, conventions : qui vit de Marseille paie à Marseille.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
   act('flottante', [1, 2, 3], { id: 'sg_flottante_inspection', label: 'Envoyer l’inspection du travail à bord', description: 'Contrats, horaires, sécurité : voir comment vivent ceux qui font tourner Nautilia.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
     risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Les inspecteurs sont refoulés à la passerelle, sous l’œil goguenard des caméras de Nautilia.' } }),
+  // Le gouvernement parallèle
+  act('shadow', undefined, { id: 'sg_shadow_maires', label: 'Faire le tour des maires « décrétés »', description: 'Écouter ceux qui appliquent les votes du soir, et comprendre ce qui les y pousse.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('shadow', undefined, { id: 'sg_shadow_juristes', label: 'Réunir constitutionnalistes et préfets', description: 'Ce que peut un maire, ce que ne peut pas une application.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('shadow', undefined, { id: 'sg_shadow_live', label: 'Répondre en direct sur les réseaux', description: 'Les vraies questions d’abord, les trolls ensuite, ou jamais.', minigame: 'moderation', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('shadow', [1, 2, 3, 4], { id: 'sg_shadow_plateforme', label: 'Ouvrir une plateforme publique de participation', description: 'Pétitions vérifiées, consultations officielles, et une réponse obligatoire du gouvernement.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('shadow', [1, 2, 3], { id: 'sg_shadow_ateliers', label: 'Lancer des ateliers civiques dans les médiathèques', description: 'Comment on écrit une loi, et pourquoi on ne la vote pas d’un clic.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Un atelier civique, filmé en douce, tourne au procès de l’État ; la vidéo triomphe sur la chaîne de Sacha Merlin.' } }),
+  // La fin du café
+  act('cafe', undefined, { id: 'sg_cafe_comptoirs', label: 'Faire la tournée des comptoirs', description: 'Un café, puis une chicorée, puis une tisane : écouter ceux qui tiennent les bistrots.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('cafe', undefined, { id: 'sg_cafe_botanistes', label: 'Réunir botanistes et torréfacteurs', description: 'Ce que mange la rouille, ce qui pousse encore, ce qui se torréfie.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('cafe', undefined, { id: 'sg_cafe_lettres', label: 'Répondre aux lettres des cafetiers', description: 'Loyers, dettes, souvenirs de comptoir : des sacs de courrier qui sentent le marc.', minigame: 'courrier', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('cafe', [1, 2, 3, 4], { id: 'sg_cafe_fonds', label: 'Créer un fonds de soutien aux bistrots', description: 'Loyers allégés, licences préservées, et le comptoir reconnu lieu de lien social.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('cafe', [1, 2, 3], { id: 'sg_cafe_chicoree', label: 'Relancer les champs de chicorée du Nord', description: 'Des hectares de racines, des séchoirs rallumés, et des recettes à réinventer.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une campagne officielle vante la chicorée « aussi bonne que le café » ; la France entière proteste, tasse à la main.' } }),
+  // La pénurie de sable
+  act('sable', undefined, { id: 'sg_sable_chantier', label: 'Visiter un chantier à l’arrêt', description: 'Des grues immobiles, des maçons inquiets, et un tas de gravats gardé comme un trésor.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('sable', undefined, { id: 'sg_sable_geologues', label: 'Réunir géologues et carriers', description: 'Où reste-t-il du sable, et combien de temps tiendra-t-il ?', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('sable', undefined, { id: 'sg_sable_chiffrage', label: 'Chiffrer le recyclage des gravats', description: 'Combien de béton neuf peut-on tirer du béton d’hier ? Cinq calculs avant d’annoncer.', minigame: 'chiffrage_mesure', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('sable', [1, 2, 3, 4], { id: 'sg_sable_recyclage', label: 'Imposer le recyclage des déchets de chantier', description: 'Chaque démolition devient une carrière, chaque gravat une ressource.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('sable', [1, 2, 3], { id: 'sg_sable_gardiens', label: 'Lancer des brigades de gardiens des dunes', description: 'Des volontaires, des ganivelles et des lampes, de Dunkerque à Biarritz.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une brigade de gardiens prend une équipe de tournage pour des pilleurs ; la vidéo fait le tour des réseaux.' } }),
+  // La commune directe
+  act('agora', undefined, { id: 'sg_agora_samedi', label: 'Assister à un samedi en assemblée', description: 'Une salle des fêtes, des bulletins, des enfants qui courent : écouter avant de juger.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('agora', undefined, { id: 'sg_agora_juristes', label: 'Réunir juristes et associations d’élus', description: 'Ce que permet la Constitution, et ce que réclament les maires.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('agora', undefined, { id: 'sg_agora_depouillement', label: 'Aider au dépouillement du samedi', description: 'Des centaines de bulletins, deux assesseurs fatigués, et pas une erreur permise.', minigame: 'depouillement', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('agora', [1, 2, 3, 4], { id: 'sg_agora_cadre', label: 'Proposer un cadre légal d’expérimentation', description: 'L’assemblée pour les grandes décisions, un conseil élu pour gérer, des comptes contrôlés.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('agora', [1, 2, 3], { id: 'sg_agora_animateurs', label: 'Former des animateurs d’assemblée', description: 'Prendre la parole, la donner, compter les voix : un vrai métier.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Un animateur formé par l’État fait revoter trois fois la même motion jusqu’au « bon » résultat ; les communes directes s’indignent.' } }),
+  // La grande faille
+  act('faille', undefined, { id: 'sg_faille_bord', label: 'Arpenter le bord de la faille', description: 'Bottes, casque, et des géologues qui mesurent chaque fissure nouvelle.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('faille', undefined, { id: 'sg_faille_geologues', label: 'Réunir géologues et hydrogéologues', description: 'Craie, nappe, effondrements : comprendre ce qui ronge la Beauce.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('faille', undefined, { id: 'sg_faille_securite', label: 'Placer les équipes autour de la faille', description: 'Gendarmes, pompiers, guides : tenir les curieux à distance du vide.', minigame: 'plan_securite', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('faille', [1, 2, 3, 4], { id: 'sg_faille_ponts', label: 'Financer des ponts et des déviations', description: 'Rétablir les routes, la voie ferrée, et le trajet des écoliers.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('faille', [1, 2, 3], { id: 'sg_faille_agriculteurs', label: 'Reloger et indemniser les agriculteurs', description: 'Des terres de remplacement, des silos neufs, et un interlocuteur unique.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Les terres de remplacement proposées sont à deux kilomètres de la faille, du mauvais côté ; les agriculteurs refusent en bloc.' } }),
+  // Le rêve partagé
+  act('reve', undefined, { id: 'sg_reve_laboratoire', label: 'Passer une nuit au laboratoire du sommeil', description: 'Casques, électrodes, et des volontaires qui sourient en dormant.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('reve', undefined, { id: 'sg_reve_savants', label: 'Réunir neurologues, psychanalystes et physiciens', description: 'Ondes, inconscient, coïncidence : que chacun apporte sa lanterne.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('reve', undefined, { id: 'sg_reve_radio', label: 'Parler du rêve à la radio', description: 'Ni miracle ni menace : ce que l’on sait, et ce qu’on peut en garder.', minigame: 'matinale', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('reve', [1, 2, 3, 4], { id: 'sg_reve_promesses', label: 'Interdire la vente de « rêves garantis »', description: 'Oreillers, tisanes, séjours : plus une promesse sans preuve.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('reve', [1, 2, 3], { id: 'sg_reve_veillees', label: 'Organiser des veillées de rêveurs', description: 'Des bibliothèques ouvertes le soir, pour raconter et écouter, sans rien vendre.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une veillée officielle se révèle discrètement sponsorisée par une marque d’oreillers ; les rêveurs s’indignent.' } }),
+  // Les archives secrètes
+  act('archives', undefined, { id: 'sg_archives_nuit', label: 'Passer une nuit avec les archivistes', description: 'Cartons, gants blancs et lampes vertes : lire, comparer, authentifier.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('archives', undefined, { id: 'sg_archives_historiens', label: 'Réunir historiens et diplomates', description: 'Ce que disent les documents, et ce qu’ils taisent.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('archives', undefined, { id: 'sg_archives_faux', label: 'Démonter les faux en direct', description: 'Une date impossible, un tampon anachronique : vérifier chaque document viral.', minigame: 'factcheck_direct', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('archives', [1, 2, 3, 4], { id: 'sg_archives_commission', label: 'Financer une commission d’authentification', description: 'Historiens, chimistes du papier, experts en écritures : un verdict pour chaque document.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('archives', [1, 2, 3], { id: 'sg_archives_prevenir', label: 'Prévenir les pays amis avant chaque révélation', description: 'Un appel, une note, un geste : désamorcer avant que la presse ne s’en charge.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Un appel de courtoisie à un pays ami est lui-même enregistré et publié ; la France passe pour s’excuser de tout.' } }),
+  // Le grand boycott
+  act('boycott', undefined, { id: 'sg_boycott_caves', label: 'Visiter les caves et les ateliers', description: 'Meules en attente, chais pleins, ateliers à l’arrêt : écouter ceux qui tiennent bon.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('boycott', undefined, { id: 'sg_boycott_conseillers', label: 'Réunir douaniers et conseillers commerciaux', description: 'Quels marchés, quels contrats, quelles normes à franchir ?', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('boycott', undefined, { id: 'sg_boycott_acheteur', label: 'Recevoir un acheteur étranger', description: 'Cadeau, menu, toast : le moindre détail peut valoir un contrat.', minigame: 'visite_officielle', cost: { ap: 1, energy: 4 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('boycott', [1, 2, 3, 4], { id: 'sg_boycott_fonds', label: 'Débloquer un fonds pour les filières boycottées', description: 'Trésorerie, stockage, prospection : tenir jusqu’au retour des clients.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('boycott', [1, 2, 3], { id: 'sg_boycott_circuits', label: 'Lancer la campagne « Goûtez votre pays »', description: 'Marchés, cantines, comités d’entreprise : les produits boycottés dans les assiettes françaises.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'L’affiche officielle de la campagne montre un fromage… méridien ; la Méridia en fait aussitôt une publicité.' } }),
 ];
