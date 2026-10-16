@@ -1045,6 +1045,9 @@ export interface NationalBudget {
 
 // ── État global ─────────────────────────────────────────────
 
+/** Le niveau de difficulté de la partie */
+export type Difficulty = 'decouverte' | 'normal' | 'difficile' | 'impitoyable';
+
 export interface GameState {
   /** 2 : un tour = un mois (1 : un tour = une semaine) */
   version: 2;
@@ -1064,6 +1067,8 @@ export interface GameState {
   program: ProgramState | null;
   protest: ProtestState | null;
   scene: SceneState | null;
+  /** Difficulté choisie à la création (« normal » par défaut) */
+  difficulty?: Difficulty;
   scenario: ScenarioId;
   crown: CrownState | null;
   lodge: LodgeState | null;

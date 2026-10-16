@@ -45,7 +45,7 @@ function monthlyRegime(d: GameState, k: KingdomState, rng: Rng): void {
     }
   } else if (r < 0) {
     // L'apparat : stable et aimé, mais sans prise
-    k.stabilite = clamp(k.stabilite - r / 90);
+    k.stabilite = clamp(k.stabilite - (r / 90) * Math.max(0.1, 1 - k.stabilite / 110));
     k.opposition = clamp(k.opposition + r / 70);
     p.stats.popularity = clamp(p.stats.popularity - r / 250);
     // Peu de prise : le capital politique fond, l'influence s'étiole, le gouvernement passe outre

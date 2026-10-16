@@ -1,3 +1,4 @@
+import { monthlyDifficulty } from '../engine/difficulty';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Decision, DecisionChoice, Effect, GameState, STAT_LABELS, StatKey, Tone } from '../models/game.models';
 import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } from '../engine/effects';
@@ -171,6 +172,7 @@ export class TurnService {
     monthlyApocalypse(d, rng);
     monthlySaga(d, rng);
     monthlyImage(d);
+    monthlyDifficulty(d);
     monthlyQuotes(d, rng);
     monthlyLaws(d, rng);
     monthlyPledges(d);

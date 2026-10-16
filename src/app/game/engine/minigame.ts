@@ -1,3 +1,4 @@
+import { mods } from './difficulty';
 import { Effect, EffectContext, GameState, MinigameState, MinigameTier } from '../models/game.models';
 import { MINIGAMES_BY_ID } from '../data/minigames';
 import { applyEffects, pushNews, scaleGains } from './effects';
@@ -26,7 +27,7 @@ export function tierOf(score: number): MinigameTier {
 export function difficultyOf(d: GameState): number {
   const s = d.player.stats;
   const calm = 1 - 0.07 * (d.player.talents?.['sang_froid'] ?? 0);
-  return Math.round(clamp((1 + (s.stress - 40) / 150 - (s.energy - 50) / 250) * calm * 100, 55, 140)) / 100;
+  return Math.round(clamp(((1 + (s.stress - 40) / 150 - (s.energy - 50) / 250) * calm + mods(d).minigame) * 100, 55, 150)) / 100;
 }
 
 /** Amplifie la part « gain » d'une liste d'effets (palier brillant) */

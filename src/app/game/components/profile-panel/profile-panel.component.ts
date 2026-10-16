@@ -1,3 +1,4 @@
+import { DIFFICULTIES, difficultyOfGame } from '../../engine/difficulty';
 import { RoyalPipe } from '../shared/royal.pipe';
 import { DecimalPipe } from '@angular/common';
 import { TraitsComponent } from '../traits/traits.component';
@@ -32,7 +33,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
     <section class="card">
       <div class="eyebrow">{{ game.s().party.name }}</div>
       <h2 class="name">{{ game.player().name }}</h2>
-      <div class="rank"><span class="dot" [style.background]="game.s().party.color"></span>{{ game.roleLabel() }}</div>
+      <div class="rank"><span class="dot" [style.background]="game.s().party.color"></span>{{ game.roleLabel() }}<span class="diffchip" [title]="diffLabel().blurb">{{ diffLabel().icon }} {{ diffLabel().label }}</span></div>
       @if (game.player().traits?.length) {
         <app-traits class="my-traits" [ids]="game.player().traits ?? []" [gender]="game.player().gender" [grouped]="true" [fresh]="freshTrait()" />
         @if (traitPath().length) {
@@ -229,6 +230,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
     </section>
   `,
   styles: `
+    .diffchip { margin-left: 8px; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
     :host { display: grid; gap: 12px; align-content: start; }
     .name { font-size: 24px; margin-top: 4px; }
     .val { display: inline-flex; align-items: center; gap: 6px; }
@@ -306,6 +308,7 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
   `,
 })
 export class ProfilePanelComponent {
+  protected readonly diffLabel = computed(() => DIFFICULTIES.find(x => x.id === difficultyOfGame(this.game.s()))!);
   protected readonly game = inject(GameStateService);
   protected readonly lifestyles = LIFESTYLES;
   protected readonly stress = computed(() => stressLevel(this.game.player().stats.stress));

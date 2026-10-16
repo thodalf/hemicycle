@@ -1,3 +1,4 @@
+import { mods } from './difficulty';
 import { namePool } from '../data/names';
 import { Effect, GameState } from '../models/game.models';
 import { RANKS } from '../data/ranks';
@@ -147,9 +148,13 @@ export function adjustKingdom(d: GameState, e: Extract<Effect, { kind: 'kingdom'
   if (!k) return [];
   const out: string[] = [];
   const sg = (v: number) => (v > 0 ? `+${v}` : `${v}`);
-  if (e.prestige) { k.prestige = clamp(k.prestige + e.prestige); out.push(`Prestige du trône ${sg(e.prestige)}`); }
-  if (e.stabilite) { k.stabilite = clamp(k.stabilite + e.stabilite); out.push(`Stabilité ${sg(e.stabilite)}`); }
-  if (e.opposition) { k.opposition = clamp(k.opposition + e.opposition); out.push(`Front républicain ${sg(e.opposition)}`); }
+  // Difficulté et rendements décroissants : un trône au sommet ne monte plus guère
+  const m = mods(d);
+  const up = (v: number, cur: number) => (v > 0 ? v * m.gain * Math.max(0.25, 1 - cur / 125) : v * m.loss);
+  const opp = (v: number) => (v < 0 ? v * m.gain * Math.max(0.3, k.opposition / 60) : v * m.loss);
+  if (e.prestige) { const v = Math.round(up(e.prestige, k.prestige)); k.prestige = clamp(k.prestige + v); out.push(`Prestige du trône ${sg(v || Math.sign(e.prestige))}`); }
+  if (e.stabilite) { const v = Math.round(up(e.stabilite, k.stabilite)); k.stabilite = clamp(k.stabilite + v); out.push(`Stabilité ${sg(v || Math.sign(e.stabilite))}`); }
+  if (e.opposition) { const v = Math.round(opp(e.opposition)); k.opposition = clamp(k.opposition + v); out.push(`Front républicain ${sg(v || Math.sign(e.opposition))}`); }
   if (e.regime) {
     k.regime = Math.max(-100, Math.min(100, (k.regime ?? 0) + e.regime));
     out.push(e.regime > 0 ? `Régime vers l’absolutisme (${sg(e.regime)})` : `Régime vers le parlementarisme (${sg(e.regime)})`);
@@ -168,7 +173,7 @@ export function monthlyKingdom(d: GameState, rng: Rng): void {
   if (!k || d.status !== 'en_cours') return;
   // Un trône est un paratonnerre : le front républicain grossit vite, la rue gronde souvent
   k.prestige = clamp(k.prestige + (50 - k.prestige) * 0.03 - 0.8 + d.player.stats.popularity / 200);
-  k.opposition = clamp(k.opposition + 2.4 - k.prestige / 100 - k.stabilite / 150);
+  k.opposition = clamp(k.opposition + 2.4 * mods(d).threat - k.prestige / 100 - k.stabilite / 150);
   k.stabilite = clamp(k.stabilite - (k.opposition - 45) / 30 + (k.prestige - 50) / 60);
   // La cour : la grandeur nourrit le prestige, mais le luxe arme le front républicain
   k.court ??= { table: 1, ceremonial: 1, mecenat: 0, garde: 1 };

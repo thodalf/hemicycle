@@ -1,3 +1,4 @@
+import { mods } from './difficulty';
 import { ActionDefinition, CircoKind, Domain, EconomyState, Effect, EffectContext, ElectionType, ElectoralMap, ElectorateState, GameState, Segment } from '../models/game.models';
 import { SEGMENTS } from '../data/programme';
 import { BASE_SEATS } from '../data/bills';
@@ -171,7 +172,8 @@ export function segmentRows(d: GameState): SegmentRow[] {
 export function adjustSegment(d: GameState, x: Extract<Effect, { kind: 'segment' }>): string[] {
   const off = electorate(d).offsets;
   const ids = x.segment === '*' ? SEGMENTS.map(s => s.id) : [x.segment];
-  for (const id of ids) off[id] = clamp(off[id] + x.delta, -30, 30);
+  const delta = x.delta * (x.delta > 0 ? mods(d).gain : mods(d).loss);
+  for (const id of ids) off[id] = clamp(off[id] + delta, -30, 30);
   const label = x.segment === '*' ? 'Tous les électorats' : SEGMENTS.find(s => s.id === x.segment)!.label;
   return [`${label} ${frSigned(x.delta)}`];
 }

@@ -1,3 +1,4 @@
+import { mods } from './difficulty';
 import { Effect, GameState, SagaState } from '../models/game.models';
 import { SAGAS, SAGA_BY_ID, SagaDef } from '../data/saga-defs';
 import { addMilestone } from './life';
@@ -41,10 +42,15 @@ export function adjustSaga(d: GameState, e: Extract<Effect, { kind: 'saga' }>): 
   if (!def || !s || s.phase >= def.phases.length) return [];
   const out: string[] = [];
   for (const k of ['a', 'b', 'c'] as const) {
-    const delta = e[k];
-    if (!delta) continue;
+    const raw = e[k];
+    if (!raw) continue;
+    // Rendements décroissants : le dernier mètre est le plus dur à gagner
+    let delta = raw;
+    if ((k === 'a' || k === 'c') && raw > 0) delta = raw * Math.max(0.25, 1 - s[k] / 130);
+    if (k === 'b' && raw < 0) delta = raw * Math.max(0.25, 0.35 + s.b / 100);
+    delta = Math.round(delta * 10) / 10;
     s[k] = clamp(s[k] + delta);
-    out.push(`${def.gauges[k].label} ${frSigned(delta)}`);
+    out.push(`${def.gauges[k].label} ${frSigned(Math.round(delta) || Math.sign(raw))}`);
   }
   return out;
 }
@@ -57,7 +63,7 @@ export function monthlySaga(d: GameState, rng: Rng): void {
   const ph = def.phases[s.phase];
   for (const k of ['a', 'b', 'c'] as const) {
     const drift = ph.drift[k] ?? 0;
-    if (drift) s[k] = clamp(s[k] + drift * rng.range(0.6, 1.3));
+    if (drift) s[k] = clamp(s[k] + drift * (k === 'b' && drift > 0 ? mods(d).threat : 1) * rng.range(0.75, 1.5));
   }
   // La menace pèse sur le pays
   d.player.stats.stress = clamp(d.player.stats.stress + s.b / 80);

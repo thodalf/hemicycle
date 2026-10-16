@@ -7,6 +7,7 @@ import { initPresidential } from '../engine/presidency';
 import { initIntl } from '../engine/intl';
 import {
   BudgetDraft, DOMAINS, Domain, OutletKind, ScenarioId, DossierState, Faction, FactionId, GameState, NetworkContact, Npc, PartyInfo,
+  Difficulty,
 } from '../models/game.models';
 
 /** Partis fictifs */
@@ -162,6 +163,8 @@ export interface NewGameOptions {
   outlet?: OutletKind;
   /** Parti à infiltrer (scénario « Infiltré·e ») ; partyId est alors votre vrai camp */
   targetPartyId?: string;
+  /** Niveau de difficulté */
+  difficulty?: Difficulty;
 }
 
 /** Le parti le plus éloigné idéologiquement : cible par défaut d'une infiltration */
@@ -197,6 +200,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
     protest: null,
     scene: null,
     scenario: opts.scenario ?? 'carriere',
+    difficulty: opts.difficulty ?? 'normal',
     crown: null,
     lodge: null,
     press: null,

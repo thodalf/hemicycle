@@ -1,3 +1,4 @@
+import { mods, scaleStat } from './difficulty';
 import { adjustKingdom } from './kingdom';
 import { recordOpinion } from './memories';
 import { adjustSecret, grantHook } from './secrets';
@@ -167,7 +168,7 @@ export function failureChance(d: GameState, risk: RiskProfile, ctx: EffectContex
   else if (risk.scaleWith) value = d.player.stats[risk.scaleWith];
   // Avocate : les risques judiciaires (ceux qui exposent aux scandales) tournent plus souvent bien
   const legal = d.player.staff.includes('juriste') && risk.onFailure.some(e => e.kind === 'exposure') ? 0.8 : 1;
-  const p = risk.baseChance * (1 - (risk.scaleWeight ?? 0) * (value / 100)) * legal;
+  const p = risk.baseChance * (1 - (risk.scaleWeight ?? 0) * (value / 100)) * legal + mods(d).risk;
   return clamp(p, 0.03, 0.95);
 }
 
@@ -231,7 +232,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
         const softCap = SOFT_CAPPED.includes(e.stat) && e.delta > 0 ? Math.max(0.15, 1 - before / 110) : 1;
         // … et plus dure est la chute : les pertes pèsent davantage quand on est haut
         const fall = SOFT_CAPPED.includes(e.stat) && e.delta < 0 ? 1 + before / 150 : 1;
-        s[e.stat] = clamp(before + e.delta * softCap * fall * statTraitMult(d, e.stat, e.delta));
+        s[e.stat] = clamp(before + scaleStat(d, e.stat, e.delta) * softCap * fall * statTraitMult(d, e.stat, e.delta));
         const real = Math.round(s[e.stat] - before);
         if (real) summary.push(`${STAT_LABELS[e.stat]} ${signed(real)}`);
         break;
@@ -253,7 +254,7 @@ export function applyEffects(d: GameState, effects: Effect[], ctx: EffectContext
       }
       case 'funds': {
         const boost = e.account === 'campaign' && e.delta > 0 && d.player.staff.includes('tresorier') ? 1.5 : 1;
-        const amount = Math.round(e.delta * boost);
+        const amount = Math.round(e.delta * boost * (e.delta > 0 ? mods(d).income : 1));
         d.player.finances[e.account] += amount;
         summary.push(`${e.account === 'campaign' ? 'Fonds de campagne' : 'Fonds perso'} ${signed(amount)} €`);
         break;

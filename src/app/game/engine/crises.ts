@@ -1,3 +1,4 @@
+import { mods } from './difficulty';
 import { economy, electorate } from './country';
 import { CrisisArc, CrisisArcId, Effect, GameState, RankId } from '../models/game.models';
 import { RANKS } from '../data/ranks';
@@ -186,8 +187,10 @@ export function adjustCrisis(d: GameState, e: Extract<Effect, { kind: 'crisis' }
   if (!a) return [];
   const out: string[] = [];
   const sg = (n: number) => (n > 0 ? `+${n}` : `${n}`);
-  if (e.gauge) { a.gauge = clamp(a.gauge + e.gauge); out.push(`${def.gaugeLabel} ${sg(e.gauge)}`); }
-  if (e.risk) { a.risk = clamp(a.risk + e.risk); out.push(`${def.riskLabel} ${sg(e.risk)}`); }
+  // Difficulté et rendements décroissants : les derniers points sont les plus durs
+  const m = mods(d);
+  if (e.gauge) { const v = Math.round(e.gauge > 0 ? e.gauge * m.gain * Math.max(0.3, 1 - a.gauge / 130) : e.gauge * m.loss) || Math.sign(e.gauge); a.gauge = clamp(a.gauge + v); out.push(`${def.gaugeLabel} ${sg(v)}`); }
+  if (e.risk) { const v = Math.round(e.risk < 0 ? e.risk * m.gain * Math.max(0.3, 0.3 + a.risk / 100) : e.risk * m.loss) || Math.sign(e.risk); a.risk = clamp(a.risk + v); out.push(`${def.riskLabel} ${sg(v)}`); }
   return out;
 }
 
@@ -196,7 +199,7 @@ export function monthlyCrises(d: GameState, rng: Rng): void {
   for (const [id, a] of activeCrises(d)) {
     const def = CRISES[id];
     a.gauge = clamp(a.gauge + def.drift.gauge * rng.range(0.5, 1.3));
-    a.risk = clamp(a.risk + def.drift.risk * rng.range(0.5, 1.4) + (id === 'proces' ? d.player.scandalExposure / 40 : 0));
+    a.risk = clamp(a.risk + def.drift.risk * (def.drift.risk > 0 ? mods(d).threat : 1) * rng.range(0.5, 1.4) + (id === 'proces' ? d.player.scandalExposure / 40 : 0));
     if (d.week - a.since >= a.months) resolve(d, id, a, rng);
   }
 }

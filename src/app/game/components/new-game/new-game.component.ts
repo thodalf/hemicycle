@@ -3,6 +3,7 @@ import { PARTIES, stanceLabel } from '../../data/world';
 import { GameStateService } from '../../services/game-state.service';
 import { PARTY_COLORS } from '../../engine/founding';
 import { PartyFormComponent } from '../party-form/party-form.component';
+import { DIFFICULTIES, Difficulty } from '../../engine/difficulty';
 
 @Component({
   selector: 'app-new-game',
@@ -50,6 +51,17 @@ import { PartyFormComponent } from '../party-form/party-form.component';
           }
         </fieldset>
 
+        <fieldset class="field">
+          <legend class="eyebrow">Difficulté</legend>
+          <div class="diffs">
+            @for (x of difficulties; track x.id) {
+              <button type="button" class="diff" [class.on]="difficulty() === x.id" (click)="difficulty.set(x.id)" [attr.aria-pressed]="difficulty() === x.id">
+                <span class="dic" aria-hidden="true">{{ x.icon }}</span><span class="pname">{{ x.label }}<small>{{ x.blurb }}</small></span>
+              </button>
+            }
+          </div>
+        </fieldset>
+
         <p class="muted hint">Une seule partie, une vie entière : guerres, complots, premier contact, royauté, épidémies… tout peut arriver en cours de route.</p>
 
         <button class="btn primary go" type="submit">Prendre sa carte →</button>
@@ -80,6 +92,10 @@ import { PartyFormComponent } from '../party-form/party-form.component';
     .swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
     .swatch.plus { display: grid; place-items: center; width: 12px; height: 12px; font-size: 13px; font-weight: 700; color: var(--accent); }
     .party.create { border-style: dashed; }
+    .diffs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    @media (max-width: 420px) { .diffs { grid-template-columns: 1fr; } }
+    .diff { display: flex; gap: 8px; align-items: flex-start; text-align: left; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; color: var(--ink); font: inherit;
+      &.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); } .dic { font-size: 18px; line-height: 1.2; } }
     .custom { padding: 14px; margin-top: 6px; }
     .go { padding: 11px; font-size: 15px; }
     .hint { font-size: 12px; }
@@ -97,6 +113,8 @@ export class NewGameComponent {
   protected readonly partyName = signal('');
   protected readonly partyColor = signal(PARTY_COLORS[5]);
   protected readonly partyPosition = signal(0);
+  protected readonly difficulties = DIFFICULTIES;
+  protected readonly difficulty = signal<Difficulty>('normal');
 
   protected label(v: number) {
     const l = stanceLabel(v);
@@ -107,7 +125,7 @@ export class NewGameComponent {
     e.preventDefault();
     const custom = this.partyId() === 'perso';
     this.game.newGame({
-      name: this.name(), gender: this.gender(), partyId: custom ? 'ut' : this.partyId(), scenario: 'carriere',
+      name: this.name(), gender: this.gender(), partyId: custom ? 'ut' : this.partyId(), scenario: 'carriere', difficulty: this.difficulty(),
       customParty: custom ? { name: this.partyName().trim() || 'Mouvement citoyen', color: this.partyColor(), position: this.partyPosition() } : undefined,
     });
   }
