@@ -5,7 +5,7 @@ import { MOTS_DU_JOUR } from './mots';
  *  ou de l'événement qui les déclenche.
  * ============================================================ */
 
-export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms' | 'agenda' | 'prompteur' | 'chiffrage' | 'depouillement' | 'tactique' | 'portrait' | 'cellule' | 'infiltration' | 'campagne' | 'enquete' | 'urbanisme';
+export type MinigameKind = 'poignees' | 'applaudimetre' | 'memoire' | 'tri' | 'marchandage' | 'pointage' | 'tournee' | 'mot' | 'grille' | 'quiz' | 'protocole' | 'table' | 'interception' | 'deminage' | 'interview' | 'cmp' | 'sommet' | 'visite' | 'train' | 'cortege' | 'valise' | 'majorite' | 'standard' | 'plume' | 'factcheck' | 'investitures' | 'arbitrage' | 'citations' | 'lecture' | 'securite' | 'interprete' | 'frondeurs' | 'rabot' | 'prenoms' | 'agenda' | 'prompteur' | 'chiffrage' | 'depouillement' | 'tactique' | 'portrait' | 'cellule' | 'infiltration' | 'campagne' | 'enquete' | 'urbanisme' | 'echiquier' | 'navette' | 'une' | 'reseau';
 
 export interface TriItem {
   text: string;
@@ -697,6 +697,58 @@ export const MINIGAMES: MinigameDef[] = [
   {
     id: 'urbanisme_reconstruction', kind: 'urbanisme', icon: '🧱', title: 'La reconstruction',
     rule: 'Après la catastrophe, déblayez les ruines, relogez tous les sinistrés avant l’hiver et videz la zone inondable de ses décombres : on n’y reconstruit plus.',
+  },
+  {
+    id: 'echiquier_monde', kind: 'echiquier', icon: '♟️', title: 'Le grand échiquier',
+    rule: 'Huit tours pour étendre l’influence française face à la Karstanie : jouez vos cartes pour placer de l’influence, tenter des coups diplomatiques ou déclencher des événements, sans laisser la tension tourner à la crise.',
+  },
+  {
+    id: 'echiquier_afrique', kind: 'echiquier', icon: '🌍', title: 'L’échiquier africain',
+    rule: 'Vingt pays, cinq régions : disputez au Kantor aide, accords et visites, et dominez les régions au moment de leurs bilans.',
+  },
+  {
+    id: 'echiquier_europe', kind: 'echiquier', icon: '🇪🇺', title: 'L’échiquier européen',
+    rule: 'Au sein de l’Union, ralliez États et institutions face à une coalition de capitales : votes, alliances et budgets, sans provoquer le blocage institutionnel.',
+  },
+  {
+    id: 'navette_loi', kind: 'navette', icon: '🏛️', title: 'La navette parlementaire',
+    rule: 'Menez votre texte de la commission à la lecture définitive : consultez les groupes, amendez, négociez, et faites-le adopter sans le vider de sa substance.',
+  },
+  {
+    id: 'navette_budget', kind: 'navette', icon: '💶', title: 'La loi de finances',
+    rule: 'Faites voter le budget de la commission jusqu’à la lecture définitive : amendez, négociez, dégainez le 49.3 si la censure ne passe pas, et tenez la cible de déficit.',
+  },
+  {
+    id: 'navette_reforme', kind: 'navette', icon: '✊', title: 'La grande réforme',
+    rule: 'Faites passer la réforme à travers l’Assemblée, le Sénat et la CMP pendant que la rue gronde : chaque étape où son cœur reste intact grossit la mobilisation.',
+  },
+  {
+    id: 'navette_constitution', kind: 'navette', icon: '📜', title: 'La révision constitutionnelle',
+    rule: 'Ni 49.3 ni dernier mot de l’Assemblée : obtenez un texte identique des deux chambres, puis les trois cinquièmes du Congrès à Versailles.',
+  },
+  {
+    id: 'une_quotidien', kind: 'une', icon: '📰', title: 'Le bouclage',
+    rule: 'Composez la Une et deux pages avant 23 h 30 : placez les dépêches, vérifiez les sources douteuses, casez les pubs, sans laisser de blanc.',
+  },
+  {
+    id: 'une_soir_electoral', kind: 'une', icon: '🗳️', title: 'Soirée électorale',
+    rule: 'Les estimations tombent et certaines seront corrigées : remplacez-les par les rectificatifs avant le bouclage, sinon c’est le démenti.',
+  },
+  {
+    id: 'une_scandale', kind: 'une', icon: '🗂️', title: 'L’affaire',
+    rule: 'Documents et versions contradictoires : vérifiez avant d’accuser, toute accusation imprimée sans preuve vaut une plainte en diffamation.',
+  },
+  {
+    id: 'reseau_metro', kind: 'reseau', icon: '🚇', title: 'Le métro du Grand Paris',
+    rule: 'Tracez les lignes semaine après semaine : chaque voyageur doit rejoindre sa destination, et une station saturée trois semaines ferme le réseau.',
+  },
+  {
+    id: 'reseau_tram', kind: 'reseau', icon: '🚋', title: 'Le tramway de la ville',
+    rule: 'Avec peu de lignes et un budget au kilomètre, desservez tous les quartiers avant que l’un d’eux ne déborde.',
+  },
+  {
+    id: 'reseau_tgv', kind: 'reseau', icon: '🚄', title: 'Les lignes à grande vitesse',
+    rule: 'Reliez les grandes villes de France avec votre budget : la montagne coûte cher, et une ville laissée à quai trop longtemps fait suspendre le plan.',
   },
   {
     id: 'visite_officielle', kind: 'visite', icon: '🎩', title: 'La visite d’État',

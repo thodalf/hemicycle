@@ -26,8 +26,6 @@ export type Side = 'p' | 'r';
 export type CardId = 'aide' | 'garantie' | 'commerce' | 'visite' | 'culture' | 'sommet' | 'mediation' | 'sanctions' | 'elections' | 'bilan'
   | 'propagande' | 'prets' | 'incident' | 'espionnage' | 'desinfo' | 'reseau';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ENV: Record<string, string | undefined> = (globalThis as any).process?.env ?? {};
 export const TURNS = 8;
 export const ROUNDS = 3;
 export const HAND = 4;
@@ -42,7 +40,7 @@ export interface MapNode extends NodeDef { i: number; zi: number; nb: number[]; 
 export interface Words {
   inf: string; country: string; countries: string; stab: string; coup: string; coups: string; coupShort: string; tension: string; crisis: string;
 }
-export interface RivalText { name: string; the: string; The: string; of: string; emblem: string }
+export interface RivalText { name: string; the: string; The: string; of: string; emblem: string; pron: 'elle' | 'il' }
 interface VariantData {
   cols: number; rows: number; zones: ZoneDef[]; nodes: NodeDef[];
   extra: [string, string][]; cut: [string, string][];
@@ -89,7 +87,7 @@ const DATA: Record<Variant, VariantData> = {
     extra: [['VAL', 'ACE'], ['AOU', 'CSU']],
     cut: [['CAR', 'MER'], ['AND', 'MAG'], ['CSU', 'SAH'], ['GOL', 'PAC']],
     start: { p: { MER: 2, MAG: 2, CAR: 1, PAC: 1, AOU: 1 }, r: { VAL: 1, ACE: 2, ZAM: 1, LEV: 1, SUB: 1 } },
-    rival: { name: 'Karstanie', the: 'la Karstanie', The: 'La Karstanie', of: 'de la Karstanie', emblem: '🦅' },
+    rival: { name: 'Karstanie', the: 'la Karstanie', The: 'La Karstanie', of: 'de la Karstanie', emblem: '🦅', pron: 'elle' },
     words: WORLD_WORDS,
     brief: 'La France et la Karstanie se disputent l’influence sur cinq continents. Dix-huit pays, cinq zones, huit tours.',
     cards: { propagande: ['📢', 'Propagande karste'], prets: ['💰', 'Prêts karstes'] },
@@ -128,7 +126,7 @@ const DATA: Record<Variant, VariantData> = {
     extra: [['OUR', 'SAB'], ['DOU', 'DAL'], ['KAN', 'DAL'], ['LOM', 'TOU'], ['DOU', 'KAN']],
     cut: [],
     start: { p: { TAM: 2, LAG: 1, IMB: 1, PAL: 1, KSO: 1 }, r: { NGO: 2, KAN: 1, DOU: 1, BOU: 1, SAB: 1 } },
-    rival: { name: 'Kantor', the: 'le Kantor', The: 'Le Kantor', of: 'du Kantor', emblem: '🐆' },
+    rival: { name: 'Kantor', the: 'le Kantor', The: 'Le Kantor', of: 'du Kantor', emblem: '🐆', pron: 'il' },
     words: WORLD_WORDS,
     brief: 'Vingt pays, cinq régions : la France et le Kantor rivalisent d’influence sur le continent, à coups d’aide, d’accords et de visites.',
     cards: {
@@ -168,7 +166,7 @@ const DATA: Record<Variant, VariantData> = {
     extra: [],
     cut: [],
     start: { p: { LOR: 2, ARV: 1, IBE: 1, BEL: 1, PAR: 1 }, r: { FRI: 2, SKA: 1, MOR: 1, KAL: 1, CON: 1 } },
-    rival: { name: 'Coalition', the: 'la coalition des capitales', The: 'La coalition des capitales', of: 'de la coalition', emblem: '🏛️' },
+    rival: { name: 'Coalition', the: 'la coalition des capitales', The: 'La coalition des capitales', of: 'de la coalition', emblem: '🏛️', pron: 'elle' },
     words: {
       inf: 'influence', country: 'siège', countries: 'sièges', stab: 'fermeté', coup: 'retournement', coups: 'retournements', coupShort: 'Retourner', tension: 'blocage', crisis: 'crise institutionnelle',
     },
@@ -257,7 +255,7 @@ export function cardDesc(id: CardId, v: Variant): string {
     case 'sanctions': return `Retire 3 ${w.inf} adverse dans un ${w.country}. ${T} +1.`;
     case 'elections': return `Dans un ${w.country}, chaque camp perd la moitié de son ${w.inf}.`;
     case 'bilan': return `+1 PV par ${w.country} contrôlé dans une zone (3 au plus).`;
-    case 'propagande': return `Pour ${R.the} : +1 ${w.inf} dans 3 ${w.countries} où elle est présente.`;
+    case 'propagande': return `Pour ${R.the} : +1 ${w.inf} dans 3 ${w.countries} où ${R.pron} est ${R.pron === 'il' ? 'présent' : 'présente'}.`;
     case 'prets': return `Pour ${R.the} : +3 ${w.inf} dans un ${w.country} de ${w.stab} 1 ou 2.`;
     case 'incident': return `Pour ${R.the} : ${w.tension} +1 et +2 ${w.inf} à ses portes.`;
     case 'espionnage': return `Contre vous : −2 ${w.inf} française dans un ${w.country} pivot.`;
@@ -287,8 +285,6 @@ export interface Game {
   crisis: Side | null;
   /** Poids de chaque zone dans l'évaluation (bilans à venir) */
   urg: number[];
-  /** Bonus d'opérations de l'adversaire (difficulté) */
-  aiBonus: number;
   /** Imprécision de l'adversaire (difficulté) */
   aiNoise: number;
 }
@@ -321,7 +317,7 @@ export function newGame(v: Variant, diff: number, seed: number): Game {
     v, diff, seed: seed | 0, turn: 1, acted: 0, tension: 0, vpP: 0, vpR: 0,
     p: new Array(n).fill(0), r: new Array(n).fill(0), shield: new Array(n).fill(''),
     deck: [], discard: [], hand: [], aiHand: [], uid: 0, sched: [], classed: { p: false, r: false }, crisis: null, urg: [],
-    aiBonus: 0, aiNoise: Number(ENV['NOISE'] ?? NaN) || clamp(2 * 3 ** ((1 - diff) / 0.2), 0.2, 6),
+    aiNoise: clamp(3.5 * 3 ** ((1 - diff) / 0.2), 0.3, 8),
   };
   for (const [k, c] of Object.entries(V.start.p)) g.p[V.nodes.findIndex(x => x.id === k)] = c;
   for (const [k, c] of Object.entries(V.start.r)) g.r[V.nodes.findIndex(x => x.id === k)] = c;
@@ -393,7 +389,7 @@ export function placeCost(g: Game, s: Side, i: number): number { return controll
 
 export function zoneClosed(g: Game, zi: number): boolean { const c = V_(g).zones[zi].close; return c !== undefined && g.tension >= c; }
 
-export function opsOf(g: Game, s: Side, c: Card): number { return MECH[c.id].ops + (s === 'r' && MECH[c.id].ops <= 2 ? g.aiBonus : 0); }
+export function opsOf(g: Game, s: Side, c: Card): number { return MECH[c.id].ops; }
 
 /** Chances de réussite d'un coup (0…1) */
 export function coupChance(g: Game, ops: number, i: number): number {
@@ -482,7 +478,7 @@ export function nextTurn(g: Game): boolean {
 }
 
 /** Score final 0…1 selon l'écart de PV (0,5 = égalité) ; la crise plafonne à 0,35 */
-const K_SCORE = Number(ENV['KS'] ?? 22);
+const K_SCORE = 22;
 export function scoreFromDiff(d: number): number { return clamp(0.5 + 0.5 * Math.tanh(d / K_SCORE), 0.02, 0.98); }
 export function finalScore(g: Game): number {
   const s = scoreFromDiff(g.vpP - g.vpR);
@@ -537,7 +533,11 @@ export function evaluate(g: Game, s: Side): number {
 
 interface Snap { p: number[]; r: number[]; shield: (Side | '')[]; tension: number; vpP: number; vpR: number; seed: number; crisis: Side | null }
 const save = (g: Game): Snap => ({ p: [...g.p], r: [...g.r], shield: [...g.shield], tension: g.tension, vpP: g.vpP, vpR: g.vpR, seed: g.seed, crisis: g.crisis });
-const restore = (g: Game, s: Snap) => { g.p = s.p; g.r = s.r; g.shield = s.shield; g.tension = s.tension; g.vpP = s.vpP; g.vpR = s.vpR; g.seed = s.seed; g.crisis = s.crisis; };
+/** Restauration en place (les tableaux gardent leur identité : les fonctions appelantes en tiennent des références) */
+const restore = (g: Game, s: Snap) => {
+  for (let i = 0; i < s.p.length; i++) { g.p[i] = s.p[i]; g.r[i] = s.r[i]; g.shield[i] = s.shield[i]; }
+  g.tension = s.tension; g.vpP = s.vpP; g.vpR = s.vpR; g.seed = s.seed; g.crisis = s.crisis;
+};
 
 /** Placement glouton d'influence (point par point, depuis les accès du début de la carte) */
 export function greedyPlace(g: Game, s: Side, ops: number, noise: number, from?: Set<number>): number[] {
@@ -791,7 +791,7 @@ export function options(g: Game, s: Side, noise = 0): Choice[] {
       const ts = m.target === 'none' ? [undefined] : eventTargets(g, s, c.id);
       for (const t of ts) {
         const sn = save(g);
-        applyEvent(g, m.side === 'n' ? s : s, c.id, t);
+        applyEvent(g, s, c.id, t);
         out.push({ a: { k: 'event', uid: c.uid, at: t }, v: evaluate(g, s) });
         restore(g, sn);
       }
@@ -820,7 +820,7 @@ export function choose(g: Game, s: Side, noise: number): Action {
 
 /** L'adversaire ; en difficulté élevée, il anticipe votre meilleure réponse */
 export function aiAction(g: Game): Action {
-  if (g.diff < 1.25 && !ENV['DEEP']) return choose(g, 'r', g.aiNoise);
+  if (g.diff < 1.25) return choose(g, 'r', g.aiNoise);
   return lookahead(g, 'r', 5, g.aiNoise * 0.5);
 }
 
@@ -858,16 +858,18 @@ export function lookahead(g: Game, s: Side, width: number, noise = 0): Action {
 /** Une ligne d'analyse du coup adverse (son intention apparente) */
 export function intentOf(g: Game, rep: ActReport): string {
   const V = V_(g);
-  if (rep.k === 'class') return 'Elle enterre une carte qui vous aurait profité.';
+  const P = V.rival.pron === 'il' ? 'Il' : 'Elle';
+  if (rep.k === 'class') return `${P} enterre une carte qui vous aurait profité.`;
   const main = rep.coup?.at ?? rep.changed[0];
-  if (main === undefined) return rep.card === 'sommet' ? 'Elle fait baisser la tension.' : '';
+  if (main === undefined) return rep.card === 'sommet' ? `${P} cherche l’apaisement.` : '';
   const n = V.nodes[main];
   const z = V.zones[n.zi];
   const next = g.sched.find(s => !s.res && s.turn >= g.turn && s.zones.length === 1 && s.zones[0] === n.zi);
-  if (rep.k === 'coup') return rep.coup?.ok ? `Elle frappe là où vous étiez fragile${next ? `, avant le bilan ${z.name} (tour ${next.turn})` : ''}.` : 'Coup manqué : elle a pris un risque.';
-  if (controller(g, main) === 'r' && n.pivot) return `Elle tient un pivot ${z.name === n.name ? '' : `de la zone ${z.name}`}${next ? ` avant le bilan du tour ${next.turn}` : ''}.`.replace(' .', '.');
-  if (next) return `Elle prépare le bilan ${z.name} (tour ${next.turn}).`;
-  return `Elle avance ses pions en zone ${z.name}.`;
+  const before = next ? ` avant le bilan ${z.name} (tour ${next.turn})` : '';
+  if (rep.k === 'coup') return rep.coup?.ok ? `${P} frappe là où vous étiez fragile${before}.` : `Coup manqué : ${V.rival.pron} a pris un risque.`;
+  if (controller(g, main) === 'r' && n.pivot) return `${P} tient un pivot de la zone ${z.name}${before}.`;
+  if (next) return `${P} prépare le bilan ${z.name} (tour ${next.turn}).`;
+  return `${P} avance ses pions en zone ${z.name}.`;
 }
 
 /* ── Composant ─────────────────────────────────────────────── */
@@ -879,7 +881,7 @@ interface NodeView {
   p: number; r: number; ctrl: Side | null; anchor: string; pend: number; can: boolean; cost2: boolean; odds: string; evt: boolean; dim: boolean;
   flash: string; shield: string; label: string; focus: boolean; pick: boolean;
 }
-interface CardView { uid: number; id: CardId; icon: string; name: string; ops: number; side: Side | 'n'; owner: string; on: boolean }
+interface CardView { uid: number; id: CardId; icon: string; name: string; ops: number; side: Side | 'n'; owner: string; on: boolean; long: boolean }
 
 const LEVELS = ['rien', 'présence', 'domination', 'contrôle'];
 const SIDE_CLASS: Record<Side, string> = { p: 'c-p', r: 'c-r' };
@@ -985,7 +987,7 @@ const SIDE_CLASS: Record<Side, string> = { p: 'c-p', r: 'c-r' };
                       (click)="pickCard(c.uid)" [attr.aria-pressed]="c.on" [attr.aria-label]="c.name + ', ' + c.ops + ' opérations, ' + c.owner">
                 <span class="ops mono">{{ c.ops }}</span>
                 <span class="ic">{{ c.icon }}</span>
-                <span class="cn">{{ c.name }}</span>
+                <span class="cn" [class.long]="c.long">{{ c.name }}</span>
                 <span class="ow">{{ c.side === 'p' ? '🇫🇷' : c.side === 'r' ? V.rival.emblem : '⚪' }}</span>
               </button>
             }
@@ -1102,7 +1104,7 @@ const SIDE_CLASS: Record<Side, string> = { p: 'c-p', r: 'c-r' };
       font: inherit; text-align: center; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.15); transition: background .4s ease, opacity .2s ease, transform .15s ease; min-width: 0;
       &.c-p { background: var(--fr); border-color: var(--fr-d); color: #fff; } &.c-r { background: var(--rv); border-color: var(--rv-d); color: #fff; }
       &.can { outline: 2px dashed var(--fr); outline-offset: 1px; } &.tgt { outline: 2px solid var(--rv); outline-offset: 1px; } &.evt { outline: 2px solid #e0a800; outline-offset: 1px; }
-      &.dim { opacity: .45; } &.focus, &.pick { box-shadow: 0 0 0 3px #f4d35e; } &.pick { outline-width: 3px; }
+      &.dim::after { content: ''; position: absolute; inset: -2px; border-radius: inherit; background: var(--surface); opacity: .6; pointer-events: none; } &.focus, &.pick { box-shadow: 0 0 0 3px #f4d35e; } &.pick { outline-width: 3px; }
       &.fl-p { animation: flP 1.4s ease 1; } &.fl-r { animation: flR 1.4s ease 1; }
       &:disabled { cursor: default; } }
     .nm { font-size: clamp(8.5px, 2.5vw, 11px); font-weight: 700; line-height: 1.1; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 1px; }
@@ -1131,7 +1133,7 @@ const SIDE_CLASS: Record<Side, string> = { p: 'c-p', r: 'c-r' };
       &.on { outline: 3px solid var(--accent); outline-offset: 1px; background: var(--surface-2); }
       &:disabled { opacity: .55; cursor: default; }
       .ops { position: absolute; top: 3px; left: 4px; font-size: 13px; font-weight: 800; color: var(--ink-2); }
-      .ic { font-size: 19px; line-height: 1.1; } .cn { font-size: 10.3px; font-weight: 600; line-height: 1.12; text-align: center; overflow-wrap: anywhere; }
+      .ic { font-size: 19px; line-height: 1.1; } .cn { font-size: 10.3px; font-weight: 600; line-height: 1.12; text-align: center; overflow-wrap: anywhere; &.long { font-size: 9px; letter-spacing: -.02em; } }
       .ow { position: absolute; top: 2px; right: 4px; font-size: 10px; } }
     .act { min-height: 52px; }
     .row, .modes { display: flex; flex-wrap: wrap; gap: 6px; .btn { min-height: 36px; } }
@@ -1239,7 +1241,7 @@ export class EchiquierGameComponent implements OnInit, OnDestroy {
     return g.hand.map(c => {
       const t = cardText(c.id, this.V.id), m = MECH[c.id];
       return {
-        uid: c.uid, id: c.id, icon: t.icon, name: t.name, ops: opsOf(g, 'p', c), side: m.side, on: this.sel() === c.uid,
+        uid: c.uid, id: c.id, icon: t.icon, name: t.name, ops: opsOf(g, 'p', c), side: m.side, on: this.sel() === c.uid, long: t.name.split(/[\s’']/).some(w => w.length > 11),
         owner: !m.event ? 'sans événement' : m.side === 'p' ? 'événement français' : m.side === 'r' ? `événement ${this.V.rival.of}` : 'événement neutre',
       };
     });
