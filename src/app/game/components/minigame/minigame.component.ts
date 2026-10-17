@@ -1,6 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, effect, inject, signal, untracked } from '@angular/core';
 import { MinigameDef, TriItem } from '../../data/minigames';
+import { rulesFor } from '../../data/minigame-rules';
 import { TIER_LABELS, tierOf } from '../../engine/minigame';
 import { MinigameService } from '../../services/minigame.service';
 import { FxService } from '../../services/fx.service';
@@ -88,6 +89,9 @@ export class MinigameComponent {
   protected readonly g = this.svc.current;
   protected readonly def = this.svc.def;
   protected readonly phase = signal<Phase>('intro');
+  /** Les règles détaillées du jeu en cours */
+  protected readonly rules = computed(() => { const d = this.def(); return d ? rulesFor(d.kind, d.id) : null; });
+  protected readonly showRules = signal(false);
   protected readonly timeLeft = signal(1);
   protected readonly liveScore = signal(0);
   protected readonly message = signal('');
@@ -142,6 +146,7 @@ export class MinigameComponent {
   protected resumable(id: string): boolean { return !!saveProgress(id); }
 
   start(): void {
+    this.showRules.set(false);
     const def = this.def();
     if (!def) return;
     this.phase.set('play');

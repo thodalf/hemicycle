@@ -5,7 +5,12 @@
         <header class="band">
           <div class="band-top">
             <span class="eyebrow on-dark">Mini-jeu · {{ g.origin }}</span>
-            @if (svc.queued() > 1) { <span class="queue">{{ svc.queued() }} en attente</span> }
+            <span class="band-right">
+              @if (svc.queued() > 1) { <span class="queue">{{ svc.queued() }} en attente</span> }
+              @if (rules() && phase() === 'play' && g.status !== 'fini') {
+                <button type="button" class="rules-btn" (click)="showRules.set(!showRules())" [attr.aria-expanded]="showRules()">{{ showRules() ? 'Fermer les règles' : '? Règles' }}</button>
+              }
+            </span>
           </div>
           <h2><span class="ico" aria-hidden="true">{{ def.icon }}</span> {{ g.title }}</h2>
           <p class="rule">{{ def.rule }}</p>
@@ -27,6 +32,17 @@
           </div>
         } @else if (phase() === 'intro') {
           <div class="intro">
+            @if (rules(); as r) {
+            <section class="howto" [class.inplay]="phase() === 'play'" aria-label="Comment jouer">
+              <h3>Comment jouer</h3>
+              <p class="but"><b>But :</b> {{ r.but }}</p>
+              <ol>@for (x of r.deroule; track $index) { <li>{{ x }}</li> }</ol>
+              @if (r.variante) { <p class="var"><b>Cette partie :</b> {{ r.variante }}</p> }
+              <p><b>Score :</b> {{ r.score }}</p>
+              @if (r.commandes) { <p><b>Commandes :</b> {{ r.commandes }}</p> }
+              @if (r.astuces?.length) { <ul class="tips">@for (x of r.astuces; track $index) { <li>💡 {{ x }}</li> }</ul> }
+            </section>
+          }
             <div class="paliers">
               <span><b>Brillant</b> (80+) gains ×1,5</span>
               <span><b>Réussi</b> (50+) gains pleins</span>
@@ -57,6 +73,19 @@
             </div>
           </div>
         } @else {
+          @if (showRules()) {
+            <div class="rules-pop">@if (rules(); as r) {
+            <section class="howto" [class.inplay]="phase() === 'play'" aria-label="Comment jouer">
+              <h3>Comment jouer</h3>
+              <p class="but"><b>But :</b> {{ r.but }}</p>
+              <ol>@for (x of r.deroule; track $index) { <li>{{ x }}</li> }</ol>
+              @if (r.variante) { <p class="var"><b>Cette partie :</b> {{ r.variante }}</p> }
+              <p><b>Score :</b> {{ r.score }}</p>
+              @if (r.commandes) { <p><b>Commandes :</b> {{ r.commandes }}</p> }
+              @if (r.astuces?.length) { <ul class="tips">@for (x of r.astuces; track $index) { <li>💡 {{ x }}</li> }</ul> }
+            </section>
+          }</div>
+          }
           <div class="play">
             @if (g.arcade) {
               <button type="button" class="btn small pause" (click)="svc.quit()" title="Vos réponses sont gardées jusqu’à minuit">⏸ Quitter, reprendre plus tard</button>
