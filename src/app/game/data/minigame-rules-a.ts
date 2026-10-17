@@ -4,9 +4,9 @@ import type { GameRules } from './minigame-rules';
 /* ============================================================
  *  Règles détaillées (première moitié des mécaniques).
  *  Chaque texte décrit la mécanique réellement codée dans
- *  components/minigame : durées, barèmes, pénalités.
- *  « Votre forme » : la fatigue et le stress rendent chaque
- *  exercice plus rapide ou plus exigeant ; reposé·e, il est plus doux.
+ *  components/minigame : durées, barèmes, pénalités.
+ *  « Votre forme » : la fatigue et le stress rendent chaque
+ *  exercice plus rapide ou plus exigeant ; reposé·e, il est plus doux.
  * ============================================================ */
 
 export const RULES_A: Partial<Record<MinigameKind, GameRules>> = {
@@ -170,12 +170,12 @@ export const RULES_A: Partial<Record<MinigameKind, GameRules>> = {
       'Une même réponse ne peut servir qu’une fois dans la grille.',
       'La partie s’arrête quand la grille est pleine, après trois erreurs, à la fin du temps (quatre minutes environ, pas de chrono dans la salle de jeux) ou si vous rendez la grille.',
     ],
-    score: 'Le score est la part des cases remplies : environ 11 points par case, 100 pour une grille complète. Les erreurs ne retirent aucun point, mais la troisième met fin à la partie. Les points de rareté s’affichent pour le plaisir et la comparaison, mais n’entrent pas dans le score sur 100.',
+    score: '80 % du score viennent des cases remplies (environ 9 points par case), 20 % de la rareté de vos réponses (la moyenne de vos points de rareté). Chaque erreur retire 4 points, et la troisième met fin à la partie.',
     commandes: 'Touchez une case, tapez dans le champ, puis touchez une suggestion ; Entrée choisit la première suggestion.',
     astuces: [
       'Commencez par les cases qui n’admettent qu’une ou deux réponses, et gardez les cases faciles pour la fin.',
       'Ne jouez pas une réponse « passe-partout » dans une case facile si elle est la seule possible ailleurs.',
-      'Une erreur ne coûte aucun point : même avec un seul cœur, tentez votre chance plutôt que de rendre la grille.',
+      'Une erreur coûte 4 points, une case remplie en rapporte environ 9 : tentez votre chance si vous hésitez entre deux réponses.',
     ],
     variantes: {
       metrodoku: 'Des stations du métro parisien. Les lignes ne sont désignées que par leur numéro, et les suggestions ne disent jamais par quelles lignes passe une station.',

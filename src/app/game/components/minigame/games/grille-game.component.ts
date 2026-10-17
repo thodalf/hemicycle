@@ -55,7 +55,7 @@ import { todayKey } from '../../../engine/daily';
       @if (!over()) { <button type="button" class="btn" (click)="giveUp()">Rendre la grille</button> }
       @if (result(); as r) {
         <app-arcade-result [result]="r" [openAll]="true" />
-        <button type="button" class="btn primary" (click)="done.emit(r.found / 9)">Continuer</button>
+        <button type="button" class="btn primary" (click)="done.emit(finalScore())">Continuer</button>
       } @else if (over() && !saveKey()) {
         <details class="all-ans"><summary>Toutes les réponses possibles</summary>
           <ul>@for (row of grid.rows; track row.id; let i = $index) { @for (c of grid.cols; track c.id; let j = $index) {
@@ -135,6 +135,12 @@ export class GrilleGameComponent {
   /** Résultat de la partie du jour (salle de jeux) */
   protected readonly result = signal<GridResult | null>(null);
   protected readonly shaking = signal(false);
+  /** Le score : 80 % pour les cases remplies, 20 % pour la rareté des réponses, −4 points par erreur */
+  protected finalScore(): number {
+    const raw = (this.filled() / 9) * 0.8 + Math.min(1, this.total() / 900) * 0.2 - (MAX_MISTAKES - this.left()) * 0.04;
+    return Math.max(0, Math.min(1, raw));
+  }
+
   /** Points de rareté case par case */
   protected readonly pts = signal<(number | null)[]>(Array(9).fill(null));
   protected readonly total = computed(() => this.pts().reduce<number>((t, p) => t + (p ?? 0), 0));
@@ -274,7 +280,7 @@ export class GrilleGameComponent {
       return x;
     }));
     this.revealed.set(rev);
-    const score = this.filled() / 9;
+    const score = this.finalScore();
     // Le verdict, façon une de journal
     if (this.filled() === 9) {
       this.fx.stamp('Grille complète', 'good', MAX_MISTAKES - this.left() ? `${MAX_MISTAKES - this.left()} erreur(s)` : 'Sans faute !');
