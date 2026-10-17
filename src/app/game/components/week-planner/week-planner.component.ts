@@ -413,7 +413,7 @@ export class WeekPlannerComponent {
       const now = this.game.s();
       const overlay = !!(now.scene || now.debate || now.protest || now.vote);
       if (!overlay) this.anim.monthTurn(from, after.week);
-      if (yearOf(after.week) !== yearOf(from)) setTimeout(() => this.anim.newYear(yearOf(after.week)), overlay ? 300 : 1500);
+      if (yearOf(after.week) !== yearOf(from)) setTimeout(() => this.anim.newYear(yearOf(after.week)), 100);
       else if (monthIndex(after.week) === 11 && !overlay) setTimeout(() => this.anim.rain(true), 600);
       // Voyages : un avion traverse l'écran
       const trip = planned.find(a => a.category === 'international' || TRIPS.has(a.id));

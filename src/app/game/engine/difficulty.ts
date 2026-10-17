@@ -41,10 +41,10 @@ export const DIFFICULTIES: { id: Difficulty; label: string; icon: string; blurb:
 ];
 
 const MODS: Record<Difficulty, DifficultyMods> = {
-  decouverte: { gain: 1.1, loss: 0.85, risk: -0.03, erosion: 0, income: 1.15, vote: 1.5, threat: 0.85, minigame: -0.1, cost: 1, tier: -0.02 },
-  normal: { gain: 0.93, loss: 1.08, risk: 0.03, erosion: 0.2, income: 0.94, vote: -1, threat: 1.12, minigame: 0.05, cost: 1.15, tier: 0.03 },
-  difficile: { gain: 0.76, loss: 1.22, risk: 0.07, erosion: 0.6, income: 0.82, vote: -3, threat: 1.25, minigame: 0.12, cost: 1.3, tier: 0.06 },
-  impitoyable: { gain: 0.64, loss: 1.38, risk: 0.12, erosion: 1, income: 0.7, vote: -5, threat: 1.45, minigame: 0.22, cost: 1.45, tier: 0.09 },
+  decouverte: { gain: 1.05, loss: 0.9, risk: -0.02, erosion: 0.05, income: 1.1, vote: 1, threat: 0.9, minigame: -0.08, cost: 1.05, tier: -0.01 },
+  normal: { gain: 0.87, loss: 1.14, risk: 0.05, erosion: 0.35, income: 0.88, vote: -2, threat: 1.2, minigame: 0.09, cost: 1.22, tier: 0.05 },
+  difficile: { gain: 0.72, loss: 1.3, risk: 0.09, erosion: 0.8, income: 0.76, vote: -4, threat: 1.35, minigame: 0.16, cost: 1.38, tier: 0.08 },
+  impitoyable: { gain: 0.6, loss: 1.48, risk: 0.14, erosion: 1.25, income: 0.64, vote: -6, threat: 1.55, minigame: 0.26, cost: 1.55, tier: 0.12 },
 };
 
 export function difficultyOfGame(d: Pick<GameState, 'difficulty'>): Difficulty {
@@ -104,8 +104,8 @@ export function topFactor(d: Pick<GameState, 'difficulty'>, value: number): numb
   return Math.max(0.1, 1 - (value - start) / (100 - start + 6));
 }
 
-/** Saturation : la troisième action d'une même catégorie dans le mois porte moins, puis de moins en moins */
-export const SATURATION = [1, 1, 0.8, 0.65, 0.5, 0.4];
+/** Saturation : dès la deuxième action d’une même catégorie dans le mois, l’effet s’émousse, puis de moins en moins */
+export const SATURATION = [1, 0.85, 0.7, 0.55, 0.42, 0.32];
 export function saturation(rank: number): number { return SATURATION[Math.min(rank, SATURATION.length - 1)]; }
 
 /** Maîtrise du dossier : une action sur un sujet mal connu porte moins, une action d'expert davantage */

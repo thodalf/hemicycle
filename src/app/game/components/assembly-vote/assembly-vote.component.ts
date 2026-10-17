@@ -306,7 +306,7 @@ export class AssemblyVoteComponent {
           this.done.set(true);
           if (r.adopted) this.fx.burst(window.innerWidth / 2, window.innerHeight * 0.45, 'good', 24);
           else this.fx.shake();
-          if (this.v()?.warEnemy && r.adopted) setTimeout(() => { this.fx.flash('bad'); this.fx.stamp('Mobilisation générale', 'bad', 'La France entre en guerre'); }, 300);
+          if (this.v()?.warEnemy && r.adopted) setTimeout(() => this.fx.group(() => { this.fx.flash('bad'); this.fx.stamp('Mobilisation générale', 'bad', 'La France entre en guerre'); }), 300);
         }
       };
       requestAnimationFrame(tick);

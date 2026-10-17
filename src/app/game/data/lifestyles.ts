@@ -24,7 +24,11 @@ export interface Lifestyle {
   trait: string;
 }
 
-export const XP_PER_PERK = 120;
+export const XP_PER_PERK = 190;
+/** Expérience gagnée chaque mois (hors actions du style) */
+export const XP_MONTHLY = 6;
+/** Par action du style, au plus trois par mois */
+export const XP_PER_ACTION = 6;
 
 export const LIFESTYLES: Lifestyle[] = [
   {

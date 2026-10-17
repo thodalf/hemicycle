@@ -131,34 +131,34 @@ export function monthlyTraits(d: GameState, rng: Rng): void {
   const bump = (key: string, on: boolean) => { f[key] = on ? Number(f[key] ?? 0) + 1 : 0; return Number(f[key]); };
   // Les compteurs avancent chaque mois, même quand un trait ne peut pas encore tomber
   const stress = bump('trait_stressMonths', p.stats.stress >= 85);
-  const energy = bump('trait_energyMonths', p.stats.energy >= 70 && rankOrder(p.rankId) >= 3);
+  const energy = bump('trait_energyMonths', p.stats.energy >= 75 && rankOrder(p.rankId) >= 3);
   const lowPop = bump('trait_lowPop', p.stats.popularity < 10);
-  const highPop = bump('trait_highPop', p.stats.popularity >= 80);
+  const highPop = bump('trait_highPop', p.stats.popularity >= 82);
   const exposed = bump('trait_exposed', p.scandalExposure >= 85);
   if (['president', 'premier_ministre', 'roi'].includes(p.rankId)) f['trait_statesMonths'] = Number(f['trait_statesMonths'] ?? 0) + 1;
-  // Une vie se construit lentement : pas plus d'un trait acquis tous les deux ans,
-  // et même quand tout est réuni, il faut que l'occasion se présente (une chance sur six par mois)
-  if (d.week - Number(f['lastTraitWeek'] ?? -999) < 24 || !rng.chance(1 / 6)) return;
+  // Une vie se construit lentement : pas plus d'un trait acquis tous les trois ans,
+  // et même quand tout est réuni, il faut que l'occasion se présente (une chance sur dix par mois)
+  if (d.week - Number(f['lastTraitWeek'] ?? -999) < 36 || !rng.chance(1 / 10)) return;
   const n = (k: string) => Number(f[k] ?? 0);
   const candidates: [TraitId, boolean, string][] = [
-    ['sage', p.age >= 66, 'Les cheveux ont blanchi, la voix s’est posée : on vient chercher vos conseils.'],
+    ['sage', p.age >= 68, 'Les cheveux ont blanchi, la voix s’est posée : on vient chercher vos conseils.'],
     ['insomniaque', stress >= 9, 'Neuf mois de stress extrême : vous ne dormez plus que quatre heures par nuit.'],
-    ['increvable', energy >= 48, 'Quatre ans de rythme infernal sans faiblir : votre énergie devient légendaire.'],
-    ['tribun', n('debatesWon') >= 15, 'Quinze débats gagnés : les plateaux télé vous redoutent.'],
-    ['homme_etat', n('trait_statesMonths') >= 24, 'Deux ans à diriger le pays vous ont donné une stature à part.'],
-    ['pilier', d.week >= 180 && !d.party.founder, 'Quinze ans de fidélité au parti : les militants vous considèrent comme un pilier.'],
-    ['legislateur', (d.laws ?? []).length >= 12, 'Douze lois portent votre empreinte.'],
+    ['increvable', energy >= 72, 'Six ans de rythme infernal sans faiblir : votre énergie devient légendaire.'],
+    ['tribun', n('debatesWon') >= 25, 'Vingt-cinq débats gagnés : les plateaux télé vous redoutent.'],
+    ['homme_etat', n('trait_statesMonths') >= 42, 'Trois ans et demi à diriger le pays vous ont donné une stature à part.'],
+    ['pilier', d.week >= 240 && !d.party.founder && d.party.cohesion >= 50, 'Vingt ans de fidélité au parti : les militants vous considèrent comme un pilier.'],
+    ['legislateur', (d.laws ?? []).filter(l => l.status !== 'abrogee').length >= 18, 'Dix-huit lois portent votre empreinte.'],
     ['entache', exposed >= 3, 'Les affaires se sont accumulées : le soupçon ne vous quittera plus.'],
     ['chanceux', !!d.crises?.loto, '28 millions au Loto : on dit que la chance vous suit.'],
-    ['erudit', n('livres') >= 2, 'Deux livres publiés : on vous lit, on vous cite.'],
-    ['polyglotte', n('langues') >= 8, 'Huit sessions de cours : vous parlez aux dirigeants étrangers sans interprète.'],
-    ['globe_trotteur', n('deplacements') >= 20, 'Vingt grands déplacements : votre valise ne se défait plus.'],
-    ['ponctuel', n('perfectTrips') >= 8, 'Huit trajets parfaits : on règle sa montre sur vous.'],
-    ['reformateur', n('customLaws') >= 6, 'Six lois de votre plume adoptées.'],
-    ['briscard', d.elections.filter(e => e.result).length >= 10, 'Dix campagnes : vous avez tout vu.'],
+    ['erudit', n('livres') >= 3, 'Trois livres publiés : on vous lit, on vous cite.'],
+    ['polyglotte', n('langues') >= 14, 'Quatorze sessions de cours : vous parlez aux dirigeants étrangers sans interprète.'],
+    ['globe_trotteur', n('deplacements') >= 35, 'Trente-cinq grands déplacements : votre valise ne se défait plus.'],
+    ['ponctuel', n('perfectTrips') >= 14, 'Quatorze trajets parfaits : on règle sa montre sur vous.'],
+    ['reformateur', n('customLaws') >= 10, 'Dix lois de votre plume adoptées.'],
+    ['briscard', d.elections.filter(e => e.result).length >= 14, 'Quatorze campagnes : vous avez tout vu.'],
     ['mal_aime', lowPop >= 12, 'Un an sous les 10 de popularité : l’étiquette vous colle.'],
-    ['idole', highPop >= 12, 'Un an au sommet des sondages : vous êtes devenu·e une idole.'],
-    ['mondain', n('galas') >= 15, 'Quinze galas, cent dîners : le Tout-Paris vous reçoit.'],
+    ['idole', highPop >= 24, 'Deux ans au sommet des sondages : vous êtes devenu·e une idole.'],
+    ['mondain', n('galas') >= 28, 'Vingt-huit galas, cent dîners : le Tout-Paris vous reçoit.'],
   ];
   const ready = candidates.filter(([id, ok]) => ok && !conflicts(traitsOf(d), id));
   if (!ready.length) return;
@@ -171,18 +171,18 @@ export function traitProgress(d: GameState): { id: TraitId; pct: number; hint: s
   const f = d.player.flags;
   const n = (k: string) => Number(f[k] ?? 0);
   const rows: [TraitId, number, string][] = [
-    ['tribun', n('debatesWon') / 15, `${n('debatesWon')} / 15 débats gagnés`],
-    ['polyglotte', n('langues') / 8, `${n('langues')} / 8 sessions de langue`],
-    ['globe_trotteur', n('deplacements') / 20, `${n('deplacements')} / 20 déplacements`],
-    ['ponctuel', n('perfectTrips') / 8, `${n('perfectTrips')} / 8 trajets parfaits`],
-    ['reformateur', n('customLaws') / 6, `${n('customLaws')} / 6 lois sur mesure adoptées`],
-    ['legislateur', (d.laws ?? []).length / 12, `${(d.laws ?? []).length} / 12 lois`],
-    ['briscard', d.elections.filter(e => e.result).length / 10, `${d.elections.filter(e => e.result).length} / 10 élections`],
-    ['mondain', n('galas') / 15, `${n('galas')} / 15 dîners et galas`],
-    ['erudit', n('livres') / 2, `${n('livres')} / 2 livres`],
-    ['homme_etat', n('trait_statesMonths') / 24, `${n('trait_statesMonths')} / 24 mois à la tête du pays`],
-    ['pilier', d.party.founder ? 0 : d.week / 180, `${Math.floor(d.week / 12)} / 15 ans au parti`],
-    ['sage', (d.player.age - 30) / 36, `${Math.floor(d.player.age)} / 66 ans`],
+    ['tribun', n('debatesWon') / 25, `${n('debatesWon')} / 25 débats gagnés`],
+    ['polyglotte', n('langues') / 14, `${n('langues')} / 14 sessions de langue`],
+    ['globe_trotteur', n('deplacements') / 35, `${n('deplacements')} / 35 déplacements`],
+    ['ponctuel', n('perfectTrips') / 14, `${n('perfectTrips')} / 14 trajets parfaits`],
+    ['reformateur', n('customLaws') / 10, `${n('customLaws')} / 10 lois sur mesure adoptées`],
+    ['legislateur', (d.laws ?? []).filter(l => l.status !== 'abrogee').length / 18, `${(d.laws ?? []).filter(l => l.status !== 'abrogee').length} / 18 lois en vigueur`],
+    ['briscard', d.elections.filter(e => e.result).length / 14, `${d.elections.filter(e => e.result).length} / 14 élections`],
+    ['mondain', n('galas') / 28, `${n('galas')} / 28 dîners et galas`],
+    ['erudit', n('livres') / 3, `${n('livres')} / 3 livres`],
+    ['homme_etat', n('trait_statesMonths') / 42, `${n('trait_statesMonths')} / 42 mois à la tête du pays`],
+    ['pilier', d.party.founder ? 0 : d.week / 240, `${Math.floor(d.week / 12)} / 20 ans au parti`],
+    ['sage', (d.player.age - 30) / 38, `${Math.floor(d.player.age)} / 68 ans`],
   ];
   return rows.filter(([id]) => !hasTrait(d, id) && !conflicts(traitsOf(d), id))
     .map(([id, p, hint]) => ({ id, pct: Math.round(clamp(p * 100)), hint }))

@@ -281,8 +281,7 @@ export class GrilleGameComponent {
       const w = window.innerWidth, h = window.innerHeight;
       [0.3, 0.5, 0.7].forEach((x, i) => setTimeout(() => this.fx.burst(w * x, h * 0.35, 'good', 22), i * 160));
     } else if (this.left() <= 0) {
-      this.fx.stamp('Plus d’essais', 'bad', `${this.filled()}/9`);
-      this.fx.flash('bad');
+      this.fx.group(() => { this.fx.stamp('Plus d’essais', 'bad', `${this.filled()}/9`); this.fx.flash('bad'); });
     } else {
       this.fx.stamp('Grille rendue', 'neutral', `${this.filled()}/9`);
     }

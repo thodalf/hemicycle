@@ -1,7 +1,7 @@
 import { Component, computed, inject, output, signal } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
 import { FxService } from '../../services/fx.service';
-import { LIFESTYLES, Lifestyle, XP_PER_PERK } from '../../data/lifestyles';
+import { LIFESTYLES, Lifestyle, XP_MONTHLY, XP_PER_ACTION, XP_PER_PERK } from '../../data/lifestyles';
 import { TRAITS, TraitId, traitLabel } from '../../data/traits';
 import { CATEGORY_LABELS, ActionCategory } from '../../models/game.models';
 import { chooseLifestyle, perksIn } from '../../engine/character';
@@ -16,7 +16,7 @@ import { chooseLifestyle, perksIn } from '../../engine/character';
           <div><span class="eyebrow">Votre façon de faire de la politique</span><h2>Styles de vie</h2></div>
           <button class="btn small" (click)="close.emit()" aria-label="Fermer">✕</button>
         </header>
-        <p class="intro">Un style de vie gagne de l’expérience chaque mois, et deux fois plus vite quand vos actions s’y rattachent. Chaque palier débloque un avantage permanent ; au bout de l’arbre, un trait pour la vie. Changer de style remet l’expérience en cours à zéro, mais vous gardez tous les avantages acquis.</p>
+        <p class="intro">Un style de vie gagne un peu d’expérience chaque mois, et davantage quand vos actions s’y rattachent (trois actions comptées par mois au plus) : il faut deux bonnes années pour aller au bout de l’arbre. Chaque palier débloque un avantage permanent ; au bout de l’arbre, un trait pour la vie. Changer de style remet l’expérience en cours à zéro, mais vous gardez tous les avantages acquis.</p>
         @if (current(); as c) {
           <div class="now">
             <span class="big">{{ c.def.icon }}</span>
@@ -101,7 +101,7 @@ export class LifestyleModalComponent {
     const def = ls ? LIFESTYLES.find(l => l.id === ls.id) : undefined;
     if (!ls || !def) return null;
     const done = perksIn(this.game.s(), def.id);
-    return { def, done, xp: Math.round(ls.xp), pct: Math.min(100, (ls.xp / XP_PER_PERK) * 100), months: Math.max(1, Math.ceil((XP_PER_PERK - ls.xp) / 14)) };
+    return { def, done, xp: Math.round(ls.xp), pct: Math.min(100, (ls.xp / XP_PER_PERK) * 100), months: Math.max(1, Math.ceil((XP_PER_PERK - ls.xp) / (XP_MONTHLY + XP_PER_ACTION * 2))) };
   });
 
   protected has(id: string) { return !!this.game.player().lifestyle?.perks.includes(id); }

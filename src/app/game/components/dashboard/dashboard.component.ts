@@ -538,11 +538,11 @@ export class DashboardComponent {
       const scenarioWin = ended.length > 0;
       if (king !== this.lastKing) {
         this.whenFree(() => {
-          if (king) { this.fx.spotlight(this.game.s().player.gender === 'femme' ? 'Vive la Reine !' : 'Vive le Roi !', 'Sacre à Reims'); this.burstAround(); }
+          if (king) this.fx.group(() => { this.fx.spotlight(this.game.s().player.gender === 'femme' ? 'Vive la Reine !' : 'Vive le Roi !', 'Sacre à Reims'); this.burstAround(); });
           else {
             const last = this.game.s().milestones.at(-1)?.title ?? '';
-            if (last === 'La déchéance') { this.fx.newspaper('DÉCHÉANCE !', 'Le Congrès renverse la Couronne'); this.fx.shake(); }
-            else if (last === 'La révolution de velours' || /Varennes/.test(this.game.s().news[0]?.body ?? '')) { this.fx.tomatoes(12); this.fx.newspaper('LA RÉPUBLIQUE PROCLAMÉE', 'La rue a renversé le trône'); }
+            if (last === 'La déchéance') this.fx.group(() => { this.fx.newspaper('DÉCHÉANCE !', 'Le Congrès renverse la Couronne'); this.fx.shake(); });
+            else if (last === 'La révolution de velours' || /Varennes/.test(this.game.s().news[0]?.body ?? '')) this.fx.group(() => { this.fx.tomatoes(12); this.fx.newspaper('LA RÉPUBLIQUE PROCLAMÉE', 'La rue a renversé le trône'); });
             else this.fx.stamp('République', 'good', 'rétablie');
           }
         }, 500);
@@ -552,27 +552,34 @@ export class DashboardComponent {
       this.lastAlien = alien;
       if (milestones.length > this.lastMilestones && status !== 'mort') {
         const m = milestones.at(-1)!;
-        this.whenFree(() => {
-          if (m.kind !== 'carriere') this.chapter.set(m);
+        // Le chapitre arrive à son tour dans la file des animations, puis sa carte s'ouvre
+        this.whenFree(() => this.fx.group(() => {
           if (m.kind === 'victoire' && scenarioWin) this.fx.fireworks(m.title, 'Scénario remporté');
           else if (m.kind === 'victoire') { this.fx.stamp('Nouveau chapitre', 'good', m.title); this.burstAround(); }
           else if (m.kind === 'revers') { this.fx.stamp('Revers', 'bad', m.title); this.fx.shake(); this.fx.rain(); }
           else this.fx.stamp('Chapitre', 'neutral', m.title);
-        }, 700);
+          if (m.kind !== 'carriere') setTimeout(() => this.chapter.set(m), 1200);
+        }), 700);
       }
       this.lastMilestones = milestones.length;
       if (rank !== this.lastRank && RANKS[rank].order > RANKS[this.lastRank].order) {
-        this.whenFree(() => {
+        this.whenFree(() => this.fx.group(() => {
           this.fx.spotlight('Promotion !', RANKS[rank].label);
           this.burstAround();
-        }, 400);
+        }), 400);
       }
       if (status !== this.lastStatus && status === 'mort') {
-        setTimeout(() => { this.fx.stamp('In memoriam', 'bad', this.game.s().endTitle ?? ''); this.fx.rain(); }, 300);
+        setTimeout(() => this.fx.group(() => { this.fx.stamp('In memoriam', 'bad', this.game.s().endTitle ?? ''); this.fx.rain(); }), 300);
       }
       this.lastRank = rank;
       this.lastStatus = status;
     });
+  });
+
+  /** La file des animations attend qu'on ait lu la carte du chapitre ou la soirée électorale */
+  private readonly holdFx = effect(() => {
+    const busy = !!this.chapter() || !!this.fx.election();
+    untracked(() => (busy ? this.fx.pause() : this.fx.resume()));
   });
 
   /** Animations mises en attente tant qu'un mini-jeu, une scène ou un vote occupe l'écran */

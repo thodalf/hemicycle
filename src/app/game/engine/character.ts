@@ -1,5 +1,5 @@
 import { ActionDefinition, Decision, GameState } from '../models/game.models';
-import { LIFESTYLE_BY_ID, PERK_BY_ID, RENOWN_TIERS, XP_PER_PERK, renownTier } from '../data/lifestyles';
+import { LIFESTYLE_BY_ID, PERK_BY_ID, RENOWN_TIERS, XP_MONTHLY, XP_PER_ACTION, XP_PER_PERK, renownTier } from '../data/lifestyles';
 import { TRAITS, TraitId } from '../data/traits';
 import { gainTrait, hasTrait } from './traits';
 import { applyEffects, pushNews } from './effects';
@@ -56,7 +56,12 @@ export function onAction(d: GameState, a: ActionDefinition): void {
   const ls = p.lifestyle;
   if (ls) {
     const def = LIFESTYLE_BY_ID.get(ls.id);
-    if (def?.categories.includes(a.category)) ls.xp += 8;
+    // Au plus trois actions par mois comptent pour le style
+    if (def?.categories.includes(a.category) && Number(p.flags['lsActionsWeek'] === d.week ? p.flags['lsActions'] : 0) < 3) {
+      p.flags['lsActions'] = (p.flags['lsActionsWeek'] === d.week ? Number(p.flags['lsActions'] ?? 0) : 0) + 1;
+      p.flags['lsActionsWeek'] = d.week;
+      ls.xp += XP_PER_ACTION;
+    }
   }
 }
 
@@ -75,15 +80,15 @@ const COPING: { trait: TraitId; label: string; outcome: string }[] = [
 export function monthlyCharacter(d: GameState, rng: Rng): void {
   if (d.status !== 'en_cours') return;
   const p = d.player;
-  // Crise : le stress au plus haut, au plus une fois par an
-  if (p.stats.stress >= 85 && d.week - Number(p.flags['stressBreak'] ?? -99) >= 18 && !d.pendingDecisions.some(x => x.tag === 'crise_stress')) {
+  // Crise : le stress au plus haut, au plus une fois tous les deux ans et demi
+  if (p.stats.stress >= 85 && d.week - Number(p.flags['stressBreak'] ?? -99) >= 30 && !d.pendingDecisions.some(x => x.tag === 'crise_stress')) {
     p.flags['stressBreak'] = d.week;
     d.pendingDecisions.push(stressBreak(d, rng));
   }
   // Style de vie : de l'expérience chaque mois, un avantage par palier, un trait au bout
   const ls = p.lifestyle;
   if (ls) {
-    ls.xp += 10;
+    ls.xp += XP_MONTHLY;
     const def = LIFESTYLE_BY_ID.get(ls.id);
     const done = def ? perksIn(d, def.id) : 0;
     if (def && done < def.perks.length && ls.xp >= XP_PER_PERK) {
@@ -110,10 +115,10 @@ export function monthlyCharacter(d: GameState, rng: Rng): void {
 
 function stressBreak(d: GameState, rng: Rng): Decision {
   const owned = new Set(d.player.traits ?? []);
-  // Deux exutoires au plus : au-delà, on ne fait que serrer les dents
+  // Un seul exutoire pour la vie : au-delà, on ne fait que serrer les dents
   const had = COPING.filter(c => owned.has(c.trait)).length;
-  const pool = had >= 2 ? [] : COPING.filter(c => !owned.has(c.trait));
-  const picks = [...pool].sort(() => rng.next() - 0.5).slice(0, 3);
+  const pool = had >= 1 ? [] : COPING.filter(c => !owned.has(c.trait));
+  const picks = [...pool].sort(() => rng.next() - 0.5).slice(0, 2);
   return {
     id: nextId(d, 'dec'), tag: 'crise_stress', week: d.week, deadlineWeek: d.week + 1, source: 'evenement',
     title: 'Vous craquez',

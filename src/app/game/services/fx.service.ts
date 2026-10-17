@@ -65,6 +65,65 @@ export class FxService {
     if (typeof location !== 'undefined' && location.search.includes('fxdebug')) (window as unknown as { fx: FxService }).fx = this;
   }
 
+  /* ── La file des grandes animations ──────────────────────
+   *  Les animations plein écran (page du mois, tampons, une de
+   *  journal, projecteurs, avion…) passent une par une : chacune
+   *  attend que la précédente soit terminée. Les petits effets
+   *  (chiffres flottants, confettis, pièces) restent immédiats.
+   */
+  private readonly chain: (() => number)[] = [];
+  private running = false;
+  private grouping = false;
+  private groupDur = 0;
+  /** Nombre d'animations en attente (pour les tests) */
+  readonly pending = signal(0);
+
+  private enqueue(dur: number, run: () => void): void {
+    if (this.reduced || typeof window === 'undefined') return;
+    if (this.grouping) { run(); this.groupDur = Math.max(this.groupDur, dur); return; }
+    // Au-delà de huit animations en attente, les plus anciennes sont abandonnées
+    if (this.chain.length >= 8) this.chain.shift();
+    this.chain.push(() => { run(); return dur; });
+    this.kick();
+  }
+
+  /** Plusieurs grandes animations jouées ensemble, comme une seule étape de la file */
+  group(fn: () => void): void {
+    if (this.reduced || typeof window === 'undefined') { fn(); return; }
+    if (this.grouping) { fn(); return; }
+    this.chain.push(() => {
+      this.grouping = true; this.groupDur = 0;
+      try { fn(); } finally { this.grouping = false; }
+      return this.groupDur;
+    });
+    this.kick();
+  }
+
+  private kick(): void {
+    this.pending.set(this.chain.length);
+    if (!this.running) this.next();
+  }
+
+  private paused = false;
+  /** Suspend la file (une carte « chapitre » ou une soirée électorale occupe l'écran) */
+  pause(): void { this.paused = true; }
+  resume(): void {
+    if (!this.paused) return;
+    this.paused = false;
+    if (!this.running) this.next();
+  }
+
+  private next(): void {
+    if (this.paused) { this.running = false; return; }
+    const job = this.chain.shift();
+    this.pending.set(this.chain.length);
+    if (!job) { this.running = false; return; }
+    this.running = true;
+    let dur = 0;
+    try { dur = job(); } catch { dur = 0; }
+    setTimeout(() => this.next(), dur ? dur + 220 : 0);
+  }
+
   private add(item: Omit<FxItem, 'id'>, ttl: number): void {
     if (this.reduced || typeof window === 'undefined') return;
     const id = ++this.seq;
@@ -118,19 +177,21 @@ export class FxService {
 
   /** Grand tampon au centre de l'écran */
   stamp(text: string, tone: FxTone, sub = ''): void {
-    this.add({ kind: 'stamp', text, sub, tone, x: window.innerWidth / 2, y: window.innerHeight * 0.38 }, 1500);
+    this.enqueue(1500, () => this.add({ kind: 'stamp', text, sub, tone, x: window.innerWidth / 2, y: window.innerHeight * 0.38 }, 1500));
   }
 
   /** Page de calendrier qui tourne en fin de mois */
   monthTurn(from: number, to: number): void {
     const name = (t: number) => monthLabel(t).split(' ')[0];
     const icon = ['❄️', '❄️', '🌱', '🌷', '🌸', '☀️', '☀️', '🏖️', '🍂', '🍂', '🍁', '🎄'][monthIndex(to)];
-    this.add({ kind: 'month', text: name(to), sub: String(yearOf(to)), old: name(from), icon, x: window.innerWidth / 2, y: 90 }, 1900);
+    this.enqueue(1900, () => this.add({ kind: 'month', text: name(to), sub: String(yearOf(to)), old: name(from), icon, x: window.innerWidth / 2, y: 90 }, 1900));
   }
 
   /** Nouvel an : fusées, gerbes et bandeau */
   newYear(year: number): void {
-    if (this.reduced || typeof window === 'undefined') return;
+    this.enqueue(3100, () => this.newYearNow(year));
+  }
+  private newYearNow(year: number): void {
     const w = window.innerWidth, h = window.innerHeight;
     [0.2, 0.5, 0.8, 0.35, 0.65].forEach((x, i) => {
       const delay = i * 260;
@@ -142,7 +203,9 @@ export class FxService {
 
   /** Feu d'artifice avec bandeau (scénario remporté, jubilé, Coupe du monde) */
   fireworks(text: string, sub = ''): void {
-    if (this.reduced || typeof window === 'undefined') return;
+    this.enqueue(3000, () => this.fireworksNow(text, sub));
+  }
+  private fireworksNow(text: string, sub: string): void {
     const w = window.innerWidth, h = window.innerHeight;
     [0.15, 0.45, 0.8, 0.3, 0.6, 0.9, 0.5].forEach((x, i) => {
       const delay = i * 220;
@@ -156,7 +219,7 @@ export class FxService {
   /** Un nouveau scénario s'ouvre : grande icône rayonnante et titre */
   scenario(icon: string, text: string, sub = 'Nouveau scénario'): void {
     if (typeof window === 'undefined') return;
-    this.add({ kind: 'scen', icon, text, sub, x: window.innerWidth / 2, y: window.innerHeight * 0.38 }, 2600);
+    this.enqueue(2600, () => this.add({ kind: 'scen', icon, text, sub, x: window.innerWidth / 2, y: window.innerHeight * 0.38 }, 2600));
   }
 
   /** Une couronne se pose sur un élément, en scintillant (action royale) */
@@ -168,18 +231,20 @@ export class FxService {
 
   /** Éclair plein écran (déclaration de guerre, défaite) */
   flash(tone: FxTone = 'bad'): void {
-    this.add({ kind: 'flash', tone, x: 0, y: 0 }, 900);
+    this.enqueue(700, () => this.add({ kind: 'flash', tone, x: 0, y: 0 }, 900));
   }
 
   /** La ligne de front avance (chevrons verts) ou recule (chevrons rouges) */
   frontline(advance: boolean): void {
     if (typeof window === 'undefined') return;
-    this.add({ kind: 'front', tone: advance ? 'good' : 'bad', text: advance ? 'Le front avance' : 'Le front recule', x: 0, y: window.innerHeight * 0.42 }, 1800);
+    this.enqueue(1800, () => this.add({ kind: 'front', tone: advance ? 'good' : 'bad', text: advance ? 'Le front avance' : 'Le front recule', x: 0, y: window.innerHeight * 0.42 }, 1800));
   }
 
   /** Pluie de tomates (huées, mini-jeu raté) */
   tomatoes(count = 9): void {
-    if (typeof window === 'undefined') return;
+    this.enqueue(1300 + count * 90, () => this.tomatoesNow(count));
+  }
+  private tomatoesNow(count: number): void {
     const w = window.innerWidth, h = window.innerHeight;
     for (let i = 0; i < count; i++) {
       const fromLeft = i % 2 === 0;
@@ -192,37 +257,37 @@ export class FxService {
   /** La une d'un journal qui tourne sur elle-même (scandale, révélation) */
   newspaper(headline: string, sub = 'ÉDITION SPÉCIALE'): void {
     if (typeof window === 'undefined') return;
-    this.add({ kind: 'paper', text: headline, sub, x: window.innerWidth / 2, y: window.innerHeight * 0.42 }, 2600);
+    this.enqueue(2600, () => this.add({ kind: 'paper', text: headline, sub, x: window.innerWidth / 2, y: window.innerHeight * 0.42 }, 2600));
   }
 
   /** Un avion traverse l'écran (déplacement à l'étranger, sommet) */
   plane(text = ''): void {
     if (typeof window === 'undefined') return;
-    this.add({ kind: 'plane', text, x: -80, y: window.innerHeight * (0.18 + Math.random() * 0.12), dx: window.innerWidth + 160 }, 2400);
+    this.enqueue(2400, () => this.add({ kind: 'plane', text, x: -80, y: window.innerHeight * (0.18 + Math.random() * 0.12), dx: window.innerWidth + 160 }, 2400));
   }
 
   /** Une soucoupe traverse l'écran, s'arrête et balaie la page de son rayon (premier contact) */
   ufo(text = ''): void {
     if (typeof window === 'undefined') return;
-    this.add({ kind: 'ufo', text, x: -90, y: window.innerHeight * 0.22, dx: window.innerWidth + 180 }, 3400);
+    this.enqueue(3400, () => this.add({ kind: 'ufo', text, x: -90, y: window.innerHeight * 0.22, dx: window.innerWidth + 180 }, 3400));
   }
 
   /** Battement de cœur (alerte de santé) */
   heartbeat(): void {
     if (typeof window === 'undefined') return;
-    this.add({ kind: 'heart', x: window.innerWidth / 2, y: window.innerHeight * 0.4 }, 1900);
+    this.enqueue(1900, () => this.add({ kind: 'heart', x: window.innerWidth / 2, y: window.innerHeight * 0.4 }, 1900));
   }
 
   /** Projecteurs qui balaient la scène (promotion, grand discours) */
   spotlight(text: string, sub = ''): void {
     if (typeof window === 'undefined') return;
-    this.add({ kind: 'spot', text, sub, x: window.innerWidth / 2, y: window.innerHeight * 0.36 }, 2300);
+    this.enqueue(2300, () => this.add({ kind: 'spot', text, sub, x: window.innerWidth / 2, y: window.innerHeight * 0.36 }, 2300));
   }
 
   /** Un bulletin glisse dans l'urne (scrutin) */
   ballot(text = 'A voté !'): void {
     if (typeof window === 'undefined') return;
-    this.add({ kind: 'ballot', text, x: window.innerWidth / 2, y: window.innerHeight * 0.42 }, 1900);
+    this.enqueue(1900, () => this.add({ kind: 'ballot', text, x: window.innerWidth / 2, y: window.innerHeight * 0.42 }, 1900));
   }
 
   /** Micro et ondes (prise de parole, débat, interview) */
@@ -234,7 +299,7 @@ export class FxService {
   /** Pluie ou neige sur l'écran (catastrophe, deuil, défaite) */
   rain(snow = false): void {
     if (typeof window === 'undefined') return;
-    this.add({ kind: 'rain', tone: snow ? 'neutral' : 'bad', x: 0, y: 0 }, 2600);
+    this.enqueue(2600, () => this.add({ kind: 'rain', tone: snow ? 'neutral' : 'bad', x: 0, y: 0 }, 2600));
   }
 
   /** Billets qui volent vers le badge des fonds (emprunt) */
