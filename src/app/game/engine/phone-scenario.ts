@@ -901,6 +901,70 @@ const CONTACTS: ScenContact[] = [
         run: () => ({ answer: 'Les Méridiens commencent à manquer de camembert, et leurs restaurateurs se plaignent. Un boycott, c’est un concours d’endurance : tenez vos producteurs, ouvrez d’autres portes, et ne cédez rien sur le fond.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
     ],
   },
+  {
+    key: 'sc:saga_iceberg', icon: '❄️', when: d => d.saga?.id === 'iceberg' && !d.saga.outcome,
+    name: () => 'Dr Solenn Kerhervé', role: () => 'Glaciologue, de retour de vingt hivers au Groenland',
+    options: () => [
+      { id: 'sc_iceberg_point', label: 'Demander comment va l’iceberg', hint: 'Elle parle de l’iceberg comme d’un vieil animal fatigué.', ask: 'Solenn, il tient encore ?', cooldown: 1,
+        run: () => ({ answer: 'Il perd un mètre par jour et il craque toutes les nuits ; on l’entend depuis Molène. Ce n’est pas un ennemi, c’est un voyageur égaré. Raccompagnez-le au large avant l’hiver, et surtout, empêchez qu’on marche dessus.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_seine', icon: '🛶', when: d => d.saga?.id === 'seine' && !d.saga.outcome,
+    name: () => 'Jean-Baptiste Houdry', role: () => 'Éclusier à Suresnes, trente ans au bord de la Seine',
+    options: () => [
+      { id: 'sc_seine_point', label: 'Demander dans quel sens coule la Seine', hint: 'Il jette chaque matin un flotteur à l’eau, et note où il part.', ask: 'Jean-Baptiste, elle coule dans quel sens, ce matin ?', cooldown: 1,
+        run: () => ({ answer: 'Toujours vers l’amont, mais moins vite : mon flotteur a mis vingt minutes à passer l’écluse, contre dix la semaine dernière. Un fleuve, c’est têtu, mais ça finit toujours par retrouver la mer. En attendant, protégez les gens d’en haut.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_jour', icon: '🌅', when: d => d.saga?.id === 'jour' && !d.saga.outcome,
+    name: () => 'Pr Hélène Vauthier', role: () => 'Astrophysicienne, à l’observatoire provisoire de Château-Chinon',
+    options: () => [
+      { id: 'sc_jour_point', label: 'Demander si le soleil descend', hint: 'Elle mesure chaque soir, au sextant, la hauteur du soleil à minuit.', ask: 'Hélène, il descend, ce soleil ?', cooldown: 1,
+        run: () => ({ answer: 'D’un demi-degré par semaine. Je n’ai aucune théorie qui tienne, mais j’ai une certitude : il y aura de nouveau une nuit. Faites en sorte que le Morvan soit encore debout pour la voir.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_langue', icon: '🔤', when: d => d.saga?.id === 'langue' && !d.saga.outcome,
+    name: () => 'Pr Anatole Mirabel-Sousa', role: () => 'Linguiste, à la tête de l’équipe de déchiffrement',
+    options: () => [
+      { id: 'sc_langue_point', label: 'Demander ce que disent les tablettes', hint: 'Il lit neuf langues mortes et confond toujours les jours de la semaine.', ask: 'Anatole, qu’avez-vous lu cette semaine ?', cooldown: 1,
+        run: () => ({ answer: 'Une recette de bière, un contrat de vente de trois moutons, et une berceuse. Rien d’héroïque, et c’est ce qui est beau. Méfiez-vous de ceux qui y trouvent des épopées : les gens d’alors étaient comme nous, ils comptaient leurs moutons.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_toque', icon: '🍲', when: d => d.saga?.id === 'toque' && !d.saga.outcome,
+    name: () => 'Maëlle Garnier', role: () => 'Cheffe, capitaine de l’équipe de France de la Toque d’or',
+    options: () => [
+      { id: 'sc_toque_point', label: 'Demander comment va la brigade', hint: 'Elle répond toujours en coupant quelque chose.', ask: 'Maëlle, la brigade est prête ?', cooldown: 1,
+        run: () => ({ answer: 'Le plat est presque là. Il manque un rien d’acidité, et un peu de calme autour de nous. Mes apprentis lisent tout ce qu’on écrit sur eux. Protégez-les du bruit, je m’occupe du reste.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_capitale', icon: '🚚', when: d => d.saga?.id === 'capitale' && !d.saga.outcome,
+    name: () => 'Odile Barbançon', role: () => 'Préfète, cheffe de la mission de transfert à Bourges',
+    options: () => [
+      { id: 'sc_capitale_point', label: 'Demander où en est le déménagement', hint: 'Elle tient le compte des cartons dans un tableur de quarante onglets.', ask: 'Odile, combien de cartons cette semaine ?', cooldown: 1,
+        run: () => ({ answer: 'Onze mille, et trois ministères qui ont perdu leurs badges d’accès. Un déménagement d’État, c’est comme un déménagement de famille, en plus long : il faut que les enfants aient une école le jour de la rentrée. Le reste suivra.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_prodige', icon: '✏️', when: d => d.saga?.id === 'prodige' && !d.saga.outcome,
+    name: () => 'Patrick Lavergne', role: () => 'Professeur de mathématiques au lycée de Guéret, le premier à avoir lu Lou',
+    options: () => [
+      { id: 'sc_prodige_point', label: 'Demander des nouvelles de Lou', hint: 'Il a gardé la première copie de Lou, notée 20 sur 20 avec un point d’interrogation.', ask: 'Patrick, comment va Lou ?', cooldown: 1,
+        run: () => ({ answer: 'Elle a eu 11 en histoire-géo, et ça l’a fait rire pendant une heure. C’est une gamine, vous savez, avec un cerveau extraordinaire. Ce dont elle a besoin, ce n’est pas d’un pont d’or : c’est d’une cour de récréation.', effects: [{ kind: 'saga', a: 2, b: -2, c: 2 }] }) },
+    ],
+  },
+  {
+    key: 'sc:saga_bouchon', icon: '🚗', when: d => d.saga?.id === 'bouchon' && !d.saga.outcome,
+    name: () => 'Gérard Pélissier', role: () => 'Chef de péage retraité, quarante ans à Vienne-Reventin',
+    options: () => [
+      { id: 'sc_bouchon_point', label: 'Demander si ça avance', hint: 'Il connaît chaque bouchon de l’A7 depuis 1978, et les raconte comme des matchs.', ask: 'Gérard, ça avance ?', cooldown: 1,
+        run: () => ({ answer: 'Trois kilomètres hier, deux de recul aujourd’hui. Un bouchon, c’est une foule qui a peur de perdre sa place. Donnez à chacun une heure de départ, et ça repartira tout seul.', effects: [{ kind: 'saga', a: 3, b: -2 }] }) },
+    ],
+  },
   // ── La guerre ──
   {
     key: 'sc:cema', icon: '🎖️', when: d => !!d.war,
@@ -984,7 +1048,7 @@ function allContacts(d: GameState): ScenContact[] {
 const SCEN_AGES: Record<string, number | string> = {
   'sc:loge': 64, 'sc:grandmaitre': 71, 'sc:alien': '312 ans (terriens)', 'sc:prince': 39, 'sc:redac': 52, 'sc:handler': 47, 'sc:viro': 49,
   'sc:sosie': 'votre âge, à un jour près', 'sc:intersyndicale': 54, 'sc:templiers': 58, 'sc:eurovision': 46, 'sc:cema': 59, 'sc:dgsi': 56,
-  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45, 'sc:saga_eveil': 54, 'sc:saga_parc': 47, 'sc:saga_lune': 39, 'sc:saga_voyageur': 41, 'sc:saga_midi': 52, 'sc:saga_somnolence': 47, 'sc:saga_souterrain': 34, 'sc:saga_maree': 49, 'sc:saga_pirates': 54, 'sc:saga_voyante': 38, 'sc:saga_silence': 44, 'sc:saga_volcans': 45, 'sc:saga_danse': 51, 'sc:saga_jouvence': 44, 'sc:saga_exode': 61, 'sc:saga_pluie': 36, 'sc:saga_rouille': 41, 'sc:saga_abeilles': 63, 'sc:saga_or': 67, 'sc:saga_miroir': 58, 'sc:saga_fantomes': 55, 'sc:saga_robots': 48, 'sc:saga_monnaie': 57, 'sc:saga_heritage': 78, 'sc:saga_moteur': 42, 'sc:saga_sommet': 56, 'sc:saga_degel': 45, 'sc:saga_tour': 46, 'sc:saga_flottante': 58, 'sc:saga_shadow': 51, 'sc:saga_cafe': 63, 'sc:saga_sable': 44, 'sc:saga_agora': 71, 'sc:saga_faille': 47, 'sc:saga_reve': 52, 'sc:saga_archives': 66, 'sc:saga_boycott': 55,
+  'sc:pretre': 67, 'sc:diable': 'sans âge', 'sc:coalition': 55, 'sc:comete': 44, 'sc:referendum': 33, 'sc:seisme': 51, 'sc:loto': 62, 'sc:tempete': 41, 'sc:expo': 53, 'sc:penurie': 57, 'sc:train': 38, 'sc:pandas': 36, 'sc:coupe': 61, 'sc:jubile': 73, 'sc:diamants': 49, 'sc:ours': 58, 'sc:essence': 44, 'sc:culture': 47, 'sc:canicule': 52, 'sc:hacker': 39, 'sc:barons': 63, 'sc:debat': 54, 'sc:tour': 49, 'sc:baleine': 46, 'sc:mariage': 58, 'sc:cathedrale': 61, 'sc:punaises': 44, 'sc:esport': 23, 'sc:satellite': 51, 'sc:casse': 58, 'sc:vin': 56, 'sc:nuage': 53, 'sc:taxis': 49, 'sc:fusion': 57, 'sc:viaduc': 55, 'sc:tresor': 46, 'sc:algues': 51, 'sc:barrage': 58, 'sc:aviaire': 47, 'sc:skipper': 61, 'sc:drones': 48, 'sc:cyclone': 56, 'sc:lithium': 44, 'sc:sous_marin': 62, 'sc:joconde': 51, 'sc:quatre_jours': 45, 'sc:saga_eveil': 54, 'sc:saga_parc': 47, 'sc:saga_lune': 39, 'sc:saga_voyageur': 41, 'sc:saga_midi': 52, 'sc:saga_somnolence': 47, 'sc:saga_souterrain': 34, 'sc:saga_maree': 49, 'sc:saga_pirates': 54, 'sc:saga_voyante': 38, 'sc:saga_silence': 44, 'sc:saga_volcans': 45, 'sc:saga_danse': 51, 'sc:saga_jouvence': 44, 'sc:saga_exode': 61, 'sc:saga_pluie': 36, 'sc:saga_rouille': 41, 'sc:saga_abeilles': 63, 'sc:saga_or': 67, 'sc:saga_miroir': 58, 'sc:saga_fantomes': 55, 'sc:saga_robots': 48, 'sc:saga_monnaie': 57, 'sc:saga_heritage': 78, 'sc:saga_moteur': 42, 'sc:saga_sommet': 56, 'sc:saga_degel': 45, 'sc:saga_tour': 46, 'sc:saga_flottante': 58, 'sc:saga_shadow': 51, 'sc:saga_cafe': 63, 'sc:saga_sable': 44, 'sc:saga_agora': 71, 'sc:saga_faille': 47, 'sc:saga_reve': 52, 'sc:saga_archives': 66, 'sc:saga_boycott': 55, 'sc:saga_iceberg': 49, 'sc:saga_seine': 61, 'sc:saga_jour': 53, 'sc:saga_langue': 66, 'sc:saga_toque': 29, 'sc:saga_capitale': 57, 'sc:saga_prodige': 58, 'sc:saga_bouchon': 71,
 };
 
 export function scenarioAge(d: GameState, key: string): string {

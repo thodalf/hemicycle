@@ -423,6 +423,94 @@ export const SAGA_GATES: RandomEvent[] = [
       ],
     }),
   },
+  {
+    tag: 'saga_iceberg', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('iceberg', 26),
+    build: () => ({
+      title: 'Une île blanche au large d’Ouessant',
+      context: 'Le préfet maritime vous a invité à bord d’un patrouilleur, pour une sortie de routine. À l’aube, le radar affiche un écho immense, immobile. Puis la brume se déchire : une falaise de glace de quarante mètres, longue de douze kilomètres, avance doucement vers la Bretagne. Le commandant repose ses jumelles : « Ça vient du Groenland. Et ça ne fait pas demi-tour. »',
+      choices: [
+        c('marine', 'Réunir marins, glaciologues et préfecture maritime', [start('iceberg'), g(8, 0, -1), s('politicalCapital', -2)], 'Dans le carré du patrouilleur, on étale des cartes marines, des relevés satellites et des thermos de café. Personne n’a jamais fait ça, mais tout le monde a des idées.'),
+        c('carte_postale', 'Y voir une belle carte postale', [start('iceberg'), g(0, 5, 3)], 'Votre photo de l’iceberg au lever du soleil fait le tour du monde. Le lendemain, trois cents bateaux de plaisance mettent le cap sur Ouessant.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_seine', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('seine', 24),
+    build: () => ({
+      title: 'La bouteille qui remonte',
+      context: 'Un éclusier de Suresnes vous appelle à six heures du matin, la voix tremblante : « Venez voir, je ne peux pas l’expliquer au téléphone. » Sur le quai, il vous montre une bouteille vide qui flotte… vers Paris. Puis une branche, puis une bouée. Les péniches tournent en rond devant l’écluse. La Seine coule à l’envers.',
+      choices: [
+        c('hydrologues', 'Réunir hydrologues, éclusiers et services de l’eau', [start('seine'), g(8, 0, -1), s('politicalCapital', -2)], 'Les hydrologues arrivent avec des sondes, les éclusiers avec des cartes de la crue de 1910. Tout le monde regarde l’eau, et personne ne rit.'),
+        c('curiosite', 'Parler d’une curiosité de la nature', [start('seine'), g(0, 5, 3)], 'Votre mot fait sourire le pays. Le lendemain, des milliers de curieux se pressent sur les quais pour voir le fleuve remonter.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_jour', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('jour', 24),
+    build: () => ({
+      title: 'Minuit en plein soleil',
+      context: 'Le maire de Château-Chinon vous appelle à minuit passé : « Je vous appelle depuis ma terrasse. Je lis le journal. Sans lampe. » Vous croyez à une plaisanterie, jusqu’à ce que les images arrivent : sur tout le Morvan, le soleil brille à l’horizon, en pleine nuit, et refuse de se coucher.',
+      choices: [
+        c('savants', 'Envoyer astronomes, médecins du sommeil et agronomes', [start('jour'), g(8, 0, -1), s('politicalCapital', -2)], 'Les astronomes installent leurs télescopes en plein jour, à minuit, et passent la nuit, si l’on peut dire, à refaire leurs calculs.'),
+        c('merveille', 'Saluer une merveille de la nature', [start('jour'), g(0, 5, 3)], 'Votre message est partagé dans le monde entier. Le lendemain, tous les hôtels du Morvan affichent complet pour l’été.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_langue', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('langue', 26),
+    build: () => ({
+      title: 'Les tablettes de la grotte',
+      context: 'Un club de spéléologues du Lot vous invite à visiter « une petite découverte ». Au fond d’une grotte, après deux heures de reptation, une salle entière : des centaines de tablettes de schiste, couvertes de signes inconnus. La présidente du club chuchote : « Les experts disent que c’est une langue. Une vraie. Et que personne ne l’a lue depuis deux mille ans. »',
+      choices: [
+        c('chercheurs', 'Confier la grotte aux archéologues et aux linguistes', [start('langue'), g(8, 0, -1), s('politicalCapital', -2)], 'La grotte est fermée, numérotée, photographiée signe par signe. Les linguistes s’installent au gîte du village et ne dorment plus beaucoup.'),
+        c('annoncer', 'Annoncer vous-même que l’histoire de France va être réécrite', [start('langue'), g(0, 5, 3)], 'La formule fait le tour du pays. Le lendemain, trois partis et deux régions revendiquent déjà la découverte.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_toque', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('toque', 24),
+    build: () => ({
+      title: 'La sélection de Maëlle Garnier',
+      context: 'Le comité de la Toque d’or vous a convié à l’annonce de l’équipe de France. Surprise : la sélection revient à Maëlle Garnier, vingt-neuf ans, cheffe d’un petit restaurant de Clermont-Ferrand, plutôt qu’à l’un des grands noms attendus. Dans la salle, trois chefs étoilés se lèvent et sortent. Les caméras, elles, restent.',
+      choices: [
+        c('soutenir', 'Réunir le comité, les écoles hôtelières et les producteurs autour de l’équipe', [start('toque'), g(8, 0, -1), s('politicalCapital', -2)], 'Autour d’une table de cuisine : la jeune cheffe, un vieux meilleur ouvrier de France, une productrice de lentilles et un proviseur de lycée hôtelier. Ils parlent produits, et tout le monde se détend.'),
+        c('commenter', 'Commenter la sélection sur un plateau de télévision', [start('toque'), g(0, 5, 3)], 'Votre avis fait le tour des réseaux. Le lendemain, chaque chef de France a le sien, et le fait savoir.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_capitale', weight: 1, minRank: 'depute', eligible: fresh('capitale', 30),
+    build: () => ({
+      title: 'Douze ministères dans le Berry',
+      context: 'Un conseiller de Matignon vous appelle tard le soir : « Demain, le gouvernement annonce le transfert de la capitale administrative à Bourges. On a besoin d’élus pour porter le projet, ou au moins pour ne pas le saborder. » Le lendemain, l’annonce fait l’effet d’un coup de tonnerre dans les ministères, et d’une fête dans le Berry.',
+      choices: [
+        c('piloter', 'Proposer de piloter la concertation avec les agents et les élus', [start('capitale'), g(8, 0, -1), s('politicalCapital', -2)], 'Votre première réunion rassemble des syndicats d’agents, des maires du Berry et des urbanistes. Personne n’est d’accord, mais tout le monde est venu.'),
+        c('ironiser', 'Ironiser sur « la capitale du Berry »', [start('capitale'), g(0, 5, 3)], 'Votre bon mot fait rire Paris. Le Berry, beaucoup moins, et les agents ne savent toujours pas où ils travailleront l’an prochain.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_prodige', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('prodige', 24),
+    build: () => ({
+      title: 'Trente pages au tableau',
+      context: 'Le proviseur du lycée de Guéret vous a supplié de venir « voir quelque chose ». Dans une salle de classe, une élève de seconde, Lou Marchetti, quinze ans, explique au tableau trente pages de calculs. Au premier rang, un mathématicien venu de Paris par le train de nuit a les larmes aux yeux : « Elle a résolu une conjecture vieille de cent cinquante ans. Et elle ne s’en rend pas compte. »',
+      choices: [
+        c('proteger', 'Réunir sa famille, ses professeurs et des mathématiciens pour la protéger', [start('prodige'), g(8, 0, -1), s('politicalCapital', -2)], 'Autour d’une table de la salle des professeurs : ses parents, son professeur, deux mathématiciens et une psychologue. Lou mange des chips et pose une seule question : « Je pourrai garder mes copines ? »'),
+        c('annoncer', 'Annoncer la nouvelle au pays', [start('prodige'), g(0, 5, 3)], 'Votre message est partagé dans le monde entier. Le lendemain matin, quarante caméras attendent devant le lycée de Guéret.'),
+      ],
+    }),
+  },
+  {
+    tag: 'saga_bouchon', weight: 1, minRank: 'conseiller_municipal', eligible: fresh('bouchon', 22),
+    build: () => ({
+      title: 'Le samedi noir',
+      context: 'Un samedi de grands départs, le directeur des routes vous appelle depuis la salle de supervision : « Deux cents kilomètres d’A7 à l’arrêt, de Lyon à Orange. Ça arrive chaque été. Mais d’habitude, ça repart. » Le dimanche, rien ne repart. Le lundi non plus. Sur les écrans, des familles déplient leurs tables sur la bande d’arrêt d’urgence.',
+      choices: [
+        c('cellule', 'Réunir ingénieurs, gendarmes et sociétés d’autoroute', [start('bouchon'), g(8, 0, -1), s('politicalCapital', -2)], 'Dans la salle de supervision : des ingénieurs, des gendarmes et un vieux chef de péage qui a tout vu. Il secoue la tête : « Ça, jamais. »'),
+        c('patience', 'Conseiller aux vacanciers d’être patients', [start('bouchon'), g(0, 5, 3)], 'Votre conseil fait sourire le pays. Sur l’A7, on sort les boules de pétanque.'),
+      ],
+    }),
+  },
 ];
 
 /* ── Rebondissements ───────────────────────────────────────── */
@@ -2474,6 +2562,454 @@ export const SAGA_EVENTS: RandomEvent[] = [
       ],
     }),
   },
+  // L'iceberg d'Ouessant
+  {
+    tag: 'iceberg_rail', weight: 1, eligible: on('iceberg', 0, 1),
+    build: () => ({
+      title: 'Le rail d’Ouessant',
+      context: 'Chaque jour, cent cinquante cargos et pétroliers empruntent le rail d’Ouessant, droit vers l’iceberg. Les armateurs demandent qu’on dévie la route, les pêcheurs qu’on ne la dévie pas sur leurs zones de pêche.',
+      choices: [
+        c('devier', 'Redessiner la route avec les armateurs et les pêcheurs', [g(5, -3, 1), s('energy', -3)], 'Une nuit de négociation à la préfecture maritime, une carte redessinée au crayon : les cargos passent au large, et les chalutiers gardent leurs fonds.'),
+        c('attendre', 'Laisser chaque navire se débrouiller', [g(-1, 4, 0)], 'Un porte-conteneurs frôle la glace à deux cents mètres. La vidéo, prise depuis la passerelle, fait frémir le pays.'),
+      ],
+    }),
+  },
+  {
+    tag: 'iceberg_vague', weight: 1, eligible: on('iceberg', 1, 2),
+    build: () => ({
+      title: 'La vague de vêlage',
+      context: 'Un pan de glace grand comme un stade s’effondre dans la mer. La houle qu’il soulève déferle sur Le Conquet et Molène : quais inondés, bateaux arrachés à leurs amarres, et d’autres effondrements annoncés pour les jours qui viennent.',
+      choices: [
+        { ...c('cellule', 'Prendre la tête de la cellule de crise', [g(5, -4, 2)], 'Quais évacués, digues de sacs de sable, bateaux mis à l’abri : la houle suivante ne trouve plus personne sur son chemin.'), play: 'cellule_crue' },
+        c('prefet', 'Laisser la préfecture maritime gérer', [g(0, 4, -2)], 'La préfecture gère. La houle suivante emporte la moitié du marché du Conquet.'),
+      ],
+    }),
+  },
+  {
+    tag: 'iceberg_voisins', weight: 1, eligible: on('iceberg', 2, 3),
+    build: () => ({
+      title: 'À qui est l’iceberg ?',
+      context: 'Plusieurs pays européens proposent de « débarrasser » la France de l’iceberg en le remorquant vers leurs côtes, pour en vendre l’eau douce. Au Conseil européen, chacun avance ses pions, et Bruxelles attend une position française.',
+      choices: [
+        { ...c('europe', 'Bâtir une position européenne commune', [g(4, -3, 5)], 'Après une nuit de tractations, les Vingt-Sept s’accordent : l’iceberg sera étudié par une mission scientifique commune, et personne ne le vendra en bouteilles.'), play: 'echiquier_europe' },
+        c('ceder', 'Laisser le premier venu le remorquer', [g(1, 3, -4)], 'Un armateur étranger accroche un câble à l’iceberg, qui se fend aussitôt en trois. Les trois morceaux dérivent vers la Bretagne.'),
+      ],
+    }),
+  },
+  {
+    tag: 'iceberg_croisieres', weight: 1, eligible: on('iceberg', 3),
+    build: () => ({
+      title: 'Les croisières sur la glace',
+      context: 'Des croisiéristes débarquent chaque jour des centaines de touristes sur l’iceberg, pour des selfies au bord des crevasses et des pique-niques sur la glace. Les glaciologues la jugent de plus en plus instable.',
+      choices: [
+        c('encadrer', 'Interdire l’accès et ouvrir des sorties encadrées par des guides', [g(6, -5, 2)], 'Des navettes de la Marine, des guides de haute montagne venus de Chamonix et une distance de sécurité : les visiteurs voient l’iceberg de près, sans jamais y poser le pied.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Un croisiériste brave l’interdiction et débarque ses passagers en direct sur les réseaux ; l’État passe pour impuissant.' } }),
+        c('laisser', 'Laisser faire : c’est bon pour le tourisme', [g(1, 3, -1)], 'Le tourisme se porte bien. La glace, beaucoup moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'iceberg_remorquage', weight: 1, eligible: on('iceberg', 4),
+    build: () => ({
+      title: 'Huit remorqueurs et un glaçon',
+      context: 'Les océanographes proposent un plan inédit : ceinturer l’iceberg de câbles et le tirer, avec huit remorqueurs, vers des eaux profondes où il fondra sans danger. Le chantier est colossal, et chaque poste doit être chiffré avant d’être présenté au pays.',
+      choices: [
+        { ...c('chiffrer', 'Chiffrer le plan vous-même, poste par poste', [g(5, -4, 3)], 'Remorqueurs, câbles, carburant, assurances : le plan est chiffré à la tonne près, et les huit remorqueurs appareillent de Brest un matin de brume.'), play: 'chiffrage' },
+        c('promettre', 'Promettre sa disparition en un mois', [g(0, 4, -2)], 'La promesse fait la une. Les glaciologues rappellent qu’on ne fait pas fondre douze kilomètres de glace sur commande.'),
+      ],
+    }),
+  },
+  // La Seine à rebours
+  {
+    tag: 'seine_captages', weight: 1, eligible: on('seine', 0, 1),
+    build: () => ({
+      title: 'L’eau salée à Rouen',
+      context: 'L’eau de mer remonte l’estuaire et approche des captages qui alimentent Rouen. Les services de l’eau demandent des moyens d’urgence, et les habitants se ruent sur l’eau en bouteille.',
+      choices: [
+        c('proteger', 'Protéger les captages et organiser des distributions d’eau', [g(5, -3, 1), s('energy', -3)], 'Barrages anti-sel, citernes, et des bénévoles à chaque coin de rue : Rouen ne manque pas d’eau une seule journée.'),
+        c('attendre', 'Attendre que le courant revienne', [g(-1, 4, 0)], 'Le courant ne revient pas. L’eau du robinet de Rouen prend un goût de marée.'),
+      ],
+    }),
+  },
+  {
+    tag: 'seine_crue', weight: 1, eligible: on('seine', 1, 2),
+    build: () => ({
+      title: 'La crue sans pluie',
+      context: 'L’eau qui ne s’écoule plus vers la mer s’accumule en amont. La Seine sort de son lit à Troyes, l’Aube et l’Yonne refluent, et des villages entiers se réveillent cernés par l’eau, sous un ciel parfaitement bleu.',
+      choices: [
+        { ...c('cellule', 'Prendre la tête de la cellule de crise', [g(5, -4, 2)], 'Lacs-réservoirs ouverts, digues renforcées, évacuations en bon ordre : l’eau monte, mais personne n’est pris au piège.'), play: 'cellule_crue' },
+        c('prefets', 'Laisser les préfets gérer, département par département', [g(0, 4, -2)], 'Chaque préfet gère son bout de fleuve. L’eau, elle, ne connaît pas les départements.'),
+      ],
+    }),
+  },
+  {
+    tag: 'seine_peniches', weight: 1, eligible: on('seine', 2, 3),
+    build: () => ({
+      title: 'Les péniches à quai',
+      context: 'Les mariniers ne peuvent plus naviguer : le courant les pousse vers l’amont, les écluses ne savent plus dans quel sens fonctionner, et des centaines de péniches chargées de céréales et de matériaux attendent à quai. Il faut tout faire passer par le rail, et vite.',
+      choices: [
+        { ...c('rail', 'Basculer le fret sur le rail, ligne par ligne', [g(4, -3, 5)], 'Trains céréaliers, wagons de sable, horaires refaits en une semaine : les marchandises passent par le rail, et les mariniers gardent leurs bateaux à flot en attendant.'), play: 'reseau_tgv' },
+        c('attendre', 'Attendre que les mariniers trouvent une solution', [g(1, 3, -4)], 'Les mariniers attendent aussi. Les silos de la Beauce débordent d’un blé qui ne part nulle part.'),
+      ],
+    }),
+  },
+  {
+    tag: 'seine_source', weight: 1, eligible: on('seine', 3),
+    build: () => ({
+      title: 'Les pèlerins de la source',
+      context: 'Des dizaines de milliers de pèlerins en canoë convergent vers la source de la Seine, sur le plateau de Langres : un minuscule vallon qui n’a jamais accueilli plus de cent visiteurs à la fois. Des marchands y vendent de « l’eau à rebours » à prix d’or.',
+      choices: [
+        c('accueillir', 'Organiser l’accueil avec les communes du plateau, et chasser les marchands', [g(6, -5, 2)], 'Navettes, campings provisoires, sentiers balisés et contrôles des fraudes : les pèlerins voient la source, et les vendeurs d’eau miraculeuse remballent.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Le jour de l’ouverture du site, la foule dépasse toutes les prévisions ; le vallon est piétiné et la source n’est plus qu’une flaque de boue.' } }),
+        c('ignorer', 'Ignorer : chacun pagaie où il veut', [g(1, 3, -1)], 'Les pèlerins pagaient. Les marchands aussi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'seine_retour', weight: 1, eligible: on('seine', 4),
+    build: () => ({
+      title: 'Le fleuve hésite',
+      context: 'Le courant ralentit, s’arrête, repart : les hydrologues pensent que la Seine pourrait reprendre son cours si l’on soulage les nappes en amont. Il faut l’expliquer au pays, et préparer les riverains au retour brutal du courant.',
+      choices: [
+        { ...c('expliquer', 'Expliquer le plan aux Français, cartes à l’appui', [g(5, -4, 3)], 'Vingt minutes, trois cartes et pas un mot technique : le pays comprend ce qui se passe sous ses pieds, et les riverains se préparent au retour du courant.'), play: 'allocution' },
+        c('silence', 'Ne rien annoncer avant d’être sûr', [g(0, 4, -2)], 'Le silence nourrit les rumeurs. On dit que la Seine va remonter jusqu’à Dijon.'),
+      ],
+    }),
+  },
+  // Le jour sans nuit
+  {
+    tag: 'jour_sommeil', weight: 1, eligible: on('jour', 0, 1),
+    build: () => ({
+      title: 'Les volets de la nuit',
+      context: 'Les habitants du Morvan ne dorment plus que trois heures par nuit. Les médecins demandent des rideaux occultants, des horaires aménagés, et qu’on prenne au sérieux une fatigue qui gagne tout le monde, des écoliers aux éleveurs.',
+      choices: [
+        c('occultants', 'Distribuer rideaux occultants et horaires aménagés', [g(5, -3, 1), s('energy', -3)], 'Rideaux noirs à chaque fenêtre, écoles qui ouvrent à dix heures, siestes autorisées dans les administrations : le Morvan retrouve le sommeil, ou presque.'),
+        c('patience', 'Conseiller la patience', [g(-1, 4, 0)], 'Le Morvan patiente, les yeux cernés. Les accidents de tracteur se multiplient.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jour_eleveurs', weight: 1, eligible: on('jour', 1, 2),
+    build: () => ({
+      title: 'Les vaches ne rentrent plus',
+      context: 'Déboussolées par la lumière, les charolaises ne rentrent plus à l’étable, ne se laissent plus traire à heure fixe, et le lait baisse dans toutes les fermes. Les éleveurs du Morvan demandent qu’on vienne les écouter, commune par commune.',
+      choices: [
+        { ...c('tournee', 'Faire la tournée des communes et des fermes', [g(5, -4, 2)], 'Vingt communes, quarante fermes, et des étables équipées de lumières tamisées : les vaches retrouvent leurs habitudes, et les éleveurs se sentent entendus.'), play: 'tournee_maires' },
+        c('aides', 'Annoncer des aides depuis Paris', [g(0, 4, -2)], 'Les aides arrivent par courrier. Les vaches, elles, ne lisent pas le courrier.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jour_cultures', weight: 1, eligible: on('jour', 2, 3),
+    build: () => ({
+      title: 'Les tournesols de quatre mètres',
+      context: 'Sous le soleil perpétuel, les cultures s’emballent puis s’épuisent. Des semenciers proposent de racheter les terres pour des récoltes record, au risque d’épuiser les sols en deux saisons. Les agriculteurs attendent un plan.',
+      choices: [
+        { ...c('plan', 'Chiffrer un plan de rotation et de repos des sols', [g(4, -3, 5)], 'Jachères, cultures adaptées, et une prime pour chaque champ laissé au repos : les sols tiennent, et les tournesols géants deviennent la fierté des comices.'), play: 'chiffrage_mesure' },
+        c('vendre', 'Laisser les semenciers racheter les terres', [g(1, 3, -4)], 'Les récoltes battent tous les records. L’année suivante, la terre ne donne plus rien.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jour_festival', weight: 1, eligible: on('jour', 3),
+    build: () => ({
+      title: 'La fête qui ne s’arrête jamais',
+      context: 'Un festival géant s’installe sous le soleil de minuit : cent mille personnes, de la musique jour et nuit, puisque c’est la même chose. Les habitants n’en dorment plus du tout.',
+      choices: [
+        c('encadrer', 'Encadrer la fête : des horaires, une jauge et des zones de calme', [g(6, -5, 2)], 'Une jauge, des zones de silence, et une fête qui s’arrête à heure fixe, même sous le soleil : le Morvan respire, et les festivaliers aussi.', { risk: { baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Les organisateurs ignorent les horaires imposés ; le festival continue, et le Morvan ne dort toujours pas.' } }),
+        c('laisser', 'Laisser faire : c’est bon pour l’économie locale', [g(1, 3, -1)], 'L’économie locale se porte bien. Les habitants, beaucoup moins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'jour_crepuscule', weight: 1, eligible: on('jour', 4),
+    build: () => ({
+      title: 'Le premier crépuscule',
+      context: 'Pour la première fois depuis des mois, le soleil frôle l’horizon et le ciel rougit. Les habitants veulent fêter le retour de la nuit, tous ensemble, sur les collines, et vous demandent de monter sur scène.',
+      choices: [
+        { ...c('scene', 'Monter sur scène pour la fête du crépuscule', [g(5, -4, 3)], 'Sur la colline de Château-Chinon, quarante mille personnes regardent le soleil descendre. Vous dites trois mots, puis tout le monde se tait, et la nuit tombe enfin, quelques minutes.'), play: 'festival' },
+        c('discret', 'Rester discret : la nuit n’est pas encore revenue', [g(0, 4, -2)], 'La fête se fait sans vous. On y remarque surtout votre absence.'),
+      ],
+    }),
+  },
+  // La langue retrouvée
+  {
+    tag: 'langue_grotte', weight: 1, eligible: on('langue', 0, 1),
+    build: () => ({
+      title: 'La grotte assiégée',
+      context: 'Des centaines de curieux et quelques pilleurs tentent de pénétrer dans la grotte, la nuit, pour emporter une tablette. Les archéologues demandent qu’on protège le site, et qu’on numérise tout avant qu’il ne soit trop tard.',
+      choices: [
+        c('proteger', 'Protéger le site et financer la numérisation', [g(5, -3, 1), s('energy', -3)], 'Une grille, des gardiens, et des scanners qui tournent jour et nuit : chaque tablette a désormais son double numérique, consultable par tous.'),
+        c('commune', 'Laisser la commune s’en occuper', [g(-1, 4, 0)], 'La commune pose un cadenas. Trois tablettes disparaissent la semaine suivante.'),
+      ],
+    }),
+  },
+  {
+    tag: 'langue_signes', weight: 1, eligible: on('langue', 1, 2),
+    build: () => ({
+      title: 'Les signes rebelles',
+      context: 'Les linguistes butent sur une série de signes qui reviennent dans toutes les tablettes. Ils vous invitent à une séance de travail ouverte au public, pour montrer comment on déchiffre, signe par signe, une langue perdue.',
+      choices: [
+        { ...c('dechiffrer', 'Vous asseoir à la table des linguistes', [g(5, -4, 2)], 'Après trois heures et six cafés, le signe rebelle livre son sens : « rivière ». Toute une série de récits s’ouvre d’un coup, et les linguistes vous offrent une tablette… en photocopie.'), play: 'fiches' },
+        c('decliner', 'Laisser les spécialistes entre eux', [g(0, 4, -2)], 'Les spécialistes travaillent entre eux. Sur internet, d’autres « traduisent » plus vite qu’eux, et n’importe comment.'),
+      ],
+    }),
+  },
+  {
+    tag: 'langue_faux', weight: 1, eligible: on('langue', 2, 3),
+    build: () => ({
+      title: 'Les fausses tablettes',
+      context: 'Des tablettes « inédites » circulent sur internet, avec des traductions sensationnelles qui confirment toutes les thèses du moment. Une émission vous met au défi de distinguer, en direct, les vraies traductions des inventions.',
+      choices: [
+        { ...c('verifier', 'Relever le défi, avec les linguistes à vos côtés', [g(4, -3, 5)], 'Une gravure trop fraîche, un mot impossible, une traduction trop commode : les faux tombent un à un, en direct, et le pays apprend à se méfier des miracles.'), play: 'factcheck_direct' },
+        c('ignorer', 'Ne pas leur faire de publicité', [g(1, 3, -4)], 'Les faux prospèrent dans le silence. Le plus célèbre est vu vingt millions de fois.'),
+      ],
+    }),
+  },
+  {
+    tag: 'langue_manuels', weight: 1, eligible: on('langue', 3),
+    build: () => ({
+      title: 'Réécrire les manuels ?',
+      context: 'Les éditeurs scolaires attendent une réponse : faut-il réécrire dès la rentrée le chapitre sur la Gaule ? Les historiens se divisent, et chaque camp vous demande de trancher.',
+      choices: [
+        c('consensus', 'Réunir une conférence de consensus des historiens de toutes les écoles', [g(6, -5, 2)], 'Trois jours de débats à huis clos, un texte commun, et un chapitre provisoire, prudent et passionnant : les manuels changent, mais personne ne crie à la falsification.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'La conférence se déchire dès le premier jour ; deux écoles d’historiens claquent la porte et publient chacune leur chapitre.' } }),
+        c('editeurs', 'Laisser chaque éditeur décider', [g(1, 3, -1)], 'Chaque éditeur décide. Les élèves d’une même classe n’apprennent pas la même Gaule.'),
+      ],
+    }),
+  },
+  {
+    tag: 'langue_dictionnaire', weight: 1, eligible: on('langue', 4),
+    build: () => ({
+      title: 'Le premier dictionnaire',
+      context: 'Le premier dictionnaire de la langue retrouvée est prêt. Les linguistes voudraient le présenter au pays avec vous, dans un grand discours qui dise ce que l’on sait, ce que l’on ignore, et pourquoi cela nous concerne tous.',
+      choices: [
+        { ...c('discours', 'Présenter le dictionnaire dans un grand discours', [g(5, -4, 3)], 'Vous lisez en public les premiers mots d’une chanson vieille de deux mille ans, puis sa traduction. La salle se lève, et le dictionnaire devient un succès de librairie.'), play: 'discours' },
+        c('communique', 'Publier un simple communiqué', [g(0, 4, -2)], 'Le communiqué passe inaperçu. Les faussaires, eux, publient leur propre dictionnaire.'),
+      ],
+    }),
+  },
+  // La Toque d'or
+  {
+    tag: 'toque_brigade', weight: 1, eligible: on('toque', 0, 1),
+    build: () => ({
+      title: 'Une brigade à bâtir',
+      context: 'Maëlle Garnier doit composer sa brigade en trois mois. Les grandes maisons refusent de lui prêter leurs seconds, et les lycées hôteliers proposent leurs meilleurs élèves. Il faut des moyens, une cuisine d’entraînement et du temps.',
+      choices: [
+        c('cuisine', 'Ouvrir une cuisine d’entraînement dans un lycée hôtelier', [g(5, -3, 1), s('energy', -3)], 'Une cuisine flambant neuve à Lyon, des apprentis sélectionnés sur concours, et un vieux chef qui vient chaque matin goûter les sauces : la brigade prend forme.'),
+        c('comite', 'Laisser le comité se débrouiller', [g(-1, 4, 0)], 'Le comité se débrouille. Faute de cuisine, la brigade s’entraîne dans un restaurant fermé le lundi.'),
+      ],
+    }),
+  },
+  {
+    tag: 'toque_joute', weight: 1, eligible: on('toque', 1, 2),
+    build: () => ({
+      title: 'La guerre des toques',
+      context: 'Un grand chef accuse publiquement la sélection d’être « une erreur historique ». Une émission vous invite à lui répondre, face à face, en direct, devant cinq millions de téléspectateurs.',
+      choices: [
+        { ...c('repondre', 'Accepter le face-à-face', [g(5, -4, 2)], 'Vous parlez produits, apprentissage et audace. À la fin de l’émission, le grand chef vous serre la main et promet de goûter le plat de l’équipe.'), play: 'eloquence' },
+        c('esquiver', 'Décliner l’invitation', [g(0, 4, -2)], 'Le grand chef parle seul pendant une heure. Le pays l’écoute.'),
+      ],
+    }),
+  },
+  {
+    tag: 'toque_fuite', weight: 1, eligible: on('toque', 2, 3),
+    build: () => ({
+      title: 'Les fiches qui ont fui',
+      context: 'Les fiches techniques de l’équipe de France ont été copiées et envoyées à une équipe concurrente. Chaque camp accuse l’autre, et l’affaire menace de faire annuler le concours. Il faut savoir qui a fait fuiter les recettes, et vite.',
+      choices: [
+        { ...c('enquete', 'Mener l’enquête vous-même', [g(4, -3, 5)], 'C’était un photographe de l’émission de téléréalité, qui avait revendu ses images. L’équipe concurrente avait rendu les fiches sans les ouvrir. L’affaire se dégonfle, et les deux brigades trinquent ensemble.'), play: 'enquete_fuite' },
+        c('accuser', 'Accuser publiquement l’équipe concurrente', [g(1, 3, -4)], 'Le pays concurrent rappelle son ambassadeur pour consultations. Les journaux du monde parlent de la « guerre des toques ».'),
+      ],
+    }),
+  },
+  {
+    tag: 'toque_lentilles', weight: 1, eligible: on('toque', 3),
+    build: () => ({
+      title: 'Les lentilles de la sécheresse',
+      context: 'La sécheresse a ruiné une bonne part de la récolte de lentilles du Puy, produit vedette du plat français. Les producteurs se disputent l’honneur de fournir l’équipe, et certains crient déjà au favoritisme.',
+      choices: [
+        c('aveugle', 'Organiser un concours ouvert entre producteurs, jugé à l’aveugle', [g(6, -5, 2)], 'Quarante lots de lentilles, un jury de cuisiniers les yeux bandés, et un vainqueur incontesté : un petit producteur de Haute-Loire, qui pleure devant les caméras.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Le lot vainqueur appartient au cousin d’un membre du jury ; la presse s’en empare aussitôt.' } }),
+        c('discret', 'Laisser l’équipe choisir discrètement', [g(1, 3, -1)], 'L’équipe choisit. La rumeur, elle, choisit un coupable.'),
+      ],
+    }),
+  },
+  {
+    tag: 'toque_diner', weight: 1, eligible: on('toque', 4),
+    build: () => ({
+      title: 'Le dîner de la veille',
+      context: 'La veille de la finale, la France reçoit les vingt-quatre délégations et le jury à dîner. Placer chaque invité, éviter les rivaux côte à côte, honorer chacun : un faux pas, et la finale commencerait sous de mauvais auspices.',
+      choices: [
+        { ...c('table', 'Composer vous-même le plan de table', [g(5, -4, 3)], 'Personne n’est vexé, deux délégations rivales se découvrent une passion commune pour le fromage, et le jury se couche de bonne humeur.'), play: 'plan_table' },
+        c('traiteur', 'Laisser un traiteur s’en charger', [g(0, 4, -2)], 'Le traiteur place côte à côte les deux délégations brouillées par l’affaire des recettes. Le dîner est très silencieux.'),
+      ],
+    }),
+  },
+  // La capitale à Bourges
+  {
+    tag: 'capitale_agents', weight: 1, eligible: on('capitale', 0, 1),
+    build: () => ({
+      title: 'Les agents qui hésitent',
+      context: 'Des milliers d’agents des ministères ne savent pas s’ils doivent suivre : conjoints, écoles, maisons à vendre. Les syndicats demandent des garanties, et beaucoup envisagent de quitter l’administration.',
+      choices: [
+        c('accompagner', 'Négocier un accompagnement famille par famille', [g(5, -3, 1), s('energy', -3)], 'Primes de mobilité, emplois pour les conjoints, places en crèche réservées : un agent sur deux accepte de partir, et presque tous les autres trouvent un poste à Paris.'),
+        c('imposer', 'Imposer la mutation, sans exception', [g(-1, 4, 0)], 'Un tiers des agents démissionne. Les ministères partent à Bourges à moitié vides.'),
+      ],
+    }),
+  },
+  {
+    tag: 'capitale_syndicats', weight: 1, eligible: on('capitale', 1, 2),
+    build: () => ({
+      title: 'La table des syndicats',
+      context: 'Les syndicats de la fonction publique menacent d’une grève dans tous les ministères si le transfert se fait sans contreparties. Une nuit de négociation s’annonce.',
+      choices: [
+        { ...c('negocier', 'Mener la négociation vous-même', [g(5, -4, 2)], 'Au petit matin, un accord : un calendrier étalé, des garanties pour les agents et un droit au retour. Les syndicats signent en grommelant, et les cartons repartent.'), play: 'negociation_syndicale' },
+        c('force', 'Passer en force', [g(0, 4, -2)], 'La grève paralyse douze ministères pendant trois semaines. Les cartons restent sur les quais de la gare d’Austerlitz.'),
+      ],
+    }),
+  },
+  {
+    tag: 'capitale_quartier', weight: 1, eligible: on('capitale', 2, 3),
+    build: () => ({
+      title: 'Le quartier des ministères',
+      context: 'Bourges doit accueillir quarante mille agents et leurs familles : logements, écoles, transports, bureaux. Les urbanistes proposent de bâtir un quartier neuf autour des anciennes casernes, et vous demandent de dessiner le plan avec eux.',
+      choices: [
+        { ...c('dessiner', 'Dessiner le plan avec les urbanistes et les habitants', [g(4, -3, 5)], 'Des logements autour des casernes rénovées, un tramway, des écoles et un grand parc le long de l’Yèvre : les Berruyers approuvent le plan, et les agents commencent à s’y voir.'), play: 'urbanisme_commune' },
+        c('promoteurs', 'Laisser les promoteurs bâtir au plus vite', [g(1, 3, -4)], 'Les promoteurs bâtissent vite, cher et loin de tout. Les agents préfèrent faire le trajet depuis Paris.'),
+      ],
+    }),
+  },
+  {
+    tag: 'capitale_ligne', weight: 1, eligible: on('capitale', 3),
+    build: () => ({
+      title: 'La ligne Paris-Bourges',
+      context: 'Sans train rapide, Bourges restera à deux heures de Paris, et le transfert échouera. Une ligne nouvelle coûterait des milliards ; les régions oubliées réclament la leur en échange de leur soutien.',
+      choices: [
+        c('plan', 'Bâtir un plan ferroviaire pour Bourges et les villes moyennes', [g(6, -5, 2)], 'Une ligne nouvelle pour Bourges, des trains rénovés pour Limoges, Clermont et Nevers : les régions oubliées s’y retrouvent, et le projet passe.', { risk: { baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Le plan ferroviaire est jugé irréaliste par la Cour des comptes ; trois régions retirent leur soutien.' } }),
+        c('reporter', 'Reporter la question du rail', [g(1, 3, -1)], 'La question est reportée. Les trains Paris-Bourges, eux, sont toujours pleins.'),
+      ],
+    }),
+  },
+  {
+    tag: 'capitale_loi', weight: 1, eligible: on('capitale', 4),
+    build: () => ({
+      title: 'La loi de la capitale',
+      context: 'Le texte qui fait de Bourges la capitale administrative arrive au Parlement. Sénateurs et députés se divisent sur tout, des noms de rues au calendrier. Il faudra le porter jusqu’au bout de la navette.',
+      choices: [
+        { ...c('porter', 'Porter la loi jusqu’au bout de la navette', [g(5, -4, 3)], 'Trois lectures, une commission mixte paritaire et une nuit blanche : la loi est adoptée, et Bourges devient officiellement la capitale administrative de la France.'), play: 'navette_loi' },
+        c('ordonnance', 'Tout régler par ordonnance', [g(0, 4, -2)], 'L’ordonnance est contestée devant le Conseil constitutionnel. Les cartons attendent.'),
+      ],
+    }),
+  },
+  // L'enfant prodige
+  {
+    tag: 'prodige_lycee', weight: 1, eligible: on('prodige', 0, 1),
+    build: () => ({
+      title: 'Le siège du lycée',
+      context: 'Des dizaines de journalistes et de curieux campent devant le lycée de Guéret. Les élèves ne peuvent plus entrer sans être filmés, et les parents réclament qu’on protège l’établissement, et Lou avec.',
+      choices: [
+        c('treve', 'Protéger le lycée et obtenir des rédactions une trêve', [g(5, -3, 1), s('energy', -3)], 'Un périmètre autour du lycée, un accord signé par les rédactions, et une seule photo officielle par mois : les élèves retrouvent leur cour, et Lou ses récréations.'),
+        c('presse', 'Laisser faire : c’est la liberté de la presse', [g(-1, 4, 0)], 'La liberté de la presse s’exerce chaque matin devant la grille. Lou ne vient plus en cours.'),
+      ],
+    }),
+  },
+  {
+    tag: 'prodige_interview', weight: 1, eligible: on('prodige', 1, 2),
+    build: () => ({
+      title: 'La seule interview',
+      context: 'Lou accepte de donner une seule interview, à condition que vous soyez à ses côtés pour répondre aux questions qui ne la concernent pas. L’animateur est réputé pour ses pièges.',
+      choices: [
+        { ...c('accompagner', 'Vous asseoir à ses côtés', [g(5, -4, 2)], 'Lou parle de mathématiques et de ses chats ; vous répondez aux questions sur l’école, les universités étrangères et l’argent. L’émission est un succès, et les autres médias se calment un peu.'), play: 'interview_piege' },
+        c('refuser', 'Lui conseiller de tout refuser', [g(0, 4, -2)], 'Sans parole officielle, les rumeurs prospèrent : on dit que Lou a déjà signé avec une université étrangère.'),
+      ],
+    }),
+  },
+  {
+    tag: 'prodige_lettres', weight: 1, eligible: on('prodige', 2, 3),
+    build: () => ({
+      title: 'Le sac de lettres',
+      context: 'Lou reçoit chaque jour des milliers de lettres : des enfants qui veulent faire des maths, des parents qui croient avoir un génie, des propositions commerciales, et quelques lettres franchement déplacées. Sa famille ne sait pas quoi en faire.',
+      choices: [
+        { ...c('trier', 'Trier le courrier avec une équipe, et répondre aux enfants', [g(4, -3, 5)], 'Les lettres déplacées sont signalées, les propositions commerciales écartées, et chaque enfant reçoit une réponse avec un problème de maths à résoudre. Lou en signe quelques-unes elle-même.'), play: 'courrier' },
+        c('entasser', 'Laisser les sacs s’entasser', [g(1, 3, -4)], 'Les sacs s’entassent dans le garage des Marchetti. Une lettre finit sur les réseaux, et tout recommence.'),
+      ],
+    }),
+  },
+  {
+    tag: 'prodige_ponts', weight: 1, eligible: on('prodige', 3),
+    build: () => ({
+      title: 'Les ponts d’or',
+      context: 'Trois grandes universités étrangères et un géant du numérique proposent à Lou et à sa famille des conditions extraordinaires pour partir. Les mathématiciens français veulent lui offrir mieux : un cadre où grandir, sans la presser.',
+      choices: [
+        c('proposer', 'Bâtir avec les universités françaises une proposition à sa mesure', [g(6, -5, 2)], 'Un tuteur à Clermont-Ferrand, des séminaires le mercredi, et la promesse de finir son lycée à Guéret : Lou et ses parents disent oui, et les ponts d’or restent sur la table.', { risk: { baseChance: 0.35, scaleWith: 'influence', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'La proposition française fuite dans la presse avant d’avoir été présentée à la famille ; les Marchetti se sentent trahis.' } }),
+        c('encheres', 'Laisser jouer la concurrence', [g(1, 3, -1)], 'La concurrence joue. Les offres doublent, et la famille Marchetti ne dort plus.'),
+      ],
+    }),
+  },
+  {
+    tag: 'prodige_clubs', weight: 1, eligible: on('prodige', 4),
+    build: () => ({
+      title: 'Un club dans chaque collège',
+      context: 'Pour sortir de la querelle, un texte propose non pas des écoles de prodiges, mais des clubs de mathématiques ouverts dans chaque collège, et des tuteurs pour les élèves qui le souhaitent. Il faut le présenter au pays.',
+      choices: [
+        { ...c('presenter', 'Présenter le texte dans une allocution', [g(5, -4, 3)], 'Vous parlez de Lou sans la nommer, de tous les enfants curieux, et des professeurs qui les repèrent. Le pays applaudit, et la querelle de l’école retombe.'), play: 'allocution' },
+        c('ecoles', 'Créer des écoles de prodiges, et vite', [g(0, 4, -2)], 'Les écoles sont annoncées. Le jour même, Lou fait savoir qu’elle n’y mettra jamais les pieds.'),
+      ],
+    }),
+  },
+  // Le bouchon éternel
+  {
+    tag: 'bouchon_eau', weight: 1, eligible: on('bouchon', 0, 1),
+    build: () => ({
+      title: 'De l’eau pour l’A7',
+      context: 'Sous le soleil de juillet, des milliers de familles coincées manquent d’eau, de nourriture et de toilettes. Les associations demandent des secours, et les maires des villages voisins ouvrent déjà leurs salles des fêtes.',
+      choices: [
+        c('ravitailler', 'Organiser le ravitaillement, kilomètre par kilomètre', [g(5, -3, 1), s('energy', -3)], 'Camions-citernes, tentes de la Sécurité civile, producteurs venus à vélo : personne ne manque de rien, et l’on mange même mieux qu’à la maison.'),
+        c('attendre', 'Attendre que ça reparte', [g(-1, 4, 0)], 'Ça ne repart pas. Les images de familles assoiffées font le tour du monde.'),
+      ],
+    }),
+  },
+  {
+    tag: 'bouchon_sorties', weight: 1, eligible: on('bouchon', 1, 2),
+    build: () => ({
+      title: 'Les sorties dans les champs',
+      context: 'Pour désengorger l’A7, il faudrait ouvrir des sorties provisoires et organiser des convois vers les routes nationales, sans créer de nouveaux bouchons ailleurs. Les gendarmes vous proposent de piloter l’opération depuis le terrain.',
+      choices: [
+        { ...c('convois', 'Piloter vous-même les convois de dégagement', [g(5, -4, 2)], 'Des sorties ouvertes dans les champs, des convois escortés jusqu’aux nationales, et des agriculteurs qui prêtent leurs chemins : dix mille voitures s’échappent en une semaine.'), play: 'cortege_province' },
+        c('prefets', 'Laisser chaque préfet ouvrir ses sorties', [g(0, 4, -2)], 'Chaque préfet ouvre ses sorties. Les bouchons se déplacent sur les routes départementales.'),
+      ],
+    }),
+  },
+  {
+    tag: 'bouchon_porte_parole', weight: 1, eligible: on('bouchon', 2, 3),
+    build: () => ({
+      title: 'Le porte-parole du bouchon',
+      context: 'Le village de l’A7 s’est trouvé un porte-parole : un professeur de physique de Roubaix, coincé depuis six semaines. Il veut négocier les conditions du dégagement : ordre des départs, dédommagements, et le droit de revenir l’an prochain.',
+      choices: [
+        { ...c('consulter', 'Consulter les habitants du bouchon, voiture par voiture', [g(4, -3, 5)], 'Mille questionnaires, cent réunions sur la bande d’arrêt d’urgence et un ordre de départ que tout le monde accepte : le village se sent écouté, et commence à faire ses valises.'), play: 'consultation' },
+        c('refuser', 'Refuser de négocier avec un bouchon', [g(1, 3, -4)], 'La formule fait rire Paris. Sur l’A7, on vote une motion de défiance contre l’État.'),
+      ],
+    }),
+  },
+  {
+    tag: 'bouchon_irreductibles', weight: 1, eligible: on('bouchon', 3),
+    build: () => ({
+      title: 'Les irréductibles de Montélimar',
+      context: 'Sur l’aire de Montélimar, des centaines d’irréductibles refusent de partir : ils ont planté des tomates sur le terre-plein, ouvert un cinéma en plein air, et ils filment tout pour leurs abonnés. Le dégagement ne pourra pas se faire sans eux.',
+      choices: [
+        c('convaincre', 'Aller les convaincre sur place, avec une fête de départ', [g(6, -5, 2)], 'Une dernière séance de cinéma en plein air, du nougat pour tout le monde, et la promesse d’une fête chaque année sur l’aire : les irréductibles rallument leurs moteurs en chantant.', { risk: { baseChance: 0.35, scaleWith: 'credibility', scaleWeight: 0.3, onFailure: [g(-2, 5, -2)], failureNews: 'Les irréductibles vous offrent des tomates de leur potager, puis vous expliquent poliment qu’ils restent ; la vidéo fait le tour du pays.' } }),
+        c('lassitude', 'Attendre qu’ils se lassent', [g(1, 3, -1)], 'Ils ne se lassent pas. Ils ouvrent une boulangerie.'),
+      ],
+    }),
+  },
+  {
+    tag: 'bouchon_degagement', weight: 1, eligible: on('bouchon', 4),
+    build: () => ({
+      title: 'Le plan de dégagement',
+      context: 'Les ingénieurs proposent de faire repartir l’A7 tronçon par tronçon, avec un créneau de départ pour chaque voiture, en tenant compte des péages, des trains de vacanciers et des irréductibles. Chaque créneau compte.',
+      choices: [
+        { ...c('coordonner', 'Attribuer vous-même les créneaux de départ', [g(5, -4, 3)], 'Tronçon par tronçon, péage par péage, avec des trains supplémentaires pour ceux qui laissent leur voiture : à midi, l’A7 roule de nouveau, sous des klaxons de joie.'), play: 'agenda_impossible' },
+        c('forcer', 'Tout rouvrir d’un coup', [g(0, 4, -2)], 'Tout repart d’un coup, et tout se bloque dix kilomètres plus loin.'),
+      ],
+    }),
+  },
 ];
 
 /* ── Actions de l'onglet ───────────────────────────────────── */
@@ -2725,4 +3261,60 @@ export const SAGA_ACTIONS: ActionDefinition[] = [
   act('boycott', [1, 2, 3, 4], { id: 'sg_boycott_fonds', label: 'Débloquer un fonds pour les filières boycottées', description: 'Trésorerie, stockage, prospection : tenir jusqu’au retour des clients.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
   act('boycott', [1, 2, 3], { id: 'sg_boycott_circuits', label: 'Lancer la campagne « Goûtez votre pays »', description: 'Marchés, cantines, comités d’entreprise : les produits boycottés dans les assiettes françaises.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
     risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'L’affiche officielle de la campagne montre un fromage… méridien ; la Méridia en fait aussitôt une publicité.' } }),
+  // L'iceberg d'Ouessant
+  act('iceberg', undefined, { id: 'sg_iceberg_patrouille', label: 'Embarquer sur un patrouilleur', description: 'Une nuit en mer, au pied de la falaise blanche, à mesurer chaque fissure.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('iceberg', undefined, { id: 'sg_iceberg_glaciologues', label: 'Réunir glaciologues et océanographes', description: 'Courants, fonte, vêlage : prévoir ce que fera la glace demain.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('iceberg', undefined, { id: 'sg_iceberg_littoral', label: 'Placer les équipes sur le littoral', description: 'Sauveteurs, gendarmes, guides : tenir les curieux loin des blocs de glace.', minigame: 'plan_securite', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('iceberg', [1, 2, 3, 4], { id: 'sg_iceberg_remorqueurs', label: 'Affréter des remorqueurs de haute mer', description: 'Des câbles, des moteurs, et des équipages habitués aux glaces.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('iceberg', [1, 2, 3], { id: 'sg_iceberg_pecheurs', label: 'Indemniser pêcheurs et ostréiculteurs', description: 'Des aides immédiates, et des zones de pêche de remplacement.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Les aides promises arrivent avec trois mois de retard ; les pêcheurs de Douarnenez déversent leurs filets vides devant la préfecture.' } }),
+  // La Seine à rebours
+  act('seine', undefined, { id: 'sg_seine_quais', label: 'Arpenter les quais avec les éclusiers', description: 'Sondes, flotteurs et carnets de crue : regarder le fleuve de près.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('seine', undefined, { id: 'sg_seine_hydrologues', label: 'Réunir hydrologues et géologues', description: 'Nappes, marées, pente du fleuve : comprendre ce qui pousse l’eau vers l’amont.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('seine', undefined, { id: 'sg_seine_radio', label: 'Parler du fleuve à la radio', description: 'Ni miracle ni catastrophe : ce que l’on sait, et ce que l’on fait.', minigame: 'matinale', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('seine', [1, 2, 3, 4], { id: 'sg_seine_digues', label: 'Financer digues et barrages anti-sel', description: 'Protéger les captages, les berges et les villages d’amont.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('seine', [1, 2, 3], { id: 'sg_seine_maisons', label: 'Ouvrir des maisons du fleuve pour les riverains', description: 'Un guichet, des sacs de sable, des nouvelles fraîches et un café chaud.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une maison du fleuve ouvre… en zone inondable ; il faut l’évacuer le jour de l’inauguration.' } }),
+  // Le jour sans nuit
+  act('jour', undefined, { id: 'sg_jour_nuit', label: 'Passer une nuit en plein soleil dans le Morvan', description: 'Volets clos, soleil aux fenêtres : vivre ce que vivent les habitants.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('jour', undefined, { id: 'sg_jour_savants', label: 'Réunir astronomes et médecins du sommeil', description: 'Pourquoi le soleil reste-t-il, et comment dormir en attendant ?', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('jour', undefined, { id: 'sg_jour_courrier', label: 'Répondre aux lettres des habitants du Morvan', description: 'Des insomnies, des vaches perdues, et des enfants qui ne veulent plus se coucher.', minigame: 'courrier', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('jour', [1, 2, 3, 4], { id: 'sg_jour_repos', label: 'Financer un plan de repos pour le Morvan', description: 'Rideaux, horaires aménagés, médecins du sommeil dans chaque canton.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('jour', [1, 2, 3], { id: 'sg_jour_jauges', label: 'Plafonner l’accueil des touristes', description: 'Des réservations obligatoires, et des villages rendus à leurs habitants.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Le site de réservation tombe en panne le premier jour ; des milliers de touristes arrivent quand même, furieux.' } }),
+  // La langue retrouvée
+  act('langue', undefined, { id: 'sg_langue_grotte', label: 'Descendre dans la grotte avec les archéologues', description: 'Lampe frontale, combinaison et silence : voir les tablettes là où elles dorment.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('langue', undefined, { id: 'sg_langue_linguistes', label: 'Réunir linguistes et historiens', description: 'Ce que disent les signes, et ce qu’ils ne disent pas encore.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('langue', undefined, { id: 'sg_langue_presse', label: 'Présenter les dernières traductions à la presse', description: 'Ce qui est sûr, ce qui est probable, et ce qui relève du roman.', minigame: 'conference_presse', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('langue', [1, 2, 3, 4], { id: 'sg_langue_institut', label: 'Créer un institut de la langue retrouvée', description: 'Des chercheurs, des bourses, et des tablettes ouvertes à tous.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('langue', [1, 2, 3], { id: 'sg_langue_ateliers', label: 'Lancer des ateliers de lecture dans les écoles', description: 'Apprendre aux élèves à lire les signes, et à se méfier des fausses traductions.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Un livret d’atelier distribué dans les écoles reproduit une fausse tablette ; les faussaires s’en vantent sur les réseaux.' } }),
+  // La Toque d'or
+  act('toque', undefined, { id: 'sg_toque_cuisine', label: 'Passer une journée en cuisine avec la brigade', description: 'Tablier, couteau, et des sauces goûtées à l’aveugle.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('toque', undefined, { id: 'sg_toque_chefs', label: 'Réunir le comité et les grands chefs', description: 'Apaiser les egos, partager les savoir-faire, unir la profession.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('toque', undefined, { id: 'sg_toque_matinale', label: 'Défendre l’équipe à la matinale', description: 'Produits, apprentis, audace : raconter l’équipe sans attiser la querelle.', minigame: 'matinale', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('toque', [1, 2, 3, 4], { id: 'sg_toque_preparation', label: 'Financer la préparation de l’équipe', description: 'Produits, voyages d’étude et entraînements chronométrés.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('toque', [1, 2, 3], { id: 'sg_toque_lycees', label: 'Ouvrir les cuisines des lycées hôteliers au public', description: 'Des démonstrations, des dégustations, et des vocations.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une démonstration filmée tourne au désastre culinaire : un soufflé effondré en direct fait rire le monde entier.' } }),
+  // La capitale à Bourges
+  act('capitale', undefined, { id: 'sg_capitale_bourges', label: 'Passer une journée à Bourges avec les agents', description: 'Bureaux neufs, cartons à moitié ouverts, et des questions sur les écoles.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('capitale', undefined, { id: 'sg_capitale_prefets', label: 'Réunir préfets, urbanistes et syndicats', description: 'Qui part, quand, et où l’on dormira le premier soir.', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('capitale', undefined, { id: 'sg_capitale_trains', label: 'Enchaîner les réunions entre Paris et Bourges', description: 'Un comité à Bourges le matin, un arbitrage à Paris l’après-midi : ne rater aucun train.', minigame: 'correspondances', cost: { ap: 1, energy: 4 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('capitale', [1, 2, 3, 4], { id: 'sg_capitale_logements', label: 'Financer logements et écoles à Bourges', description: 'Des appartements pour les agents, des classes pour leurs enfants.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('capitale', [1, 2, 3], { id: 'sg_capitale_villes', label: 'Associer les villes moyennes au transfert', description: 'Un service ministériel par région oubliée : Limoges, Nevers, Châteauroux.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Deux villes moyennes se disputent le même service ministériel sur la place publique ; l’affaire tourne à la farce.' } }),
+  // L'enfant prodige
+  act('prodige', undefined, { id: 'sg_prodige_famille', label: 'Rendre visite aux Marchetti, à Guéret', description: 'Un café dans la cuisine, des nouvelles de Lou, et aucune caméra.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('prodige', undefined, { id: 'sg_prodige_maths', label: 'Réunir mathématiciens et psychologues', description: 'Comment accompagner un génie de quinze ans sans l’étouffer ?', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('prodige', undefined, { id: 'sg_prodige_rumeurs', label: 'Démentir les rumeurs en ligne', description: 'Contrats imaginaires, départs annoncés : répondre sans jamais livrer sa vie privée.', minigame: 'moderation', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('prodige', [1, 2, 3, 4], { id: 'sg_prodige_fondation', label: 'Créer une fondation pour les jeunes matheux', description: 'Des clubs dans les collèges ruraux, et des tuteurs pour qui le veut.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('prodige', [1, 2, 3], { id: 'sg_prodige_treve', label: 'Négocier une trêve avec les médias', description: 'Une photo officielle par mois, et la paix le reste du temps.', cost: { ap: 1, energy: 4, politicalCapital: 3 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'credibility', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Une chaîne rompt la trêve dès la première semaine et filme Lou à la boulangerie ; les autres suivent.' } }),
+  // Le bouchon éternel
+  act('bouchon', undefined, { id: 'sg_bouchon_moto', label: 'Remonter le bouchon à moto avec les gendarmes', description: 'Deux cents kilomètres de voitures, et autant de questions.', cost: { ap: 1, energy: 6 }, cooldown: 1, effects: [g(3, -3, 2)] }),
+  act('bouchon', undefined, { id: 'sg_bouchon_ingenieurs', label: 'Réunir ingénieurs routiers et sociétés d’autoroute', description: 'Pourquoi ça ne repart pas, et par où commencer ?', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(2, -3, 2)] }),
+  act('bouchon', undefined, { id: 'sg_bouchon_standard', label: 'Tenir le standard de crise de l’A7', description: 'Familles inquiètes, routiers excédés, maires débordés : une réponse pour chacun.', minigame: 'standard_ministere', cost: { ap: 1, energy: 3 }, maxPerMonth: 1, effects: [g(1, -1, 3)] }),
+  act('bouchon', [1, 2, 3, 4], { id: 'sg_bouchon_trains', label: 'Affréter des trains pour les vacanciers', description: 'Laisser sa voiture sur l’A7, et partir quand même en vacances.', cost: { ap: 1, politicalCapital: 6 }, maxPerMonth: 1, effects: [g(5, -2)] }),
+  act('bouchon', [1, 2, 3], { id: 'sg_bouchon_secours', label: 'Installer des postes de secours sur l’A7', description: 'Eau, médecins, douches et jeux pour les enfants, tous les dix kilomètres.', cost: { ap: 1, energy: 3, money: 1500 }, maxPerMonth: 1, effects: [g(1, -4, 3)],
+    risk: { baseChance: 0.2, scaleWith: 'influence', scaleWeight: 0.4, onFailure: [g(0, 2, -3)], failureNews: 'Les postes de secours, mal placés, créent un nouveau bouchon dans le bouchon ; les réseaux s’en amusent.' } }),
 ];
