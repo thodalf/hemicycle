@@ -52,7 +52,7 @@ export class DepouillementGameComponent implements OnDestroy {
   private timer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
-    const pool = [...NAMES].sort(() => Math.random() - 0.5).slice(0, this.diff() >= 3 ? 4 : 3);
+    const pool = [...NAMES].sort(() => Math.random() - 0.5).slice(0, this.diff() >= 1.2 ? 4 : 3);
     this.mine = pool[0];
     const n = 18 + Math.round(this.diff() * 3);
     this.ballots = Array.from({ length: n }, () => (Math.random() < 0.06 ? 'Nul' : Math.random() < 0.42 ? this.mine : pool[1 + Math.floor(Math.random() * (pool.length - 1))]));

@@ -75,7 +75,7 @@ export class CitationsGameComponent {
   protected readonly found = computed(() => this.matched().size);
 
   ngOnInit(): void {
-    const n = this.diff() >= 3 ? 6 : 5;
+    const n = this.diff() >= 1.2 ? 6 : 5;
     this.quotes = [...QUOTES].sort(() => Math.random() - 0.5).slice(0, n);
     // Un auteur de trop pour brouiller les pistes
     const extra = QUOTES.filter(q => !this.quotes.includes(q)).sort(() => Math.random() - 0.5)[0];

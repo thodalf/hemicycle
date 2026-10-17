@@ -12,6 +12,7 @@ export const RULES_B: Partial<Record<MinigameKind, GameRules>> = {
     but: 'Investir chaque candidat·e dans la circonscription qui lui ressemble le plus.',
     deroule: [
       'Cinq circonscriptions et cinq candidat·es s’affichent, chacun avec deux étiquettes (ouvrier, cadres, rural, jeunes, seniors, enraciné, écologie, sécurité, économie, social).',
+      'À difficulté élevée, il y a six circonscriptions et six candidat·es.',
       'Touchez un·e candidat·e, puis la circonscription où vous voulez l’investir.',
       'Les étiquettes communes s’allument en vert et la note du binôme s’affiche : 0/2, 1/2 ou 2/2.',
       'Placer quelqu’un dans une circonscription déjà pourvue libère l’ancien titulaire ; toucher une circonscription sans rien sélectionner la vide.',
@@ -47,6 +48,7 @@ export const RULES_B: Partial<Record<MinigameKind, GameRules>> = {
     but: 'Relier chaque citation historique à son auteur.',
     deroule: [
       'Cinq citations s’affichent à gauche, six auteurs à droite : l’un d’eux est un leurre.',
+      'À difficulté élevée, six citations à attribuer et un auteur de plus.',
       'Touchez une citation, puis l’auteur auquel vous l’attribuez.',
       'Une bonne réponse verrouille le couple ; une erreur fait trembler l’auteur, compte comme un essai raté, et la citation reste sélectionnée.',
       'La partie s’arrête quand les cinq citations sont trouvées, ou après cinq erreurs.',
@@ -79,6 +81,7 @@ export const RULES_B: Partial<Record<MinigameKind, GameRules>> = {
     but: 'Poster vos équipes de façon à couvrir le plus de risque possible sur le parcours du cortège.',
     deroule: [
       'Le parcours serpente sur une grille de 7 × 4 cases ; plus une case est rouge, plus elle est sensible (risque de 1 à 3, ⚠️ pour le maximum).',
+      'À difficulté élevée, vous ne disposez que de trois équipes.',
       'Quelques cases hors du parcours présentent aussi un petit risque.',
       'Touchez une case pour y poster une équipe, touchez-la de nouveau pour la retirer.',
       'Chaque équipe couvre sa case et ses quatre voisines (haut, bas, gauche, droite), jamais les diagonales.',
@@ -148,12 +151,13 @@ export const RULES_B: Partial<Record<MinigameKind, GameRules>> = {
     but: 'Saluer chaque personne croisée au marché par son prénom.',
     deroule: [
       'Cinq personnes s’affichent avec leur prénom, leur métier et un détail personnel.',
+      'À difficulté élevée, six visages défilent au lieu de cinq.',
       'Vous avez une dizaine de secondes pour les mémoriser ; le compte à rebours raccourcit sous la fatigue.',
       'Chaque personne revient ensuite, décrite par son métier et son détail, sans son prénom.',
       'Choisissez son prénom parmi trois propositions, toutes tirées des personnes du marché.',
       'Pas de chronomètre pendant les saluts.',
     ],
-    score: 'Chaque prénom juste vaut 20 points.',
+    score: 'Chaque prénom juste vaut une part égale du score : 20 points sur cinq visages, environ 17 sur six.',
     commandes: 'Souris ou doigt : touchez un prénom.',
     astuces: [
       'Associez prénom et métier par une image (« Martine la boulangère »).',
@@ -165,6 +169,7 @@ export const RULES_B: Partial<Record<MinigameKind, GameRules>> = {
     but: 'Caser tous les rendez-vous de la journée en respectant la contrainte de chacun.',
     deroule: [
       'Six rendez-vous sont à placer sur huit créneaux : 8 h, 9 h, 10 h, 11 h, puis 14 h, 15 h, 16 h et 17 h.',
+      'À difficulté élevée, sept rendez-vous sont à placer.',
       'Chaque rendez-vous a une contrainte : le matin, l’après-midi, avant 10 h, pas avant 16 h, juste avant ou juste après le déjeuner, ni à 8 h ni à 17 h, ou avant (ou après) un autre rendez-vous.',
       'Touchez un rendez-vous, puis un créneau ; poser un rendez-vous sur un créneau occupé en chasse l’ancien.',
       'Touchez un créneau occupé sans rien sélectionner pour le libérer et reprendre son rendez-vous.',
@@ -214,6 +219,7 @@ export const RULES_B: Partial<Record<MinigameKind, GameRules>> = {
     but: 'Compter de tête les bulletins de votre liste pendant le dépouillement.',
     deroule: [
       'Le nom de votre liste s’affiche, face à deux listes concurrentes.',
+      'À difficulté élevée, quatre listes se disputent les bulletins au lieu de trois.',
       'L’assesseur annonce une vingtaine de bulletins, environ un par seconde, dont quelques bulletins nuls.',
       'Comptez de tête ceux de votre liste : seul le bulletin du moment est visible.',
       'Donnez ensuite votre total parmi quatre propositions très proches.',
@@ -528,7 +534,7 @@ export const RULES_B: Partial<Record<MinigameKind, GameRules>> = {
       'Le temps est limité, de 5 à 8 minutes selon les niveaux tirés.',
     ],
     score: 'Un niveau résolu rapporte 70 % de sa valeur, plus jusqu’à 30 % selon votre nombre de coups comparé à la solution la plus courte ; un niveau passé ou non résolu ne rapporte rien. Les niveaux plus durs pèsent davantage (+25 % par palier de difficulté).',
-    commandes: 'Flèches ou ZQSD pour avancer, Retour arrière (ou U, ou Ctrl+Z) pour annuler, R pour recommencer ; flèches à l’écran ou balayage du doigt sur le plateau.',
+    commandes: 'Flèches, ZQSD (clavier AZERTY) ou WASD (QWERTY) pour avancer, Retour arrière (ou U, ou Ctrl+Z) pour annuler, R pour recommencer ; flèches à l’écran ou balayage du doigt sur le plateau.',
     astuces: [
       'Lisez la liste des règles en vigueur avant de bouger : un mot qui ne forme aucune phrase n’a aucun effet.',
       'Si le but est hors d’atteinte, changez la règle plutôt que le chemin : « X EST GAGNE » peut viser un objet à votre portée, ou ce que vous êtes vous-même.',

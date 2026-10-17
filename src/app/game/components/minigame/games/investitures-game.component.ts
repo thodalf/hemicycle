@@ -91,7 +91,7 @@ export class InvestituresGameComponent {
   protected readonly placed = computed(() => this.assign().filter(x => x !== null && x !== undefined).length);
 
   ngOnInit(): void {
-    const n = this.diff() >= 3 ? 6 : 5;
+    const n = this.diff() >= 1.2 ? 6 : 5;
     this.circos = [...CIRCOS].sort(() => Math.random() - 0.5).slice(0, n);
     const firsts = [...FIRST].sort(() => Math.random() - 0.5), lasts = [...LAST].sort(() => Math.random() - 0.5);
     // Un profil taillé pour chaque circonscription… avec une étiquette brouillée sur deux profils

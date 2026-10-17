@@ -54,7 +54,7 @@ export class SecuriteGameComponent {
   protected readonly ratio = computed(() => [...this.covered()].reduce((t, k) => t + this.risk[k], 0) / this.total);
 
   ngOnInit(): void {
-    this.agents.set(this.diff() >= 3 ? 3 : 4);
+    this.agents.set(this.diff() >= 1.2 ? 3 : 4);
     // Un parcours de cortège qui serpente, et des points chauds le long du trajet
     let y = Math.floor(Math.random() * H);
     for (let x = 0; x < W; x++) {

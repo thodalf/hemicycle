@@ -70,7 +70,7 @@ export class PrenomsGameComponent implements OnDestroy {
   protected q() { return this.questions[this.i()]; }
 
   ngOnInit(): void {
-    const n = this.diff() >= 3 ? 6 : 5;
+    const n = this.diff() >= 1.2 ? 6 : 5;
     const jobs = [...JOBS].sort(() => Math.random() - 0.5).slice(0, n);
     const f = [...NAMES_F].sort(() => Math.random() - 0.5), m = [...NAMES_M].sort(() => Math.random() - 0.5);
     const det = [...DETAILS].sort(() => Math.random() - 0.5);
@@ -80,7 +80,7 @@ export class PrenomsGameComponent implements OnDestroy {
       const wrong = names.filter(x => x !== p.name).sort(() => Math.random() - 0.5).slice(0, 2);
       return { p, opts: [p.name, ...wrong].sort(() => Math.random() - 0.5) };
     });
-    const secs = Math.max(6, 13 - this.diff() * 2);
+    const secs = Math.round(Math.max(6, 13 - this.diff() * 2));
     this.countdown.set(secs);
     this.timer = setInterval(() => {
       this.countdown.update(x => x - 1);

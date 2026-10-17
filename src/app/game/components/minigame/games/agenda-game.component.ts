@@ -85,7 +85,7 @@ export class AgendaGameComponent implements OnDestroy {
   private timer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
-    const n = this.diff() >= 3 ? 7 : 6;
+    const n = this.diff() >= 1.2 ? 7 : 6;
     const picks = [...MEETINGS].sort(() => Math.random() - 0.5).slice(0, n);
     // Une solution cachée : on en déduit des contraintes qu'elle respecte
     const sol = [...HOURS.keys()].sort(() => Math.random() - 0.5).slice(0, n);
