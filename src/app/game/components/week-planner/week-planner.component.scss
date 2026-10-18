@@ -58,6 +58,7 @@
   small { flex-basis: 100%; font-size: 11.5px; } }
 .party-tag { display: inline-block; margin-left: 4px; font-size: 11px; color: var(--accent); }
 .cost.ap { color: var(--accent); font-weight: 600; }
+.cost.ap.ap-up { color: var(--warn); cursor: help; text-decoration: underline dotted; }
 .action-cta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
 .reason { font-size: 11px; color: var(--bad); text-align: right; max-width: 110px; }
 .empty { padding: 12px; font-size: 13px; }

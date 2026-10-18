@@ -121,7 +121,7 @@
               <p class="muted">{{ a.description | royal: game.kingFem() }}</p>
               <div class="costs mono">
                 @let k = costOf(a);
-                <span class="cost ap">{{ k.ap }} PA</span>
+                <span class="cost ap" [class.ap-up]="k.ap > a.cost.ap" [title]="apWhy(a)">{{ k.ap }} PA</span>
                 @if (k.energy) { <span class="cost">⚡ {{ k.energy }}</span> }
                 @if (k.money) { <span class="cost">{{ k.money.toLocaleString('fr-FR') }} €</span> }
                 @if (k.politicalCapital) { <span class="cost">◆ {{ k.politicalCapital }} cap.</span> }

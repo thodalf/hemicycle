@@ -70,9 +70,11 @@ export class ActionPlannerService {
   readonly spent = computed(() => {
     const s = this.game.s();
     const totals = { ap: 0, energy: 0, money: 0, partyMoney: 0, politicalCapital: 0 };
+    const seen: Record<string, number> = {};
     for (const p of this._plan()) {
       const a = ACTIONS_BY_ID.get(p.actionId)!;
-      const c = costOf(s, a);
+      const c = costOf(s, a, seen[a.id] ?? 0);
+      seen[a.id] = (seen[a.id] ?? 0) + 1;
       totals.ap += c.ap;
       totals.energy += c.energy ?? 0;
       totals.politicalCapital += c.politicalCapital ?? 0;
@@ -148,10 +150,26 @@ export class ActionPlannerService {
     return this.inScenario().filter(a => rankOrder(a.minRank) > order);
   });
 
+  /** Combien de fois cette action est déjà prévue ce mois-ci */
+  repeats(actionId: string): number {
+    return this._plan().filter(p => p.actionId === actionId).length;
+  }
+
+  /** Le temps d'une action prévue (sa place dans le plan compte : la répéter coûte plus cher) */
+  plannedAp(uid: string): number {
+    const s = this.game.s();
+    const plan = this._plan();
+    const i = plan.findIndex(p => p.uid === uid);
+    if (i < 0) return 0;
+    const a = ACTIONS_BY_ID.get(plan[i].actionId);
+    if (!a) return 0;
+    return costOf(s, a, plan.slice(0, i).filter(p => p.actionId === a.id).length).ap;
+  }
+
   availability(action: ActionDefinition, targetId?: string, payer: Payer = 'perso'): Availability {
     const s = this.game.s();
     const spent = this.spent();
-    const cost = costOf(s, action);
+    const cost = costOf(s, action, this.repeats(action.id));
     if (rankOrder(action.minRank) > rankOrder(s.player.rankId)) return { ok: false, reason: 'Rang insuffisant' };
     if ((s.cooldowns[action.id] ?? 0) > s.week) return { ok: false, reason: `De nouveau possible ${inMonth(s.cooldowns[action.id])}` };
     if (action.minigame && MINIGAMES_BY_ID.get(action.minigame)?.daily && dailyPlayed()) return { ok: false, reason: 'Déjà joué aujourd’hui : nouveau mot demain' };
@@ -260,10 +278,18 @@ export class ActionPlannerService {
   /** Appelé par TurnService à l'intérieur de la transaction de fin de mois */
   execute(d: GameState, rng: Rng): void {
     const byCategory: Record<string, number> = {};
-    for (const planned of this._plan()) {
+    // Les coûts sont fixés au moment du plan (l'épuisement en cours de mois ne les change plus)
+    const seen: Record<string, number> = {};
+    const costs = this._plan().map(planned => {
+      const a = ACTIONS_BY_ID.get(planned.actionId)!;
+      const c = costOf(d, a, seen[a.id] ?? 0);
+      seen[a.id] = (seen[a.id] ?? 0) + 1;
+      return c;
+    });
+    for (const [k, planned] of this._plan().entries()) {
       const action = ACTIONS_BY_ID.get(planned.actionId)!;
       const ctx = { domain: planned.domain, targetId: planned.targetId, reason: action.label };
-      const cost = costOf(d, action);
+      const cost = costs[k];
 
       d.player.actionPoints.current -= cost.ap;
       d.player.stats.energy = Math.max(0, d.player.stats.energy - (cost.energy ?? 0));

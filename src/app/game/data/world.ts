@@ -230,7 +230,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
       skills,
       skillPoints: 1,
       finances: { personal: 4000, campaign: 0, campaignSpent: 0, legalCeiling: null },
-      actionPoints: { max: 5, current: 5 },
+      actionPoints: { max: 6, current: 6 },
       scandalExposure: 0,
       momentum: 0,
       stance: party.position,
@@ -278,7 +278,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
 function startComplotScenario(s: GameState): void {
   const p = s.player;
   p.rankId = 'depute';
-  p.actionPoints = { max: 7, current: 7 };
+  p.actionPoints = { max: 8, current: 8 };
   p.stats = { popularity: 38, influence: 35, politicalCapital: 30, credibility: 45, stress: 35, energy: 85 };
   for (const domain of DOMAINS) p.dossiers[domain].mastery = 25;
   p.dossiers.justice.mastery = 50;
@@ -291,7 +291,7 @@ function startComplotScenario(s: GameState): void {
 function startInvasionScenario(s: GameState): void {
   const p = s.player;
   p.rankId = 'ministre';
-  p.actionPoints = { max: 8, current: 8 };
+  p.actionPoints = { max: 9, current: 9 };
   p.stats = { popularity: 40, influence: 55, politicalCapital: 40, credibility: 50, stress: 30, energy: 90 };
   for (const domain of DOMAINS) p.dossiers[domain].mastery = 28;
   p.dossiers.securite.mastery = 55;

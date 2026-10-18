@@ -1,4 +1,4 @@
-import { costOf, saturation } from '../../engine/difficulty';
+import { apBreakdown, costOf, saturation } from '../../engine/difficulty';
 import { SAGA_BY_ID } from '../../data/saga-defs';
 import { RoyalPipe } from '../shared/royal.pipe';
 import { tierOdds } from '../../engine/outcomes';
@@ -170,7 +170,12 @@ export class WeekPlannerComponent {
   }
 
   /** Chances de coup d'éclat et de raté, affichées sur chaque action */
-  protected costOf(a: ActionDefinition) { return costOf(this.game.s(), a); }
+  protected costOf(a: ActionDefinition) { return costOf(this.game.s(), a, this.planner.repeats(a.id)); }
+  /** Pourquoi l'action prend ce temps-là (infobulle sur les PA) */
+  protected apWhy(a: ActionDefinition): string {
+    const b = apBreakdown(this.game.s(), a, this.planner.repeats(a.id));
+    return b.notes.length ? `${b.ap} PA : ${b.notes.join(' · ')}` : `${b.ap} PA`;
+  }
   /** La prochaine action de cette catégorie : quelle perte, faute de variété ? */
   protected satNext(a: ActionDefinition): number {
     if (['repos', 'sante', 'argent'].includes(a.category)) return 0;
@@ -319,12 +324,13 @@ export class WeekPlannerComponent {
 
   protected plan(action: ActionDefinition, event?: Event): void {
     const target = this.selectedTarget(action);
+    const apNow = this.costOf(action).ap;
     const ok = this.planner.add(action.id, action.target === 'domain'
       ? { domain: target as Domain }
       : action.target ? { targetId: target } : undefined, this.payer(action));
     // Un jeton « −n PA » s'envole de la carte vers l'agenda du mois
     if (ok && event) {
-      this.anim.fly(event.currentTarget as Element, document.querySelector('app-week-planner .plan-list'), `${action.cost.ap} PA`);
+      this.anim.fly(event.currentTarget as Element, document.querySelector('app-week-planner .plan-list'), `${apNow} PA`);
       if (action.category === 'medias') this.anim.mic(event.currentTarget as Element);
       const icon = CATEGORY_ICONS[action.category];
       if (icon) this.anim.floatAt(event.currentTarget as Element, icon, 'neutral', 120);
@@ -345,7 +351,7 @@ export class WeekPlannerComponent {
         ?? PARTNERS_BY_ID.get(p.targetId)?.name
         ?? ENEMIES_BY_ID.get(p.targetId)?.name;
     }
-    return { label: a.label, target, ap: a.cost.ap, party: p.payer === 'parti' };
+    return { label: a.label, target, ap: this.planner.plannedAp(p.uid), party: p.payer === 'parti' };
   }
 
   protected rankLabel(a: ActionDefinition): string {

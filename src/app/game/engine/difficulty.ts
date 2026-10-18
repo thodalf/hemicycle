@@ -80,12 +80,92 @@ export function monthlyDifficulty(d: GameState): void {
   if (s.influence > 78) s.influence = clamp(s.influence - (s.influence - 78) * 0.06 * wear);
 }
 
-/** Le coût réel d'une action, selon la difficulté (les points d'action ne changent pas) */
-export function costOf<C extends { ap: number; energy?: number; money?: number; politicalCapital?: number }>(d: Pick<GameState, 'difficulty'>, a: { cost: C }): C {
+/* ── Le temps : les points d'action ─────────────────────────
+ *  Une action ne prend pas toujours un seul point d'action :
+ *  un déplacement, une émission, un dossier de fond prennent
+ *  deux points ; un voyage à l'étranger ou un coup d'éclat, trois.
+ *  Une action très payante coûte un point de plus. L'épuisement
+ *  et la répétition d'une même action dans le mois en ajoutent.
+ *  Le bon collaborateur fait gagner du temps sur son terrain.
+ * ============================================================ */
+
+/** Durée de base d'une action selon sa catégorie (en points d'action) */
+export const CATEGORY_TIME: Partial<Record<string, number>> = {
+  terrain: 2, medias: 2, dossiers: 2, fonction: 2, elysee: 2, territoire: 2, couronne: 2, loge: 2,
+  administration: 2, arriere: 2, international: 3, eclat: 3,
+};
+const TIME_LABELS: Partial<Record<string, string>> = {
+  terrain: 'Sur le terrain', territoire: 'Sur le terrain', medias: 'Passage dans les médias', dossiers: 'Travail de fond',
+  fonction: 'Tâche de votre fonction', elysee: 'Charge présidentielle', administration: 'Charge administrative', couronne: 'Cérémonial',
+  loge: 'Tenue de loge', arriere: 'À l’arrière', international: 'Voyage', eclat: 'Coup d’éclat',
+};
+/** Catégories où le temps ne bouge jamais : se reposer, se soigner, gérer son argent */
+const FLAT_TIME = new Set(['repos', 'sante', 'argent']);
+/** Les collaborateurs qui font gagner un point d'action sur leur terrain */
+export const STAFF_TIME: { role: string; label: string; categories: string[] }[] = [
+  { role: 'chauffeur', label: 'votre chauffeur', categories: ['terrain', 'territoire'] },
+  { role: 'attache_presse', label: 'votre attachée de presse', categories: ['medias'] },
+  { role: 'assistant_parlementaire', label: 'votre assistant parlementaire', categories: ['dossiers'] },
+  { role: 'chef_cabinet', label: 'votre directrice de cabinet', categories: ['fonction', 'administration', 'elysee'] },
+  { role: 'sherpa', label: 'votre conseiller diplomatique', categories: ['international'] },
+];
+
+interface Weighable { cost: { ap: number }; category?: string; effects?: { kind: string; [k: string]: unknown }[] }
+const POWER = new WeakMap<object, number>();
+/** La « puissance » d'une action : ce qu'elle rapporte au mieux (jauges, dossiers, électorats) */
+export function actionPower(a: Weighable): number {
+  const cached = POWER.get(a);
+  if (cached !== undefined) return cached;
+  let x = 0;
+  const walk = (effs: Weighable['effects'], k = 1) => {
+    for (const e of effs ?? []) {
+      const delta = Number(e['delta'] ?? 0);
+      if (e.kind === 'stat' && delta > 0 && ['popularity', 'credibility', 'influence'].includes(String(e['stat']))) x += delta * k;
+      else if (e.kind === 'stat' && e['stat'] === 'politicalCapital' && delta > 0) x += delta * 0.5 * k;
+      else if (e.kind === 'dossier' && delta > 0) x += delta * 0.5 * k;
+      else if (e.kind === 'segment' && delta > 0) x += delta * (e['segment'] === '*' ? 2 : 0.7) * k;
+      else if (e.kind === 'momentum' && delta > 0) x += delta * 0.3 * k;
+      else if (e.kind === 'minigame') walk(e['reward'] as Weighable['effects'], k);
+    }
+  };
+  walk(a.effects);
+  POWER.set(a, x);
+  return x;
+}
+
+/** Seuil de puissance au-delà duquel une action coûte un point de plus */
+const POWER_STEP: Record<Difficulty, number> = { decouverte: 9, normal: 6.5, difficile: 5.5, impitoyable: 4.5 };
+
+export interface ApBreakdown { ap: number; notes: string[] }
+
+/** Le temps réel d'une action ce mois-ci, et pourquoi. `repeat` : combien de fois elle est déjà prévue ce mois-ci */
+export function apBreakdown(d: GameState, a: Weighable, repeat = 0): ApBreakdown {
+  const base = a.cost.ap;
+  const notes: string[] = [];
+  if (!base) return { ap: 0, notes };
+  const cat = a.category ?? '';
+  if (FLAT_TIME.has(cat) || base >= 4) return { ap: base, notes };
+  let ap = base;
+  const time = CATEGORY_TIME[cat] ?? 0;
+  if (time > ap) { ap = time; notes.push(`${TIME_LABELS[cat] ?? 'Action longue'} : ${time} PA`); }
+  const step = POWER_STEP[difficultyOfGame(d)];
+  const power = actionPower(a);
+  if (power >= step * 1.8) { ap += 2; notes.push('Action très payante : +2 PA'); }
+  else if (power >= step) { ap += 1; notes.push('Action payante : +1 PA'); }
+  const helper = STAFF_TIME.find(h => h.categories.includes(cat) && (d.player?.staff ?? []).includes(h.role as never));
+  if (helper && ap > base) { ap -= 1; notes.push(`Grâce à ${helper.label} : −1 PA`); }
+  if ((d.player?.stats.energy ?? 100) < 30) { ap += 1; notes.push('Épuisement : +1 PA'); }
+  if (repeat > 0) { ap += repeat; notes.push(`Déjà prévue ce mois-ci : +${repeat} PA`); }
+  return { ap: Math.min(ap, base + 4), notes };
+}
+
+/** Le coût réel d'une action, selon la difficulté et le temps qu'elle prend (voir apBreakdown) */
+export function costOf<C extends { ap: number; energy?: number; money?: number; politicalCapital?: number }>(d: GameState, a: { cost: C; category?: string; effects?: Weighable['effects'] }, repeat = 0): C {
   const m = mods(d).cost;
-  if (m === 1) return a.cost;
+  const ap = apBreakdown(d, a as Weighable, repeat).ap;
   return {
     ...a.cost,
+    ap,
     ...(a.cost.energy ? { energy: Math.round(a.cost.energy * m) } : {}),
     ...(a.cost.money ? { money: Math.round(a.cost.money * m / 50) * 50 } : {}),
     ...(a.cost.politicalCapital ? { politicalCapital: Math.round(a.cost.politicalCapital * m) } : {}),
