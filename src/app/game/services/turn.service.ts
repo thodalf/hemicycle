@@ -1,6 +1,7 @@
 import { monthlyDifficulty } from '../engine/difficulty';
 import { monthlyNemesis } from '../engine/nemesis';
 import { monthlyDialogues } from '../engine/phone-dialogues';
+import { monthlyRequetes } from '../engine/requetes';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Decision, DecisionChoice, Effect, GameState, STAT_LABELS, StatKey, Tone } from '../models/game.models';
 import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } from '../engine/effects';
@@ -146,6 +147,7 @@ export class TurnService {
     monthlyHostile(d, rng);
     monthlyPhone(d, rng);
     monthlyDialogues(d, rng);
+    monthlyRequetes(d, rng);
     monthlySocial(d, rng);
     monthlyKingdom(d, rng);
     monthlyTraits(d, rng);

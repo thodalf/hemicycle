@@ -25,6 +25,7 @@ export interface SeriesArchetype {
   title: string;
   /** Le premier message ({nom} : l'interlocuteur, {moi} : le joueur) */
   intro: string;
+  introTu?: string;
   /** Ce que l'interlocuteur espère entendre (−2 … +2) */
   ideal: (c: SeriesCtx) => number;
   /** Sujets de prédilection (ids de data/positions) */
@@ -33,10 +34,12 @@ export interface SeriesArchetype {
   /** La relance quand vous allez dans son sens, et quand vous allez à rebours */
   agree: string;
   disagree: string;
+  agreeTu?: string;
+  disagreeTu?: string;
   /** Le bilan */
-  good: { text: string; effects: (c: SeriesCtx) => Effect[] };
-  mixed: { text: string; effects: (c: SeriesCtx) => Effect[] };
-  bad: { text: string; effects: (c: SeriesCtx) => Effect[] };
+  good: { text: string; textTu?: string; effects: (c: SeriesCtx) => Effect[] };
+  mixed: { text: string; textTu?: string; effects: (c: SeriesCtx) => Effect[] };
+  bad: { text: string; textTu?: string; effects: (c: SeriesCtx) => Effect[] };
 }
 
 const st = (stat: 'popularity' | 'credibility' | 'influence' | 'politicalCapital' | 'stress' | 'energy', delta: number): Effect => ({ kind: 'stat', stat, delta });
@@ -57,18 +60,24 @@ export const ARCHETYPES: Record<string, SeriesArchetype> = {
     intro: '{nom} ici. Avant le congrès, nos adhérents veulent savoir ce que vous pensez vraiment. Quatre questions, une par mois. Vos réponses iront dans notre journal interne.',
     ideal: () => -1.5,
     agree: 'Ça, nos adhérents vont l’applaudir. Vous le défendrez dans l’hémicycle, pas seulement au téléphone ?',
+    agreeTu: 'Ça, nos adhérents vont l’applaudir. Tu le défendras dans l’hémicycle, pas seulement au téléphone ?',
+    disagreeTu: 'Là, tu nous perds. Les salariés ne comprendront pas. Tu pourrais revoir ta copie ?',
+    introTu: '{nom} ici. Avant le congrès, nos adhérents veulent savoir ce que tu penses vraiment. Quatre questions, une par mois, entre nous… et dans notre journal interne.',
     disagree: 'Là, vous nous perdez. Les salariés ne comprendront pas. Vous pourriez revoir votre copie ?',
-    good: { text: 'Notre journal titre : « Un allié des salariés ». La base vous fera bon accueil.', effects: c => [...trust(c, 10, 1), { kind: 'segment', segment: 'populaires', delta: 3 }, st('influence', 1)] },
+    good: { text: 'Notre journal titre : « Un allié des salariés ». La base vous fera bon accueil.', textTu: 'Notre journal titre : « Un allié des salariés ». La base te fera bon accueil.', effects: c => [...trust(c, 10, 1), { kind: 'segment', segment: 'populaires', delta: 3 }, st('influence', 1)] },
     mixed: { text: 'Des désaccords, des convergences. On restera vigilants, mais la porte reste ouverte.', effects: c => [...trust(c, 2), { kind: 'segment', segment: 'populaires', delta: 1 }] },
-    bad: { text: 'Notre conseil national vous classe parmi les adversaires des salariés. Ça circulera dans les cortèges.', effects: c => [...trust(c, -12), { kind: 'segment', segment: 'populaires', delta: -4 }] },
+    bad: { text: 'Notre conseil national vous classe parmi les adversaires des salariés. Ça circulera dans les cortèges.', textTu: 'Notre conseil national te classe parmi les adversaires des salariés. Désolé, ça circulera dans les cortèges.', effects: c => [...trust(c, -12), { kind: 'segment', segment: 'populaires', delta: -4 }] },
   },
   patronat: {
     id: 'patronat', title: 'Le petit-déjeuner de {nom}', questions: 4, topics: ECO,
     intro: '{nom}. Nos adhérents investissent en fonction de la visibilité politique. Je vous propose un échange suivi : quatre questions, une par mois, et je rendrai compte à mon conseil.',
     ideal: () => 1.5,
     agree: 'Voilà un discours que les investisseurs comprennent. Vous seriez prêt·e à le porter dans une tribune ?',
+    agreeTu: 'Voilà un discours que les investisseurs comprennent. Tu serais prêt·e à le porter dans une tribune ?',
+    disagreeTu: 'Ça m’inquiète. Avec ça, des projets d’usine partiront ailleurs. Tu es sûr·e de toi ?',
+    introTu: '{nom}. Entre nous : mon conseil veut savoir où tu vas. Je te propose un échange suivi, quatre questions, une par mois.',
     disagree: 'Ça m’inquiète. Avec ça, des projets d’usine partiront ailleurs. Vous êtes sûr·e de vous ?',
-    good: { text: 'Mon conseil vous considère comme un interlocuteur fiable. Nos membres sauront s’en souvenir, y compris pour votre campagne.', effects: c => [...trust(c, 10, 1), { kind: 'funds', account: 'campaign', delta: 4000 }, { kind: 'segment', segment: 'cadres', delta: 2 }, { kind: 'exposure', delta: 2 }] },
+    good: { text: 'Mon conseil vous considère comme un interlocuteur fiable. Nos membres sauront s’en souvenir, y compris pour votre campagne.', textTu: 'Mon conseil te considère comme un interlocuteur fiable. Nos membres sauront s’en souvenir, y compris pour ta campagne.', effects: c => [...trust(c, 10, 1), { kind: 'funds', account: 'campaign', delta: 4000 }, { kind: 'segment', segment: 'cadres', delta: 2 }, { kind: 'exposure', delta: 2 }] },
     mixed: { text: 'Pragmatique sur certains points, inquiétant sur d’autres. On continuera à se parler.', effects: c => [...trust(c, 2)] },
     bad: { text: 'Mon rapport à notre conseil sera sévère. Ne comptez pas sur nous.', effects: c => [...trust(c, -12), { kind: 'segment', segment: 'cadres', delta: -3 }, { kind: 'economy', confidence: -1 }] },
   },
@@ -77,10 +86,13 @@ export const ARCHETYPES: Record<string, SeriesArchetype> = {
     intro: '{nom}, de l’association. Nos bénévoles m’ont confié une liste de questions pour vous. On peut en faire une par mois ? Nous publierons vos réponses dans notre bulletin.',
     ideal: () => -0.8,
     agree: 'Merci ! Nos bénévoles vont être soulagés. Vous viendriez le dire à notre assemblée générale ?',
+    agreeTu: 'Merci ! Nos bénévoles vont être soulagés. Tu viendrais le dire à notre assemblée générale ?',
+    disagreeTu: 'Nos bénévoles vont être déçus. Tu connais la réalité du terrain ? On pourrait te la montrer.',
+    introTu: 'C’est {nom}, de l’association. Nos bénévoles m’ont confié des questions pour toi. On en fait une par mois ?',
     disagree: 'Nos bénévoles vont être déçus. Vous connaissez la réalité du terrain ? On pourrait vous la montrer.',
-    good: { text: 'Notre bulletin vous salue comme « un élu qui écoute ». Vous serez toujours le bienvenu chez nous.', effects: c => [...trust(c, 10), st('popularity', 2), { kind: 'segment', segment: 'retraites', delta: 1 }] },
-    mixed: { text: 'Nous avons publié vos réponses telles quelles. Nos membres se feront leur avis.', effects: c => [...trust(c, 3)] },
-    bad: { text: 'Notre bulletin regrette vos positions. Nos bénévoles sont nombreux, et ils votent.', effects: c => [...trust(c, -10), st('popularity', -2)] },
+    good: { text: 'Notre bulletin vous salue comme « un élu qui écoute ». Vous serez toujours le bienvenu chez nous.', textTu: 'Notre bulletin te salue comme « un élu qui écoute ». Tu seras toujours le bienvenu chez nous.', effects: c => [...trust(c, 10), st('popularity', 2), { kind: 'segment', segment: 'retraites', delta: 1 }] },
+    mixed: { text: 'Nous avons publié vos réponses telles quelles. Nos membres se feront leur avis.', textTu: 'On a publié tes réponses telles quelles. Nos membres se feront leur avis.', effects: c => [...trust(c, 3)] },
+    bad: { text: 'Notre bulletin regrette vos positions. Nos bénévoles sont nombreux, et ils votent.', textTu: 'Notre bulletin regrette tes positions. Nos bénévoles sont nombreux, et ils votent.', effects: c => [...trust(c, -10), st('popularity', -2)] },
   },
   culte: {
     id: 'culte', title: 'Un dialogue avec {nom}', questions: 3, topics: ['fin_de_vie', 'cannabis', 'jours_feries', 'aide_developpement', 'reseaux_15', 'telephone_ecole'],
@@ -97,10 +109,13 @@ export const ARCHETYPES: Record<string, SeriesArchetype> = {
     intro: '{nom}. Rien à publier pour l’instant : je prépare un livre sur la nouvelle génération politique. Quelques questions, en off, sur plusieurs mois. Je veux comprendre comment vous pensez.',
     ideal: () => 0,
     agree: 'Intéressant. Et vous le diriez en on, à visage découvert ?',
+    agreeTu: 'Intéressant. Et tu le dirais en on, à visage découvert ?',
+    disagreeTu: 'Tu sais que c’est minoritaire dans ton camp ? Tu le maintiens ?',
+    introTu: '{nom}. Rien à publier pour l’instant : je prépare un livre sur la nouvelle génération politique. Quelques questions en off, sur plusieurs mois ? Je veux comprendre comment tu penses.',
     disagree: 'Vous savez que c’est minoritaire dans votre camp ? Vous le maintenez ?',
-    good: { text: 'Mon chapitre sur vous s’intitulera « Le cohérent ». Mes confrères le liront.', effects: c => [...trust(c, 8), st('credibility', 3)] },
-    mixed: { text: 'Je ne suis pas sûr d’avoir compris votre ligne. Ce sera un chapitre court.', effects: c => [...trust(c, 1)] },
-    bad: { text: 'Mon chapitre sur vous s’appellera « Le flou ». Désolé, c’est ce que j’ai entendu.', effects: c => [...trust(c, -4), st('credibility', -3)] },
+    good: { text: 'Mon chapitre sur vous s’intitulera « Le cohérent ». Mes confrères le liront.', textTu: 'Mon chapitre sur toi s’intitulera « Le cohérent ». Mes confrères le liront.', effects: c => [...trust(c, 8), st('credibility', 3)] },
+    mixed: { text: 'Je ne suis pas sûr d’avoir compris votre ligne. Ce sera un chapitre court.', textTu: 'Je ne suis pas sûr d’avoir compris ta ligne. Ce sera un chapitre court.', effects: c => [...trust(c, 1)] },
+    bad: { text: 'Mon chapitre sur vous s’appellera « Le flou ». Désolé, c’est ce que j’ai entendu.', textTu: 'Mon chapitre sur toi s’appellera « Le flou ». Désolé, c’est ce que j’ai entendu.', effects: c => [...trust(c, -4), st('credibility', -3)] },
   },
   equipe: {
     id: 'equipe', title: 'Les points du lundi avec {nom}', questions: 4, topics: [...SOCIAL.slice(0, 4), ...SOCIETY.slice(0, 4), ...INSTITUTIONS.slice(0, 3)],
@@ -127,8 +142,11 @@ export const ARCHETYPES: Record<string, SeriesArchetype> = {
     intro: '{nom}. On se croise souvent sans vraiment se parler. Et si on échangeait, une question par mois, sur le fond ? J’aimerais savoir s’il y a matière à travailler ensemble.',
     ideal: c => { const n = c.d.npcs.find(x => x.id === c.npcId); const p = [c.d.party, ...c.d.otherParties].find(x => x.id === n?.partyId); return Math.max(-2, Math.min(2, (p?.position ?? 0) / 30)); },
     agree: 'On est d’accord là-dessus, c’est rare entre nous. On pourrait déposer quelque chose ensemble ?',
+    agreeTu: 'On est d’accord là-dessus. On pourrait déposer quelque chose ensemble, toi et moi ?',
+    disagreeTu: 'On ne sera jamais d’accord sur ce point. Mais j’aime ta franchise. Tu ne bougeras pas ?',
+    introTu: '{nom}. On se croise souvent sans vraiment se parler. Et si on échangeait, une question par mois, sur le fond ? J’ai l’impression qu’on pourrait faire des choses ensemble.',
     disagree: 'On ne sera jamais d’accord sur ce point. Mais je respecte la franchise. Vous ne bougerez pas ?',
-    good: { text: 'Je crois qu’on peut travailler ensemble. Mon téléphone vous est ouvert.', effects: c => [...rel(c, 14), st('influence', 2)] },
+    good: { text: 'Je crois qu’on peut travailler ensemble. Mon téléphone vous est ouvert.', textTu: 'Je crois qu’on peut travailler ensemble. Mon téléphone t’est ouvert.', effects: c => [...rel(c, 14), st('influence', 2)] },
     mixed: { text: 'Pas d’alliance, mais du respect. C’est déjà beaucoup.', effects: c => [...rel(c, 4)] },
     bad: { text: 'Au moins, c’est clair : nous sommes adversaires. Je m’en souviendrai.', effects: c => [...rel(c, -10)] },
   },

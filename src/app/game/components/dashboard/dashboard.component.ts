@@ -31,6 +31,8 @@ import { CrisisPanelComponent } from '../crisis-panel/crisis-panel.component';
 import { TerritoryPanelComponent } from '../territory-panel/territory-panel.component';
 import { FxService } from '../../services/fx.service';
 import { MusicService } from '../../services/music.service';
+import { ParliamentComponent } from '../parliament/parliament.component';
+import { RequetesComponent } from '../requetes/requetes.component';
 import { AuthService } from '../../services/auth.service';
 import { RANKS } from '../../data/ranks';
 import { PatrimoineService } from '../../services/patrimoine.service';
@@ -68,7 +70,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [ObjectivesFabComponent, 
+  imports: [RequetesComponent, ParliamentComponent, ObjectivesFabComponent, 
     DecimalPipe,
     ProfilePanelComponent, WeekPlannerComponent, DecisionPanelComponent,
     PartyPanelComponent, ElectionPanelComponent, NewsFeedComponent,
@@ -175,6 +177,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
           </section>
         }
         <app-decision-panel />
+        <app-requetes />
         <app-week-planner />
       </main>
       <div class="col-right">
@@ -184,6 +187,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
         <app-country-panel />
         <app-election-panel />
         <app-party-panel />
+        <app-parliament />
       </div>
     </div>
 

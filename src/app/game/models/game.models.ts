@@ -1164,6 +1164,8 @@ export interface GameState {
   npcLog?: import('../engine/npc-life').NpcLogEntry[];
   /** Le royaume : vous êtes sur le trône d'une monarchie constitutionnelle */
   kingdom?: import('../engine/kingdom').KingdomState | null;
+  /** Les requêtes (à la Reigns) : quatre piliers, les cartes du mois, les suites à venir */
+  requetes?: import('../engine/requetes').RequetesState;
 }
 
 // ── Emprunts ────────────────────────────────────────────────
@@ -1227,7 +1229,7 @@ export interface PhoneMessage {
   /** Conversation à embranchements : le dialogue et le nœud en cours */
   dlg?: { run: string; def: string; node: string };
   /** Question à choix multiple : prise de position, ou colle de culture politique */
-  qcm?: { kind: 'position' | 'colle' | 'intro' | 'relance' | 'portrait'; topic?: string; correct?: string; asker?: string; sid?: string; relance?: string };
+  qcm?: { kind: 'position' | 'colle' | 'intro' | 'relance' | 'portrait' | 'scenario'; topic?: string; correct?: string; asker?: string; sid?: string; relance?: string };
 }
 
 /** Conversations à embranchements, prises de position et colles */
@@ -1267,6 +1269,8 @@ export interface QcmSeries {
   recruitId?: string;
   /** Qui a lancé la discussion : vous (appel) ou l'interlocuteur */
   byPlayer?: boolean;
+  /** L'interlocuteur vous tutoie (proche, ou il vous apprécie) */
+  tu?: boolean;
   outlet: string;
   title: string;
   who: string;
