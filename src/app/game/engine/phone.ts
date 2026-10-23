@@ -15,6 +15,7 @@ import { scenarioAsk, scenarioCall, scenarioEntries, scenarioOptions } from './p
 import { applyEffects, campaignOpen, partySupport } from './effects';
 import { voteRole } from './assembly';
 import { Rng, clamp, nextId } from './rng';
+import { onDialogueAnswer } from './phone-dialogues';
 
 /* ============================================================
  *  Le téléphone : SMS et appels de l'équipe, du chef ou de la
@@ -612,6 +613,8 @@ export function answerMessage(d: GameState, msgId: string, replyId: string, rng:
   const summary = applyEffects(d, r.effects, { reason: `Au téléphone : « ${r.label} »` }, rng);
   if (r.answer) addMessage(d, { kind: 'sms', who: m.who, from: m.from, role: m.role, text: r.answer, read: true, summary });
   else if (summary.length) m.summary = summary;
+  // Conversation à embranchements ou question à choix multiple : la suite
+  if (m.dlg || m.qcm) onDialogueAnswer(d, m, r.id, rng);
   return summary;
 }
 

@@ -9,7 +9,7 @@ import { PostResult, goLive, socialStats } from '../engine/social';
 export class PhoneService {
   private readonly game = inject(GameStateService);
   readonly open = signal(false);
-  readonly tab = signal<'messages' | 'repertoire' | 'reseaux'>('messages');
+  readonly tab = signal<'messages' | 'repertoire' | 'reseaux' | 'positions'>('messages');
   readonly feed = computed(() => socialFeed(this.game.s()));
   readonly socialLeft = computed(() => socialLeft(this.game.s()));
   readonly reacted = computed(() => { const s = this.game.s().phone?.social; return s && s.week === this.game.s().week ? s.reacted : []; });

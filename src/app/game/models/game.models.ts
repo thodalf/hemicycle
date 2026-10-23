@@ -1198,6 +1198,8 @@ export interface PhoneReply {
   effects: Effect[];
   /** Réponse de l'interlocuteur */
   answer?: string;
+  /** Précision affichée sous le choix */
+  hint?: string;
 }
 
 export interface PhoneMessage {
@@ -1222,6 +1224,24 @@ export interface PhoneMessage {
   urgent?: boolean;
   /** Effets si l'appel est manqué */
   missed?: Effect[];
+  /** Conversation à embranchements : le dialogue et le nœud en cours */
+  dlg?: { run: string; def: string; node: string };
+  /** Question à choix multiple : prise de position, ou colle de culture politique */
+  qcm?: { kind: 'position' | 'colle'; topic?: string; correct?: string; asker?: string };
+}
+
+/** Conversations à embranchements, prises de position et colles */
+export interface DialogueState {
+  /** Conversations en cours (clé : identifiant de la conversation) */
+  runs: Record<string, { def: string; who: string; from: string; role: string; node: string; since: number; steps: number }>;
+  /** Conséquences différées : un nœud qui reviendra dans quelques mois */
+  later: { week: number; def: string; node: string; who: string; from: string; role: string }[];
+  /** Dernière fois que chaque conversation a eu lieu (mois) */
+  done: Record<string, number>;
+  /** Vos prises de position : sujet → réponse, mois, nombre de fois, revirements */
+  positions: Record<string, { answer: string; week: number; times: number; flips: number }>;
+  /** Colles : bonnes et mauvaises réponses */
+  colles: { right: number; wrong: number; asked: string[] };
 }
 
 /** Une histoire en cours avec quelqu'un de votre téléphone */
@@ -1274,6 +1294,8 @@ export interface PhoneState {
   social?: { week: number; posts: number; reacted: string[] };
   /** Votre audience : abonnés, tendances, publications */
   audience?: import('../engine/social').SocialStats;
+  /** Conversations à embranchements, prises de position, colles */
+  dlg?: DialogueState;
 }
 
 // ── Complot ─────────────────────────────────────────────────
