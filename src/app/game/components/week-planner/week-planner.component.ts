@@ -1,4 +1,6 @@
 import { apBreakdown, costOf, saturation } from '../../engine/difficulty';
+import { HAND_CATEGORIES, drawHand, occasionOf, redrawCost } from '../../engine/agenda';
+import { unlockedFor } from '../../services/action-planner.service';
 import { SAGA_BY_ID } from '../../data/saga-defs';
 import { RoyalPipe } from '../shared/royal.pipe';
 import { tierOdds } from '../../engine/outcomes';
@@ -87,7 +89,7 @@ export class WeekPlannerComponent {
 
   /** Onglets présents dans ce scénario, scénario en premier */
   protected readonly categories = computed(() => {
-    const present = new Set([...this.planner.unlocked(), ...this.planner.locked()].map(a => a.category));
+    const present = new Set([...this.planner.offered(), ...this.planner.locked()].map(a => a.category));
     const sagaTab = this.game.s().saga ? SAGA_BY_ID.get(this.game.s().saga!.id)?.tab : undefined;
     const all = (Object.entries(CATEGORY_LABELS) as [ActionCategory, string][]).filter(([c]) => present.has(c)).map(([c, l]) => [c, c === 'saga' && sagaTab ? sagaTab : l] as [ActionCategory, string]);
     const scenario = this.game.s().scenario;
@@ -227,7 +229,27 @@ export class WeekPlannerComponent {
   protected readonly fundable = partyFundable;
 
   protected readonly visibleActions = computed(() =>
-    this.planner.unlocked().filter(a => a.category === this.category()));
+    this.planner.offered().filter(a => a.category === this.category())
+      .sort((a, b) => Number(!!this.occasion(b)) - Number(!!this.occasion(a))));
+  /** L'occasion du mois portée par cette action */
+  protected occasion(a: ActionDefinition) { return occasionOf(this.game.s(), a.id); }
+  protected readonly handInfo = computed(() => {
+    const s = this.game.s();
+    const h = s.agendaHand;
+    const total = this.planner.unlocked().filter(a => HAND_CATEGORIES.has(a.category)).length;
+    return { size: h?.week === s.week ? h.ids.length : 0, total, redrawn: (h?.redraws ?? 0) >= 1, cost: redrawCost(s), canPay: s.player.stats.politicalCapital >= redrawCost(s) };
+  });
+  protected readonly occasionList = computed(() => this.planner.occasions().map(o => ({ ...o, action: ACTIONS_BY_ID.get(o.actionId)! })).filter(o => !!o.action));
+  protected goOccasion(cat: ActionCategory): void { this.category.set(cat); }
+  protected readonly comboList = computed(() => this.planner.combos());
+  protected readonly comboDone = computed(() => this.comboList().filter(x => x.done >= x.need).length);
+  /** La main du mois se tire au début de chaque mois (et au premier affichage) */
+  private readonly ensureHand = effect(() => {
+    const s = this.game.state();
+    if (s && s.status === 'en_cours' && (!s.agendaHand || s.agendaHand.week !== s.week)) {
+      queueMicrotask(() => this.game.mutate((d, rng) => { if (!d.agendaHand || d.agendaHand.week !== d.week) d.agendaHand = drawHand(d, unlockedFor(d), rng); }));
+    }
+  });
   protected readonly lockedActions = computed(() =>
     this.planner.locked().filter(a => a.category === this.category()));
 

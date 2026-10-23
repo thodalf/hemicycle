@@ -1,3 +1,4 @@
+import { COMBOS, combosOf, drawHand, inHand, liteFromPlan, occasionOf, redrawCost } from '../engine/agenda';
 import { costOf, masteryFactor, saturation } from '../engine/difficulty';
 import { sagaRunning } from '../engine/saga';
 import { natCrisis } from '../data/national-crises';
@@ -57,6 +58,42 @@ export function partyFundable(a: ActionDefinition): boolean {
  * en fin de mois.
  */
 /** Catégories sans saturation : se reposer, se soigner, gérer son argent */
+/** Les actions présentes dans la partie (scénarios, fonctions, crises…), avant le filtre de rang */
+export function actionsInScenario(s: GameState) {
+  return ACTIONS.filter(a => {
+      if (a.category === 'couronne') return s.kingdom ? !!a.requires?.kingdom : (!!s.crown && !a.requires?.kingdom);
+      if (a.category === 'loge') return !!s.lodge;
+      if (a.category === 'lutte') return !!s.struggle && (!a.requires?.struggle || a.requires.struggle === s.struggle.id);
+      if (a.category === 'eclat') return renownTier(s.player.renown ?? 0) >= (a.requires?.renownTier ?? 1);
+      if (hiddenForOffice(s, a)) return false;
+      if (a.requires?.decision && !decisionActive(s, a.requires.decision)) return false;
+      if (a.category === 'redaction') return !!s.press;
+      if (a.category === 'infiltration') return !!s.mole;
+      if (a.category === 'contact') return !!s.alien;
+      if (a.category === 'elysee') return !!s.presidency;
+      if (a.category === 'arriere') return !!s.war;
+      if (a.category === 'securite') return !!s.plot;
+      if (a.category === 'zombie') return !!s.zombie;
+      if (a.category === 'apocalypse') return !!s.apocalypse && s.apocalypse.phase < 4;
+      if (a.category === 'saga') return sagaRunning(s) && s.saga!.id === a.requires?.saga;
+      if (a.requires?.arc && !s.crises?.[a.requires.arc]) return false;
+      if (a.partyOnly && s.party.leaderNpcId !== 'player') return false;
+      if (a.category === 'crise') return a.requires?.natCrisis ? natCrisis(s) === a.requires.natCrisis : Object.values(s.crises ?? {}).some(Boolean);
+      if (a.category === 'administration') return civilActive(s);
+      if (a.category === 'international' && !intlRelevant(s)) return false;
+      if (a.category === 'international' && rankOrder(a.minRank) >= rankOrder('ministre') && rankOrder(s.player.rankId) >= rankOrder('ministre') && !intlPower(s)) return false;
+      if (a.onlyRanks && !rankAllowed(a.onlyRanks, s.player.rankId)) return false;
+      if (a.requires?.portfolio && (s.player.rankId !== 'ministre' || s.portfolio !== a.requires.portfolio)) return false;
+      return true;
+  });
+}
+
+/** Les actions débloquées pour l'état donné (rang compris) */
+export function unlockedFor(s: GameState) {
+  const order = rankOrder(s.player.rankId);
+  return actionsInScenario(s).filter(a => rankOrder(a.minRank) <= order);
+}
+
 const FLAT_CATEGORIES = new Set(['repos', 'sante', 'argent']);
 
 @Injectable({ providedIn: 'root' })
@@ -103,46 +140,37 @@ export class ActionPlannerService {
    * Couronne et Loge n'apparaissent qu'une fois débloquées : par le scénario, ou dans une partie normale
    * par un événement aléatoire (émissaire du prétendant, parrainage en loge…).
    */
-  private readonly inScenario = computed(() => {
-    const s = this.game.s();
-    return ACTIONS.filter(a => {
-      if (a.category === 'couronne') return s.kingdom ? !!a.requires?.kingdom : (!!s.crown && !a.requires?.kingdom);
-      if (a.category === 'loge') return !!s.lodge;
-      // Lutte : seulement pendant une grande lutte, et les actions de cette lutte-là
-      if (a.category === 'lutte') return !!s.struggle && (!a.requires?.struggle || a.requires.struggle === s.struggle.id);
-      // Actions d'éclat : seulement quand la renommée les ouvre
-      if (a.category === 'eclat') return renownTier(s.player.renown ?? 0) >= (a.requires?.renownTier ?? 1);
-      // Un président ne colle pas d'affiches ; une ministre ne pose pas de question au gouvernement
-      if (hiddenForOffice(s, a)) return false;
-      // Actions nées d'une grande décision : seulement tant qu'elle tient
-      if (a.requires?.decision && !decisionActive(s, a.requires.decision)) return false;
-      if (a.category === 'redaction') return !!s.press;
-      if (a.category === 'infiltration') return !!s.mole;
-      if (a.category === 'contact') return !!s.alien;
-      if (a.category === 'elysee') return !!s.presidency;
-      if (a.category === 'arriere') return !!s.war;
-      if (a.category === 'securite') return !!s.plot;
-      if (a.category === 'zombie') return !!s.zombie;
-      if (a.category === 'apocalypse') return !!s.apocalypse && s.apocalypse.phase < 4;
-      if (a.category === 'saga') return sagaRunning(s) && s.saga!.id === a.requires?.saga;
-      if (a.requires?.arc && !s.crises?.[a.requires.arc]) return false;
-      // La caisse du parti : réservée à sa direction (les autres ne voient pas ces actions)
-      if (a.partyOnly && s.party.leaderNpcId !== 'player') return false;
-      if (a.category === 'crise') return a.requires?.natCrisis ? natCrisis(s) === a.requires.natCrisis : Object.values(s.crises ?? {}).some(Boolean);
-      if (a.category === 'administration') return civilActive(s);
-      if (a.category === 'international' && !intlRelevant(s)) return false;
-      if (a.category === 'international' && rankOrder(a.minRank) >= rankOrder('ministre') && rankOrder(s.player.rankId) >= rankOrder('ministre') && !intlPower(s)) return false;
-      if (a.onlyRanks && !rankAllowed(a.onlyRanks, s.player.rankId)) return false;
-      // Actions propres à un ministère : seulement pour le ou la titulaire du portefeuille
-      if (a.requires?.portfolio && (s.player.rankId !== 'ministre' || s.portfolio !== a.requires.portfolio)) return false;
-      return true;
-    });
-  });
+  private readonly inScenario = computed(() => actionsInScenario(this.game.s()));
 
   readonly unlocked = computed(() => {
     const order = rankOrder(this.game.player().rankId);
     return this.inScenario().filter(a => rankOrder(a.minRank) <= order);
   });
+
+  /** Ce qu'on peut jouer ce mois-ci : la main du mois, les occasions, et les catégories toujours ouvertes */
+  readonly offered = computed(() => { const s = this.game.s(); return this.unlocked().filter(a => inHand(s, a)); });
+  /** Les occasions du mois (actions débloquées seulement) */
+  readonly occasions = computed(() => { const s = this.game.s(); const h = s.agendaHand; return h && h.week === s.week ? h.occasions.filter(o => this.unlocked().some(a => a.id === o.actionId)) : []; });
+  /** Les combos : avancement selon le plan du mois */
+  readonly combos = computed(() => {
+    const lite = liteFromPlan(this.game.s(), this._plan());
+    return COMBOS.map(c => ({ c, ...c.check(lite) }));
+  });
+
+  /** Redistribuer la main du mois (une fois) */
+  redraw(): boolean {
+    let ok = false;
+    this.game.mutate((d, rng) => {
+      const h = d.agendaHand;
+      const cost = redrawCost(d);
+      if (!h || h.week !== d.week || h.redraws >= 1 || d.player.stats.politicalCapital < cost) return;
+      d.player.stats.politicalCapital -= cost;
+      d.agendaHand = drawHand(d, unlockedFor(d), rng, true);
+      ok = true;
+    });
+    if (ok) this._plan.update(p => p.filter(x => { const a = ACTIONS_BY_ID.get(x.actionId); return !a || inHand(this.game.s(), a); }));
+    return ok;
+  }
 
   /** Prochaines actions verrouillées : motive la progression */
   readonly locked = computed(() => {
@@ -171,6 +199,7 @@ export class ActionPlannerService {
     const spent = this.spent();
     const cost = costOf(s, action, this.repeats(action.id));
     if (rankOrder(action.minRank) > rankOrder(s.player.rankId)) return { ok: false, reason: 'Rang insuffisant' };
+    if (!inHand(s, action)) return { ok: false, reason: 'Pas dans la main du mois' };
     if ((s.cooldowns[action.id] ?? 0) > s.week) return { ok: false, reason: `De nouveau possible ${inMonth(s.cooldowns[action.id])}` };
     if (action.minigame && MINIGAMES_BY_ID.get(action.minigame)?.daily && dailyPlayed()) return { ok: false, reason: 'Déjà joué aujourd’hui : nouveau mot demain' };
     // Monarchie d'apparat : le gouvernement décide sans le souverain
@@ -278,6 +307,10 @@ export class ActionPlannerService {
   /** Appelé par TurnService à l'intérieur de la transaction de fin de mois */
   execute(d: GameState, rng: Rng): void {
     const byCategory: Record<string, number> = {};
+    const occUsed = new Set<string>();
+    // Les combos du mois (l'ordre du plan compte)
+    const lite = liteFromPlan(d, this._plan());
+    const combos = combosOf(lite);
     // Les coûts sont fixés au moment du plan (l'épuisement en cours de mois ne les change plus)
     const seen: Record<string, number> = {};
     const costs = this._plan().map(planned => {
@@ -325,7 +358,10 @@ export class ActionPlannerService {
         const sat = FLAT_CATEGORIES.has(action.category) ? 1 : saturation(rank);
         const mastery = ctx.domain ? masteryFactor(d.player.dossiers[ctx.domain].mastery) : 1;
         const agenda = ctx.domain && ctx.domain === d.agendaDomain ? 1.15 : 1;
-        const wear = wearFactor(d, action.id) * sat * mastery * agenda;
+        // Une occasion du mois porte davantage (la première fois)
+        const occ = occasionOf(d, action.id) && !occUsed.has(action.id) ? 1.5 : 1;
+        if (occ > 1) occUsed.add(action.id);
+        const wear = wearFactor(d, action.id) * sat * mastery * agenda * occ;
         const effects = action.category === 'medias' ? boostMedia(d, action.effects) : action.effects;
         // Mini-jeu : les gains attendent le résultat (joué avant la fin du mois suivant)
         if (action.minigame && queueMinigame(d, action.minigame, action.label, scaleGains(effects, wear), ctx).length) {
@@ -338,7 +374,8 @@ export class ActionPlannerService {
         const summary = applyEffects(d, tierEffects(scaleGains(effects, wear), tier), ctx, rng);
         if (sat < 1) summary.push(`saturation −${Math.round((1 - sat) * 100)} %`);
         if (mastery < 1) summary.push(`dossier mal maîtrisé −${Math.round((1 - mastery) * 100)} %`);
-        if (wear / sat / mastery / agenda < 1) summary.push(`lassitude −${Math.round((1 - wear / sat / mastery / agenda) * 100)} %`);
+        if (wear / sat / mastery / agenda / occ < 1) summary.push(`lassitude −${Math.round((1 - wear / sat / mastery / agenda / occ) * 100)} %`);
+        if (occ > 1) summary.push('occasion du mois +50 %');
         if (tier === 'eclat') {
           d.player.renown = (d.player.renown ?? 0) + 3;
           pushNews(d, 'actu', 'positive', `Coup d’éclat : ${action.label}`, [tierStory(action, tier, rng), summary.join(' · ')].filter(Boolean).join(' — '));
@@ -348,6 +385,12 @@ export class ActionPlannerService {
         } else if (summary.length) pushNews(d, 'action', 'positive', action.label, summary.join(' · '));
       }
       record();
+    }
+    for (const c of combos) {
+      const domain = lite.find(p => p.action.category === 'dossiers' && p.domain)?.domain ?? d.agendaDomain;
+      const summary = applyEffects(d, c.effects, { domain, reason: `Combo : ${c.label}` }, rng);
+      pushNews(d, 'action', 'positive', `${c.icon} Combo : ${c.label}`, summary.join(' · '));
+      d.player.flags[`combo_${c.id}`] = Number(d.player.flags[`combo_${c.id}`] ?? 0) + 1;
     }
     this.clear();
   }

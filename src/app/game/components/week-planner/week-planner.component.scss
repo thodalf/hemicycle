@@ -190,3 +190,20 @@
 @keyframes cat-from-l { from { transform: translateX(-32px); opacity: .35; } }
 
 .fx-chip.dice { background: color-mix(in srgb, #e3b341 18%, var(--surface)); border-color: color-mix(in srgb, #e3b341 50%, var(--line)); }
+
+/* Le mois : occasions, main, combos */
+.month-deck { display: grid; gap: 8px; margin: 4px 0 10px; }
+.occasions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.occ-card { display: grid; gap: 3px; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--warn); background: var(--warn-soft); color: var(--ink); font: inherit; cursor: pointer; }
+.occ-card:hover { filter: brightness(1.03); }
+.occ-t { font-weight: 700; font-size: 13.5px; }
+.occ-b { font-size: 12.5px; color: var(--ink-2); }
+.occ-a { font-size: 12px; }
+.hand-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.combos { font-size: 13px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; background: var(--surface-2); }
+.combos summary { cursor: pointer; }
+.combos ul { list-style: none; margin: 8px 0 2px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.combos li { display: grid; gap: 1px; padding: 6px 8px; border-radius: 8px; border: 1px dashed var(--line); background: var(--surface); }
+.combos li.half { border-style: solid; border-color: var(--accent); }
+.combos li.done { border-style: solid; border-color: var(--good); background: var(--good-soft); }
+.chip.occ { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }

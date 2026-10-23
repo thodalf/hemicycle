@@ -110,7 +110,7 @@ export const STAFF_TIME: { role: string; label: string; categories: string[] }[]
   { role: 'sherpa', label: 'votre conseiller diplomatique', categories: ['international'] },
 ];
 
-interface Weighable { cost: { ap: number }; category?: string; effects?: { kind: string; [k: string]: unknown }[] }
+interface Weighable { id?: string; cost: { ap: number }; category?: string; effects?: { kind: string; [k: string]: unknown }[] }
 const POWER = new WeakMap<object, number>();
 /** La « puissance » d'une action : ce qu'elle rapporte au mieux (jauges, dossiers, électorats) */
 export function actionPower(a: Weighable): number {
@@ -154,6 +154,9 @@ export function apBreakdown(d: GameState, a: Weighable, repeat = 0): ApBreakdown
   else if (power >= step) { ap += 1; notes.push('Action payante : +1 PA'); }
   const helper = STAFF_TIME.find(h => h.categories.includes(cat) && (d.player?.staff ?? []).includes(h.role as never));
   if (helper && ap > base) { ap -= 1; notes.push(`Grâce à ${helper.label} : −1 PA`); }
+  // Une occasion du mois : un point d'action de moins (la première fois)
+  const hand = d.agendaHand;
+  if (a.id && repeat === 0 && hand && hand.week === d.week && hand.occasions.some(o => o.actionId === a.id) && ap > 1) { ap -= 1; notes.push('Occasion du mois : −1 PA'); }
   if ((d.player?.stats.energy ?? 100) < 30) { ap += 1; notes.push('Épuisement : +1 PA'); }
   if (repeat > 0) { ap += repeat; notes.push(`Déjà prévue ce mois-ci : +${repeat} PA`); }
   return { ap: Math.min(ap, base + 4), notes };

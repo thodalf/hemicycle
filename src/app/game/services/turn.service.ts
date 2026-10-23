@@ -48,7 +48,8 @@ import { refreshObjectives, weeklyObjectives } from '../engine/objectives';
 import { programPending } from '../engine/programme';
 import { weeklyScenario } from '../engine/scenarios';
 import { nationalBudgetBlocking } from '../engine/budget';
-import { ActionPlannerService } from './action-planner.service';
+import { ActionPlannerService, unlockedFor } from './action-planner.service';
+import { drawHand } from '../engine/agenda';
 import { ElectionEngineService } from './election-engine.service';
 import { GameStateService } from './game-state.service';
 import { MediaService } from './media.service';
@@ -190,6 +191,8 @@ export class TurnService {
     weeklyProject(d, rng);
     settleEndings(d);
     weeklyLife(d, rng);
+    // La main d'actions et les occasions du nouveau mois
+    d.agendaHand = drawHand(d, unlockedFor(d), rng);
     for (const a of checkAchievements(d)) pushNews(d, 'systeme', 'positive', `🏆 Succès débloqué : ${a.title}`, a.text);
   }
 

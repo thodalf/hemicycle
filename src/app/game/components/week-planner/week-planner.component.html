@@ -62,6 +62,39 @@
     }
   }
 
+  <!-- Le mois : occasions, main tirée, combos -->
+  <div class="month-deck">
+    @if (occasionList().length) {
+      <div class="occasions">
+        @for (o of occasionList(); track o.actionId) {
+          <button type="button" class="occ-card" (click)="goOccasion(o.action.category)" [title]="o.blurb">
+            <span class="occ-t">⏳ {{ o.title }}</span>
+            <span class="occ-b">{{ o.blurb }}</span>
+            <span class="occ-a">→ <b>{{ o.action.label | royal: game.kingFem() }}</b> · +50 %, −1 PA, ce mois-ci seulement</span>
+          </button>
+        }
+      </div>
+    }
+    <div class="hand-bar">
+      <span>🃏 Main du mois : <b>{{ handInfo().size }}</b> actions tirées sur {{ handInfo().total }}</span>
+      <button type="button" class="btn small" [disabled]="handInfo().redrawn || !handInfo().canPay" (click)="planner.redraw()"
+              [title]="handInfo().redrawn ? 'Déjà redistribuée ce mois-ci' : 'Une nouvelle main (les actions prévues hors main sont retirées)'">
+        🔄 Redistribuer{{ handInfo().cost ? ' (' + handInfo().cost + ' cap.)' : ' (gratuit)' }}
+      </button>
+    </div>
+    <details class="combos">
+      <summary>✨ Combos du mois : <b>{{ comboDone() }}</b> réussi{{ comboDone() > 1 ? 's' : '' }} — l’ordre de l’agenda compte</summary>
+      <ul>
+        @for (x of comboList(); track x.c.id) {
+          <li [class.done]="x.done >= x.need" [class.half]="x.done > 0 && x.done < x.need">
+            <span>{{ x.c.icon }} <b>{{ x.c.label }}</b></span>
+            <small class="muted">{{ x.c.how }} · {{ x.done }}/{{ x.need }}</small>
+          </li>
+        }
+      </ul>
+    </details>
+  </div>
+
   <div class="planner-body">
     <!-- Catalogue -->
     <div class="catalog" [class.swipe-l]="catAnim() === 'l'" [class.swipe-r]="catAnim() === 'r'"
@@ -115,6 +148,7 @@
             <div class="action-main">
               <div class="action-title">
                 <strong>{{ a.label | royal: game.kingFem() }}</strong>
+                @if (occasion(a); as oc) { <span class="chip occ" [title]="oc.blurb">⏳ {{ oc.title }}</span> }
                 @if (a.risk) { <span class="chip warn" [title]="failText(a)">risque</span> }
                 @if (a.minigame) { <span class="chip accent game-chip" title="Les gains dépendent de votre score au mini-jeu (joué en début de mois prochain). Vous pouvez aussi laisser faire l’équipe.">🎮 mini-jeu</span> }
               </div>

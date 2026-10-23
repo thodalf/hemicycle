@@ -1166,6 +1166,8 @@ export interface GameState {
   kingdom?: import('../engine/kingdom').KingdomState | null;
   /** Les requêtes (à la Reigns) : quatre piliers, les cartes du mois, les suites à venir */
   requetes?: import('../engine/requetes').RequetesState;
+  /** L'agenda du mois : la main d'actions tirée, les occasions, les redistributions */
+  agendaHand?: import('../engine/agenda').AgendaHand;
 }
 
 // ── Emprunts ────────────────────────────────────────────────
