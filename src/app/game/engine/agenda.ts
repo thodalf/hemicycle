@@ -8,7 +8,8 @@ import { Rng, clamp } from './rng';
  *
  *  1. LA MAIN DU MOIS : parmi les actions ordinaires (terrain,
  *     médias, dossiers, parti, réseau, fonction…), seule une main
- *     tirée au début du mois est jouable. Le tirage tient compte
+ *     tirée au début du mois est jouable (6 à 11 actions, selon vos
+ *     points d'action). Le tirage tient compte
  *     du sujet à la une et préfère ce qu'on n'a pas fait depuis
  *     longtemps. On peut redistribuer une fois par mois (gratuit
  *     avec une directrice de cabinet, sinon du capital politique).
@@ -39,7 +40,10 @@ function mentionsDomain(a: ActionDefinition, dom: Domain): boolean {
 /** Tirer la main du mois parmi les actions ordinaires débloquées */
 export function drawHand(d: GameState, unlocked: ActionDefinition[], rng: Rng, keepOccasions = false): AgendaHand {
   const pool = unlocked.filter(a => HAND_CATEGORIES.has(a.category));
-  const size = clamp(Math.round(pool.length * 0.45), Math.min(8, pool.length), 16);
+  // La main se cale sur le temps disponible : de quoi choisir, jamais de quoi tout faire
+  const ap = d.player.actionPoints.max;
+  const size = Math.min(pool.length, clamp(Math.round(ap * 0.6) + 2, 6, 11));
+  const perCore = size >= 10 ? 2 : 1;
   const weight = (a: ActionDefinition) => {
     const last = Number(d.player.flags[`last_${a.id}`] ?? -99);
     let w = 1;
@@ -58,7 +62,7 @@ export function drawHand(d: GameState, unlocked: ActionDefinition[], rng: Rng, k
     pool.splice(pool.indexOf(a), 1);
   };
   // Au moins deux actions de chaque grande famille, quand il y en a
-  for (const cat of CORE) for (let i = 0; i < 2; i++) { const l = pool.filter(a => a.category === cat); if (l.length && picked.length < size) take(l); }
+  for (const cat of CORE) for (let i = 0; i < perCore; i++) { const l = pool.filter(a => a.category === cat); if (l.length && picked.length < size) take(l); }
   while (picked.length < size && pool.length) take(pool);
   const prev = d.agendaHand;
   const occasions = keepOccasions && prev?.week === d.week ? prev.occasions : drawOccasions(d, unlocked, picked, rng);
@@ -175,7 +179,7 @@ export const COMBOS: Combo[] = [
     check: plan => then(plan, p => p.occasion, p => p.action.category === 'medias' && !p.occasion) },
   { id: 'equilibre', icon: '⚖️', label: 'L’agenda équilibré', how: 'Quatre familles d’actions différentes', effects: [st('credibility', 1), st('stress', -4)],
     check: plan => ({ done: Math.min(4, new Set(plan.map(p => p.action.category).filter(c => HAND_CATEGORIES.has(c))).size), need: 4 }) },
-  { id: 'souffle', icon: '🌿', label: 'Reprendre son souffle', how: 'Du repos, puis du terrain', effects: [st('energy', 6), st('popularity', 1)],
+  { id: 'souffle', icon: '🌿', label: 'Reprendre son souffle', how: 'Du repos, puis du terrain', effects: [st('energy', 4)],
     check: plan => then(plan, p => p.action.category === 'repos' || p.action.category === 'sante', p => p.action.category === 'terrain') },
 ];
 

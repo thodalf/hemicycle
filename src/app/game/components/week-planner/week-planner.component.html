@@ -102,9 +102,21 @@
       <nav class="tabs" role="tablist">
         @for (c of categories(); track c[0]) {
           <button role="tab" [class.active]="category() === c[0]" [attr.aria-selected]="category() === c[0]" [attr.data-cat]="c[0]"
-                  (click)="category.set(c[0])">{{ c[1] | royal: game.kingFem() }}</button>
+                  (click)="category.set(c[0])">{{ c[1] | royal: game.kingFem() }}@if (c[0] !== 'projets' && counts()[c[0]]) { <small class="cnt">{{ counts()[c[0]] }}</small> }</button>
         }
       </nav>
+      @if (category() !== 'projets') {
+        <div class="filters" role="search">
+          <input type="search" class="f-search" placeholder="Chercher une action…" [value]="search()" (input)="search.set($any($event.target).value)" aria-label="Chercher une action" />
+          <label class="f-tog"><input type="checkbox" [checked]="onlyAffordable()" (change)="onlyAffordable.set($any($event.target).checked)" /> Abordables</label>
+          <label class="f-tog"><input type="checkbox" [checked]="onlyOccasions()" (change)="onlyOccasions.set($any($event.target).checked)" /> Occasions</label>
+          <select class="f-sort" [value]="sortBy()" (change)="sortBy.set($any($event.target).value)" aria-label="Trier">
+            <option value="defaut">Par famille</option>
+            <option value="pa">Moins de PA d’abord</option>
+            <option value="gains">Plus payantes d’abord</option>
+          </select>
+        </div>
+      }
 
       @if (billVisible() && ['elysee', 'fonction', 'couronne', 'parti', 'projets'].includes(category())) { <app-bill-composer /> }
 
@@ -148,6 +160,7 @@
             <div class="action-main">
               <div class="action-title">
                 <strong>{{ a.label | royal: game.kingFem() }}</strong>
+                @if (category() === 'tout') { <span class="chip cat">{{ catLabel(a.category) }}</span> }
                 @if (occasion(a); as oc) { <span class="chip occ" [title]="oc.blurb">⏳ {{ oc.title }}</span> }
                 @if (a.risk) { <span class="chip warn" [title]="failText(a)">risque</span> }
                 @if (a.minigame) { <span class="chip accent game-chip" title="Les gains dépendent de votre score au mini-jeu (joué en début de mois prochain). Vous pouvez aussi laisser faire l’équipe.">🎮 mini-jeu</span> }
@@ -199,7 +212,7 @@
             </div>
           </li>
         } @empty {
-          <li class="muted empty">Aucune action débloquée dans cette catégorie.</li>
+          <li class="muted empty">Aucune action ne correspond. La main du mois ne contient qu’une partie de vos actions : changez de filtre, ou redistribuez.</li>
         }
       </ul>
       @if (lockedActions().length) {

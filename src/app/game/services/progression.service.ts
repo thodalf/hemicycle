@@ -134,7 +134,9 @@ export class ProgressionService {
     const bonus = Number(p.flags['bonusAp'] ?? 0) + (p.staff.includes('directeur_campagne') && p.finances.legalCeiling !== null ? 1 : 0)
       + countTrait(d, 'bourreau') + assetAp(d) + staffAp(d) - (civilActive(d) ? 1 : 0) + talent(d, 'stratege');
     p.flags['bonusAp'] = 0;
-    p.actionPoints.max = rank.monthlyActionPoints + bonus;
+    // Au-delà de 12 points d'action, chaque point de bonus ne compte qu'à moitié : l'agenda a ses limites
+    const rawAp = rank.monthlyActionPoints + bonus;
+    p.actionPoints.max = rawAp > 12 ? 12 + Math.floor((rawAp - 12) / 2) : rawAp;
     p.actionPoints.current = burnout ? Math.ceil(p.actionPoints.max / 2) : p.actionPoints.max;
 
     // Usure : la notoriété s'érode si on ne l'entretient pas

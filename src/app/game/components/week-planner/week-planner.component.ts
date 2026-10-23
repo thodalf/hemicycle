@@ -1,4 +1,4 @@
-import { apBreakdown, costOf, saturation } from '../../engine/difficulty';
+import { actionPower, apBreakdown, costOf, saturation } from '../../engine/difficulty';
 import { HAND_CATEGORIES, drawHand, occasionOf, redrawCost } from '../../engine/agenda';
 import { unlockedFor } from '../../services/action-planner.service';
 import { SAGA_BY_ID } from '../../data/saga-defs';
@@ -61,6 +61,10 @@ const CATEGORY_ICONS: Partial<Record<string, string>> = {
 import { BillComposerComponent } from '../bill-composer/bill-composer.component';
 import { voteRole } from '../../engine/assembly';
 
+/** Minuscules sans accents, pour la recherche */
+const UTILITY = new Set(['argent', 'sante', 'repos']);
+const norm = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
 @Component({
   selector: 'app-week-planner',
   imports: [DecimalPipe, BillComposerComponent, ObjectivesPanelComponent, RoyalPipe],
@@ -101,7 +105,7 @@ export class WeekPlannerComponent {
     } else {
       all.splice(0, all.length, ...all.filter(([c]) => c !== 'guerre' && c !== 'arriere'));
     }
-    const withProjects = (list: [ActionCategory | 'projets', string][]) => [...list.slice(0, 1), ['projets', 'Projets'] as [ActionCategory | 'projets', string], ...list.slice(1)];
+    const withProjects = (list: [ActionCategory | 'projets' | 'tout', string][]) => [['tout', 'Tout'] as [ActionCategory | 'projets' | 'tout', string], ...list, ['projets', 'Projets'] as [ActionCategory | 'projets' | 'tout', string]];
     // Épidémie Z : l'onglet passe devant tout le reste
     if (this.game.s().zombie) {
       const zz = all.filter(([c]) => c === 'zombie');
@@ -121,12 +125,24 @@ export class WeekPlannerComponent {
     const first = scenario === 'royaute' ? 'couronne' : scenario === 'franc_macon' ? 'loge' : scenario === 'editorialiste' ? 'redaction' : scenario === 'infiltre' ? 'infiltration' : scenario === 'contact' ? 'contact' : null;
     return withProjects(first ? [...all.filter(([c]) => c === first), ...all.filter(([c]) => c !== first)] : all);
   });
-  protected readonly category = signal<ActionCategory | 'projets'>(this.categories()[0]?.[0] ?? 'terrain');
+  protected readonly category = signal<ActionCategory | 'projets' | 'tout'>('tout');
+  /** Filtres de la liste unique : recherche, abordables seulement, occasions seulement, tri */
+  protected readonly search = signal('');
+  protected readonly onlyAffordable = signal(false);
+  protected readonly onlyOccasions = signal(false);
+  protected readonly sortBy = signal<'defaut' | 'pa' | 'gains'>('defaut');
+  protected catLabel(c: ActionCategory): string { return CATEGORY_LABELS[c]; }
+  /** Combien d'actions jouables dans chaque catégorie (pour les puces de filtre) */
+  protected readonly counts = computed(() => {
+    const m: Record<string, number> = { tout: this.planner.offered().length };
+    for (const a of this.planner.offered()) m[a.category] = (m[a.category] ?? 0) + 1;
+    return m;
+  });
   /** Un onglet qui disparaît (fin d'une lutte…) renvoie au premier onglet */
   private readonly keepCategory = effect(() => {
     const cats = this.categories();
     const cur = this.category();
-    if (cur !== 'projets' && cats.length && !cats.some(([c]) => c === cur)) this.category.set(cats[0][0]);
+    if (cur !== 'projets' && cur !== 'tout' && cats.length && !cats.some(([c]) => c === cur)) this.category.set('tout');
   });
   protected readonly confirmAbandon = signal(false);
 
@@ -228,9 +244,22 @@ export class WeekPlannerComponent {
   private readonly payers = signal<Record<string, Payer>>({});
   protected readonly fundable = partyFundable;
 
-  protected readonly visibleActions = computed(() =>
-    this.planner.offered().filter(a => a.category === this.category())
-      .sort((a, b) => Number(!!this.occasion(b)) - Number(!!this.occasion(a))));
+  protected readonly visibleActions = computed(() => {
+    const cat = this.category();
+    const q = norm(this.search().trim());
+    const order = new Map(this.categories().map(([c], i) => [c, i]));
+    let list = this.planner.offered().filter(a => cat === 'tout' || a.category === cat);
+    if (q) list = list.filter(a => norm(`${a.label} ${a.description} ${CATEGORY_LABELS[a.category]}`).includes(q));
+    if (this.onlyOccasions()) list = list.filter(a => !!this.occasion(a));
+    if (this.onlyAffordable()) { this.planner.plan(); list = list.filter(a => this.availability(a).ok); }
+    const sort = this.sortBy();
+    const cost = (a: ActionDefinition) => this.costOf(a).ap;
+    // Les occasions d'abord, puis la main du mois et les urgences (crises, sagas…), l'argent, la santé et le repos à la fin
+    const tier = (x: ActionDefinition) => this.occasion(x) ? 0 : UTILITY.has(x.category) ? 3 : HAND_CATEGORIES.has(x.category) ? 2 : 1;
+    return [...list].sort((a, b) =>
+      tier(a) - tier(b)
+      || (sort === 'pa' ? cost(a) - cost(b) : sort === 'gains' ? actionPower(b) - actionPower(a) : (order.get(a.category) ?? 99) - (order.get(b.category) ?? 99)));
+  });
   /** L'occasion du mois portée par cette action */
   protected occasion(a: ActionDefinition) { return occasionOf(this.game.s(), a.id); }
   protected readonly handInfo = computed(() => {
@@ -251,7 +280,7 @@ export class WeekPlannerComponent {
     }
   });
   protected readonly lockedActions = computed(() =>
-    this.planner.locked().filter(a => a.category === this.category()));
+    this.category() === 'tout' ? [] : this.planner.locked().filter(a => a.category === this.category()));
 
   protected readonly apPips = computed(() => {
     const ap = this.game.player().actionPoints;
