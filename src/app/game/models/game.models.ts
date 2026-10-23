@@ -1227,7 +1227,7 @@ export interface PhoneMessage {
   /** Conversation à embranchements : le dialogue et le nœud en cours */
   dlg?: { run: string; def: string; node: string };
   /** Question à choix multiple : prise de position, ou colle de culture politique */
-  qcm?: { kind: 'position' | 'colle'; topic?: string; correct?: string; asker?: string };
+  qcm?: { kind: 'position' | 'colle' | 'intro' | 'relance' | 'portrait'; topic?: string; correct?: string; asker?: string; sid?: string; relance?: string };
 }
 
 /** Conversations à embranchements, prises de position et colles */
@@ -1242,6 +1242,43 @@ export interface DialogueState {
   positions: Record<string, { answer: string; week: number; times: number; flips: number }>;
   /** Colles : bonnes et mauvaises réponses */
   colles: { right: number; wrong: number; asked: string[] };
+  /** La série en cours : une interview au long cours, ou une saison du quiz des élus */
+  series?: QcmSeries | null;
+  /** Les séries passées (portraits publiés, classements) */
+  history?: { sid: string; kind: 'interview' | 'quiz'; title: string; outlet: string; verdict: string; tone: 'good' | 'bad' | 'mixed'; week: number }[];
+  /** Vos engagements de programme pris en interview (sujet → mois) */
+  engagements?: Record<string, number>;
+  /** Pas de nouvelle série avant ce mois */
+  nextSeries?: number;
+}
+
+/** Une série de questions à choix multiple, sur plusieurs mois, avec un fil conducteur */
+export interface QcmSeries {
+  sid: string;
+  kind: 'interview' | 'quiz';
+  journalist: string;
+  outlet: string;
+  title: string;
+  who: string;
+  accepted: boolean;
+  /** Relecture exigée : portrait adouci, journaliste agacé·e */
+  relecture?: boolean;
+  step: number;
+  total: number;
+  nextWeek: number;
+  since: number;
+  /** Interview : les réponses de la série */
+  answers: { topic: string; answer: string; lean: number; week: number }[];
+  engagements: string[];
+  flips: number;
+  evasions: number;
+  joker: boolean;
+  dissidences: number;
+  /** Quiz : score, série en cours, adversaires */
+  right: number;
+  wrong: number;
+  streak: number;
+  rivals: { name: string; score: number }[];
 }
 
 /** Une histoire en cours avec quelqu'un de votre téléphone */

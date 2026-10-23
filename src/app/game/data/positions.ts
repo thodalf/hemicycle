@@ -82,6 +82,21 @@ export const POSITION_ASKERS: { from: string; role: string }[] = [
   { from: 'L’Opinion', role: 'Service politique' },
 ];
 
+/** Les journalistes qui mènent les interviews au long cours (personnages fictifs) */
+export const JOURNALISTS: { name: string; outlet: string; fem: boolean; style: 'dur' | 'courtois' | 'malicieux' }[] = [
+  { name: 'Claire Vasseur', outlet: 'Le Parisien', fem: true, style: 'courtois' },
+  { name: 'Mathieu Roux', outlet: 'Le Monde', fem: false, style: 'dur' },
+  { name: 'Sonia Belkacem', outlet: 'France Info', fem: true, style: 'malicieux' },
+  { name: 'Antoine Lefort', outlet: 'Le Figaro', fem: false, style: 'dur' },
+  { name: 'Inès Moreau', outlet: 'Libération', fem: true, style: 'malicieux' },
+  { name: 'Paul Guérin', outlet: 'Ouest-France', fem: false, style: 'courtois' },
+  { name: 'Julie Arnaud', outlet: 'BFM', fem: true, style: 'dur' },
+  { name: 'Hugo Lambert', outlet: 'L’Opinion', fem: false, style: 'courtois' },
+];
+
+/** Les titres des séries d'interviews ({nom} : le joueur) */
+export const SERIES_TITLES = ['Ce que pense vraiment {nom}', 'Six questions à {nom}', 'Le grand oral de {nom}', '{nom}, sans langue de bois', 'Le test de cohérence : {nom}', 'Un été avec {nom}'];
+
 /** Qui vous pose une colle de culture politique */
 export const COLLE_ASKERS: { from: string; role: string; tv: boolean }[] = [
   { from: 'Quotidien', role: 'Micro-trottoir de l’Assemblée', tv: true },

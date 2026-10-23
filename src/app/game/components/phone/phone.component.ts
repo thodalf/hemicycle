@@ -6,7 +6,7 @@ import { GameStateService } from '../../services/game-state.service';
 import { PhoneService } from '../../services/phone.service';
 import { EXTRA_CALL_ENERGY, PhoneEntry } from '../../engine/phone';
 import { QUICK_SMS, REACTIONS } from '../../engine/phone-extra';
-import { positionsList } from '../../engine/phone-dialogues';
+import { positionsList, seriesInfo } from '../../engine/phone-qcm';
 import { PhoneMessage } from '../../models/game.models';
 
 const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
@@ -52,7 +52,9 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
             </div>
             @if (pending(); as m) {
               <div class="replies">
-                @if (m.qcm?.kind === 'position') { <p class="qcm-head">❓ <b>Question à choix multiple</b> · votre réponse sera publiée et retenue : changer d’avis plus tard vous coûtera cher.</p> }
+                @if (m.qcm?.kind === 'position') { <p class="qcm-head">❓ <b>Question à choix multiple</b> · votre réponse est publiée et retenue ; une relance suivra.</p> }
+                @else if (m.qcm?.kind === 'relance') { <p class="qcm-head">↪️ <b>Relance</b> · on rebondit sur ce que vous venez de dire.</p> }
+                @else if (m.qcm?.kind === 'intro') { <p class="qcm-head">🎙️ <b>Une série au long cours</b> · plusieurs mois, un fil conducteur, un verdict à la fin.</p> }
                 @else if (m.qcm?.kind === 'colle') { <p class="qcm-head">🎯 <b>Colle</b> · une seule bonne réponse{{ m.qcm?.asker === 'tv' ? ', et la caméra tourne' : '' }}.</p> }
                 @else if (m.dlg) { <p class="qcm-head">💬 <b>Votre réponse compte</b> · on s’en souviendra.</p> }
                 @for (r of m.replies; track r.id) { <button type="button" class="reply" [class.qcm]="!!m.qcm" (click)="phone.reply(m.id, r.id)"><span>{{ r.label }}</span>@if (r.hint) { <small>{{ r.hint }}</small> }</button> }
@@ -154,11 +156,22 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
               </div>
             } @else if (phone.tab() === 'positions') {
               <div class="positions">
-                <p class="muted small">Ce que vous avez déclaré, sujet par sujet. Les journalistes ont de la mémoire : changer d’avis est un revirement, de plus en plus coûteux.</p>
+                @if (series().current; as c) {
+                  <div class="serie" (click)="openSeries()">
+                    <strong>{{ c.kind === 'quiz' ? '🎯' : '🎙️' }} {{ c.title }}</strong>
+                    <small>{{ c.journalist }} · {{ c.outlet }} · question {{ c.step }} / {{ c.total }}{{ c.score ? ' · score ' + c.score : '' }}</small>
+                  </div>
+                } @else { <p class="muted small">Pas de série en cours. Un·e journaliste vous proposera bientôt une interview au long cours, ou une saison du quiz des élus.</p> }
+                @if (series().history.length) {
+                  <h4>Portraits et saisons</h4>
+                  <ul class="hist">@for (h of series().history; track h.sid) { <li [class]="'t-' + h.tone"><b>« {{ h.verdict }} »</b> <small class="muted">{{ h.outlet }} · {{ h.title }} · {{ game.month(h.week) }}</small></li> }</ul>
+                }
+                <h4>Vos prises de position</h4>
+                <p class="muted small">Les journalistes ont de la mémoire : changer d’avis est un revirement, de plus en plus coûteux, et double quand vous en aviez fait un engagement.</p>
                 @if (colles(); as c) { <p class="colles">🎯 Colles : <b>{{ c.right }}</b> bonne{{ c.right > 1 ? 's' : '' }} réponse{{ c.right > 1 ? 's' : '' }}, <b>{{ c.wrong }}</b> raté{{ c.wrong > 1 ? 's' : '' }}</p> }
                 <ul>
                   @for (p of positions(); track p.topic) {
-                    <li [class.flip]="p.flips > 0"><strong>{{ p.topic }}</strong><span>« {{ p.answer }} »</span>
+                    <li [class.flip]="p.flips > 0"><strong>{{ p.topic }}@if (p.engaged) { <em class="eng">engagement</em> }</strong><span>« {{ p.answer }} »</span>
                       <small class="muted">{{ game.month(p.week) }} · déclaré {{ p.times }} fois{{ p.flips ? ' · ' + p.flips + ' revirement' + (p.flips > 1 ? 's' : '') : '' }}</small></li>
                   } @empty { <li class="empty">Aucune prise de position pour l’instant. Les journalistes vous poseront bientôt la question.</li> }
                 </ul>
@@ -242,7 +255,12 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
       li { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 13px; }
       li.flip { border-color: var(--warn); }
       .small { font-size: 12px; margin: 0; }
-      .colles { margin: 8px 0 0; font-size: 13px; } }
+      .colles { margin: 8px 0 0; font-size: 13px; }
+      h4 { margin: 12px 0 0; font-size: 13px; }
+      .serie { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); cursor: pointer; font-size: 13px; }
+      .hist li { padding: 6px 10px; }
+      .hist .t-good { border-color: var(--good); } .hist .t-bad { border-color: var(--bad); }
+      .eng { font-style: normal; font-size: 10.5px; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); } }
     .heart { font-size: 13px; }
     .react-bar { display: inline-flex; gap: 2px; margin-top: 4px; button { border: 0; background: var(--surface); border-radius: 12px; padding: 1px 5px; cursor: pointer; font-size: 13px; } button:hover { transform: scale(1.15); } }
     .react-on { display: inline-block; margin-top: 3px; font-size: 14px; }
@@ -320,7 +338,7 @@ export class PhoneComponent {
     const dir = new Map(this.phone.directory().map(e => [e.key, e]));
     const out = new Map<string, { who: string; name: string; icon: string; last: string; week: number; unread: number; waiting: boolean; urgent: boolean }>();
     for (const m of this.all()) {
-      const t = out.get(m.who) ?? { who: m.who, name: dir.get(m.who)?.name ?? m.from, icon: dir.get(m.who)?.icon ?? (m.urgent ? '📞' : m.who === 'qcm:colle' ? '🎯' : m.who.startsWith('qcm:') ? '❓' : '💬'), last: m.text, week: m.week, unread: 0, waiting: false, urgent: false };
+      const t = out.get(m.who) ?? { who: m.who, name: dir.get(m.who)?.name ?? m.from, icon: dir.get(m.who)?.icon ?? (m.urgent ? '📞' : m.who === 'qcm:colle' || m.who === 'qcm:quiz' ? '🎯' : m.who.startsWith('qcm:') ? '🎙️' : '💬'), last: m.text, week: m.week, unread: 0, waiting: false, urgent: false };
       if (!m.outgoing && !m.read) t.unread++;
       if (!m.outgoing && m.replies && !m.answered) t.waiting = true;
       if (m.urgent && !m.answered) t.urgent = true;
@@ -364,6 +382,8 @@ export class PhoneComponent {
   protected readonly groups = computed(() => GROUPS.map(g => ({ label: g.label, entries: this.phone.directory().filter(e => e.kind === g.kind) })).filter(g => g.entries.length));
 
   protected readonly positions = computed(() => positionsList(this.game.s()));
+  protected readonly series = computed(() => seriesInfo(this.game.s()));
+  protected openSeries(): void { const w = this.game.s().phone?.dlg?.series?.who; if (w) this.phone.openThread(w); }
   protected readonly colles = computed(() => { const c = this.game.s().phone?.dlg?.colles; return c && c.right + c.wrong ? c : null; });
   protected readonly quick = QUICK_SMS;
   protected readonly reactions = REACTIONS;

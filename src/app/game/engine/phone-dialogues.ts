@@ -1,14 +1,11 @@
 import { DialogueState, Effect, GameState, PhoneMessage, PhoneReply } from '../models/game.models';
 import { DIALOGUES, DIALOGUE_BY_ID } from '../data/dialogues';
 import type { DialogueDef, DlgChoice, DlgNode, Speaker } from '../data/dialogue-types';
-import { COLLE_ASKERS, POSITIONS, POSITION_ASKERS, POSITION_BY_ID } from '../data/positions';
-import { QUIZ_QUESTIONS } from '../data/quiz';
-import { RANKS } from '../data/ranks';
+import { monthlyQcm, onQcmAnswer } from './phone-qcm';
 import { addMessage } from './phone';
-import { applyEffects, pushNews } from './effects';
+import { applyEffects } from './effects';
 import { mods } from './difficulty';
 import { Rng, clamp } from './rng';
-import { monthLabel } from './calendar';
 
 /* ============================================================
  *  Le moteur des conversations à embranchements, des prises de
@@ -22,8 +19,6 @@ import { monthLabel } from './calendar';
  *    de position (retenue ; changer d'avis coûte cher) ou une colle
  *    de culture politique (une bonne et trois mauvaises réponses).
  * ============================================================ */
-
-const LETTERS = ['A', 'B', 'C', 'D'];
 
 export function dlgState(d: GameState): DialogueState {
   const ph = d.phone!;
@@ -112,101 +107,6 @@ export function onDialogueAnswer(d: GameState, m: PhoneMessage, replyId: string,
   endRun(d, m.dlg.run, def.id);
 }
 
-/* ── Questions à choix multiple ──────────────────────────── */
-
-const rankOrderOf = (d: GameState) => RANKS[d.player.rankId]?.order ?? 0;
-
-function askPosition(d: GameState, rng: Rng): boolean {
-  const st = dlgState(d);
-  const order = rankOrderOf(d);
-  // On vous repose surtout les questions déjà posées il y a longtemps (le piège du revirement), sinon un sujet neuf
-  const old = POSITIONS.filter(t => st.positions[t.id] && d.week - st.positions[t.id].week >= 10);
-  const fresh = POSITIONS.filter(t => !st.positions[t.id] && (t.minOrder ?? 0) <= order);
-  const pool = old.length && rng.chance(0.35) ? old : fresh.length ? fresh : old;
-  if (!pool.length) return false;
-  const t = rng.pick(pool);
-  const asker = rng.pick(POSITION_ASKERS);
-  const again = st.positions[t.id];
-  const replies: PhoneReply[] = t.answers.map((a, i) => ({ id: a.id, label: `${LETTERS[i]}. ${a.label}`, effects: [...a.effects, ...(a.lean ? [{ kind: 'stance', delta: a.lean * 1.5 } as Effect] : [])] }));
-  addMessage(d, {
-    kind: 'sms', who: 'qcm:presse', from: 'La presse', role: 'Questions des journalistes',
-    text: `${asker.from} (${asker.role.toLowerCase()}) : ${again ? 'on vous l’a déjà demandé, mais nos lecteurs veulent savoir. ' : ''}${t.question}`,
-    replies, qcm: { kind: 'position', topic: t.id, asker: asker.from },
-  });
-  return true;
-}
-
-function askColle(d: GameState, rng: Rng): boolean {
-  const st = dlgState(d);
-  const pool = QUIZ_QUESTIONS.filter(q => !st.colles.asked.includes(q.q));
-  if (!pool.length) return false;
-  const q = rng.pick(pool);
-  const asker = rng.pick(COLLE_ASKERS);
-  const order = [0, 1, 2, 3].sort(() => rng.next() - 0.5);
-  const replies: PhoneReply[] = order.map((k, i) => ({ id: `r${k}`, label: `${LETTERS[i]}. ${q.a[k]}`, effects: [] }));
-  st.colles.asked.push(q.q);
-  if (st.colles.asked.length > 80) st.colles.asked.splice(0, st.colles.asked.length - 80);
-  addMessage(d, {
-    kind: 'sms', who: 'qcm:colle', from: 'Les colles', role: 'Questions de culture politique',
-    text: `${asker.from} (${asker.role.toLowerCase()}) : ${asker.tv ? 'petite question, on est à l’antenne dans une minute. ' : 'une petite colle pour vous. '}${q.q}`,
-    replies, qcm: { kind: 'colle', correct: 'r0', topic: q.q, asker: asker.tv ? 'tv' : 'prive' },
-  });
-  return true;
-}
-
-function onQcmAnswer(d: GameState, m: PhoneMessage, replyId: string, rng: Rng): void {
-  const st = dlgState(d);
-  const q = m.qcm!;
-  if (q.kind === 'colle') {
-    const right = replyId === q.correct;
-    const tv = q.asker === 'tv';
-    const good = m.replies?.find(r => r.id === q.correct)?.label.replace(/^[A-D]\. /, '') ?? '';
-    if (right) {
-      st.colles.right += 1;
-      const out = applyEffects(d, [{ kind: 'stat', stat: 'credibility', delta: tv ? 2 : 1 }, ...(tv ? [{ kind: 'stat', stat: 'popularity', delta: 1 } as Effect] : [])], {}, rng);
-      addMessage(d, { kind: 'sms', who: m.who, from: m.from, role: m.role, text: `Bonne réponse ! ${tv ? 'Le plateau applaudit.' : 'Impressionnant.'}`, read: true, summary: out });
-    } else {
-      st.colles.wrong += 1;
-      const out = applyEffects(d, [{ kind: 'stat', stat: 'credibility', delta: tv ? -4 : -1 }, ...(tv ? [{ kind: 'stat', stat: 'popularity', delta: -1 } as Effect] : [])], {}, rng);
-      addMessage(d, { kind: 'sms', who: m.who, from: m.from, role: m.role, text: `Raté… la bonne réponse était : ${good}.${tv ? ' La séquence tourne déjà sur les réseaux.' : ''}`, read: true, summary: out });
-      if (tv) pushNews(d, 'actu', 'negative', 'Colle en direct : un trou de mémoire qui fait le buzz', `À la question « ${q.topic} », mauvaise réponse. La bonne était : ${good}.`);
-    }
-    return;
-  }
-  // Prise de position : retenue ; changer d'avis est un revirement
-  const topic = POSITION_BY_ID.get(q.topic ?? '');
-  if (!topic) return;
-  const prev = st.positions[topic.id];
-  const label = topic.answers.find(a => a.id === replyId)?.label ?? '';
-  if (prev && prev.answer !== replyId) {
-    const flips = prev.flips + 1;
-    st.positions[topic.id] = { answer: replyId, week: d.week, times: prev.times + 1, flips };
-    const totalFlips = Object.values(st.positions).reduce((t, p) => t + p.flips, 0);
-    const out = applyEffects(d, [{ kind: 'stat', stat: 'credibility', delta: -(3 + 2 * flips + Math.min(4, totalFlips - 1)) }, { kind: 'momentum', delta: -4 }], {}, rng);
-    const before = topic.answers.find(a => a.id === prev.answer)?.label ?? '';
-    addMessage(d, { kind: 'sms', who: m.who, from: m.from, role: m.role, text: `Tiens… en ${monthLabel(prev.week)}, vous nous disiez plutôt : « ${before} ». On publiera les deux citations côte à côte.`, read: true, summary: out });
-    pushNews(d, 'actu', 'negative', `Volte-face sur ${topic.label.toLowerCase()}`, `Hier « ${before} », aujourd’hui « ${label} ». ${totalFlips >= 3 ? 'Les éditorialistes parlent de girouette.' : 'L’opposition ironise.'}`);
-  } else if (prev) {
-    st.positions[topic.id] = { ...prev, week: d.week, times: prev.times + 1 };
-    const out = applyEffects(d, [{ kind: 'stat', stat: 'credibility', delta: 2 }], {}, rng);
-    addMessage(d, { kind: 'sms', who: m.who, from: m.from, role: m.role, text: 'Vous n’avez pas varié d’un pouce depuis la dernière fois. Nos lecteurs apprécient la constance.', read: true, summary: out });
-  } else {
-    st.positions[topic.id] = { answer: replyId, week: d.week, times: 1, flips: 0 };
-    addMessage(d, { kind: 'sms', who: m.who, from: m.from, role: m.role, text: 'Merci, c’est noté. Votre réponse sera publiée demain.', read: true });
-  }
-}
-
-
-/** Vos prises de position, pour le téléphone */
-export function positionsList(d: GameState): { topic: string; answer: string; times: number; flips: number; week: number }[] {
-  const st = d.phone?.dlg;
-  if (!st) return [];
-  return Object.entries(st.positions).map(([id, p]) => {
-    const t = POSITION_BY_ID.get(id);
-    return { topic: t?.label ?? id, answer: t?.answers.find(a => a.id === p.answer)?.label ?? p.answer, times: p.times, flips: p.flips, week: p.week };
-  }).sort((a, b) => b.week - a.week);
-}
-
 /* ── Chaque mois ──────────────────────────────────────────── */
 
 function busy(d: GameState, who: string): boolean {
@@ -258,12 +158,8 @@ export function monthlyDialogues(d: GameState, rng: Rng): void {
       break;
     }
   }
-  // 4. Une question à choix multiple, de temps en temps
-  const lastQ = Number(d.player.flags['qcmWeek'] ?? -99);
-  if (d.week - lastQ >= 2 && !busy(d, 'qcm:presse') && !busy(d, 'qcm:colle') && rng.chance(rankOrderOf(d) >= 1 ? 0.45 : 0.3)) {
-    const ok = rng.chance(0.6) ? askPosition(d, rng) || askColle(d, rng) : askColle(d, rng) || askPosition(d, rng);
-    if (ok) d.player.flags['qcmWeek'] = d.week;
-  }
+  // 4. Les questions à choix multiple : séries d'interviews et quiz des élus
+  monthlyQcm(d, rng);
 }
 
 function safeEligible(def: DialogueDef, d: GameState): boolean {
