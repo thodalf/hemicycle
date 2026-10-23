@@ -8,6 +8,7 @@ import { LIFESTYLES, LIFESTYLE_BY_ID, RENOWN_TIERS, XP_PER_PERK, renownTier } fr
 import { perksIn, stressLevel } from '../../engine/character';
 import { LifestyleModalComponent } from '../lifestyle-modal/lifestyle-modal.component';
 import { TRAITS, traitLabel } from '../../data/traits';
+import { FOOD_LEVELS, OTHER_LEVELS, household, setHousehold } from '../../engine/household';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DOMAINS, DOMAIN_LABELS, Domain, STAT_LABELS, StatKey } from '../../models/game.models';
 import { GameStateService } from '../../services/game-state.service';
@@ -120,8 +121,30 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
           }
           <li class="sum"><span class="lbl">Rémunération totale</span><span class="mono">{{ r.total | number: '1.0-0' }} €</span></li>
         </ul>
+        <div class="house">
+          <div class="house-title">🏠 Budget du foyer</div>
+          <ul class="pay-lines small">
+            @for (h of r.household; track h.key) {
+              <li [class.off]="!h.amount"><span class="lbl">{{ h.label }}@if (h.note) { <small class="muted">{{ h.note }}</small> }</span><span class="mono neg">{{ h.amount ? '−' + (h.amount | number: '1.0-0') + ' €' : '—' }}</span></li>
+            }
+          </ul>
+          <div class="house-pick" role="group" aria-label="Nourriture">
+            <span>Nourriture</span>
+            @for (f of foodLevels; track $index) {
+              <button type="button" class="seg" [class.on]="house().food === $index" [title]="f.hint" (click)="setHouse('food', $index)">{{ f.label }}</button>
+            }
+          </div>
+          <small class="muted hint">{{ foodLevels[house().food].hint }}</small>
+          <div class="house-pick" role="group" aria-label="Autres dépenses">
+            <span>Autres</span>
+            @for (f of otherLevels; track $index) {
+              <button type="button" class="seg" [class.on]="house().other === $index" [title]="f.hint" (click)="setHouse('other', $index)">{{ f.label }}</button>
+            }
+          </div>
+          <small class="muted hint">{{ otherLevels[house().other].hint }}</small>
+        </div>
         <ul class="pay-lines small">
-          <li><span class="lbl">Mis de côté chaque mois<small class="muted">un tiers environ, le reste fait vivre le foyer</small></span><span class="mono pos">+{{ r.saved | number: '1.0-0' }} €</span></li>
+          <li><span class="lbl">Mis de côté chaque mois<small class="muted">ce qui reste, budget du foyer payé</small></span><span class="mono" [class.pos]="r.saved > 0" [class.neg]="r.saved < 0">{{ r.saved > 0 ? '+' : '' }}{{ r.saved | number: '1.0-0' }} €</span></li>
           @for (c of r.charges; track c.label) { <li><span class="lbl">{{ c.label }}@if (c.note) { <small class="muted">{{ c.note }}</small> }</span><span class="mono neg">−{{ c.amount | number: '1.0-0' }} €</span></li> }
           <li class="sum"><span class="lbl">Solde du mois</span><span class="mono" [class.neg]="r.net < 0" [class.pos]="r.net > 0">{{ r.net > 0 ? '+' : '' }}{{ r.net | number: '1.0-0' }} €</span></li>
         </ul>
@@ -277,6 +300,13 @@ const GAUGES: { key: StatKey; inverse?: boolean; hint: string }[] = [
       .pos { color: var(--good); } .neg { color: var(--bad); } }
     .pay-lines.small { font-size: 12.5px; }
     .civ { margin: 0; font-size: 11.5px; }
+    .house { display: grid; gap: 6px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); }
+    .house-title { font-weight: 600; font-size: 13px; }
+    .house-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 12px;
+      > span { min-width: 74px; color: var(--ink-2); }
+      .seg { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 3px 9px; font: 500 11.5px var(--font-body); cursor: pointer; }
+      .seg.on { background: var(--accent); border-color: var(--accent); color: #fff; } }
+    .house .hint { font-size: 11px; margin-top: -3px; }
     .link-btn { justify-self: start; border: 0; background: none; padding: 0; color: var(--accent); font: 600 11.5px var(--font-body); cursor: pointer; text-decoration: underline; }
     .pay-lines li.editor { display: grid; gap: 6px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2);
       label { display: grid; gap: 4px; font-size: 12.5px; } input { width: 100%; } .ed-btns { display: flex; gap: 6px; } }
@@ -370,6 +400,12 @@ export class ProfilePanelComponent {
 
   private readonly skillPoints = computed(() => this.game.player().skillPoints);
   protected readonly pay = computed(() => remuneration(this.game.s()));
+  protected readonly foodLevels = FOOD_LEVELS;
+  protected readonly otherLevels = OTHER_LEVELS;
+  protected readonly house = computed(() => household(this.game.s()));
+  protected setHouse(key: 'food' | 'other', v: number): void {
+    this.game.mutate(d => setHousehold(d, { [key]: v as 0 | 1 | 2 }));
+  }
   protected readonly limits = LEADER_PAY_LIMITS;
   protected readonly editing = signal<'party' | 'president' | null>(null);
   protected readonly draft = signal(0);

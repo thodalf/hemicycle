@@ -29,7 +29,7 @@ export const TALENTS: TalentDef[] = [
   { id: 'resilience', icon: '❤️', label: 'Résilience', effect: '+0,5 de santé chaque mois, par niveau.', max: 3, cost: 2 },
   { id: 'sang_froid', icon: '🧊', label: 'Sang-froid', effect: 'Les mini-jeux sont plus faciles (−7 % de difficulté par niveau).', max: 3, cost: 2 },
   { id: 'mobilisateur', icon: '📣', label: 'Mobilisateur·rice', effect: '+1 de dynamique de campagne chaque mois, par niveau.', max: 2, cost: 2 },
-  { id: 'gestionnaire', icon: '💶', label: 'Bon gestionnaire', effect: '+5 points de rémunération mis de côté chaque mois, par niveau.', max: 3, cost: 2 },
+  { id: 'gestionnaire', icon: '💶', label: 'Bon gestionnaire', effect: '−5 % sur les dépenses du foyer (hors impôt), par niveau.', max: 3, cost: 2 },
 ];
 export const TALENTS_BY_ID = new Map(TALENTS.map(t => [t.id, t]));
 

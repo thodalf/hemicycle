@@ -173,6 +173,8 @@ export interface Player {
   traits?: string[];
   /** Style de vie choisi, expérience et avantages débloqués */
   lifestyle?: { id: string; xp: number; perks: string[] } | null;
+  /** Budget du foyer : niveau de nourriture et des autres dépenses (0 sobre, 1 normal, 2 aisé) */
+  household?: { food: 0 | 1 | 2; other: 0 | 1 | 2 };
   /** Données des grandes décisions : allié réconcilié, chef des exclus, sujet du livre blanc… */
   edictData?: Record<string, string>;
   /** Renommée (s'accumule, se dépense pour les actions d'éclat) */
@@ -1471,6 +1473,8 @@ export interface Fronde {
   demand: 'ligne' | 'postes' | 'consultation' | 'demission';
   strength: number;
   since: number;
+  /** Née d'un pilier des requêtes trop bas ou trop haut */
+  pillar?: 'peuple' | 'parti' | 'medias' | 'puissants';
 }
 
 export interface ActivityState {

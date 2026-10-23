@@ -6,12 +6,14 @@ import { loanPayments } from './loans';
 import { weeklyCharges } from './patrimoine';
 import { placementEstimate, sideNote, sidePayable } from './side-income';
 import { frSigned } from './rng';
+import { HouseLine, householdLines } from './household';
 
 /* ============================================================
  *  Rémunération : ce que rapportent chaque mois le mandat ou
  *  le métier, la direction du parti, la haute fonction
- *  publique, la presse et le patrimoine. Les deux tiers
- *  partent dans le train de vie : un tiers est mis de côté.
+ *  publique, la presse et le patrimoine. Le budget du foyer
+ *  (impôt, loyer, nourriture, autres) est prélevé : le reste
+ *  est mis de côté.
  * ============================================================ */
 
 /** Rangs rémunérés comme membres du gouvernement */
@@ -30,13 +32,6 @@ export function trackMinisterialExit(d: GameState): void {
   p.flags['prevRankIdx'] = ids.indexOf(p.rankId);
 }
 
-/** Part de la rémunération épargnée chaque mois */
-export const SAVING_RATE = 0.35;
-
-/** Part épargnée, talent « Bon gestionnaire » compris */
-export function savingRate(d: GameState): number {
-  return SAVING_RATE + 0.05 * (d.player.talents?.['gestionnaire'] ?? 0);
-}
 
 /** Part « métier » des revenus d'un·e militant·e ou d'un·e conseiller·e : remplacée par le traitement de fonctionnaire */
 const JOB_PART: Partial<Record<RankId, number>> = { militant: 2400, conseiller_municipal: 2400 };
@@ -68,8 +63,10 @@ export interface Remuneration {
   lines: PayLine[];
   /** Rémunération totale brute du mois */
   total: number;
-  /** Ce qui est mis de côté (part épargnée + versements directs) */
+  /** Ce qui reste une fois le budget du foyer payé */
   saved: number;
+  /** Le budget du foyer : impôt, loyer, nourriture, autres */
+  household: HouseLine[];
   charges: PayLine[];
   /** Solde estimé du mois sur les fonds personnels */
   net: number;
@@ -180,9 +177,8 @@ export function remuneration(d: GameState): Remuneration {
   if (ch.rent) lines.push({ label: 'Loyers perçus', amount: ch.rent, direct: true });
 
   const total = lines.reduce((t, l) => t + l.amount, 0);
-  const savable = lines.filter(l => !l.direct).reduce((t, l) => t + l.amount, 0);
-  const direct = total - savable;
-  const saved = Math.round(savable * savingRate(d)) + direct;
+  const household = householdLines(d, total);
+  const saved = total - household.reduce((t, l) => t + l.amount, 0);
 
   const charges: PayLine[] = [];
   const tf = teamFunding(d);
@@ -192,11 +188,11 @@ export function remuneration(d: GameState): Remuneration {
   if (ch.loans) charges.push({ label: 'Crédits immobiliers', amount: ch.loans });
   if (ch.upkeep) charges.push({ label: 'Entretien des biens', amount: ch.upkeep });
   const net = saved - charges.reduce((t, c) => t + c.amount, 0);
-  return { lines, total, saved, charges, net };
+  return { lines, total, saved, household, charges, net };
 }
 
-/** Ce que la rémunération verse sur les fonds chaque mois (hors presse et loyers, versés à part) */
+/** Ce que la rémunération verse sur les fonds chaque mois, budget du foyer payé (presse, revenus annexes et loyers perçus sont versés à part) */
 export function monthlySavings(d: GameState): number {
   const r = remuneration(d);
-  return Math.round(r.lines.filter(l => !l.direct).reduce((t, l) => t + l.amount, 0) * savingRate(d));
+  return r.lines.filter(l => !l.direct).reduce((t, l) => t + l.amount, 0) - r.household.reduce((t, l) => t + l.amount, 0);
 }

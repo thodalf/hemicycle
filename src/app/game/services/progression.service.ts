@@ -10,6 +10,7 @@ import { weeklyNationalBudget } from '../engine/budget';
 import { weeklyBankruptcy } from '../engine/bankruptcy';
 import { assetAp, dossierDecayFactor, weeklyAssets } from '../engine/patrimoine';
 import { monthlyLoans } from '../engine/loans';
+import { monthlyHousehold } from '../engine/household';
 import { monthlyLeaderPay, monthlySavings, partyLeaderPay, trackMinisterialExit } from '../engine/remuneration';
 import { monthlySide } from '../engine/side-income';
 import { monthlyTeam } from '../engine/team-pay';
@@ -95,6 +96,7 @@ export class ProgressionService {
     // Revenus du mois (part épargnée), salaires de l'équipe, mensualités des prêts
     trackMinisterialExit(d);
     p.finances.personal += monthlySavings(d);
+    monthlyHousehold(d);
     // Le parti paie son chef ou sa cheffe
     const leadPay = partyLeaderPay(d);
     if (leadPay && d.partyFinance) d.partyFinance.treasury -= leadPay / 1000;

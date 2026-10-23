@@ -1,7 +1,7 @@
 import { monthlyDifficulty } from '../engine/difficulty';
 import { monthlyNemesis } from '../engine/nemesis';
 import { monthlyDialogues } from '../engine/phone-dialogues';
-import { monthlyRequetes } from '../engine/requetes';
+import { autoRequetes, monthlyRequetes } from '../engine/requetes';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Decision, DecisionChoice, Effect, GameState, STAT_LABELS, StatKey, Tone } from '../models/game.models';
 import { applyEffects, failureChance, meetsRequirement, pushNews, rollRisk } from '../engine/effects';
@@ -112,10 +112,13 @@ export class TurnService {
     const s = this.game.s();
     return s.pendingDecisions.filter(d => d.deadlineWeek <= s.week);
   });
+  /** Les requêtes du mois encore à trancher : obligatoire avant de clore le mois */
+  readonly requetesLeft = computed(() => this.game.s().requetes?.hand.length ?? 0);
+
   readonly canEndWeek = computed(() =>
     this.game.s().status === 'en_cours' && this.blocking().length === 0 && !this.game.s().debate && !this.game.s().protest && !this.game.s().scene
     && !this.game.s().vote && !this.game.s().activity && !(this.game.s().minigames ?? []).length
-    && !programPending(this.game.s()) && !nationalBudgetBlocking(this.game.s()));
+    && !programPending(this.game.s()) && !nationalBudgetBlocking(this.game.s()) && !this.requetesLeft());
 
   endWeek(): void {
     if (!this.canEndWeek()) return;
@@ -246,6 +249,7 @@ export class TurnService {
         if (waiting) { report.reason = `Mini-jeu à jouer : ${waiting.title}`; break; }
         const stop = this.autoResolve(d, rng);
         if (stop) { report.reason = `Décision à prendre : ${stop}`; break; }
+        if (report.months) autoRequetes(d, rng);
         this.advance(d, rng);
         report.months += 1;
         // Un projet qui aboutit peut ouvrir une scène (promotion du livre…) : on la laisse au joueur

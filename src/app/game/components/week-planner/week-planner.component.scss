@@ -86,6 +86,7 @@
   div { display: flex; justify-content: space-between; }
   dt { color: var(--ink-3); } dd { margin: 0; }
 }
+.link-req { border: 0; background: none; padding: 0; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 .blocking { margin: 0; padding: 8px 10px; border-radius: 7px; background: var(--bad-soft); color: var(--bad); font-size: 12.5px; font-weight: 500; }
 .end { width: 100%; padding: 10px; }
 .hint { margin: -4px 0 0; font-size: 12px; text-align: center; }

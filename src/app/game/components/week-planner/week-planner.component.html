@@ -108,7 +108,7 @@
       @if (category() !== 'projets') {
         <div class="filters" role="search">
           <input type="search" class="f-search" placeholder="Chercher une action…" [value]="search()" (input)="search.set($any($event.target).value)" aria-label="Chercher une action" />
-          <label class="f-tog"><input type="checkbox" [checked]="onlyAffordable()" (change)="onlyAffordable.set($any($event.target).checked)" /> Abordables</label>
+          @if (category() !== 'tout') { <label class="f-tog"><input type="checkbox" [checked]="onlyAffordable()" (change)="onlyAffordable.set($any($event.target).checked)" /> Abordables</label> }
           <label class="f-tog"><input type="checkbox" [checked]="onlyOccasions()" (change)="onlyOccasions.set($any($event.target).checked)" /> Occasions</label>
           <select class="f-sort" [value]="sortBy()" (change)="sortBy.set($any($event.target).value)" aria-label="Trier">
             <option value="defaut">Par famille</option>
@@ -271,6 +271,9 @@
           {{ turn.blocking().length }} décision(s) urgente(s) à trancher avant de clore le mois.
         </p>
       }
+      @if (turn.requetesLeft()) {
+        <p class="blocking"><button type="button" class="link-req" (click)="scrollToRequetes()">📜 {{ turn.requetesLeft() }} requête{{ turn.requetesLeft() > 1 ? 's' : '' }} à trancher</button> avant de clore le mois.</p>
+      }
       <button class="btn primary end" [disabled]="!turn.canEndWeek()" (click)="endWeek()">
         Terminer le mois →
       </button>
@@ -313,6 +316,8 @@
   <button type="button" class="fold" (click)="mini.set(!mini())" [attr.aria-label]="mini() ? 'Déplier la barre' : 'Replier la barre'">{{ mini() ? '▴' : '▾' }}</button>
   @if (turn.blocking().length) {
     <button type="button" class="btn warn-btn" (click)="scrollToDecisions()">{{ turn.blocking().length }} décision{{ turn.blocking().length > 1 ? 's' : '' }} à trancher</button>
+  } @else if (turn.requetesLeft()) {
+    <button type="button" class="btn warn-btn" (click)="scrollToRequetes()">📜 {{ turn.requetesLeft() }} requête{{ turn.requetesLeft() > 1 ? 's' : '' }} à trancher</button>
   } @else {
     <button type="button" class="btn primary" [disabled]="!turn.canEndWeek()" (click)="endWeek()">Terminer le mois →</button>
   }

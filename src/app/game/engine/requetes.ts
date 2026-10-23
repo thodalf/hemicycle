@@ -1,4 +1,5 @@
-import { Decision, DecisionChoice, Effect, GameState } from '../models/game.models';
+import { Decision, DecisionChoice, Effect, FactionId, GameState } from '../models/game.models';
+import { frondes } from './frondes';
 import type { Pillar, ReqCard, ReqSide } from '../data/requetes-types';
 import { CARDS_A } from '../data/requetes-a';
 import { CARDS_B } from '../data/requetes-b';
@@ -13,7 +14,9 @@ import { Rng, clamp, nextId } from './rng';
  *  quatre piliers (Peuple, Parti, Médias, Puissants) de 0 à 100.
  *  À 0 comme à 100, un pilier fait chuter : il faut alors
  *  trancher une crise (et le pilier repart d'une valeur moins
- *  extrême). Les cartes ignorées agacent. Certaines cartes
+ *  extrême). Trancher toutes les requêtes est obligatoire pour
+ *  clore le mois. Un pilier trop bas ou trop haut en fin de
+ *  mois soulève une fronde dans le parti. Certaines cartes
  *  appellent une suite des mois plus tard.
  * ============================================================ */
 
@@ -65,9 +68,22 @@ export function monthlyRequetes(d: GameState, rng: Rng): void {
     for (const p of touched) r.pillars[p] = clamp(r.pillars[p] - 3);
   }
   if (ignored.length) pushNews(d, 'actu', 'neutral', `${ignored.length} requête${ignored.length > 1 ? 's' : ''} restée${ignored.length > 1 ? 's' : ''} sans réponse`, 'On a frappé à votre porte, personne n’a répondu : chacun s’en souviendra.');
+  pillarFrondes(d, r.pillars);
   // Les piliers reviennent doucement vers l'équilibre
   for (const p of PILLARS) r.pillars[p.id] = clamp(r.pillars[p.id] + Math.sign(50 - r.pillars[p.id]) * 0.8);
-  // La nouvelle main
+  drawRequetes(d, rng);
+}
+
+/** Première main : une partie neuve (ou ancienne) reçoit ses requêtes tout de suite */
+export function ensureRequetes(d: GameState, rng: Rng): void {
+  if (d.requetes || d.status !== 'en_cours') return;
+  requetes(d);
+  drawRequetes(d, rng);
+}
+
+/** Tirer la main du mois : les suites d'abord, puis la pioche */
+function drawRequetes(d: GameState, rng: Rng): void {
+  const r = requetes(d);
   const hand: string[] = [];
   const due = r.chain.filter(x => x.week <= d.week);
   r.chain = r.chain.filter(x => x.week > d.week);
@@ -80,9 +96,63 @@ export function monthlyRequetes(d: GameState, rng: Rng): void {
     const k = Math.max(0, pool.findIndex(c => (roll -= c.weight ?? 1) < 0));
     hand.push(pool.splice(k, 1)[0].id);
   }
+  // Pioche épuisée : on ressort les requêtes les plus anciennes
+  if (hand.length < size) {
+    const old = CARDS.filter(c => !c.chainOnly && !hand.includes(c.id) && (!c.eligible || safe(() => c.eligible!(d))))
+      .sort((a, b) => (r.done[a.id] ?? -999) - (r.done[b.id] ?? -999));
+    for (const c of old) { if (hand.length >= size) break; hand.push(c.id); }
+  }
   for (const id of hand) r.done[id] = d.week;
   r.hand = hand;
   r.week = d.week;
+}
+
+/* ── Les piliers extrêmes soulèvent des frondes ───────────── */
+
+/** Quel courant se soulève, et pourquoi, quand un pilier est trop bas ou trop haut */
+const PILLAR_FRONDE: Record<Pillar, { low: [FactionId, string]; high: [FactionId, string] }> = {
+  peuple: { low: ['reformistes', 'vous reproche d’avoir perdu le contact avec le pays'], high: ['moderes', 'dénonce une dérive démagogique'] },
+  parti: { low: ['ligne_dure', 'vous accuse de trahir le parti'], high: ['reformistes', 'dénonce le culte du chef et un parti caporalisé'] },
+  medias: { low: ['moderes', 's’alarme : la presse vous a lâché·e, le parti devient infréquentable'], high: ['ligne_dure', 'vous reproche de vivre sur les plateaux plutôt que sur le terrain'] },
+  puissants: { low: ['moderes', 's’inquiète : les milieux économiques nous ferment leurs portes'], high: ['ligne_dure', 'vous accuse d’être vendu·e aux puissants'] },
+};
+export const FRONDE_LOW = 15;
+export const FRONDE_HIGH = 85;
+
+function pillarFrondes(d: GameState, pillars: Record<Pillar, number>): void {
+  const list = frondes(d);
+  for (const p of PILLARS) {
+    const v = pillars[p.id];
+    if (v > FRONDE_LOW && v < FRONDE_HIGH) continue;
+    const high = v >= FRONDE_HIGH;
+    const [fid, why] = PILLAR_FRONDE[p.id][high ? 'high' : 'low'];
+    const f = d.party.factions.find(x => x.id === fid);
+    if (!f) continue;
+    f.supportForPlayer = clamp(f.supportForPlayer - 3);
+    const fr = list.find(x => x.factionId === fid);
+    if (fr) {
+      fr.strength = clamp(fr.strength + 12);
+      pushNews(d, 'parti', 'negative', `La fronde ${f.name.toLowerCase()} s’amplifie`, `${p.icon} ${p.label} ${high ? 'au plus haut' : 'au plus bas'} : le courant ${why}.`);
+    } else {
+      list.push({ factionId: fid, demand: high ? 'consultation' : 'ligne', strength: 28, since: d.week, pillar: p.id });
+      pushNews(d, 'parti', 'negative', `Fronde : ${f.name}`, `${p.icon} ${p.label} ${high ? 'au plus haut' : 'au plus bas'} : le courant ${f.name.toLowerCase()} ${why}.`);
+    }
+  }
+}
+
+/** Trancher à la place du joueur (projet au long cours) : la réponse qui garde les piliers au plus près de l'équilibre */
+export function autoRequetes(d: GameState, rng: Rng): number {
+  const r = requetes(d);
+  let n = 0;
+  for (const id of [...r.hand]) {
+    const c = CARD_BY_ID.get(id);
+    if (!c) { r.hand = r.hand.filter(x => x !== id); continue; }
+    const score = (side: ReqSide) => PILLARS.reduce((t, p) => t + Math.abs(r.pillars[p.id] + (side.pillars[p.id] ?? 0) - 50), 0);
+    answerRequete(d, id, score(c.left) <= score(c.right) ? 'left' : 'right', rng);
+    n++;
+  }
+  if (n) pushNews(d, 'actu', 'neutral', `${n} requête${n > 1 ? 's' : ''} tranchée${n > 1 ? 's' : ''} en votre absence`, 'Votre équipe a répondu au plus prudent.');
+  return n;
 }
 
 export interface RequeteResult { outcome: string; summary: string[]; deltas: Partial<Record<Pillar, number>>; fall?: string }

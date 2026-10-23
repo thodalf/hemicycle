@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { GameStateService } from '../../services/game-state.service';
-import { CARD_BY_ID, PILLARS, RequeteResult, answerRequete, requetes, textOf } from '../../engine/requetes';
+import { CARD_BY_ID, FRONDE_HIGH, FRONDE_LOW, PILLARS, RequeteResult, answerRequete, ensureRequetes, textOf } from '../../engine/requetes';
 import type { Pillar, ReqCard } from '../../data/requetes-types';
 
 /* ============================================================
@@ -15,14 +15,14 @@ import type { Pillar, ReqCard } from '../../data/requetes-types';
   selector: 'app-requetes',
   template: `
     @if (visible()) {
-      <section class="card req" aria-label="Les requêtes du mois">
+      <section class="card req" id="requetes" [class.pending]="hand().length > 0" aria-label="Les requêtes du mois">
         <header class="head">
           <h2 class="card-title">📜 Les requêtes du mois</h2>
-          <small class="muted">{{ hand().length ? hand().length + ' en attente' : 'Toutes traitées' }}</small>
+          <small class="muted">{{ hand().length ? hand().length + ' à trancher avant la fin du mois' : 'Toutes traitées ✓' }}</small>
         </header>
         <div class="pillars" role="group" aria-label="Les quatre piliers">
           @for (p of pillars(); track p.id) {
-            <div class="pil" [class.danger]="p.value <= 15 || p.value >= 85" [title]="p.label + ' : ' + p.value + ' / 100'">
+            <div class="pil" [class.danger]="p.value <= low || p.value >= high" [title]="p.label + ' : ' + p.value + ' / 100'">
               <span class="gauge"><span class="fill" [style.height.%]="p.value"></span><span class="ico">{{ p.icon }}</span></span>
               <span class="dot" [class]="'dot s' + preview()[p.id]"></span>
               <small>{{ p.label }}</small>
@@ -52,15 +52,16 @@ import type { Pillar, ReqCard } from '../../data/requetes-types';
             <button type="button" class="btn" (mouseenter)="hover.set('left')" (mouseleave)="hover.set(null)" (focus)="hover.set('left')" (blur)="hover.set(null)" (click)="choose('left')">◀ {{ c.left.label }}</button>
             <button type="button" class="btn" (mouseenter)="hover.set('right')" (mouseleave)="hover.set(null)" (focus)="hover.set('right')" (blur)="hover.set(null)" (click)="choose('right')">{{ c.right.label }} ▶</button>
           </div>
-          <p class="muted small">Glissez la carte ou choisissez. Les points montrent quels piliers vont bouger, pas dans quel sens. À 0 comme à 100, un pilier vous fait chuter.</p>
+          <p class="muted small">Glissez la carte ou choisissez. Les points montrent quels piliers vont bouger, pas dans quel sens. Sous {{ low }} ou au-dessus de {{ high }} en fin de mois, un pilier soulève une fronde dans le parti ; à 0 comme à 100, il vous fait chuter.</p>
         } @else {
-          <p class="muted small">Plus de requête ce mois-ci. Les suivantes arriveront le mois prochain ; celles qu’on laisse sans réponse agacent.</p>
+          <p class="muted small">Toutes les requêtes du mois sont tranchées. Les suivantes arriveront le mois prochain.</p>
         }
       </section>
     }
   `,
   styles: [`
-    .req { display: grid; gap: 10px; overflow: hidden; }
+    .req { display: grid; gap: 10px; overflow: hidden; scroll-margin-top: 70px; }
+    .req.pending { border-color: var(--warn); box-shadow: 0 0 0 2px color-mix(in srgb, var(--warn) 30%, transparent); }
     .head { display: flex; justify-content: space-between; align-items: baseline; }
     .head h2 { margin: 0; }
     .pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
@@ -95,6 +96,8 @@ import type { Pillar, ReqCard } from '../../data/requetes-types';
 })
 export class RequetesComponent {
   private readonly game = inject(GameStateService);
+  protected readonly low = FRONDE_LOW;
+  protected readonly high = FRONDE_HIGH;
   protected readonly hover = signal<'left' | 'right' | null>(null);
   protected readonly dx = signal(0);
   protected readonly dragging = signal(false);
@@ -151,6 +154,6 @@ export class RequetesComponent {
 
   constructor() {
     // Toujours un état prêt (les anciennes parties n'en ont pas)
-    if (!this.game.s().requetes) queueMicrotask(() => this.game.mutate(d => { requetes(d); }));
+    if (!this.game.s().requetes) queueMicrotask(() => this.game.mutate((d, rng) => ensureRequetes(d, rng)));
   }
 }

@@ -251,7 +251,11 @@ export class WeekPlannerComponent {
     let list = this.planner.offered().filter(a => cat === 'tout' || a.category === cat);
     if (q) list = list.filter(a => norm(`${a.label} ${a.description} ${CATEGORY_LABELS[a.category]}`).includes(q));
     if (this.onlyOccasions()) list = list.filter(a => !!this.occasion(a));
-    if (this.onlyAffordable()) { this.planner.plan(); list = list.filter(a => this.availability(a).ok); }
+    // Dans « Tout », les actions injouables disparaissent (sauf celles déjà prévues) ; les onglets par catégorie les montrent encore
+    if (this.onlyAffordable() || cat === 'tout') {
+      const planned = new Set(this.planner.plan().map(p => p.actionId));
+      list = list.filter(a => planned.has(a.id) || this.availability(a).ok);
+    }
     const sort = this.sortBy();
     const cost = (a: ActionDefinition) => this.costOf(a).ap;
     // Les occasions d'abord, puis la main du mois et les urgences (crises, sagas…), l'argent, la santé et le repos à la fin
@@ -412,6 +416,10 @@ export class WeekPlannerComponent {
 
   protected scrollToPlan(): void {
     document.querySelector('app-week-planner .plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  protected scrollToRequetes(): void {
+    document.getElementById('requetes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   protected scrollToDecisions(): void {

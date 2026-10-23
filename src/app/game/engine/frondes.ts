@@ -24,7 +24,9 @@ export function frondes(d: GameState): Fronde[] {
 
 /** Chaque mois : les courants mécontents s'organisent */
 export function monthlyFrondes(d: GameState, rng: Rng): void {
-  if (d.status !== 'en_cours' || rankOrder(d.player.rankId) < 1) return;
+  if (d.status !== 'en_cours') return;
+  // Les militants ne voient pas naître de fronde de courant ; celles des requêtes, si
+  const low = rankOrder(d.player.rankId) < 1;
   const list = frondes(d);
   const dread = d.player.dread ?? 0;
   const nego = d.player.lifestyle?.perks.includes('nego_3') ? 0.8 : 1;
@@ -33,7 +35,7 @@ export function monthlyFrondes(d: GameState, rng: Rng): void {
   const pact = decisionActive(d, 'pacte_courants') ? 0.5 : 1;
   for (const f of d.party.factions) {
     let fr = list.find(x => x.factionId === f.id);
-    if (!fr && !purged && f.supportForPlayer < 30 && rng.chance(0.25)) {
+    if (!fr && !low && !purged && f.supportForPlayer < 30 && rng.chance(0.25)) {
       const leader = d.party.leaderNpcId === 'player';
       const demand: Fronde['demand'] = leader && f.supportForPlayer < 18 ? 'demission' : rng.pick(['ligne', 'postes', 'consultation'] as const);
       fr = { factionId: f.id, demand, strength: 20, since: d.week };
@@ -41,9 +43,12 @@ export function monthlyFrondes(d: GameState, rng: Rng): void {
       pushNews(d, 'parti', 'negative', `Fronde : ${f.name}`, `Le courant ${f.name.toLowerCase()} s’organise et ${DEMANDS[demand].text}.`);
     }
     if (!fr) continue;
-    const grow = ((35 - f.supportForPlayer) / 4 + (50 - d.party.cohesion) / 12) * nego;
+    // Une fronde née d'un pilier grandit tant que le pilier reste extrême, et s'éteint quand il revient
+    const pv = fr.pillar ? d.requetes?.pillars[fr.pillar] ?? 50 : null;
+    const grow = pv !== null ? (pv <= 20 || pv >= 80 ? 7 : -8) * nego
+      : ((35 - f.supportForPlayer) / 4 + (50 - d.party.cohesion) / 12) * nego;
     fr.strength = clamp(fr.strength + (grow > 0 ? grow * pact : grow) - dread / 25);
-    if (f.supportForPlayer >= 45 || fr.strength <= 0) {
+    if ((pv === null && f.supportForPlayer >= 45) || fr.strength <= 0) {
       d.frondes = list.filter(x => x !== fr);
       pushNews(d, 'parti', 'positive', `La fronde ${f.name.toLowerCase()} s’éteint`, 'Les mécontents rentrent dans le rang.');
       continue;
