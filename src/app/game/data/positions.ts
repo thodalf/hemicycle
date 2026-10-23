@@ -84,11 +84,11 @@ export const POSITION_ASKERS: { from: string; role: string }[] = [
 
 /** Les journalistes qui mènent les interviews au long cours (personnages fictifs) */
 export const JOURNALISTS: { name: string; outlet: string; fem: boolean; style: 'dur' | 'courtois' | 'malicieux' }[] = [
-  { name: 'Claire Vasseur', outlet: 'Le Parisien', fem: true, style: 'courtois' },
+  { name: 'Claire Vasselin', outlet: 'Le Parisien', fem: true, style: 'courtois' },
   { name: 'Mathieu Roux', outlet: 'Le Monde', fem: false, style: 'dur' },
   { name: 'Sonia Belkacem', outlet: 'France Info', fem: true, style: 'malicieux' },
   { name: 'Antoine Lefort', outlet: 'Le Figaro', fem: false, style: 'dur' },
-  { name: 'Inès Moreau', outlet: 'Libération', fem: true, style: 'malicieux' },
+  { name: 'Inès Morvan', outlet: 'Libération', fem: true, style: 'malicieux' },
   { name: 'Paul Guérin', outlet: 'Ouest-France', fem: false, style: 'courtois' },
   { name: 'Julie Arnaud', outlet: 'BFM', fem: true, style: 'dur' },
   { name: 'Hugo Lambert', outlet: 'L’Opinion', fem: false, style: 'courtois' },

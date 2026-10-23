@@ -2,12 +2,14 @@ import { Effect, GameState, PhoneMessage, PhoneReply, QcmSeries } from '../model
 import { JOURNALISTS, POSITIONS, POSITION_BY_ID, PositionTopic, SERIES_TITLES } from '../data/positions';
 import { QUIZ_QUESTIONS } from '../data/quiz';
 import { RANKS } from '../data/ranks';
-import { addMessage } from './phone';
+import { addMessage, directory as directoryOf } from './phone';
 import { applyEffects, pushNews } from './effects';
 import { mods } from './difficulty';
 import { monthLabel } from './calendar';
 import { Rng, clamp } from './rng';
 import { dlgState } from './phone-dialogues';
+import { ARCHETYPES, SeriesArchetype, SeriesCtx, archetypeFor } from '../data/series-archetypes';
+import type { PhoneEntry } from './phone';
 
 /* ============================================================
  *  Les questions à choix multiple, en séries au long cours.
@@ -97,8 +99,12 @@ function pickTopic(d: GameState, s: QcmSeries, rng: Rng): PositionTopic | null {
   const asked = new Set(s.answers.map(a => a.topic));
   const order = orderOf(d);
   // Le piège : un sujet sur lequel vous vous êtes déjà prononcé·e il y a longtemps
-  const old = POSITIONS.filter(t => !asked.has(t.id) && stx.positions[t.id] && d.week - stx.positions[t.id].week >= 8);
-  const fresh = POSITIONS.filter(t => !asked.has(t.id) && !stx.positions[t.id] && (t.minOrder ?? 0) <= order);
+  const arch = s.archetype ? ARCHETYPES[s.archetype] : null;
+  const base = arch ? POSITIONS.filter(t => arch.topics.includes(t.id)) : POSITIONS;
+  const all = base.length >= s.total ? base : POSITIONS;
+  const old = all.filter(t => !asked.has(t.id) && stx.positions[t.id] && d.week - stx.positions[t.id].week >= 8);
+  const fresh = all.filter(t => !asked.has(t.id) && !stx.positions[t.id] && (t.minOrder ?? 0) <= order);
+  if (arch && !fresh.length && !old.length) { const any = all.filter(t => !asked.has(t.id)); return any.length ? rng.pick(any) : null; }
   const pool = old.length && (s.step >= 2 && rng.chance(0.4)) ? old : fresh.length ? fresh : old;
   return pool.length ? rng.pick(pool) : null;
 }
@@ -111,8 +117,8 @@ function askMain(d: GameState, s: QcmSeries, rng: Rng): void {
   const prevTopic = prev ? POSITION_BY_ID.get(prev.topic) : null;
   const known = stx.positions[t.id];
   const intro = prev && prevTopic
-    ? `Suite de notre série. La dernière fois, sur ${prevTopic.label.toLowerCase()}, vous m’avez répondu « ${prevTopic.answers.find(a => a.id === prev.answer)?.label ?? '…'} ». `
-    : 'Première question. ';
+    ? `${s.kind === 'echange' ? 'On reprend notre discussion' : 'Suite de notre série'}. La dernière fois, sur ${prevTopic.label.toLowerCase()}, vous m’avez répondu « ${prevTopic.answers.find(a => a.id === prev.answer)?.label ?? '…'} ». `
+    : s.kind === 'echange' ? '' : 'Première question. ';
   const trap = known ? `Vous vous êtes déjà exprimé${e(d, '', 'e')} sur ce sujet, je le sais. ` : '';
   const replies: PhoneReply[] = t.answers.map((a, i) => opt(a.id, `${LETTERS[i]}. ${a.label}`, [...a.effects, ...(a.lean ? [{ kind: 'stance', delta: a.lean * 1.5 } as Effect] : [])]));
   if (!s.joker) replies.push(opt('joker', `${LETTERS[replies.length]}. Je ne réponds pas à cette question`, [], 'Une seule fois par série ; on notera l’esquive'));
@@ -147,8 +153,9 @@ function recordPosition(d: GameState, topicId: string, answerId: string, rng: Rn
 }
 
 /** La relance : elle dépend de ce que vous venez de répondre */
-function relance(d: GameState, s: QcmSeries, topic: PositionTopic, answerId: string, flip: { flip: boolean; before?: string; when?: number }): void {
+function relance(d: GameState, s: QcmSeries, topic: PositionTopic, answerId: string, flip: { flip: boolean; before?: string; when?: number }, rng: Rng): void {
   const a = topic.answers.find(x => x.id === answerId)!;
+  if (s.kind === 'echange' && !flip.flip) { relanceEchange(d, s, topic, a.lean, rng); return; }
   const party = Math.sign(d.party.position);
   if (flip.flip) {
     ask(d, s, `Attendez. En ${monthLabel(flip.when ?? d.week)}, vous disiez : « ${flip.before} ». Aujourd’hui : « ${a.label} ». Qu’est-ce qui a changé ?`, [
@@ -240,6 +247,30 @@ function onRelance(d: GameState, s: QcmSeries, m: PhoneMessage, replyId: string,
       say('Merci d’avoir tranché. C’est plus clair.', [st('credibility', 1)]);
       break;
     }
+    case 'e_agree':
+      if (replyId === 'promettre' && topic) {
+        s.promised = (s.promised ?? 0) + 1;
+        (dlgState(d).engagements ??= {})[topic.id] = d.week;
+        say('C’est une promesse, alors. Je m’en souviendrai.', [st('credibility', 1)]);
+      } else if (replyId === 'nuancer') { bumpAgree(s, -0.1); say('Avec des nuances… d’accord.'); }
+      else say('Discrétion, compris. Ça reste entre nous.');
+      break;
+    case 'e_disagree':
+      if (replyId === 'revoir' && topic && s.ideal !== undefined) {
+        const best = [...topic.answers].sort((x, y) => Math.abs(x.lean - s.ideal!) - Math.abs(y.lean - s.ideal!))[0];
+        const stx = dlgState(d);
+        const cur = stx.positions[topic.id];
+        if (cur && cur.week === d.week) stx.positions[topic.id] = { ...cur, answer: best.id };
+        const last = s.answers.at(-1);
+        if (last && last.topic === topic.id) { last.answer = best.id; last.lean = best.lean; }
+        s.agree![s.agree!.length - 1] = agreement(best.lean, s.ideal);
+        say(`Donc vous vous rangez à « ${best.label} ». Je préfère ça.`, [st('credibility', -1)]);
+      } else if (replyId === 'expliquer') {
+        const ok = rng.chance(clamp(0.3 + (d.player.stats.influence + d.player.stats.credibility - 100) / 250, 0.15, 0.75));
+        if (ok) bumpAgree(s, 0.3);
+        say(ok ? 'Vous m’avez presque convaincu·e. Je vous accorde que l’argument se tient.' : 'Non, vraiment, vous ne me convainquez pas.', ok ? [st('influence', 1)] : []);
+      } else say('Au moins, vous êtes constant·e. Je le respecte.', [st('credibility', 1)]);
+      break;
     case 'engagement':
       if (replyId === 'engage' && topic) {
         s.engagements.push(topic.id);
@@ -256,6 +287,11 @@ function onRelance(d: GameState, s: QcmSeries, m: PhoneMessage, replyId: string,
 /* ── Le portrait ──────────────────────────────────────────── */
 
 function publishPortrait(d: GameState, s: QcmSeries, rng: Rng): void {
+  if (s.kind === 'echange') finishEchange(d, s, rng);
+  else publishInterview(d, s, rng);
+}
+
+function publishInterview(d: GameState, s: QcmSeries, rng: Rng): void {
   const leans = s.answers.map(a => a.lean);
   const n = Math.max(1, leans.length);
   const mean = leans.reduce((t, x) => t + x, 0) / n;
@@ -306,6 +342,104 @@ function publishPortrait(d: GameState, s: QcmSeries, rng: Rng): void {
   (stx.history ??= []).push({ sid: s.sid, kind: 'interview', title: s.title, outlet: s.outlet, verdict, tone, week: d.week });
   stx.series = null;
   stx.nextSeries = d.week + 3 + Math.floor(rng.next() * 3);
+}
+
+/* ── Les discussions de fond avec un contact ───────────── */
+
+const agreement = (lean: number, ideal: number) => clamp(1 - Math.abs(lean - ideal) / 4, 0, 1);
+function bumpAgree(s: QcmSeries, delta: number): void {
+  if (!s.agree?.length) return;
+  s.agree[s.agree.length - 1] = clamp(s.agree[s.agree.length - 1] + delta, 0, 1);
+}
+
+function ctxOf(d: GameState, s: QcmSeries): SeriesCtx {
+  return { d, npcId: s.npcId, contactId: s.contactId, recruitId: s.recruitId, name: s.journalist };
+}
+
+/** Une discussion de fond avec un contact du répertoire (il la propose, ou vous l'appelez pour la lancer) */
+export function startEchange(d: GameState, entry: PhoneEntry, rng: Rng, byPlayer: boolean): boolean {
+  const stx = dlgState(d);
+  if (stx.series) return false;
+  const archId = archetypeFor(entry.kind, entry.key, d);
+  const arch = archId ? ARCHETYPES[archId] : null;
+  if (!arch) return false;
+  const k = entry.key;
+  const npcId = k.startsWith('perso:') ? k.slice(6) : k.startsWith('collegue:') ? k.slice(9) : k === 'chef' ? d.party.leaderNpcId ?? undefined : undefined;
+  const s: QcmSeries = {
+    sid: `ec-${d.week}-${k}`, kind: 'echange', journalist: entry.name, outlet: entry.role, title: arch.title.replace('{nom}', entry.name), who: k,
+    accepted: byPlayer, step: 0, total: arch.questions, nextWeek: d.week, since: d.week,
+    answers: [], engagements: [], flips: 0, evasions: 0, joker: false, dissidences: 0, right: 0, wrong: 0, streak: 0, rivals: [],
+    archetype: arch.id, agree: [], promised: 0, byPlayer,
+    ...(npcId && npcId !== 'player' ? { npcId } : {}),
+    ...(k.startsWith('contact:') ? { contactId: k.slice(8) } : {}),
+    ...(k.startsWith('equipe:') ? { recruitId: k.slice(7) } : {}),
+  };
+  s.ideal = arch.ideal(ctxOf(d, s));
+  stx.series = s;
+  d.player.flags[`serie_${k}`] = d.week;
+  const intro = arch.intro.replace('{nom}', entry.name).replace('{moi}', d.player.name);
+  if (byPlayer) {
+    post(d, s, `Une discussion de fond ? Volontiers. ${s.total} questions, une par mois, et je vous dirai à la fin ce que j’en retiens.`, { read: true });
+    askMain(d, s, rng);
+  } else {
+    ask(d, s, intro, [
+      opt('oui', 'Avec plaisir, je vous écoute', [], `${s.total} questions sur plusieurs mois ; le bilan pèsera sur votre relation`),
+      opt('non', 'Une autre fois', []),
+    ], 'intro');
+  }
+  return true;
+}
+
+function relanceEchange(d: GameState, s: QcmSeries, topic: PositionTopic, lean: number, rng: Rng): void {
+  const arch = ARCHETYPES[s.archetype!];
+  const a = agreement(lean, s.ideal ?? 0);
+  s.agree!.push(a);
+  if (a >= 0.75) {
+    ask(d, s, arch.agree, [
+      opt('promettre', 'Oui, je m’y engage', [], 'Une promesse : la renier plus tard coûtera double'),
+      opt('discret', 'Je préfère rester discret·e là-dessus'),
+      opt('nuancer', 'Oui, mais avec des nuances'),
+    ], 'relance', { topic: topic.id, relance: 'e_agree' });
+  } else if (a <= 0.45) {
+    ask(d, s, arch.disagree, [
+      opt('tenir', 'Je maintiens, par conviction'),
+      opt('revoir', 'Vous avez peut-être raison, je révise', [], 'Vous vous rangez à son avis'),
+      opt('expliquer', 'Laissez-moi vous convaincre', [], 'Il faut de l’influence et de la crédibilité'),
+    ], 'relance', { topic: topic.id, relance: 'e_disagree' });
+  } else {
+    post(d, s, rng.chance(0.5) ? 'Je vois. Ce n’est pas tout à fait ce que j’espérais, mais je comprends.' : 'Hum. Une réponse de compromis. Je note.', { read: true });
+    if (s.step >= s.total) s.nextWeek = d.week + 1; else nextStep(d, s, rng);
+  }
+}
+
+function finishEchange(d: GameState, s: QcmSeries, rng: Rng): void {
+  const arch: SeriesArchetype = ARCHETYPES[s.archetype!];
+  const ag = s.agree ?? [];
+  const score = (ag.length ? ag.reduce((t, x) => t + x, 0) / ag.length : 0.3) + (s.promised ?? 0) * 0.05 - s.flips * 0.15 - s.evasions * 0.1;
+  const tone: 'good' | 'mixed' | 'bad' = score >= 0.68 ? 'good' : score >= 0.45 ? 'mixed' : 'bad';
+  const v = arch[tone];
+  const summary = applyEffects(d, v.effects(ctxOf(d, s)), { reason: s.title }, rng);
+  post(d, s, `${s.flips ? 'Vous avez changé d’avis devant moi, ça m’a marqué. ' : ''}${v.text}`, {
+    summary,
+    replies: [opt('merci', 'Merci pour ces échanges'), opt('reprendre', 'On recommencera', [st('stress', -1)])],
+    qcm: { kind: 'portrait', sid: s.sid },
+  });
+  const stx = dlgState(d);
+  const verdict = tone === 'good' ? 'Accord' : tone === 'mixed' ? 'Respect mutuel' : 'Désaccord';
+  (stx.history ??= []).push({ sid: s.sid, kind: 'echange', title: s.title, outlet: s.journalist, verdict, tone, week: d.week });
+  d.player.flags[`mem_serie_${s.archetype}_${tone}`] = Number(d.player.flags[`mem_serie_${s.archetype}_${tone}`] ?? 0) + 1;
+  stx.series = null;
+  stx.nextSeries = d.week + 2 + Math.floor(rng.next() * 3);
+}
+
+/** Peut-on proposer une discussion de fond à ce contact ? */
+export function echangeBlock(d: GameState, e: PhoneEntry): string | null {
+  if (!archetypeFor(e.kind, e.key, d)) return 'Pas de discussion de fond possible';
+  const stx = d.phone?.dlg;
+  if (stx?.series) return stx.series.who === e.key ? 'Discussion déjà en cours' : `Une série est déjà en cours (${stx.series.journalist})`;
+  const last = Number(d.player.flags[`serie_${e.key}`] ?? -99);
+  if (d.week - last < 12) return 'Vous avez déjà eu cette discussion cette année';
+  return null;
 }
 
 /* ── Le quiz ──────────────────────────────────────────────── */
@@ -402,6 +536,12 @@ export function onQcmAnswer(d: GameState, m: PhoneMessage, replyId: string, rng:
   }
   if (!s || s.sid !== q.sid) return;
   if (q.kind === 'intro') {
+    if (replyId === 'non' && s.kind === 'echange') {
+      post(d, s, 'Une autre fois, alors.', { read: true });
+      stx.series = null;
+      stx.nextSeries = d.week + 2;
+      return;
+    }
     if (replyId === 'non') {
       post(d, s, s.kind === 'quiz' ? 'Dommage ! Nous jouerons sans vous.' : 'Dommage. Nous écrirons le portrait quand même, avec une chaise vide.', { read: true });
       if (s.kind === 'interview') pushNews(d, 'actu', 'negative', `${s.outlet} : la chaise vide`, `${d.player.name} a refusé de répondre à notre série « ${s.title} ».`);
@@ -412,7 +552,7 @@ export function onQcmAnswer(d: GameState, m: PhoneMessage, replyId: string, rng:
     }
     s.accepted = true;
     s.relecture = replyId === 'relecture';
-    post(d, s, s.kind === 'quiz' ? 'Parfait ! On attaque tout de suite.' : s.relecture ? 'Relecture… Soit. On commence.' : 'Parfait. On commence tout de suite.', { read: true });
+    post(d, s, s.kind === 'quiz' ? 'Parfait ! On attaque tout de suite.' : s.kind === 'echange' ? 'Merci. Je commence.' : s.relecture ? 'Relecture… Soit. On commence.' : 'Parfait. On commence tout de suite.', { read: true });
     if (s.kind === 'quiz') askQuiz(d, s, rng); else askMain(d, s, rng);
     return;
   }
@@ -439,7 +579,7 @@ export function onQcmAnswer(d: GameState, m: PhoneMessage, replyId: string, rng:
     if (r.flip) s.flips += 1;
     s.answers.push({ topic: topic.id, answer: replyId, lean: topic.answers.find(a => a.id === replyId)?.lean ?? 0, week: d.week });
     if (r.summary.length) m.summary = [...(m.summary ?? []), ...r.summary];
-    relance(d, s, topic, replyId, r);
+    relance(d, s, topic, replyId, r, rng);
   }
 }
 
@@ -469,9 +609,9 @@ export function monthlyQcm(d: GameState, rng: Rng): void {
       open.answered = 'Sans réponse';
       if (!s.accepted) { stx.series = null; stx.nextSeries = d.week + 3; return; }
       s.evasions += 1;
-      post(d, s, s.kind === 'quiz' ? 'Pas de réponse… on compte la question comme ratée.' : 'Toujours pas de réponse. Je l’écrirai : « n’a pas répondu ».');
+      post(d, s, s.kind === 'quiz' ? 'Pas de réponse… on compte la question comme ratée.' : s.kind === 'echange' ? 'Vous ne répondez plus ? Je prends note de votre silence.' : 'Toujours pas de réponse. Je l’écrirai : « n’a pas répondu ».');
       if (s.kind === 'quiz') { s.wrong += 1; s.streak = 0; }
-      if (s.kind === 'interview' && s.evasions >= 3) { publishPortrait(d, s, rng); return; }
+      if (s.kind !== 'quiz' && s.evasions >= 3) { publishPortrait(d, s, rng); return; }
       s.nextWeek = d.week;
     } else if (open) return;
     if (!s.accepted || d.week < s.nextWeek) return;
@@ -482,7 +622,12 @@ export function monthlyQcm(d: GameState, rng: Rng): void {
   }
   if (d.week < (stx.nextSeries ?? 2)) return;
   if (!rng.chance(orderOf(d) >= 1 ? 0.5 : 0.35)) return;
-  const lastKind = stx.history?.at(-1)?.kind;
+  // Un contact du répertoire propose une discussion de fond (une fois sur deux), sinon la presse
+  if (rng.chance(0.5)) {
+    const pool = directoryOf(d).filter(e => !echangeBlock(d, e));
+    if (pool.length && startEchange(d, rng.pick(pool), rng, false)) return;
+  }
+  const lastKind = [...(stx.history ?? [])].reverse().find(h => h.kind !== 'echange')?.kind;
   const interview = lastKind === 'interview' ? rng.chance(0.4) : lastKind === 'quiz' ? true : rng.chance(0.65);
   if (interview) startInterview(d, rng); else startQuiz(d, rng);
 }

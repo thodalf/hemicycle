@@ -16,6 +16,9 @@ import { applyEffects, campaignOpen, partySupport } from './effects';
 import { voteRole } from './assembly';
 import { Rng, clamp, nextId } from './rng';
 import { onDialogueAnswer } from './phone-dialogues';
+import { echangeBlock, startEchange } from './phone-qcm';
+import { personOf } from './phone-names';
+import { genderOf } from '../data/names';
 
 /* ============================================================
  *  Le téléphone : SMS et appels de l'équipe, du chef ou de la
@@ -43,7 +46,7 @@ export interface PhoneEntry {
 }
 
 export interface CallOption {
-  id: 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage' | 'seduire' | 'rompre' | 'complot' | 'apparition' | 'nommer_pm' | 'limoger' | `sc_${string}` | `min_${string}`;
+  id: 'serie' | 'soutien' | 'argent' | 'nouvelles' | 'point' | 'numero' | 'remercier' | 'mission' | 'rumeur' | 'fuite' | 'pacte' | 'tuyau' | 'conseil' | 'appui' | 'arbitrage' | 'seduire' | 'rompre' | 'complot' | 'apparition' | 'nommer_pm' | 'limoger' | `sc_${string}` | `min_${string}`;
   label: string;
   hint: string;
   ok: boolean;
@@ -165,7 +168,7 @@ export function directory(d: GameState): PhoneEntry[] {
     out.push({ key: `equipe:${r.id}`, kind: 'equipe', name: r.name, role: STAFF_BY_ROLE.get(r.role)?.title ?? r.role, icon: STAFF_ICONS[r.role] ?? '👤' });
   }
   const chief = leader(d);
-  if (chief) out.push({ key: 'chef', kind: 'chef', name: chief.name, role: `Chef·fe ${d.party.name.startsWith('Union') || d.party.name.startsWith('Alliance') ? 'de l’' + d.party.name : 'du parti'}`, icon: '🎗️', bond: Math.round(chief.relationToPlayer) });
+  if (chief) out.push({ key: 'chef', kind: 'chef', name: chief.name, role: `${genderOf(chief.name) === 'm' ? 'Chef' : genderOf(chief.name) === 'f' ? 'Cheffe' : 'Chef·fe'} ${d.party.name.startsWith('Union') || d.party.name.startsWith('Alliance') ? 'de l’' + d.party.name : 'du parti'}`, icon: '🎗️', bond: Math.round(chief.relationToPlayer) });
   const colleagues = d.npcs
     .filter(n => n.partyId === d.party.id && n.id !== d.party.leaderNpcId && n.relationToPlayer >= 0)
     .sort((a, b) => b.relationToPlayer - a.relationToPlayer)
@@ -185,6 +188,13 @@ export function directory(d: GameState): PhoneEntry[] {
   const partner = d.family?.partner;
   if (partner) out.push({ key: 'conjoint', kind: 'proche', name: partner.name, role: partner.married ? 'Votre conjoint·e' : 'Votre moitié', icon: '💞' });
   if (d.family?.parents.find(x => x.name === 'Maman')?.alive !== false) out.push({ key: 'proche', kind: 'proche', name: 'Maman', role: 'Famille', icon: '❤️' });
+  // Chacun a un prénom, un nom et sa fonction (organisations, titres, famille)
+  for (const e of out) {
+    if (e.kind !== 'contact' && e.kind !== 'scenario' && e.kind !== 'proche') continue;
+    const p = personOf(d, e.key, e.name, e.role);
+    e.name = p.from;
+    e.role = p.role;
+  }
   return out;
 }
 
@@ -295,6 +305,9 @@ export function callOptions(d: GameState, key: string): CallOption[] {
       break;
     }
   }
+  // Une discussion de fond : une série de questions à choix multiple, sur plusieurs mois
+  const serie = echangeBlock(d, e);
+  if (serie !== 'Pas de discussion de fond possible') opts.push({ id: 'serie', label: '💬 Proposer une discussion de fond', hint: 'Quelques questions à choix multiple, une par mois. Ses attentes, vos réponses, et un bilan qui pèsera sur votre relation.', ok: !block && !serie, reason: block ?? serie ?? undefined });
   opts.push(...askOptions(d, e, block));
   opts.push(...appointOptions(d, e, block));
   opts.push(...romanceOptions(d, e, block));
@@ -304,6 +317,10 @@ export function callOptions(d: GameState, key: string): CallOption[] {
 export function addMessage(d: GameState, m: Omit<PhoneMessage, 'id' | 'week'>): PhoneMessage {
   const ph = phone(d);
   const msg: PhoneMessage = { id: nextId(d, 'tel'), week: d.week, ...m };
+  // Chacun a un prénom, un nom et sa fonction
+  const who = personOf(d, msg.who, msg.from, msg.role);
+  msg.from = who.from;
+  msg.role = who.role;
   // Sous la Couronne, on parle au souverain, pas au président
   if (d.kingdom) {
     msg.text = royal(d, msg.text);
@@ -349,6 +366,12 @@ export function placeCall(d: GameState, key: string, optionId: CallOption['id'],
     nommer_pm: 'J’ai besoin de vous à Matignon. Vous acceptez ?', limoger: key === 'gouv:pm' ? 'Il est temps de tourner la page. J’attends votre démission.' : 'Je vais devoir vous demander de quitter le gouvernement.',
   };
   const ask = optionId === 'soutien' ? (d.vote?.status === 'debat' ? `Je peux compter sur ton soutien pour « ${d.vote.title} » ?` : 'Je prépare un texte : je peux compter sur ton soutien ?') : ASK[optionId] ?? (optionId.startsWith('min_') ? 'Je voudrais vous confier un ministère. Vous êtes partant·e ?' : undefined) ?? scenarioAsk(d, e, optionId) ?? 'Je prenais des nouvelles.';
+  if (optionId === 'serie') {
+    addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: '📞 J’aimerais qu’on prenne le temps d’une vraie discussion de fond. Quelques questions, sur plusieurs mois ?', outgoing: true, read: true });
+    if (extra) applyEffects(d, effects, {}, rng);
+    startEchange(d, e, rng, true);
+    return [];
+  }
   addMessage(d, { kind: 'appel', who: key, from: e.name, role: e.role, text: `📞 ${ask}`, outgoing: true, read: true });
 
   let notes: string[] = [];

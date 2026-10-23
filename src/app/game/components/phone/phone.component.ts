@@ -52,7 +52,7 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
             </div>
             @if (pending(); as m) {
               <div class="replies">
-                @if (m.qcm?.kind === 'position') { <p class="qcm-head">❓ <b>Question à choix multiple</b> · votre réponse est publiée et retenue ; une relance suivra.</p> }
+                @if (m.qcm?.kind === 'position') { <p class="qcm-head">❓ <b>Question à choix multiple</b> · votre réponse est retenue (et publiée si c’est la presse) ; une relance suivra.</p> }
                 @else if (m.qcm?.kind === 'relance') { <p class="qcm-head">↪️ <b>Relance</b> · on rebondit sur ce que vous venez de dire.</p> }
                 @else if (m.qcm?.kind === 'intro') { <p class="qcm-head">🎙️ <b>Une série au long cours</b> · plusieurs mois, un fil conducteur, un verdict à la fin.</p> }
                 @else if (m.qcm?.kind === 'colle') { <p class="qcm-head">🎯 <b>Colle</b> · une seule bonne réponse{{ m.qcm?.asker === 'tv' ? ', et la caméra tourne' : '' }}.</p> }

@@ -1245,7 +1245,7 @@ export interface DialogueState {
   /** La série en cours : une interview au long cours, ou une saison du quiz des élus */
   series?: QcmSeries | null;
   /** Les séries passées (portraits publiés, classements) */
-  history?: { sid: string; kind: 'interview' | 'quiz'; title: string; outlet: string; verdict: string; tone: 'good' | 'bad' | 'mixed'; week: number }[];
+  history?: { sid: string; kind: 'interview' | 'quiz' | 'echange'; title: string; outlet: string; verdict: string; tone: 'good' | 'bad' | 'mixed'; week: number }[];
   /** Vos engagements de programme pris en interview (sujet → mois) */
   engagements?: Record<string, number>;
   /** Pas de nouvelle série avant ce mois */
@@ -1255,8 +1255,18 @@ export interface DialogueState {
 /** Une série de questions à choix multiple, sur plusieurs mois, avec un fil conducteur */
 export interface QcmSeries {
   sid: string;
-  kind: 'interview' | 'quiz';
+  kind: 'interview' | 'quiz' | 'echange';
   journalist: string;
+  /** Discussion de fond avec un contact : son profil, ce qu'il espère, vos accords, vos promesses */
+  archetype?: string;
+  ideal?: number;
+  agree?: number[];
+  promised?: number;
+  npcId?: string;
+  contactId?: string;
+  recruitId?: string;
+  /** Qui a lancé la discussion : vous (appel) ou l'interlocuteur */
+  byPlayer?: boolean;
   outlet: string;
   title: string;
   who: string;

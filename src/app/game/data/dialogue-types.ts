@@ -117,7 +117,7 @@ export function personalitySpeaker(filter?: (rel: number) => boolean) {
 }
 
 /** La famille */
-export const familySpeaker = (from = 'Maman'): ((d: GameState) => Speaker) => () => ({ who: 'proche', from, role: 'Famille' });
+export const familySpeaker = (from = 'Maman'): ((d: GameState) => Speaker) => () => ({ who: from === 'Maman' ? 'proche' : `proche:${from}`, from, role: 'Famille' });
 
 /** Un interlocuteur de passage, qui garde son propre fil de discussion */
 export const guestSpeaker = (key: string, from: string, role: string): ((d: GameState) => Speaker) => () => ({ who: `dlg:${key}`, from, role });
