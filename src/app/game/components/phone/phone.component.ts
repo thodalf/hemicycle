@@ -53,7 +53,7 @@ const GROUPS: { kind: PhoneEntry['kind']; label: string }[] = [
             @if (pending(); as m) {
               <div class="replies">
                 @if (m.qcm?.kind === 'position') { <p class="qcm-head">❓ <b>Question à choix multiple</b> · votre réponse sera publiée et retenue : changer d’avis plus tard vous coûtera cher.</p> }
-                @else if (m.qcm?.kind === 'colle') { <p class="qcm-head">🎯 <b>Colle</b> · une seule bonne réponse{{ m.qcm.asker === 'tv' ? ', et la caméra tourne' : '' }}.</p> }
+                @else if (m.qcm?.kind === 'colle') { <p class="qcm-head">🎯 <b>Colle</b> · une seule bonne réponse{{ m.qcm?.asker === 'tv' ? ', et la caméra tourne' : '' }}.</p> }
                 @else if (m.dlg) { <p class="qcm-head">💬 <b>Votre réponse compte</b> · on s’en souviendra.</p> }
                 @for (r of m.replies; track r.id) { <button type="button" class="reply" [class.qcm]="!!m.qcm" (click)="phone.reply(m.id, r.id)"><span>{{ r.label }}</span>@if (r.hint) { <small>{{ r.hint }}</small> }</button> }
               </div>

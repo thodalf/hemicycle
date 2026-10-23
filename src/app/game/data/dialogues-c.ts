@@ -1,4 +1,4 @@
-import { DOMAIN_LABELS, Domain, Effect, GameState, Segment } from '../models/game.models';
+import type { Domain, Effect, GameState, Segment } from '../models/game.models';
 import { DialogueDef, contactSpeaker, familySpeaker, guestSpeaker, mem, rankAtLeast, st, teamSpeaker } from './dialogue-types';
 
 /* ============================================================
@@ -31,6 +31,10 @@ const trust = (delta: number): Effect => ({ kind: 'contact', contactId: '$speake
 const momentum = (delta: number): Effect => ({ kind: 'momentum', delta });
 
 const fem = (d: GameState) => d.player.gender === 'femme';
+const SUJETS: Record<Domain, string> = {
+  economie: 'l’économie', social: 'le social', ecologie: 'l’écologie', securite: 'la sécurité', justice: 'la justice',
+  education: 'l’école', sante: 'la santé', numerique: 'le numérique', territoires: 'les territoires', diplomatie: 'la place de la France dans le monde',
+};
 const hasRole = (d: GameState, role: string) => d.player.team.some(r => r.role === role);
 const titrePM = (d: GameState) => (fem(d) ? 'Madame la Première ministre' : 'Monsieur le Premier ministre');
 const titrePR = (d: GameState) => (fem(d) ? 'Madame la Présidente' : 'Monsieur le Président');
@@ -46,6 +50,7 @@ function griefs(d: GameState): string[] {
   if (mem(d, 'c_porte_parole_sacrifiee')) out.push('une porte-parole sacrifiée pour une phrase');
   if (mem(d, 'c_gouverneur_menacee')) out.push('des pressions sur la Banque de France');
   if (mem(d, 'c_prefet_lache')) out.push('un préfet lâché devant les caméras');
+  if (mem(d, 'c_frondeur_achete')) out.push('des hôpitaux sauvés contre des votes');
   return out.slice(0, 3);
 }
 
@@ -457,6 +462,7 @@ export const DIALOGUES_C: DialogueDef[] = [
       },
       reclamation: {
         text: 'Je viens réclamer ma dette : le ministère de la Justice se libère au prochain remaniement. Je le veux.',
+        effects: [st('stress', 2)],
         choices: [
           { id: 'oui', label: 'Il est à vous', effects: [pres({ majority: 3 }), st('influence', -2)], end: 'Merci. Vous ne le regretterez pas.' },
           { id: 'autre', label: 'Pas la Justice, mais un autre portefeuille', effects: [pres({ majority: 1 })], end: 'Je prends. Mais je n’oublie pas.' },
@@ -507,6 +513,7 @@ export const DIALOGUES_C: DialogueDef[] = [
       },
       rapport: {
         text: 'Mon rapport est prêt : référendum d’initiative partagée simplifié, dose de proportionnelle, mandat unique. Vous m’aviez promis de le reprendre.',
+        effects: [st('credibility', 1), expo(1)],
         choices: [
           { id: 'proportionnelle', label: 'Je reprends la proportionnelle', effects: [pres({ majority: -2 }), st('credibility', 2), st('popularity', 1)], end: 'Enfin un successeur qui tient parole.' },
           { id: 'moment', label: 'Le moment n’est pas opportun', effects: [st('credibility', -2)], end: 'Le moment ne l’est jamais. Je le dirai.' },
@@ -627,7 +634,7 @@ export const DIALOGUES_C: DialogueDef[] = [
         effects: [eco({ confidence: 2, growth: 0.05 })],
         choices: [
           { id: 'conclu', label: 'Marché conclu', effects: [st('politicalCapital', -1)], end: 'Parfait. Rendez-vous dans un an.', later: { months: 12, node: 'reexamen' } },
-          { id: 'usines', label: 'Et vous rouvrez l’usine de Longvic', effects: [st('politicalCapital', -2), seg('populaires', 2)], end: 'Vous êtes gourmand·e. Va pour l’usine.', later: { months: 12, node: 'reexamen' } },
+          { id: 'usines', label: 'Et vous rouvrez l’usine de Vaucelles', effects: [st('politicalCapital', -2), seg('populaires', 2)], end: 'Vous êtes gourmand·e. Va pour l’usine.', later: { months: 12, node: 'reexamen' } },
         ],
       },
       depart_sec: {
@@ -664,6 +671,7 @@ export const DIALOGUES_C: DialogueDef[] = [
       },
       reexamen: {
         text: 'Un an a passé. Le milliard est investi, comme promis. À vous : la surtaxe doit baisser.',
+        effects: [eco({ growth: 0.05, unemployment: -0.05 })],
         choices: [
           { id: 'baisser', label: 'Promesse tenue : je la baisse', effects: [eco({ deficit: 0.03, confidence: 2 }), seg('populaires', -2)], remember: { c_cac_cede: 1 }, end: 'Merci. On pourra encore travailler ensemble.' },
           { id: 'budget', label: 'Impossible, le budget est trop serré', effects: [st('credibility', -2), eco({ confidence: -2 })], end: 'Je m’en souviendrai.' },
@@ -837,7 +845,7 @@ export const DIALOGUES_C: DialogueDef[] = [
         ],
       },
       loyale: {
-        text: 'Petite info : un ministre a essayé de m’enrôler dans sa « ligne » contre vous. J’ai refusé, et je vous transmets ses messages. Vous m’avez fait confiance, je vous la rends.',
+        text: d => `Petite info : ${mem(d, 'c_fuiteur_garde') ? 'Matthieu Ravel, celui que vous avez gardé malgré ses fuites,' : 'un ministre'} a essayé de m’enrôler dans sa « ligne » contre vous. J’ai refusé, et je vous transmets ses messages. Vous m’avez fait confiance, je vous la rends.`,
         effects: [st('influence', 3), expo(-2)],
         choices: [
           { id: 'merci', label: 'Merci, Lina', effects: [st('stress', -1)], end: 'Avec plaisir. On se serre les coudes.' },
@@ -848,7 +856,7 @@ export const DIALOGUES_C: DialogueDef[] = [
         text: 'Je vous écris de mon nouveau bureau : je publie un livre sur mes années au gouvernement. Le chapitre sur mon départ s’intitule « Le fusible ».',
         effects: [st('popularity', -2), st('credibility', -2), expo(2)],
         choices: [
-          { id: 'succes', label: 'Je vous souhaite du succès', effects: [st('credibility', 1)], end: 'Vous êtes beau joueur. C’est noté.' },
+          { id: 'succes', label: 'Je vous souhaite du succès', effects: [st('credibility', 1)], end: d => `Vous êtes ${fem(d) ? 'belle joueuse' : 'beau joueur'}. C’est noté.` },
           { id: 'avocats', label: 'Mes avocats le liront', effects: [st('stress', 2)], end: 'Ils trouveront tout exact.' },
         ],
       },
@@ -871,7 +879,7 @@ export const DIALOGUES_C: DialogueDef[] = [
         ignore: [morale(-4)],
       },
       proposition: {
-        text: d => `Le cœur du texte : vous reconnaissez que votre camp s’est trompé pendant dix ans sur ${DOMAIN_LABELS[d.agendaDomain].toLowerCase()}, et vous proposez de tout remettre à plat.${mem(d, 'c_mentor_ecoute') ? ' Ça prolonge votre retour sur le terrain.' : ''} Ça peut faire de vous une figure. Ou vous couler.`,
+        text: d => `Le cœur du texte : vous reconnaissez que votre camp s’est trompé pendant dix ans sur ${SUJETS[d.agendaDomain]}, et vous proposez de tout remettre à plat.${mem(d, 'c_mentor_ecoute') ? ' Ça prolonge votre retour sur le terrain.' : ''} Ça peut faire de vous une figure. Ou vous couler.`,
         choices: [
           { id: 'audace', label: 'Je le prononce tel quel', hint: 'Un coup de poker', effects: [st('popularity', 4), st('influence', 3), coh(-3), morale(8)], remember: { c_discours_audace: 1 }, risk: { chance: 0.45, scaleWith: 'credibility', fail: 'flop' }, end: 'Salle debout. Les chaînes d’info passent l’extrait en boucle. On s’en souviendra.', later: { months: 6, node: 'heritage' } },
           { id: 'adoucir', label: 'On garde l’idée, on lime les angles', effects: [st('popularity', 1), st('influence', 1), morale(2)], end: 'D’accord. Ce sera bien. Pas inoubliable, mais bien.' },
@@ -954,6 +962,7 @@ export const DIALOGUES_C: DialogueDef[] = [
       },
       propositions: {
         text: 'Le déjeuner avait du bon. Mes collègues et moi avons rédigé dix propositions. Reprenez-en trois, et vous aurez nos voix jusqu’à la fin de la session.',
+        effects: [gov({ majority: 1 })],
         choices: [
           { id: 'trois', label: 'J’en reprends trois', effects: [st('politicalCapital', -2), gov({ majority: 4 })], end: 'Marché conclu. C’est un plaisir de travailler avec vous.' },
           { id: 'une', label: 'Une seule, et c’est déjà beaucoup', effects: [gov({ majority: 1 })], end: 'C’est maigre. On s’en contentera.' },
@@ -1013,6 +1022,7 @@ export const DIALOGUES_C: DialogueDef[] = [
       },
       retour: {
         text: 'Quatre mois dans l’opposition nous ont coûté cher dans les sondages. Si vous rouvrez la porte, nous revenons, avec un seul ministère.',
+        effects: [st('influence', 1)],
         choices: [
           { id: 'ouvrir', label: 'La porte est ouverte', effects: [{ kind: 'coalition', open: true }, st('politicalCapital', -2)], end: 'Alors, à la table des négociations.' },
           { id: 'tard', label: 'Trop tard', effects: [st('influence', 1)], end: 'Dommage. Pour vous comme pour nous.' },
@@ -1087,7 +1097,8 @@ export const DIALOGUES_C: DialogueDef[] = [
         text: d => {
           const g = griefs(d);
           const passe = mem(d, 'defi_chef') ? ' Toi qui tenais tête à ton chef de parti, à l’époque.' : '';
-          return `Je te regarde depuis ma retraite et je ne te reconnais plus.${g.length ? ` On me parle de ${g.join(', ')}.` : ' Tu parles comme un communiqué de presse.'}${passe} Tu te souviens pourquoi tu as commencé ?`;
+          const bien = mem(d, 'c_note_publiee') || mem(d, 'c_prefet_assume') ? ' Il y a eu de beaux gestes, je sais, quand tu as assumé tes erreurs.' : '';
+          return `Je te regarde depuis ma retraite et je ne te reconnais plus.${g.length ? ` On me parle de ${g.join(', ')}.` : ' Tu parles comme un communiqué de presse.'}${bien}${passe} Tu te souviens pourquoi tu as commencé ?`;
         },
         choices: [
           { id: 'ecouter', label: 'Tu as raison. Dis-moi ce que tu vois', effects: [st('stress', 1), st('credibility', 1)], next: 'conseil' },
@@ -1112,7 +1123,7 @@ export const DIALOGUES_C: DialogueDef[] = [
         ],
       },
       tribune: {
-        text: 'Je publie demain une tribune : « Lettre à un ancien élève ». Je ne te nomme pas. Tout le monde comprendra.',
+        text: d => `Je publie demain une tribune : « Lettre à ${fem(d) ? 'une ancienne élève' : 'un ancien élève'} ». Je ne te nomme pas. Tout le monde comprendra.`,
         effects: [st('credibility', -3), st('popularity', -1), expo(1)],
         choices: [
           { id: 'appeler', label: 'Je t’appelle', effects: [st('energy', -3), st('credibility', 1)], end: 'Trop tard pour la tribune. Pas pour un café.' },
@@ -1191,7 +1202,7 @@ export const DIALOGUES_C: DialogueDef[] = [
       debut: {
         text: d => `Dernier point avant le débat de demain. ${mem(d, 'c_cac_cede') ? 'Ils vous attaqueront sur le cadeau fiscal aux grands groupes, c’est certain. ' : ''}${mem(d, 'c_sante_ignoree') ? 'Et sur votre santé : la rumeur tourne. ' : ''}Il faut choisir une stratégie : on attaque, ou on reste au-dessus de la mêlée ?`,
         choices: [
-          { id: 'attaque', label: 'On attaque dès la première minute', hint: 'Ça passe ou ça casse', effects: [momentum(4), st('popularity', 2), st('stress', 3)], remember: { c_debat_attaque: 1 }, risk: { chance: 0.45, scaleWith: 'credibility', fail: 'contre' }, end: 'Vous l’avez mis K.-O. au quart d’heure. Les sondages flash vous donnent vainqueur.', later: { months: 3, node: 'trace' } },
+          { id: 'attaque', label: 'On attaque dès la première minute', hint: 'Ça passe ou ça casse', effects: [momentum(4), st('popularity', 2), st('stress', 3)], remember: { c_debat_attaque: 1 }, risk: { chance: 0.45, scaleWith: 'credibility', fail: 'contre' }, end: 'Vous l’avez mis K.-O. au quart d’heure. Les sondages flash vous donnent gagnant·e.', later: { months: 3, node: 'trace' } },
           { id: 'hauteur', label: 'On reste calme et précis', effects: [st('credibility', 3), momentum(1), st('energy', -2)], next: 'nuit' },
           { id: 'ton', label: 'On reprend le ton de mon grand discours', if: d => mem(d, 'c_discours_audace') > 0, effects: [momentum(3), st('influence', 2)], end: 'Vos partisans vont adorer. Les indécis aussi, peut-être.' },
           { id: 'bulletin', label: 'Je publie mon bulletin de santé ce soir', if: d => mem(d, 'c_sante_ignoree') > 0 && !mem(d, 'c_sante_transparence'), effects: [st('credibility', 2), expo(-3), st('stress', -2)], end: 'Ça désamorce tout. Bien vu.' },
@@ -1206,7 +1217,7 @@ export const DIALOGUES_C: DialogueDef[] = [
         ],
       },
       contre: {
-        text: 'Ça s’est retourné contre nous : il vous a coupé avec un chiffre que vous ne connaissiez pas, et la séquence tourne en boucle. Les sondages flash le donnent gagnant.',
+        text: 'Ça s’est retourné contre nous : il vous a coupé·e avec un chiffre que vous ne connaissiez pas, et la séquence tourne en boucle. Les sondages flash le donnent gagnant.',
         effects: [momentum(-5), st('credibility', -3), st('popularity', -2)],
         choices: [
           { id: 'reseaux', label: 'On contre-attaque sur les réseaux', effects: [momentum(2), expo(2)], end: 'On fait de notre mieux. Les militants sont mobilisés.' },

@@ -30,6 +30,7 @@ import { JournalComponent } from '../journal/journal.component';
 import { CrisisPanelComponent } from '../crisis-panel/crisis-panel.component';
 import { TerritoryPanelComponent } from '../territory-panel/territory-panel.component';
 import { FxService } from '../../services/fx.service';
+import { MusicService } from '../../services/music.service';
 import { AuthService } from '../../services/auth.service';
 import { RANKS } from '../../data/ranks';
 import { PatrimoineService } from '../../services/patrimoine.service';
@@ -89,6 +90,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
       </span>
       <button class="btn small phone-btn" [class.ringing]="phone.urgent().length" (click)="phone.show()" [attr.aria-label]="'Téléphone' + (phone.unread() ? ', ' + phone.unread() + ' non lus' : '')">📱@if (phone.unread()) { <b class="badge">{{ phone.unread() }}</b> }</button>
       <button class="btn small help-btn" (click)="tuto.start()" aria-label="Revoir le tutoriel" title="Tutoriel">?</button>
+      <button class="btn small music-btn" (click)="music.toggle()" [attr.aria-pressed]="!music.muted()" [attr.aria-label]="music.muted() ? 'Remettre la musique' : 'Couper la musique'" [title]="music.muted() ? 'Remettre la musique' : 'Couper la musique'">{{ music.muted() ? '🔇' : '🎵' }}</button>
       <button class="btn small quit" (click)="confirmQuit()" aria-label="Mes parties">Mes parties</button>
     </header>
 
@@ -335,6 +337,7 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
     .col-main > :empty, .col-left > :empty, .col-right > :empty,
     .col-main > :not(:has(*)), .col-left > :not(:has(*)), .col-right > :not(:has(*)) { display: none; }
     .help-btn { font-weight: 700; min-width: 30px; padding: 4px 8px; }
+    .music-btn { min-width: 30px; padding: 4px 8px; }
     .phone-btn.ringing { animation: phone-ring 1.2s ease-in-out infinite; border-color: #d6453d; }
     @keyframes phone-ring { 0%, 60%, 100% { transform: rotate(0); } 10%, 30%, 50% { transform: rotate(-12deg); } 20%, 40% { transform: rotate(12deg); } }
     @media (prefers-reduced-motion: reduce) { .phone-btn.ringing { animation: none; } }
@@ -365,14 +368,14 @@ type Tab = 'agenda' | 'moi' | 'pays' | 'actu' | 'jeux';
       .grid[data-tab='jeux'] .col-right > :not(app-arcade-panel),
       .grid[data-tab='pays'] .col-right > :is(app-news-feed, app-arcade-panel) { display: none; }
       /* Barre du haut compacte */
-      .topbar { display: grid; grid-template-columns: auto 1fr auto auto auto auto; gap: 4px 8px; padding: 8px 12px; align-items: center; background: color-mix(in srgb, var(--bg) 97%, transparent); }
+      .topbar { display: grid; grid-template-columns: auto 1fr auto auto auto auto auto; gap: 4px 8px; padding: 8px 12px; align-items: center; background: color-mix(in srgb, var(--bg) 97%, transparent); }
       .brand { font-size: 17px; }
       .facts { gap: 10px; font-size: 12px; flex-wrap: nowrap; overflow: hidden; }
       .facts > span:nth-child(n+2) { display: none; }
       .save .save-lbl { display: none; }
       .quit { padding: 4px 8px; }
-      .brand { order: 1; } .facts { order: 2; } .save { order: 3; } .phone-btn { order: 4; } .help-btn { order: 5; } .quit { order: 6; justify-self: end; }
-      app-vitals { grid-column: 1 / -1; order: 7; }
+      .brand { order: 1; } .facts { order: 2; } .save { order: 3; } .phone-btn { order: 4; } .help-btn { order: 5; } .music-btn { order: 6; } .quit { order: 7; justify-self: end; }
+      app-vitals { grid-column: 1 / -1; order: 8; }
       .mobile-tabs {
         display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
         background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(10px);
@@ -580,7 +583,10 @@ export class DashboardComponent {
   private readonly holdFx = effect(() => {
     const busy = !!this.chapter() || !!this.fx.election();
     untracked(() => (busy ? this.fx.pause() : this.fx.resume()));
+    // La musique baisse pendant l'annonce d'un nouveau chapitre
+    untracked(() => this.music.hold('chapter', !!this.chapter()));
   });
+  protected readonly music = inject(MusicService);
 
   /** Animations mises en attente tant qu'un mini-jeu, une scène ou un vote occupe l'écran */
   private queued: [() => void, number][] = [];

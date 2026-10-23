@@ -77,6 +77,8 @@ export class FxService {
   private groupDur = 0;
   /** Nombre d'animations en attente (pour les tests) */
   readonly pending = signal(0);
+  /** Une grande animation est en cours (la musique baisse) */
+  readonly busy = signal(false);
 
   private enqueue(dur: number, run: () => void): void {
     if (this.reduced || typeof window === 'undefined') return;
@@ -114,11 +116,12 @@ export class FxService {
   }
 
   private next(): void {
-    if (this.paused) { this.running = false; return; }
+    if (this.paused) { this.running = false; this.busy.set(false); return; }
     const job = this.chain.shift();
     this.pending.set(this.chain.length);
-    if (!job) { this.running = false; return; }
+    if (!job) { this.running = false; this.busy.set(false); return; }
     this.running = true;
+    this.busy.set(true);
     let dur = 0;
     try { dur = job(); } catch { dur = 0; }
     setTimeout(() => this.next(), dur ? dur + 220 : 0);

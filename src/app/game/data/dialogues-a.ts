@@ -267,6 +267,7 @@ export const DIALOGUES_A: DialogueDef[] = [
         text: 'Vote dans trois semaines. Julien fait du porte-à-porte chez chaque adhérent. Tu fais campagne comment ?',
         choices: [
           { id: 'kevin', label: 'J’appelle Kevin et ses bénévoles', if: d => mem(d, 'kevin_loyal') > 0, hint: 'Kevin vous doit une fière chandelle', effects: [st('energy', -2), membres(5)], next: 'victoire' },
+          { id: 'anciens', label: 'Raymond et les anciens votent pour moi', if: d => mem(d, 'a_raymond_retenu') > 0, hint: 'Le vieux militant que vous avez retenu', effects: [st('energy', -2), seg('retraites', 1)], next: 'victoire' },
           { id: 'terrain', label: 'Je fais le tour des adhérents, un par un', effects: [st('energy', -7)], risk: { chance: 0.4, scaleWith: 'popularity', fail: 'defaite' }, next: 'victoire' },
           { id: 'debat', label: 'Je propose un débat devant la section', effects: [st('stress', 2)], risk: { chance: 0.45, scaleWith: 'credibility', fail: 'defaite' }, next: 'victoire' },
         ],
@@ -342,10 +343,10 @@ export const DIALOGUES_A: DialogueDef[] = [
           : 'Je n’ai pas encore tout… Je peux te rendre 600 € maintenant. Et une info : la fédé prépare un audit de toutes les sections.',
         effects: [st('stress', 1)],
         choices: [
-          { id: 'merci_audit', label: 'Merci Michel. Prépare bien tes comptes', if: d => mem(d, 'a_caisse_papier') > 0, effects: [perso(1800), st('credibility', 1)], end: 'Ils seront nickel. Je te dois une fière chandelle.' },
-          { id: 'audit_ensemble', label: 'Merci. On prépare l’audit ensemble', if: d => mem(d, 'a_caisse_papier') > 0, effects: [perso(1800), st('energy', -2), expo(-2)], end: 'Avec toi derrière, je suis plus serein.' },
+          { id: 'merci_audit', label: 'Merci Michel. On prépare l’audit ensemble', if: d => mem(d, 'a_caisse_papier') > 0, effects: [perso(1800), st('energy', -2), expo(-2)], end: 'Avec toi derrière, je suis plus serein. Je te dois une fière chandelle.' },
           { id: 'partiel', label: 'Je prends les 600 €, le reste plus tard', if: d => !mem(d, 'a_caisse_papier'), effects: [perso(600)], end: 'Promis, le reste avant l’été.' },
           { id: 'effacer', label: 'Laisse tomber la dette, oublions ça', if: d => !mem(d, 'a_caisse_papier'), effects: [cohesion(1), membres(2)], end: 'Je ne sais pas comment te remercier. Toute la section le saura.' },
+          { id: 'audit', label: 'L’audit ? Dis-moi tout ce que tu sais', effects: [st('influence', 1), st('energy', -1)], end: 'Ils vont éplucher les notes de frais. Je t’envoie les dates, et je te rembourse dès que possible.' },
         ],
       },
       colere: {
@@ -402,7 +403,7 @@ export const DIALOGUES_A: DialogueDef[] = [
         text: 'Je préside le collectif contre l’antenne-relais du square. Signez notre pétition, et ma vidéo disparaît. Simple, non ?',
         choices: [
           { id: 'signer', label: 'D’accord, je signerai', effects: [st('credibility', -2)], remember: { a_voisin_antenne: 1 }, end: 'Ravi qu’on se comprenne. Le collectif vous contactera.' },
-          { id: 'refuser', label: 'Je ne signe rien sous la pression', effects: [st('credibility', 2)], risk: { chance: 0.5, scaleWith: 'popularity', fail: 'buzz' }, end: 'Comme vous voudrez. Je garde la vidéo au chaud.', later: { months: 5, node: 'retour_voisin' } },
+          { id: 'refuser', label: 'Je ne signe rien sous la pression', hint: 'Il gardera la vidéo sous le coude', effects: [st('credibility', 2), st('stress', 2)], end: 'Comme vous voudrez. Je garde la vidéo au chaud.', later: { months: 5, node: 'retour_voisin' } },
           { id: 'devancer', label: 'Je publie moi-même la vidéo, avec mes excuses', effects: [st('popularity', 1), st('credibility', 2), expo(-1), st('energy', -1)], end: 'Vous publiez vous-même ma vidéo ? Malin. Les gens trouvent ça sympathique.' },
         ],
       },
@@ -432,7 +433,7 @@ export const DIALOGUES_A: DialogueDef[] = [
     start: 'debut',
     nodes: {
       debut: {
-        text: d => `Bonjour, Nadia Ferrand, de l’opposition municipale. ${mem(d, 'a_maire_ennemi') ? 'Il paraît que le maire et vous, ce n’est plus le grand amour. ' : ''}Le budget passe en conseil dans quinze jours. Ensemble, on peut le faire tomber. Ça vous tente ?`,
+        text: d => `Bonjour, Nadia Ferrand, de l’opposition municipale. ${mem(d, 'a_maire_ennemi') ? 'Il paraît que le maire et vous, ce n’est plus le grand amour. ' : mem(d, 'a_club_subvention') ? 'Je sais que le maire vous a accordé une subvention express pour le club de foot. Ça se paie, ces choses-là. ' : ''}Le budget passe en conseil dans quinze jours. Ensemble, on peut le faire tomber. Ça vous tente ?`,
         choices: [
           { id: 'allier', label: 'Oui, unissons-nous contre ce budget', effects: [st('politicalCapital', -3), { kind: 'faction', factionId: 'ligne_dure', delta: -3 }, st('influence', 3)], remember: { a_alliance_ferrand: 1 }, next: 'plan' },
           { id: 'secret', label: 'Discrètement : je m’abstiendrai', effects: [st('influence', 2)], remember: { a_alliance_ferrand: 1 }, risk: { chance: 0.4, scaleWith: 'influence', fail: 'fuite' }, end: 'Une abstention discrète, c’est déjà beaucoup. Merci.' },
@@ -855,7 +856,7 @@ export const DIALOGUES_A: DialogueDef[] = [
     start: 'debut',
     nodes: {
       debut: {
-        text: d => `Un journaliste du quotidien local prépare un portrait de vous. ${mem(d, 'a_pacte_maire') ? 'Il pose beaucoup de questions sur vos rapports avec le maire. ' : ''}${mem(d, 'a_promoteur_dette') ? 'Et il a la liste des donateurs de votre association de financement. ' : ''}Il veut une interview vendredi. Je lui dis quoi ?`,
+        text: d => `Un journaliste du quotidien local prépare un portrait de vous. ${mem(d, 'a_pacte_maire') ? 'Il pose beaucoup de questions sur vos rapports avec le maire. ' : ''}${mem(d, 'a_promoteur_dette') ? 'Et il a la liste des donateurs de votre association de financement. ' : ''}${mem(d, 'a_terrasse_faveur') ? 'Il a aussi entendu parler d’une terrasse au Café des Halles. ' : ''}${mem(d, 'a_dette_lobby') ? 'Et il a une photo de vous au restaurant avec un lobbyiste. ' : ''}Il veut une interview vendredi. Je lui dis quoi ?`,
         choices: [
           { id: 'interview', label: 'J’accepte, on prépare ensemble', effects: [st('energy', -4), st('popularity', 1)], next: 'prepa' },
           { id: 'refuser', label: 'Pas d’interview', effects: [st('popularity', -1), expo(1)], end: 'Entendu. Il écrira sans vous, alors.', later: { months: 3, node: 'retour_portrait' } },
@@ -868,7 +869,7 @@ export const DIALOGUES_A: DialogueDef[] = [
         choices: [
           { id: 'bilan', label: 'Je déroule mon bilan, chiffres à l’appui', effects: [st('credibility', 3), st('energy', -2)], end: 'Parfait. Le portrait sera flatteur, je le sens.', later: { months: 3, node: 'publie' } },
           { id: 'anecdote', label: 'Je raconte une histoire de terrain', effects: [st('popularity', 2)], risk: { chance: 0.35, scaleWith: 'popularity', fail: 'derapage' }, end: 'Votre anecdote fait le titre du portrait. Très bon.' },
-          { id: 'franchise', label: 'Je vide mon sac sur les dossiers gênants', if: d => mem(d, 'a_pacte_maire') > 0 || mem(d, 'a_promoteur_dette') > 0, hint: 'Prendre les devants', effects: [st('credibility', 4), expo(-3), st('politicalCapital', -3)], end: 'Vous avez coupé l’herbe sous le pied à toutes les rumeurs. Gonflé.' },
+          { id: 'franchise', label: 'Je vide mon sac sur les dossiers gênants', if: d => mem(d, 'a_pacte_maire') + mem(d, 'a_promoteur_dette') + mem(d, 'a_terrasse_faveur') + mem(d, 'a_dette_lobby') > 0, hint: 'Prendre les devants', effects: [st('credibility', 4), expo(-3), st('politicalCapital', -3)], end: 'Vous avez coupé l’herbe sous le pied à toutes les rumeurs. Gonflé.' },
         ],
       },
       derapage: {
@@ -1168,7 +1169,7 @@ export const DIALOGUES_A: DialogueDef[] = [
         ],
       },
       discours: {
-        text: 'Le comité te laisse cinq minutes, entre la tombola et le lâcher de ballons. Tu vas dire quoi ? Fais court, les gens ont faim.',
+        text: d => `Le comité te laisse cinq minutes, entre la tombola et le lâcher de ballons. ${mem(d, 'a_ruraux_promesse') ? 'Les éleveurs du comité parlent encore de ta promesse au barrage. ' : ''}Tu vas dire quoi ? Fais court, les gens ont faim.`,
         choices: [
           { id: 'humour', label: 'Un discours drôle et léger', effects: [st('popularity', 1)], risk: { chance: 0.4, scaleWith: 'popularity', fail: 'blague' }, next: 'succes' },
           { id: 'politique', label: 'Un vrai discours sur l’avenir du village', effects: [st('credibility', 2), st('energy', -2), seg('ruraux', 1)], end: 'Les gens ont écouté poliment. Ton oncle dit que c’était « un peu long ».', later: { months: 10, node: 'retour_fete' } },
@@ -1209,7 +1210,7 @@ export const DIALOGUES_A: DialogueDef[] = [
     start: 'debut',
     nodes: {
       debut: {
-        text: d => `C’est Raymond. Quarante ans de carte, et je crois que je vais la rendre. La direction a lâché les retraités, et toi tu n’as rien dit. ${mem(d, 'a_caisse_denoncee') ? 'Et tu as livré Michel à la fédé, un camarade de trente ans. ' : ''}Convaincs-moi de rester.`,
+        text: d => `C’est Raymond. Quarante ans de carte, et je crois que je vais la rendre. La direction a lâché les retraités, et toi tu n’as rien dit. ${mem(d, 'a_caisse_denoncee') ? 'Et tu as livré Michel à la fédé, un camarade de trente ans. ' : mem(d, 'a_caisse_couverte') ? 'Michel m’a dit que tu l’avais tiré d’affaire, je sais que tu as du cœur. ' : ''}Convaincs-moi de rester.`,
         choices: [
           { id: 'visite', label: 'Je passe te voir demain, on en parle', effects: [st('energy', -4)], next: 'cuisine' },
           { id: 'ligne', label: 'La ligne du parti est la bonne, Raymond', effects: [cohesion(1), seg('retraites', -1), membres(-3)], end: 'Alors je la rends. Salut.', later: { months: 6, node: 'retour_rendu' } },
